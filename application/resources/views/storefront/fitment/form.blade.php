@@ -15,7 +15,6 @@
         <div class="grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)] lg:items-start">
             <div class="rounded-2xl border border-easytire-border bg-easytire-panel p-6 shadow-sm sm:p-8">
                 <h2 class="text-2xl font-black tracking-tight text-easytire-ink">{{ __('fitment.registration') }}</h2>
-                <p class="mt-2 text-sm leading-6 text-easytire-muted">{{ __('fitment.notice') }}</p>
 
                 <form method="POST" action="{{ url()->current() }}" class="mt-7 space-y-5">
                     @csrf
@@ -33,7 +32,7 @@
                             aria-describedby="registration-help{{ $errors->has('registration') ? ' registration-error' : '' }}"
                             @class(['mt-2 block min-h-12 w-full rounded-lg border bg-white px-4 text-base font-semibold uppercase tracking-wide text-easytire-ink outline-none transition placeholder:text-slate-400 focus:border-easytire-brand focus:ring-4 focus:ring-easytire-brand/15', 'border-red-600' => $errors->has('registration'), 'border-easytire-border' => ! $errors->has('registration')])
                         >
-                        <p id="registration-help" class="mt-2 text-sm leading-6 text-easytire-muted">{{ __('fitment.notice') }}</p>
+                        <p id="registration-help" class="mt-2 text-sm leading-6 text-easytire-muted">{{ __('fitment.registration_help') }}</p>
                         @error('registration')
                             <p id="registration-error" class="mt-2 text-sm font-semibold text-red-700" role="alert">{{ $message }}</p>
                         @enderror
@@ -65,7 +64,7 @@
                 <aside class="rounded-2xl border border-easytire-border bg-white p-6 shadow-sm sm:p-8" aria-labelledby="fitment-fallback-title">
                     <p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">EasyTire</p>
                     <h2 id="fitment-fallback-title" class="mt-3 text-2xl font-black tracking-tight text-easytire-ink">{{ __('fitment.fallback') }}</h2>
-                    <p class="mt-3 text-sm leading-6 text-easytire-muted">{{ __('fitment.notice') }}</p>
+                    <p class="mt-3 text-sm leading-6 text-easytire-muted">{{ __('fitment.manual_help') }}</p>
                     <a href="{{ route($routePrefix.'tires.index') }}" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-full border border-easytire-ink px-5 py-3 text-sm font-bold text-easytire-ink transition hover:border-easytire-brand hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">
                         {{ __('fitment.manual') }}
                     </a>
