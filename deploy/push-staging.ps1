@@ -1,6 +1,7 @@
 param(
     [string] $PhpBinary = 'php',
-    [string] $NpmBinary = 'npm'
+    [string] $NpmBinary = 'npm',
+    [string] $DeployTarget = 'easytire-deploy@95.217.153.189'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,3 +45,14 @@ finally {
 
 git -C $projectRoot push staging main
 if ($LASTEXITCODE -ne 0) { throw 'Git push or remote deployment failed.' }
+
+$expectedRevision = (git -C $projectRoot rev-parse HEAD).Trim()
+$deployedRevision = & ssh $DeployTarget 'cat /var/www/staging-easytire.bethub.fun/current/REVISION'
+$sshExitCode = $LASTEXITCODE
+$deployedRevision = $deployedRevision | Select-Object -First 1
+
+if ($sshExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($deployedRevision) -or $deployedRevision.Trim() -ne $expectedRevision) {
+    throw "Git received $expectedRevision, but staging did not activate that revision."
+}
+
+Write-Host "Staging activated revision $($deployedRevision.Trim())."

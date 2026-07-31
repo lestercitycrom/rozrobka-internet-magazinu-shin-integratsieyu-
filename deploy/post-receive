@@ -28,6 +28,7 @@ while read -r oldrev newrev refname; do
     mkdir -p "$release"
     trap 'rm -rf -- "$release"' ERR
     GIT_WORK_TREE="$release" git checkout --force "$newrev" -- .
+    printf '%s\n' "$newrev" > "$release/REVISION"
     app="$release/application"
     [[ "$app" == "$release/application" && -f "$app/artisan" && -f "$app/composer.json" ]] || fail 'Laravel application is missing from release/application.'
     cp -- "$SHARED/.env" "$app/.env"

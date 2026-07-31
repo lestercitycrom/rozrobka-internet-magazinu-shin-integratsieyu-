@@ -20,6 +20,10 @@ install -m 600 -o "$APP_USER" -g "$APP_USER" /root/.ssh/authorized_keys "/home/$
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y php8.3-sqlite3 mysql-server curl ca-certificates unzip certbot python3-certbot-nginx
+php -r 'exit(function_exists("proc_open") ? 0 : 1);' || {
+  echo 'PHP CLI must allow proc_open for Composer and Laravel test processes. FPM may keep its stricter policy.' >&2
+  exit 1
+}
 
 expected_checksum="$(curl -fsSL https://composer.github.io/installer.sig)"
 curl -fsSL https://getcomposer.org/installer -o /tmp/composer-setup.php

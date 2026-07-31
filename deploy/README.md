@@ -26,7 +26,11 @@ The repository includes `push-staging.ps1`. It refuses a dirty worktree or a bra
   -NpmBinary 'C:\Program Files\nodejs\npm.cmd'
 ```
 
-Only pushes to `main` run the hook. Each deployment checks out an isolated release, enters `release/application`, uses the shared `.env`, symlinks `application/storage` to the persistent shared storage, then runs Composer, `npm ci`, the production build, migrations, and tests before atomically updating `current`. The hook keeps five releases. Redis is deliberately not installed; `.env` selects database-backed cache, queues, and sessions. Nginx serves `current/application/public`.
+Only pushes to `main` run the hook. Each deployment checks out an isolated release, enters `release/application`, uses the shared `.env`, symlinks `application/storage` to the persistent shared storage, then runs Composer, `npm ci`, the production build, tests, and migrations before atomically updating `current`. The hook keeps five releases. Redis is deliberately not installed; `.env` selects database-backed cache, queues, and sessions. Nginx serves `current/application/public`.
+
+The hook records the activated Git hash in `current/REVISION`. After push, the local script reads that marker over SSH and fails explicitly if Git accepted the commit but the post-receive build did not activate it. This distinction matters because Git cannot roll back a received ref when a post-receive hook fails.
+
+Composer and the Laravel test command require `proc_open` in PHP CLI. The bootstrap verifies this and stops with a clear error when a server hardening policy disables it. PHP-FPM remains independent and may keep a stricter `disable_functions` policy.
 
 ## Rollback
 
