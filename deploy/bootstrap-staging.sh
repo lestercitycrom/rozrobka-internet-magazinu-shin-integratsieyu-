@@ -80,7 +80,9 @@ chmod 640 "$APP_ROOT/shared/.env"
 fi
 
 install -m 644 "$DEPLOY_SOURCE/staging-easytire.nginx.conf" "/etc/nginx/sites-available/$DOMAIN"
-ln -sfn "/etc/nginx/sites-available/$DOMAIN" "/etc/nginx/sites-enabled/$DOMAIN"
+enabled_tmp="/etc/nginx/sites-enabled/.${DOMAIN}.$$"
+ln -s "/etc/nginx/sites-available/$DOMAIN" "$enabled_tmp"
+mv -Tf "$enabled_tmp" "/etc/nginx/sites-enabled/$DOMAIN"
 nginx -t
 systemctl reload nginx
 certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email -d "$DOMAIN" --redirect
