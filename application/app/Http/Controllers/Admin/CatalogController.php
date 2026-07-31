@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\Admin\UpdateProductPublicationRequest;
+use App\Modules\Catalog\Enums\PublicationStatus;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Content\Models\MediaAsset;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 final class CatalogController
@@ -26,6 +29,17 @@ final class CatalogController
 
         $mediaAssets = MediaAsset::query()->where('is_active', true)->latest()->get();
 
-        return view('admin.catalog.show', compact('product', 'mediaAssets'));
+        return view('admin.catalog.show', [
+            'product' => $product,
+            'mediaAssets' => $mediaAssets,
+            'publicationStatuses' => PublicationStatus::cases(),
+        ]);
+    }
+
+    public function updatePublication(UpdateProductPublicationRequest $request, Product $product): RedirectResponse
+    {
+        $product->update(['publication_status' => $request->validated('publication_status')]);
+
+        return redirect()->route('admin.catalog.show', $product)->with('status', __('catalog.publication_saved'));
     }
 }

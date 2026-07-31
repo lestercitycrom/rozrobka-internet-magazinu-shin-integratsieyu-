@@ -21,3 +21,16 @@ test('enabled russian preview is translated and marked noindex', function (): vo
     $this->get('/ru')->assertOk()->assertSee('Шины и диски для вашего ритма жизни')->assertSee('noindex,nofollow', false)->assertSee('rel="canonical"', false)->assertSee('lang="ru"', false);
     $this->get('/')->assertOk()->assertSee('Dekk og felg som passer hverdagen din')->assertDontSee('Шины и диски для вашего ритма жизни');
 });
+
+test('russian preview 4xx is localized and preserves preview SEO guardrails', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+
+    $this->get('/ru/tjenester/does-not-exist')
+        ->assertNotFound()
+        ->assertSee(__('errors.heading', [], 'ru'))
+        ->assertDontSee(__('errors.heading', [], 'nb'))
+        ->assertSee('lang="ru"', false)
+        ->assertSee('noindex,nofollow', false)
+        ->assertSee('rel="canonical"', false)
+        ->assertSee('/tjenester/does-not-exist', false);
+});

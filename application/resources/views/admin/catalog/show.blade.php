@@ -2,6 +2,8 @@
     <div class="space-y-8">
         <a class="text-sm underline" href="{{ route('admin.catalog.index') }}">← {{ __('admin.catalog.back') }}</a>
         <header><h1 class="text-3xl font-semibold">{{ $product->title }}</h1><p>{{ $product->brand?->canonical_name }} · {{ $product->product_type->value }}</p></header>
+        @if(session('status'))<p class="border-l-4 border-easytire-brand bg-easytire-brand-soft p-3">{{ session('status') }}</p>@endif
+        <section class="space-y-3"><h2 class="text-lg font-semibold">{{ __('catalog.publication') }}</h2><form method="POST" action="{{ route('admin.catalog.publication.update', $product) }}" class="flex flex-wrap items-end gap-3">@csrf @method('PUT')<label class="text-sm font-medium">{{ __('admin.catalog.status') }}<select name="publication_status" class="mt-1 block border border-easytire-border bg-white px-3 py-2">@foreach($publicationStatuses as $status)<option value="{{ $status->value }}" @selected(old('publication_status', $product->publication_status->value) === $status->value)>{{ __('catalog.statuses.'.$status->value) }}</option>@endforeach</select></label><button class="bg-easytire-brand px-4 py-2 text-sm font-semibold text-white">{{ __('catalog.update_publication') }}</button></form>@error('publication_status')<p class="text-sm text-red-700">{{ $message }}</p>@enderror</section>
         @php($primary = $product->mediaAssignments->firstWhere('role', 'primary')?->asset)
         <section class="space-y-3"><h2 class="text-lg font-semibold">{{ __('media.primary') }}</h2>
             @if ($primary)

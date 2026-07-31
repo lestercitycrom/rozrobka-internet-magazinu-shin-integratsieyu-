@@ -26,6 +26,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
         Route::get('/catalog/{product}', [CatalogController::class, 'show'])->name('catalog.show');
+        Route::put('/catalog/{product}/publication', [CatalogController::class, 'updatePublication'])->name('catalog.publication.update');
         Route::get('/imports', [ImportRunController::class, 'index'])->name('imports.index');
         Route::get('/imports/{runId}', [ImportRunController::class, 'show'])->name('imports.show');
         Route::resource('services', ServicePageController::class)->except('show', 'destroy');

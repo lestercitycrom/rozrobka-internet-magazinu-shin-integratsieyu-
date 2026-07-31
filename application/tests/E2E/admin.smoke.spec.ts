@@ -16,6 +16,9 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
 
     await page.getByRole('link', { name: 'Katalog', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/catalog/);
+    await page.getByRole('link', { name: 'Demo 205/55 R16', exact: true }).click();
+    await expect(page.getByRole('combobox', { name: /status/i })).toHaveValue('published');
+    await expect(page.getByRole('button', { name: /oppdater publisering/i })).toBeVisible();
     await page.getByRole('link', { name: 'Importer', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/imports/);
     await page.getByRole('link', { name: /Bestillinger|Orders/i }).click();

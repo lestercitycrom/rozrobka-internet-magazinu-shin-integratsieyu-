@@ -16,6 +16,19 @@ test('fitment page honestly falls back to manual catalog selection', function ()
     $this->post('/biloppslag', ['registration' => 'AB12345'])->assertOk()->assertSee('Velg dekk manuelt');
 });
 
+test('russian preview localizes fitment and retains its preview SEO guardrails', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+
+    $this->get('/ru/biloppslag')
+        ->assertOk()
+        ->assertSee(__('fitment.title', [], 'ru'))
+        ->assertDontSee(__('fitment.title', [], 'nb'))
+        ->assertSee('lang="ru"', false)
+        ->assertSee('noindex,nofollow', false)
+        ->assertSee('rel="canonical"', false)
+        ->assertSee('/biloppslag', false);
+});
+
 test('enabled fake lookup maps approved dimensions without retaining the registration', function () {
     config()->set('vehicle_fitment.enabled', true);
     config()->set('vehicle_fitment.api_key', 'test-key');

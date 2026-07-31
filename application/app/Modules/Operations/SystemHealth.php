@@ -2,6 +2,7 @@
 
 namespace App\Modules\Operations;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 final class SystemHealth
@@ -16,7 +17,7 @@ final class SystemHealth
             $database = false;
         }
         $last = DB::table('import_runs')->whereIn('status', ['succeeded', 'duplicate', 'completed'])->whereNotNull('finished_at')->orderByDesc('finished_at')->first(['status', 'finished_at']);
-        $age = $last ? now()->diffInMinutes($last->finished_at) : null;
+        $age = $last ? max(0, (int) Carbon::parse($last->finished_at)->diffInMinutes(now())) : null;
         $free = @disk_free_space(base_path());
         $failed = DB::table(config('queue.failed.table', 'failed_jobs'))->count();
         $outboxPending = DB::table('outbox_messages')->where('status', 'pending')->count();
