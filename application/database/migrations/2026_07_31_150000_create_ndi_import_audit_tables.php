@@ -54,7 +54,10 @@ return new class extends Migration
             $table->foreignUlid('source_artifact_id')->constrained('source_artifacts')->restrictOnDelete();
             $table->string('dataset_role', 64);
             $table->string('parser_version', 64);
-            $table->unique(['import_run_id', 'source_artifact_id', 'dataset_role']);
+            $table->unique(
+                ['import_run_id', 'source_artifact_id', 'dataset_role'],
+                'import_run_artifacts_run_artifact_role_unique',
+            );
         });
 
         Schema::create('import_rejections', function (Blueprint $table): void {

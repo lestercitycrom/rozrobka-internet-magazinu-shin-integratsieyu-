@@ -78,6 +78,13 @@ test('an artifact can link to different runs but not twice to the same dataset r
     ]))->toThrow(QueryException::class);
 });
 
+test('the composite import artifact index has an explicit MySQL-safe name', function (): void {
+    $migration = file_get_contents(database_path('migrations/2026_07_31_150000_create_ndi_import_audit_tables.php'));
+
+    expect($migration)->toContain('import_run_artifacts_run_artifact_role_unique')
+        ->and(strlen('import_run_artifacts_run_artifact_role_unique'))->toBeLessThanOrEqual(64);
+});
+
 function createSupplier(): int
 {
     return DB::table('suppliers')->insertGetId([
