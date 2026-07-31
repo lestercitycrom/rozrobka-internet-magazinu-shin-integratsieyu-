@@ -6,6 +6,10 @@
 - Run `php artisan schedule:run` every minute from cron; use `schedule:work` only for local development.
 - Check `php artisan easytire:health` after deploy. Exit `0` is healthy; `1` requires investigation. Its output is intentionally redacted.
 
+## First administrator
+
+- Run `php artisan easytire:bootstrap-admin` interactively only. It prompts for password and confirmation without accepting or printing a password in command arguments/output.
+
 ## Deploy and rollback
 
 - Enable maintenance mode, deploy the release, install locked dependencies, migrate, clear/refresh caches, then disable maintenance mode.

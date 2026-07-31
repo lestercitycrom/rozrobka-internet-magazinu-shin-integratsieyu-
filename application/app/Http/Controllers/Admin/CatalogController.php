@@ -25,7 +25,15 @@ final class CatalogController
 
     public function show(Product $product)
     {
-        $product->load(['brand', 'supplierSkus.supplier', 'tireSpec', 'wheelSpec', 'mediaAssignments.asset']);
+        $product->load([
+            'brand',
+            'supplierSkus.supplier',
+            'supplierSkus.prices.priceList',
+            'supplierSkus.currentStock.warehouse',
+            'tireSpec',
+            'wheelSpec',
+            'mediaAssignments.asset',
+        ]);
 
         $mediaAssets = MediaAsset::query()->where('is_active', true)->latest()->get();
 
