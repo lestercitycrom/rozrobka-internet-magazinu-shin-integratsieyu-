@@ -10,6 +10,15 @@ test('a guest is redirected from the admin dashboard to the admin login', functi
     $this->get('/admin')->assertRedirect(route('admin.login'));
 });
 
+test('an administrator sees operational dashboard links', function (): void {
+    $this->actingAs(User::factory()->operations()->create())
+        ->get('/admin')
+        ->assertOk()
+        ->assertSee(route('admin.catalog.index'), false)
+        ->assertSee(route('admin.imports.index'), false)
+        ->assertSee(route('admin.services.index'), false);
+});
+
 test('an active administrator can sign in with a normalized email address', function (): void {
     $admin = User::factory()->owner()->create([
         'email' => 'owner@example.test',

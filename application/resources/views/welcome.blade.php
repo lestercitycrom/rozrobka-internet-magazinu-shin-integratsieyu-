@@ -1,80 +1,24 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="EasyTire i Tromsø – grunnlag for dekk, felg og dekktjenester.">
-    <title>EasyTire | Dekk og felg i Tromsø</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-50 font-sans text-slate-950 antialiased">
-    <a href="#innhold" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-slate-950 focus:shadow-lg">Hopp til innhold</a>
-    <header class="border-b border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-            <a href="/" class="text-xl font-bold tracking-tight" aria-label="EasyTire, forsiden">EasyTire</a>
-            <nav aria-label="Hovednavigasjon" class="hidden items-center gap-7 text-sm font-medium text-slate-700 md:flex" data-testid="desktop-navigation">
-                <a href="#dekk-og-felg" class="rounded focus:outline-2 focus:outline-offset-4 focus:outline-sky-700">Dekk og felg</a>
-                <a href="#tjenester" class="rounded focus:outline-2 focus:outline-offset-4 focus:outline-sky-700">Tjenester</a>
-            </nav>
-            <a href="#dekk-og-felg" class="rounded-full bg-sky-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-800 focus:outline-2 focus:outline-offset-4 focus:outline-sky-700">Utforsk dekk</a>
-        </div>
-        <nav aria-label="Hurtiglenker" class="border-t border-slate-100 px-5 py-3 md:hidden" data-testid="mobile-navigation">
-            <div class="mx-auto flex max-w-6xl gap-5 overflow-x-auto text-sm font-medium text-slate-700">
-                <a href="#dekk-og-felg" class="shrink-0">Dekk og felg</a>
-                <a href="#tjenester" class="shrink-0">Tjenester</a>
-            </div>
-        </nav>
-    </header>
-    <main id="innhold">
-        <section class="bg-slate-950 text-white">
-            <div class="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-                <div>
-                    <p class="mb-5 text-sm font-semibold tracking-[0.18em] text-sky-300 uppercase">Tromsø</p>
-                    <h1 class="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">Dekk og felg – på din måte</h1>
-                    <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300">EasyTire bygger en enklere vei til dekk, felg og dekktjenester. Se etter riktig løsning når katalogen er klar, eller start med tjenestene våre.</p>
-                </div>
-                <aside class="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl" aria-label="Neste steg">
-                    <p class="text-sm font-semibold text-sky-300">På vei</p>
-                    <p class="mt-2 text-xl font-semibold">Søk etter dekk og felg</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-300">Katalog og produktinformasjon blir lagt til når de er klare for publisering.</p>
-                </aside>
-            </div>
-        </section>
-        <section id="dekk-og-felg" class="mx-auto max-w-6xl scroll-mt-6 px-5 py-16 sm:px-8 sm:py-24" aria-labelledby="catalog-heading" data-testid="catalog-foundation">
+<x-layouts.storefront>
+    @php($routePrefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.')
+    <section class="relative isolate min-h-[38rem] overflow-hidden bg-easytire-ink text-white sm:min-h-[42rem]">
+        <img src="/brand/hero-mobile-service.webp" width="1920" height="1080" alt="{{ __('storefront.hero_image_alt') }}" class="absolute inset-0 -z-20 size-full object-cover object-[65%_center]" fetchpriority="high">
+        <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/85 to-black/20"></div>
+        <div class="mx-auto grid min-h-[38rem] max-w-7xl gap-10 px-5 py-16 sm:min-h-[42rem] sm:px-8 sm:py-24 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
             <div class="max-w-3xl">
-                <p class="text-sm font-semibold tracking-[0.16em] text-sky-800 uppercase">Dekk og felg</p>
-                <h2 id="catalog-heading" class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Finn riktig utgangspunkt for bilen din</h2>
-                <p class="mt-4 text-lg leading-8 text-slate-600">Her kommer søk og katalog for dekk, felg og komplette hjulpakker. Vi viser ikke produkter eller priser før dataene er klare.</p>
+                <p class="mb-5 text-sm font-bold tracking-[.18em] text-easytire-brand uppercase">{{ __('storefront.hero_kicker') }}</p><h1 class="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">{{ __('storefront.hero_title') }}</h1><p class="mt-6 max-w-2xl text-lg leading-8 text-white/75">{{ __('storefront.hero_text') }}</p><div class="mt-8 flex flex-col gap-3 sm:flex-row"><a href="{{ route($routePrefix.'tires.index') }}" class="rounded-xl bg-easytire-brand px-5 py-3 text-center font-bold text-white transition hover:bg-easytire-brand-strong">{{ __('storefront.see_tires') }}</a><a href="{{ route($routePrefix.'wheels.index') }}" class="rounded-xl border border-white/40 px-5 py-3 text-center font-bold text-white hover:bg-white/10">{{ __('storefront.see_wheels') }}</a></div>
             </div>
-            <form class="mt-9 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7" aria-describedby="catalog-help">
-                <label for="future-search" class="text-base font-semibold">Hva ser du etter?</label>
-                <div class="mt-3 flex flex-col gap-3 sm:flex-row">
-                    <input id="future-search" name="future-search" type="search" placeholder="For eksempel dekk, felg eller størrelse" disabled class="min-h-12 w-full rounded-lg border border-slate-300 bg-slate-100 px-4 text-slate-700 placeholder:text-slate-500 disabled:cursor-not-allowed" aria-disabled="true">
-                    <button type="button" disabled class="min-h-12 rounded-lg bg-slate-300 px-5 font-semibold text-slate-600 disabled:cursor-not-allowed">Søk kommer snart</button>
-                </div>
-                <p id="catalog-help" class="mt-3 text-sm text-slate-600">Søket er klargjort som en plass for den kommende katalogen.</p>
-            </form>
-        </section>
-        <section id="tjenester" class="scroll-mt-6 border-y border-slate-200 bg-white" aria-labelledby="services-heading" data-testid="services-section">
-            <div class="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
-                <div class="max-w-3xl">
-                    <p class="text-sm font-semibold tracking-[0.16em] text-sky-800 uppercase">Tjenester</p>
-                    <h2 id="services-heading" class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Tjenester som er en del av EasyTire</h2>
-                    <p class="mt-4 text-lg leading-8 text-slate-600">Tilgjengelighet, betingelser og bestilling avklares før de publiseres som aktive tilbud.</p>
-                </div>
-                <ul class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="list">
-                    @foreach (['Mobilt dekkskift', 'Dekkskift på dekkverksted', 'Tesla og elbiler', 'Bobil og varebil', 'Dekkhotell', 'Dekk, felg og komplette hjulpakker'] as $service)
-                        <li class="rounded-xl border border-slate-200 bg-slate-50 p-5">
-                            <h3 class="font-semibold">{{ $service }}</h3>
-                            <p class="mt-2 text-sm leading-6 text-slate-600">Informasjon og neste steg kommer når tjenesten er klar for publisering.</p>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        </section>
-    </main>
-    <footer class="bg-slate-950 px-5 py-8 text-sm text-slate-300 sm:px-8">
-        <div class="mx-auto flex max-w-6xl flex-col justify-between gap-2 sm:flex-row"><p>EasyTire · Tromsø</p><p>Offentlig informasjon oppdateres etter hvert som innhold og katalog blir klare.</p></div>
-    </footer>
-</body>
-</html>
+            <aside class="rounded-3xl border border-white/20 bg-black/45 p-6 shadow-2xl backdrop-blur-sm" aria-label="{{ __('storefront.catalog_finder_aria') }}">
+                <p class="text-sm font-bold text-easytire-brand">{{ __('storefront.start_size') }}</p><p class="mt-2 text-2xl font-bold">{{ __('storefront.starting_point') }}</p><p class="mt-3 leading-7 text-white/75">{{ __('storefront.starting_text') }}</p>
+            </aside>
+        </div>
+    </section>
+    <section class="mx-auto max-w-7xl px-5 py-16 sm:px-8" aria-labelledby="catalog-heading" data-testid="catalog-foundation">
+        <p class="text-sm font-bold tracking-[.16em] text-easytire-brand uppercase">{{ __('storefront.catalog_label') }}</p><h2 id="catalog-heading" class="mt-3 max-w-2xl text-3xl font-black tracking-tight sm:text-4xl">{{ __('storefront.catalog_title') }}</h2>
+        <div class="mt-9 grid gap-5 md:grid-cols-2">
+            <a href="{{ route($routePrefix.'tires.index') }}" class="group rounded-3xl border border-easytire-border bg-white p-7 shadow-sm transition hover:-translate-y-0.5 hover:border-easytire-brand hover:shadow-lg"><p class="text-sm font-bold text-easytire-brand">{{ __('storefront.tires') }}</p><h3 class="mt-3 text-2xl font-black">{{ __('storefront.tire_card_title') }}</h3><p class="mt-3 leading-7 text-easytire-muted">{{ __('storefront.tire_card_text') }}</p><span class="mt-6 inline-block font-bold text-easytire-brand">{{ __('storefront.explore_tires') }}</span></a>
+            <a href="{{ route($routePrefix.'wheels.index') }}" class="group rounded-3xl border border-easytire-border bg-white p-7 shadow-sm transition hover:-translate-y-0.5 hover:border-easytire-brand hover:shadow-lg"><p class="text-sm font-bold text-easytire-brand">{{ __('storefront.wheels') }}</p><h3 class="mt-3 text-2xl font-black">{{ __('storefront.wheel_card_title') }}</h3><p class="mt-3 leading-7 text-easytire-muted">{{ __('storefront.wheel_card_text') }}</p><span class="mt-6 inline-block font-bold text-easytire-brand">{{ __('storefront.explore_wheels') }}</span></a>
+        </div>
+    </section>
+    <section id="tjenester" class="border-y border-easytire-border bg-easytire-brand-soft" aria-labelledby="services-heading" data-testid="services-section"><div class="mx-auto max-w-7xl px-5 py-16 sm:px-8"><p class="text-sm font-bold tracking-[.16em] text-easytire-brand uppercase">{{ __('storefront.services') }}</p><h2 id="services-heading" class="mt-3 text-3xl font-black tracking-tight">{{ __('storefront.more_than_tires') }}</h2><div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">@foreach($services->take(6) as $index => $service)<a class="group rounded-2xl border border-easytire-border bg-white p-6 transition hover:-translate-y-0.5 hover:border-easytire-brand hover:shadow-md focus-visible:outline-easytire-brand" href="{{ route($routePrefix.'services.show', $service->slug) }}"><span class="text-sm font-black text-easytire-brand">0{{ $index + 1 }}</span><h3 class="mt-3 text-xl font-black">{{ $service->title }}</h3><p class="mt-3 line-clamp-3 text-sm leading-6 text-easytire-muted">{{ $service->excerpt }}</p><span class="mt-5 inline-block font-bold text-easytire-brand">{{ __('storefront.service_cta') }}</span></a>@endforeach</div></div></section>
+    <section class="mx-auto max-w-7xl px-5 py-16 sm:px-8"><p class="text-sm font-bold tracking-[.16em] text-easytire-brand uppercase">EasyTire</p><h2 class="mt-3 text-3xl font-black">{{ __('storefront.process_title') }}</h2><ol class="mt-8 grid gap-4 md:grid-cols-3">@foreach([1,2,3] as $step)<li class="border-t-4 border-easytire-ink bg-white p-6"><span class="text-sm font-black text-easytire-brand">0{{ $step }}</span><h3 class="mt-3 text-xl font-black">{{ __('storefront.process_'.$step.'_title') }}</h3><p class="mt-3 leading-6 text-easytire-muted">{{ __('storefront.process_'.$step.'_text') }}</p></li>@endforeach</ol></section>
+</x-layouts.storefront>

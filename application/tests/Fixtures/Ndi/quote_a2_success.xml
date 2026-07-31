@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<quote_A2 xmlns="http://www.reifen.net">
+  <DocumentID xmlns="">QUOTE-TEST-001</DocumentID>
+  <BuyerParty xmlns=""><PartyID>REDACTED</PartyID><AgencyCode>TEST</AgencyCode></BuyerParty>
+  <OrderLine xmlns="">
+    <LineID>1</LineID>
+    <OrderedArticle>
+      <ArticleIdentification><ManufacturersArticleID>000205550016</ManufacturersArticleID></ArticleIdentification>
+      <RequestedQuantity><QuantityValue>4</QuantityValue></RequestedQuantity>
+      <ScheduleDetails><AvailableQuantity><QuantityValue>3</QuantityValue></AvailableQuantity><DeliveryDate>2026-08-03</DeliveryDate></ScheduleDetails>
+    </OrderedArticle>
+  </OrderLine>
+  <ErrorHead xmlns=""><ErrorCode>0</ErrorCode></ErrorHead>
+  <Variant xmlns="" />
+</quote_A2>

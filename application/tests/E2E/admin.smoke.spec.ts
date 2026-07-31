@@ -14,7 +14,15 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole('heading', { name: /oversikt/i })).toBeVisible();
 
+    await page.getByRole('link', { name: 'Katalog', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/catalog/);
+    await page.getByRole('link', { name: 'Importer', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/imports/);
+
     await page.getByTestId('switch-language-ru').click();
+    await expect(page.getByRole('heading', { name: 'NDI-импорты' })).toBeVisible();
+    await page.getByRole('link', { name: 'Панель управления' }).click();
+    await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole('heading', { name: 'Панель управления' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Выйти' }).click();

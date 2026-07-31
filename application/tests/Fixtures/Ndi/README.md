@@ -40,7 +40,7 @@ Exactly 8 columns, in this order:
 ItemID|InStockNorway|InStockVestby|InStockKristiansand|InStockTrondheim|InStockTromso|InStockBergen|InStockKopervik
 ```
 
-Types: `ItemID` is text; all seven stock columns are integer numbers. `InStockNorway` is the national total and equals the sum of the six location columns in every valid fixture row.
+Types: `ItemID` is text; all seven stock columns are integer numbers. `InStockNorway` is the national availability indicator. In the supplied NDI feed it equals the sum of the six location columns capped at `40`.
 
 ## Exact fixture expectations
 
@@ -72,7 +72,7 @@ Types: `ItemID` is text; all seven stock columns are integer numbers. `InStockNo
 - `TEST-STOCK-ONLY-001` is the only stock-only SKU. Expected catalog state: `stock_only`/quarantined and not published.
 - `TEST-WHEEL-003` is the explicit all-zero-stock row.
 - Every named location column is exercised with a positive value somewhere in the fixture; zero quantities are also present.
-- For every row, `InStockNorway = InStockVestby + InStockKristiansand + InStockTrondheim + InStockTromso + InStockBergen + InStockKopervik`.
+- The fixture includes a row whose physical-location sum exceeds 40. For every row, `InStockNorway = min(location sum, 40)`, matching all 2,304 rows in the supplied NDI stock workbook.
 
 ### `duplicate_sku.xlsx`
 

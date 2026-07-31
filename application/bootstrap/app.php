@@ -3,6 +3,7 @@
 use App\Http\Middleware\Admin\EnsureActiveAdmin;
 use App\Http\Middleware\Admin\SetAdminLocale;
 use App\Http\Middleware\SetPublicLocale;
+use App\Http\Middleware\SetRussianPreviewLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.active' => EnsureActiveAdmin::class,
             'admin.locale' => SetAdminLocale::class,
             'public.locale' => SetPublicLocale::class,
+            'public.preview.ru' => SetRussianPreviewLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

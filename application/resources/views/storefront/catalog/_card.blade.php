@@ -1,0 +1,8 @@
+@php($seasonKey = ['Summer' => 'season_summer', 'Winter' => 'season_winter', 'All season' => 'season_all'][$item->tire['season'] ?? ''] ?? null)
+<article class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" data-testid="catalog-product">
+    <p class="text-sm font-bold text-easytire-brand">{{ $item->brand }}</p><h2 class="mt-1 text-lg font-black leading-6">{{ $item->title }}</h2><p class="mt-1 text-sm text-easytire-muted">{{ $item->modelName }}</p><p class="mt-2 text-xs font-semibold text-slate-500">{{ __('storefront.item_number') }} {{ $item->sku }}</p>
+    <p class="mt-4 text-sm font-semibold text-slate-700">@if ($item->tire) {{ $item->tire['width_mm'] }}/{{ $item->tire['aspect_ratio'] }} R{{ $item->tire['rim_diameter_in'] }} · {{ $seasonKey ? __('storefront.'.$seasonKey) : $item->tire['season'] }} @else {{ $item->wheel['width_in'] }} × {{ $item->wheel['diameter_in'] }} · {{ $item->wheel['bolt_holes'] }}×{{ $item->wheel['pcd_mm'] }} · ET {{ $item->wheel['offset_et_mm'] }} @endif</p>
+    @if (count($item->prices))<p class="mt-4 text-lg font-black">{{ number_format((float) $item->prices[0]->amount, 2, ',', ' ') }} {{ $item->prices[0]->currency }}</p>@endif
+    <p class="mt-1 text-sm text-slate-600">{{ $item->stock->quantity > 0 ? __('storefront.registered_stock') : __('storefront.no_stock') }}</p>
+    <a href="{{ route((app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.').'products.show', ['sku' => $item->sku]) }}" class="mt-5 inline-flex min-h-11 items-center font-bold text-easytire-brand underline">{{ __('storefront.view_product') }}</a>
+</article>

@@ -36,14 +36,20 @@ test('valid wheel rows retain zero prices as data', function (): void {
         ->and($rows['TEST-WHEEL-003']['prices']['net'])->toBe('0');
 });
 
-test('valid stock rows retain all warehouse observations and check the national total', function (): void {
+test('valid stock rows retain all warehouse observations and check the capped national availability', function (): void {
     $result = app(NdiWorkbookValidator::class)->validate(ndiFixture('stock_all_warehouses.xlsx'));
     $rows = iterator_to_array($result->rows(), false);
 
     expect($result->acceptedCount)->toBe(7)
         ->and($rows)->toHaveCount(7)
         ->and($rows[0]['locations'])->toHaveCount(7)
-        ->and(collect($rows)->sum(fn (array $row): int => count($row['locations'])))->toBe(49);
+        ->and(collect($rows)->sum(fn (array $row): int => count($row['locations'])))->toBe(49)
+        ->and(collect($rows)->contains(function (array $row): bool {
+            $locations = $row['locations'];
+            $locationTotal = array_sum(array_diff_key($locations, ['norway' => true]));
+
+            return $locationTotal > 40 && $locations['norway'] === 40;
+        }))->toBeTrue();
 });
 
 test('duplicate SKU invalidates the entire dataset and identifies both Excel rows', function (): void {

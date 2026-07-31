@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<quote_A2 xmlns="http://www.reifen.net">
+  <DocumentID xmlns="">QUOTE-TEST-915</DocumentID>
+  <BuyerParty xmlns=""><PartyID>REDACTED</PartyID><AgencyCode>TEST</AgencyCode></BuyerParty>
+  <ErrorHead xmlns=""><ErrorCode>915</ErrorCode></ErrorHead>
+  <Variant xmlns="" />
+</quote_A2>

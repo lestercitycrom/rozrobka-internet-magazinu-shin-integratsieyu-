@@ -194,8 +194,15 @@ final class NdiWorkbookValidator
             }
         }
 
-        if ($locations['norway'] !== array_sum(array_diff_key($locations, ['norway' => true]))) {
-            throw new RowValidationException('InStockNorway', 'national_total_does_not_match_locations');
+        $locationTotal = array_sum(array_diff_key($locations, ['norway' => true]));
+        $nationalCap = (int) config('ndi.stock_national_cap', 40);
+
+        if ($nationalCap < 1) {
+            throw new \RuntimeException('NDI_STOCK_NATIONAL_CAP must be a positive integer.');
+        }
+
+        if ($locations['norway'] !== min($locationTotal, $nationalCap)) {
+            throw new RowValidationException('InStockNorway', 'national_availability_does_not_match_capped_location_total');
         }
 
         return [

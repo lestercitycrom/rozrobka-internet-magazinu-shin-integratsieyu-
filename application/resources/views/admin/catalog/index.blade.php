@@ -1,0 +1,13 @@
+<x-layouts.admin :title="__('admin.catalog.title')">
+    <div class="space-y-8">
+        <header><p class="text-sm font-medium text-[#666660]">{{ __('admin.brand') }}</p><h1 class="mt-2 text-3xl font-semibold tracking-tight">{{ __('admin.catalog.heading') }}</h1><p class="mt-3 text-[#666660]">{{ __('admin.catalog.intro') }}</p></header>
+        <form class="grid gap-3 border border-[#D8D8D2] bg-white p-4 md:grid-cols-4" method="GET">
+            <label class="text-sm font-medium md:col-span-2">{{ __('admin.catalog.search') }}<input name="q" value="{{ $filters['q'] ?? '' }}" class="mt-1 w-full border-[#D8D8D2] text-sm focus:border-[#111111] focus:ring-[#111111]"></label>
+            <label class="text-sm font-medium">{{ __('admin.catalog.type') }}<select name="type" class="mt-1 w-full border-[#D8D8D2] text-sm focus:border-[#111111] focus:ring-[#111111]"><option value="">{{ __('admin.catalog.all') }}</option><option value="tire" @selected(($filters['type'] ?? '') === 'tire')>Tire</option><option value="wheel" @selected(($filters['type'] ?? '') === 'wheel')>Wheel</option></select></label>
+            <label class="text-sm font-medium">{{ __('admin.catalog.status') }}<input name="status" value="{{ $filters['status'] ?? '' }}" class="mt-1 w-full border-[#D8D8D2] text-sm focus:border-[#111111] focus:ring-[#111111]"></label>
+            <button class="bg-[#111111] px-4 py-2 text-sm font-semibold text-white md:col-start-4">{{ __('admin.catalog.search') }}</button>
+        </form>
+        @if ($products->isEmpty()) <p class="border border-dashed border-[#D8D8D2] bg-white p-8 text-[#666660]">{{ __('admin.catalog.empty') }}</p>
+        @else <div class="overflow-x-auto border border-[#D8D8D2] bg-white"><table class="min-w-full text-left text-sm"><thead class="sticky top-0 bg-[#F5F5F2] text-[#666660]"><tr><th class="p-3">{{ __('admin.catalog.product') }}</th><th class="p-3">{{ __('admin.catalog.brand') }}</th><th class="p-3">{{ __('admin.catalog.type') }}</th><th class="p-3">{{ __('admin.catalog.skus') }}</th><th class="p-3">{{ __('admin.catalog.seen') }}</th></tr></thead><tbody>@foreach($products as $product)<tr class="border-t border-[#D8D8D2]"><td class="p-3 font-medium"><a class="underline underline-offset-4" href="{{ route('admin.catalog.show', $product) }}">{{ $product->title }}</a></td><td class="p-3">{{ $product->brand?->canonical_name }}</td><td class="p-3">{{ $product->product_type->value }}</td><td class="p-3">{{ $product->supplier_skus_count }}</td><td class="p-3">{{ $product->last_catalog_seen_at?->format('Y-m-d H:i') ?? '—' }}</td></tr>@endforeach</tbody></table></div>{{ $products->links() }}@endif
+    </div>
+</x-layouts.admin>

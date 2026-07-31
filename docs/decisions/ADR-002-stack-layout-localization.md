@@ -1,5 +1,7 @@
 # ADR-002: стек, структура репозитория и локализация
 
+> Update 2026-07-31: the custom Blade/Tailwind admin shares the storefront's EasyTire design tokens, Ubuntu/Arial typography, logo treatment, density, radii and base components through `application/resources/css/app.css`. No separate admin CSS system, Filament, Livewire, or ready-made admin framework is introduced.
+
 Статус: accepted  
 Дата: 2026-07-31  
 Владелец решения: Mister Red
@@ -13,8 +15,8 @@
 - Laravel 13 на PHP 8.3 или новее;
 - MySQL 8 как основная production-БД;
 - Redis 7 для кеша, блокировок и очередей;
-- собственная административная панель на Laravel, Blade, Livewire и Tailwind CSS;
-- Blade, Livewire и Tailwind CSS для витрины и интерактивных элементов;
+- собственная административная панель на Laravel, Blade и Tailwind CSS;
+- Blade и Tailwind CSS для витрины; точечный JavaScript добавляется только для действительно интерактивных элементов;
 - Pest для unit, feature, integration и architecture-тестов;
 - Playwright на TypeScript для E2E-тестов.
 
@@ -32,7 +34,7 @@
 
 ## Визуальное направление административной панели
 
-Административная панель остаётся простой и функциональной и полностью разрабатывается командой проекта без Filament и других готовых admin-panel frameworks. Базовое оформление — чёрный, белый и нейтральные серые оттенки, тонкие разделители, спокойная типографика, один акцент только для состояний и опасных действий. Компоненты, навигация, формы, таблицы, роли и состояния принадлежат приложению.
+Административная панель остаётся простой и функциональной и полностью разрабатывается командой проекта без Filament, Livewire и других готовых admin-panel frameworks. Она разделяет бело-чёрно-красную фирменную палитру, Ubuntu/Arial, плотность, радиусы и базовые компоненты витрины через общие tokens; отдельная CSS-система не создаётся. Компоненты, навигация, формы, таблицы, роли и состояния принадлежат приложению.
 
 ## Правило качества
 
