@@ -36,6 +36,7 @@ install -d -m 2750 -o "$APP_USER" -g "$APP_GROUP" "$APP_ROOT" "$APP_ROOT/release
 install -d -m 2750 -o root -g "$APP_GROUP" /srv/git
 install -d -m 2770 -o "$APP_USER" -g "$APP_GROUP" \
   "$APP_ROOT/shared/storage" \
+  "$APP_ROOT/shared/storage/app/private" \
   "$APP_ROOT/shared/storage/app/public" \
   "$APP_ROOT/shared/storage/app/backups" \
   "$APP_ROOT/shared/storage/framework/cache/data" \

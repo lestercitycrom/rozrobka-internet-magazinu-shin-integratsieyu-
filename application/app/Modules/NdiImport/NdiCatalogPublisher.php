@@ -29,6 +29,8 @@ use RuntimeException;
 
 class NdiCatalogPublisher
 {
+    private const CURRENT_PRICE_LIST_VALID_FROM = '2000-01-01 00:00:00';
+
     /**
      * @param  array<string, PreparedDataset>  $datasets
      */
@@ -138,7 +140,7 @@ class NdiCatalogPublisher
                 'code' => 'ndi-file-current',
                 'currency' => $currency,
                 'tax_mode' => $taxMode,
-                'valid_from' => '1970-01-01 00:00:00',
+                'valid_from' => self::CURRENT_PRICE_LIST_VALID_FROM,
             ]);
             $amount = $row['prices'][$taxMode->value];
             $currentPrice = SkuPrice::query()->firstOrNew([

@@ -29,6 +29,8 @@ test('a complete valid NDI bundle is published transactionally with provenance',
         ->and(DB::table('supplier_skus')->count())->toBe(7)
         ->and(DB::table('sku_prices')->count())->toBe(12)
         ->and(DB::table('sku_price_history')->count())->toBe(12)
+        ->and(DB::table('price_lists')->pluck('valid_from')->unique()->values()->all())
+        ->toBe(['2000-01-01 00:00:00'])
         ->and(DB::table('stock_snapshots')->count())->toBe(49)
         ->and(DB::table('current_stock')->count())->toBe(49)
         ->and(DB::table('source_artifacts')->count())->toBe(3)

@@ -29,7 +29,13 @@ class ImportNdiBundle extends Command
 
             return self::FAILURE;
         } catch (NdiPublishFailed $exception) {
+            report($exception);
             $this->components->error("Run {$exception->runId} failed during transactional publication.");
+
+            return self::FAILURE;
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->components->error('Import failed unexpectedly. Check the application logs.');
 
             return self::FAILURE;
         }
