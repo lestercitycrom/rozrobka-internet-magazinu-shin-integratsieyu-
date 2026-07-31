@@ -1,0 +1,16 @@
+/.idea/
+/.vscode/
+/.env
+/.env.*
+!/.env.example
+/tmp/
+/output/
+/docs/primary/*.png
+/application/.env
+/application/.phpunit.result.cache
+/application/node_modules/
+/application/vendor/
+/application/storage/logs/*.log
+/application/test-results/
+/application/playwright-report/
+/application/playwright/.auth/
