@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\ReadModel\CatalogQuery;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
+use App\Modules\Pricing\SellingPriceService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -21,13 +22,13 @@ class CatalogController extends Controller
         return $this->index($request, $catalog, ProductType::Wheel);
     }
 
-    public function show(string $sku, CatalogReadService $catalog): View
+    public function show(string $sku, CatalogReadService $catalog, SellingPriceService $pricing): View
     {
         $item = $catalog->findPublicSku($sku);
 
         abort_if($item === null, 404);
 
-        return view('storefront.catalog.show', compact('item'));
+        return view('storefront.catalog.show', ['item' => $item, 'sellingPrice' => $pricing->forItem($item)]);
     }
 
     private function index(Request $request, CatalogReadService $catalog, ProductType $productType): View
@@ -49,9 +50,14 @@ class CatalogController extends Controller
             page: max(1, $request->integer('page', 1)),
         ));
 
+        $pricing = app(SellingPriceService::class);
+        $sellingPrices = collect($items->items)
+            ->mapWithKeys(fn ($item): array => [$item->sku => $pricing->forItem($item)]);
+
         return view('storefront.catalog.index', [
             'items' => $items,
             'productType' => $productType,
+            'sellingPrices' => $sellingPrices,
         ]);
     }
 

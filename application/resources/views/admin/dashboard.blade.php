@@ -3,6 +3,7 @@
         <p class="text-sm font-medium text-easytire-muted">{{ __('admin.brand') }}</p>
         <h1 class="mt-2 text-3xl font-semibold tracking-tight">{{ __('admin.dashboard.heading') }}</h1>
         <p class="mt-3 max-w-2xl leading-7 text-easytire-muted">{{ __('admin.dashboard.intro') }}</p>
+        <section class="mt-6 border border-easytire-border bg-easytire-panel p-5"><h2 class="font-semibold">{{ __('orders.title') }}</h2><p>{{ $orderCounts['total'] }} total · {{ $orderCounts['attention'] }} attention</p></section>
 
         <section class="mt-10 rounded-2xl border border-easytire-border bg-easytire-panel p-5" aria-labelledby="identity-heading">
             <h2 id="identity-heading" class="text-sm font-semibold">{{ __('admin.dashboard.identity') }}</h2>

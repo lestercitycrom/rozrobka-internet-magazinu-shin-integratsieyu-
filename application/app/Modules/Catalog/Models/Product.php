@@ -4,11 +4,13 @@ namespace App\Modules\Catalog\Models;
 
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\Enums\PublicationStatus;
+use App\Modules\Content\Models\MediaAssignment;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
     'product_type',
@@ -54,5 +56,10 @@ class Product extends Model
     public function wheelSpec(): HasOne
     {
         return $this->hasOne(WheelSpec::class);
+    }
+
+    public function mediaAssignments(): MorphMany
+    {
+        return $this->morphMany(MediaAssignment::class, 'assignable');
     }
 }

@@ -7,9 +7,12 @@ use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\Enums\PublicationStatus;
 use App\Modules\Catalog\Enums\TaxMode;
 use App\Modules\Catalog\Models\CurrentStock;
+use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\SkuPrice;
 use App\Modules\Catalog\Models\SupplierSku;
+use App\Modules\Content\Models\MediaAssignment;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 
 final class CatalogReadService
 {
@@ -99,12 +102,17 @@ final class CatalogReadService
         }
 
         $ids = collect($skus)->pluck('id');
+        $productIds = collect($skus)->pluck('product_id');
         $prices = SkuPrice::query()
             ->join('price_lists', 'price_lists.id', '=', 'sku_prices.price_list_id')
             ->whereIn('sku_prices.supplier_sku_id', $ids)
             ->where('price_lists.tax_mode', TaxMode::Gross->value)
-            ->orderBy('price_lists.tax_mode')
-            ->get(['sku_prices.supplier_sku_id', 'sku_prices.amount', 'sku_prices.observed_at', 'price_lists.currency', 'price_lists.tax_mode'])
+            ->where('price_lists.valid_from', '<=', now())
+            ->where(function (Builder $query): void {
+                $query->whereNull('price_lists.valid_to')->orWhere('price_lists.valid_to', '>', now());
+            })
+            ->orderByDesc('price_lists.valid_from')
+            ->get(['sku_prices.supplier_sku_id', 'sku_prices.amount', 'sku_prices.observed_at', 'price_lists.currency', 'price_lists.tax_mode', 'price_lists.code'])
             ->groupBy('supplier_sku_id');
         $stocks = CurrentStock::query()
             ->join('warehouses', 'warehouses.id', '=', 'current_stock.warehouse_id')
@@ -119,9 +127,17 @@ final class CatalogReadService
             ->groupBy('current_stock.supplier_sku_id')
             ->get()
             ->keyBy('supplier_sku_id');
+        $media = MediaAssignment::query()
+            ->join('media_assets', 'media_assets.id', '=', 'media_assignments.media_asset_id')
+            ->where('media_assignments.assignable_type', Product::class)
+            ->where('media_assignments.role', 'primary')
+            ->whereIn('media_assignments.assignable_id', $productIds)
+            ->get(['media_assignments.assignable_id', 'media_assets.disk', 'media_assets.path', 'media_assets.alt_nb', 'media_assets.alt_ru'])
+            ->keyBy('assignable_id');
 
-        return array_map(function (SupplierSku $sku) use ($prices, $stocks): CatalogItem {
+        return array_map(function (SupplierSku $sku) use ($prices, $stocks, $media): CatalogItem {
             $stock = $stocks->get($sku->id);
+            $asset = $media->get($sku->product_id);
             $quantity = $stock === null
                 ? 0
                 : (int) ($stock->national_quantity ?? $stock->location_quantity ?? 0);
@@ -132,10 +148,15 @@ final class CatalogReadService
                 brand: $sku->getAttribute('catalog_brand'),
                 modelName: $sku->getAttribute('catalog_model_name'),
                 title: $sku->getAttribute('catalog_title'),
-                prices: $prices->get($sku->id, collect())->map(fn ($price) => new CatalogPrice($price->amount, $price->currency, TaxMode::from($price->tax_mode), $price->observed_at))->all(),
+                prices: $prices->get($sku->id, collect())
+                    ->unique(fn ($price) => $price->code.'|'.$price->currency)
+                    ->map(fn ($price) => new CatalogPrice($price->amount, $price->currency, TaxMode::from($price->tax_mode), $price->observed_at, $price->code))
+                    ->values()
+                    ->all(),
                 stock: new CatalogStock($quantity, $stock?->observed_at),
                 tire: $sku->getAttribute('tire_rim_diameter_in') === null ? null : ['width_mm' => $sku->getAttribute('tire_width_mm'), 'aspect_ratio' => $sku->getAttribute('tire_aspect_ratio'), 'rim_diameter_in' => $sku->getAttribute('tire_rim_diameter_in'), 'season' => $sku->getAttribute('tire_season')],
                 wheel: $sku->getAttribute('wheel_diameter_in') === null ? null : ['width_in' => $sku->getAttribute('wheel_width_in'), 'diameter_in' => $sku->getAttribute('wheel_diameter_in'), 'bolt_holes' => $sku->getAttribute('wheel_bolt_holes'), 'pcd_mm' => $sku->getAttribute('wheel_pcd_mm'), 'offset_et_mm' => $sku->getAttribute('wheel_offset_et_mm'), 'center_bore_mm' => $sku->getAttribute('wheel_center_bore_mm')],
+                primaryMedia: $asset === null ? null : ['url' => Storage::disk($asset->disk)->url($asset->path), 'alt_nb' => $asset->alt_nb, 'alt_ru' => $asset->alt_ru],
             );
         }, $skus);
     }

@@ -67,7 +67,9 @@ test('it paginates and hydrates prices and stock in a bounded number of queries'
     expect($page->total)->toBe(3)
         ->and($page->page)->toBe(2)
         ->and($page->items)->toHaveCount(1)
-        ->and(count($queries))->toBeLessThanOrEqual(4);
+        // Count, page, price, stock, and one batched primary-media query.
+        // The bound must stay constant as the page size grows.
+        ->and(count($queries))->toBeLessThanOrEqual(5);
 
     $priced = app(CatalogReadService::class)->findPublicSku('PAGE-01');
     expect($priced?->prices)->toHaveCount(1)

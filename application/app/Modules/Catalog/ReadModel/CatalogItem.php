@@ -17,5 +17,6 @@ final readonly class CatalogItem
         public CatalogStock $stock,
         public ?array $tire,
         public ?array $wheel,
+        public ?array $primaryMedia = null,
     ) {}
 }

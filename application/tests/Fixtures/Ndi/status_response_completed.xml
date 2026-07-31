@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order_status_response_ndi>
+  <DocumentID>C1</DocumentID>
+  <PartyID>TEST-PARTY</PartyID>
+  <ERP>
+    <Reference>NDI-ORDER-0001</Reference>
+    <SalesType>Sales</SalesType>
+    <SalesStatus>Completed</SalesStatus>
+    <DocumentStatus>Invoice</DocumentStatus>
+  </ERP>
+  <TransportStatus>
+    <Carrier>Fixture Carrier</Carrier>
+    <CarrierProduct>Parcel</CarrierProduct>
+    <OrderLine>
+      <TrackingNumber>TRACK-0001</TrackingNumber>
+      <TrackingLink>https://tracking.example.test/TRACK-0001</TrackingLink>
+      <GlobalStatus>Internal</GlobalStatus>
+      <LocalStatus>Shipment label printed</LocalStatus>
+      <Date>2030-01-02 10:30:00</Date>
+    </OrderLine>
+  </TransportStatus>
+</order_status_response_ndi>

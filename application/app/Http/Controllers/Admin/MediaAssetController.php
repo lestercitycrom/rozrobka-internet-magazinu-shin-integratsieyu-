@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Modules\Content\Models\MediaAsset;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+final class MediaAssetController extends Controller
+{
+    public function index()
+    {
+        return view('admin.media.index', ['assets' => MediaAsset::latest()->paginate(30)]);
+    }
+
+    public function update(Request $request, MediaAsset $mediaAsset)
+    {
+        $mediaAsset->update($request->validate(['alt_nb' => ['nullable', 'string', 'max:255'], 'alt_ru' => ['nullable', 'string', 'max:255']]));
+
+        return back();
+    }
+
+    public function store(Request $r)
+    {
+        $r->validate(['image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'], 'alt_nb' => ['nullable', 'string', 'max:255'], 'alt_ru' => ['nullable', 'string', 'max:255']]);
+        $f = $r->file('image');
+        $mime = $f->getMimeType();
+        abort_unless(in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true), 422);
+        [$w,$h] = getimagesize($f->getRealPath()) ?: [0, 0];
+        abort_if($w < 1 || $h < 1, 422);
+        $path = 'media/'.Str::random(40).'.'.$f->extension();
+        Storage::disk('public')->putFileAs('media', $f, basename($path));
+        MediaAsset::create(['disk' => 'public', 'path' => $path, 'original_name' => $f->getClientOriginalName(), 'mime' => $mime, 'byte_size' => $f->getSize(), 'width' => $w, 'height' => $h, 'sha256' => hash_file('sha256', $f->getRealPath()), 'alt_nb' => $r->input('alt_nb'), 'alt_ru' => $r->input('alt_ru'), 'uploader_id' => $r->user()->id]);
+
+        return back();
+    }
+
+    public function destroy(MediaAsset $mediaAsset)
+    {
+        abort_if($mediaAsset->assignments()->exists(), 409);
+        Storage::disk($mediaAsset->disk)->delete($mediaAsset->path);
+        $mediaAsset->delete();
+
+        return back();
+    }
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<q1:order_response xmlns:q1="http://www.reifen.net">
+  <DocumentID>C1</DocumentID>
+  <Variant>0</Variant>
+  <TransportPriority>REPL</TransportPriority>
+  <ErrorHead><ErrorCode>0</ErrorCode></ErrorHead>
+  <CustomerReference><DocumentID>EASY-TEST-0001</DocumentID></CustomerReference>
+  <BuyerParty><PartyID>TEST-PARTY</PartyID><AgencyCode>91</AgencyCode></BuyerParty>
+  <OrderLine>
+    <LineID>1</LineID>
+    <OrderedArticle>
+      <ArticleIdentification><BuyersArticleID>TEST-SKU-0001</BuyersArticleID></ArticleIdentification>
+      <OrderReference><DocumentID>NDI-ORDER-0001</DocumentID></OrderReference>
+      <Error><ErrorCode>0</ErrorCode></Error>
+      <ScheduleDetails>
+        <DeliveryDate>2030-01-03</DeliveryDate>
+        <ConfirmedQuantity><QuantityValue>2</QuantityValue></ConfirmedQuantity>
+      </ScheduleDetails>
+      <OrderedQuantity><QuantityValue>2</QuantityValue></OrderedQuantity>
+    </OrderedArticle>
+  </OrderLine>
+</q1:order_response>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<desadv_list_pull xmlns="http://www.reifen.net">
+  <EnvelopeHeader xmlns="">
+    <DocumentID>C1</DocumentID>
+    <Variant>0</Variant>
+    <MessageType>DesAdv</MessageType>
+    <NumberOfMessages>1</NumberOfMessages>
+  </EnvelopeHeader>
+  <ErrorHead xmlns=""><ErrorCode>0</ErrorCode></ErrorHead>
+  <desadv xmlns="">
+    <DocumentNumber>DESADV-0001</DocumentNumber>
+    <DocumentTypeCode>351</DocumentTypeCode>
+    <ArrivalDate>2030-01-03</ArrivalDate>
+    <LineLevel>
+      <LineID>1</LineID>
+      <OrderedArticle>
+        <TracingInformation>
+          <TracingID>TRACK-0001</TracingID>
+          <TracingURI>https://tracking.example.test/TRACK-0001</TracingURI>
+        </TracingInformation>
+      </OrderedArticle>
+    </LineLevel>
+  </desadv>
+</desadv_list_pull>

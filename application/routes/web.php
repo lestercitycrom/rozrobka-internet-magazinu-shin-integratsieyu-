@@ -1,27 +1,77 @@
 <?php
 
+use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CatalogController;
+use App\Http\Controllers\Storefront\CheckoutController;
+use App\Http\Controllers\Storefront\ContentPageController;
 use App\Http\Controllers\Storefront\ServiceController;
+use App\Http\Controllers\Storefront\ServiceRequestController;
+use App\Http\Controllers\Storefront\VehicleFitmentController;
 use App\Modules\Content\Enums\ServicePageLocale;
+use App\Modules\Content\Models\ServicePage;
 use App\Modules\Content\ReadModel\PublishedServicePageReadService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/robots.txt', function () {
+    if (! app()->environment('production')) {
+        return response("User-agent: *\nDisallow: /\n", 200, ['Content-Type' => 'text/plain']);
+    }
+
+    return response("User-agent: *\nDisallow: /admin\nDisallow: /ru\nSitemap: ".url('/sitemap.xml')."\n", 200, ['Content-Type' => 'text/plain']);
+});
+
+Route::get('/sitemap.xml', function () {
+    $urls = [url('/'), url('/dekk'), url('/felger'), url('/tjenester')];
+    $urls = [...$urls, ...ServicePage::query()->where('publication_status', 'published')->orderBy('sort_order')->pluck('slug')->map(fn ($slug) => url('/tjenester/'.$slug))->all()];
+    $urls = [...$urls, ...DB::table('supplier_skus')->join('products', 'products.id', '=', 'supplier_skus.product_id')->where('products.publication_status', 'published')->where('supplier_skus.catalog_state', 'catalog')->pluck('supplier_skus.external_sku')->map(fn ($sku) => url('/produkter/'.$sku))->all()];
+    $xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.collect($urls)->unique()->map(fn ($location) => '<url><loc>'.e($location).'</loc></url>')->implode('').'</urlset>';
+
+    return response($xml, 200, ['Content-Type' => 'application/xml']);
+});
 
 Route::middleware('public.locale')->group(function (): void {
     Route::get('/', function (PublishedServicePageReadService $services) {
         return view('welcome', ['services' => $services->list(ServicePageLocale::NorwegianBokmal)]);
     })->name('storefront.home');
     Route::get('/dekk', [CatalogController::class, 'tires'])->name('storefront.tires.index');
+    Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('storefront.fitment.create');
+    Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('storefront.fitment.store');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('storefront.wheels.index');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('storefront.products.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('storefront.services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('storefront.services.show');
+    Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('storefront.content.show');
+    Route::get('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'create'])->name('storefront.requests.create');
+    Route::post('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'store'])->middleware('throttle:10,1')->name('storefront.requests.store');
+    Route::get('/foresporsel/{reference}/takk', [ServiceRequestController::class, 'thanks'])->name('storefront.requests.thanks');
+    Route::get('/handlekurv', [CartController::class, 'index'])->name('storefront.cart.index');
+    Route::post('/handlekurv', [CartController::class, 'add'])->name('storefront.cart.add');
+    Route::patch('/handlekurv', [CartController::class, 'update'])->name('storefront.cart.update');
+    Route::delete('/handlekurv', [CartController::class, 'remove'])->name('storefront.cart.remove');
+    Route::get('/kasse', [CheckoutController::class, 'create'])->name('storefront.checkout.create');
+    Route::post('/kasse', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('storefront.checkout.store');
+    Route::get('/bestilling/{reference}', [CheckoutController::class, 'thanks'])->name('storefront.orders.thanks');
 });
 
 Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')->group(function (): void {
     Route::get('/', fn (PublishedServicePageReadService $services) => view('welcome', ['services' => $services->list(ServicePageLocale::Russian)]))->name('home');
     Route::get('/dekk', [CatalogController::class, 'tires'])->name('tires.index');
+    Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('fitment.create');
+    Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('fitment.store');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('wheels.index');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('products.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('services.show');
+    Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('content.show');
+    Route::get('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'create'])->name('requests.create');
+    Route::post('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'store'])->middleware('throttle:10,1')->name('requests.store');
+    Route::get('/foresporsel/{reference}/takk', [ServiceRequestController::class, 'thanks'])->name('requests.thanks');
+    Route::get('/handlekurv', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/handlekurv', [CartController::class, 'add'])->name('cart.add');
+    Route::patch('/handlekurv', [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/handlekurv', [CartController::class, 'remove'])->name('cart.remove');
+    Route::get('/kasse', [CheckoutController::class, 'create'])->name('checkout.create');
+    Route::post('/kasse', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
+    Route::get('/bestilling/{reference}', [CheckoutController::class, 'thanks'])->name('orders.thanks');
 });

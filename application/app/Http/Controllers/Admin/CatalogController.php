@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Content\Models\MediaAsset;
 use Illuminate\Http\Request;
 
 final class CatalogController
@@ -21,8 +22,10 @@ final class CatalogController
 
     public function show(Product $product)
     {
-        $product->load(['brand', 'supplierSkus.supplier', 'tireSpec', 'wheelSpec']);
+        $product->load(['brand', 'supplierSkus.supplier', 'tireSpec', 'wheelSpec', 'mediaAssignments.asset']);
 
-        return view('admin.catalog.show', compact('product'));
+        $mediaAssets = MediaAsset::query()->where('is_active', true)->latest()->get();
+
+        return view('admin.catalog.show', compact('product', 'mediaAssets'));
     }
 }

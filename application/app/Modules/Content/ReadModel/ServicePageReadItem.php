@@ -10,6 +10,6 @@ final readonly class ServicePageReadItem
         public ?string $excerpt,
         public ?string $body,
         public ?string $seoTitle,
-        public ?string $seoDescription,
+        public ?string $seoDescription, public ?array $hero = null,
     ) {}
 }

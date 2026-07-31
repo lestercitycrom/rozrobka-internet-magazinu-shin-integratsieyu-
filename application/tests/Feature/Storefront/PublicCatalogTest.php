@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Modules\Catalog\Enums\CatalogState;
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\Enums\PublicationStatus;
@@ -12,6 +13,8 @@ use App\Modules\Catalog\Models\SkuPrice;
 use App\Modules\Catalog\Models\Supplier;
 use App\Modules\Catalog\Models\SupplierSku;
 use App\Modules\Catalog\Models\Warehouse;
+use App\Modules\Content\Models\MediaAsset;
+use App\Modules\Content\Models\MediaAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -39,7 +42,7 @@ test('visitor can filter published tires and open a product page', function (): 
     $this->get('/produkter/SKU-TIRE-205')
         ->assertOk()
         ->assertSee('205/55 R16')
-        ->assertSee('Legg i handlekurv kommer snart')
+        ->assertSee(__('storefront.price_unavailable'))
         ->assertSee('SKU-TIRE-205');
 });
 
@@ -60,7 +63,19 @@ test('russian preview translates catalog and product copy without Norwegian UI s
     config()->set('storefront.ru_preview_enabled', true);
     storefrontProduct(ProductType::Tire, 'SKU-RU-205', ['width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00', 'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer']);
     $this->get('/ru/dekk?width=205')->assertOk()->assertSee('Ширина')->assertSee('Открыть товар')->assertDontSee('Bredde')->assertDontSee('Se produkt')->assertDontSee('Varenr.');
-    $this->get('/ru/produkter/SKU-RU-205')->assertOk()->assertSee('Артикул')->assertSee('Лето')->assertSee('Добавление в корзину скоро появится')->assertDontSee('Legg i handlekurv kommer snart')->assertDontSee('Varenummer');
+    $this->get('/ru/produkter/SKU-RU-205')->assertOk()->assertSee('Артикул')->assertSee('Лето')->assertDontSee('Varenummer');
+});
+
+test('primary product media uses lazy card loading, eager detail loading, russian fallback and no image when absent', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+    $sku = storefrontProduct(ProductType::Tire, 'SKU-MEDIA', ['width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00', 'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer']);
+    $asset = MediaAsset::create(['disk' => 'public', 'path' => 'media/test.png', 'original_name' => 'test.png', 'mime' => 'image/png', 'byte_size' => 1, 'width' => 1, 'height' => 1, 'sha256' => str_repeat('b', 64), 'alt_nb' => 'Fallback alt', 'alt_ru' => null, 'uploader_id' => User::factory()->operations()->create()->id, 'is_active' => true]);
+    MediaAssignment::create(['media_asset_id' => $asset->id, 'assignable_type' => Product::class, 'assignable_id' => $sku->product_id, 'role' => 'primary']);
+    $this->get('/dekk')->assertSee('data-testid="product-primary-media"', false)->assertSee('loading="lazy"', false);
+    $this->get('/produkter/SKU-MEDIA')->assertSee('loading="eager"', false)->assertSee('fetchpriority="high"', false);
+    $this->get('/ru/produkter/SKU-MEDIA')->assertSee('alt="Fallback alt"', false);
+    storefrontProduct(ProductType::Tire, 'SKU-NO-MEDIA', ['width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00', 'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter']);
+    $this->get('/produkter/SKU-NO-MEDIA')->assertDontSee('data-testid="product-primary-media"', false);
 });
 
 function storefrontProduct(ProductType $type, string $skuCode, array $spec): SupplierSku

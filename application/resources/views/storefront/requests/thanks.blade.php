@@ -1,0 +1,1 @@
+<x-layouts.storefront><section class="mx-auto max-w-2xl px-5 py-16"><h1 class="text-3xl font-black">{{ __('booking.thanks_title') }}</h1><p class="mt-4">{{ __('booking.thanks_text') }}</p><p class="mt-6 font-bold">{{ __('booking.reference') }}: {{ $reference }}</p></section></x-layouts.storefront>

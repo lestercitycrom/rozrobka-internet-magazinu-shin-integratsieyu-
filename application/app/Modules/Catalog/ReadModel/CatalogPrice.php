@@ -12,5 +12,6 @@ final readonly class CatalogPrice
         public string $currency,
         public TaxMode $taxMode,
         public string $observedAt,
+        public string $priceListCode,
     ) {}
 }

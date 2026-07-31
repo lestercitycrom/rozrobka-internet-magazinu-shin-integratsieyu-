@@ -11,7 +11,14 @@ test('buyer can use the private Russian storefront preview', async ({ page }) =>
     await page.getByLabel('Ширина').fill('205');
     await page.getByRole('button', { name: 'Показать товары' }).click();
     await page.getByRole('link', { name: 'Открыть товар' }).click();
-    await expect(page.getByTestId('cart-coming-soon')).toContainText('Добавление в корзину скоро появится');
+    await expect(page.getByRole('button', { name: 'Добавить в корзину' })).toBeVisible();
+    await page.getByRole('button', { name: 'Добавить в корзину' }).click();
+    await page.getByRole('link', { name: /Корзина/ }).click();
+    await expect(page.getByRole('heading', { name: 'Корзина' })).toBeVisible();
+    await expect(page.getByText('Demo 205/55 R16')).toBeVisible();
+    await expect(page.getByLabel('Количество')).toHaveValue('1');
+    await page.getByRole('link', { name: 'К оформлению' }).click();
+    await expect(page.getByRole('heading', { name: 'Оформление' })).toBeVisible();
     await page.goto('/ru/tjenester');
     await page.getByRole('link', { name: /Подробнее/ }).first().click();
     await expect(page).toHaveURL(/\/ru\/tjenester\//);

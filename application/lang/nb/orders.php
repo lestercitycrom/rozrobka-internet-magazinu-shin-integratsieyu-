@@ -1,0 +1,3 @@
+<?php
+
+return ['title' => 'Bestillinger', 'warning' => 'Statusendringer følger arbeidsflyten. Betaling og NDI kan ikke endres her.', 'note_required' => 'Notat er obligatorisk ved kansellering eller feil.', 'saved' => 'Status er oppdatert.', 'reference_or_email' => 'Referanse eller e-post', 'reference' => 'Referanse', 'status' => 'Status', 'payment' => 'Betaling', 'ndi' => 'NDI', 'all' => 'Alle', 'from' => 'Fra dato', 'to' => 'Til dato', 'submitted' => 'Sendt inn', 'total' => 'Totalt', 'empty' => 'Ingen bestillinger passer filtrene.', 'filter' => 'Filtrer', 'customer' => 'Kunde', 'totals' => 'Summer', 'items' => 'Varer og prisøyeblikksbilde', 'history' => 'Historikk', 'note' => 'Notat', 'update' => 'Oppdater status'];

@@ -1,0 +1,1 @@
+<x-layouts.storefront><section class="mx-auto max-w-xl px-5 py-16"><h1 class="text-3xl font-black">{{ __('commerce.received') }}</h1><p>{{ __('commerce.reference') }}: {{ $reference }}</p><p>{{ __('commerce.pending') }}</p></section></x-layouts.storefront>

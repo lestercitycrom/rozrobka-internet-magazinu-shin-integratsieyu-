@@ -18,7 +18,7 @@
             @if ($items->items === [])
                 <div class="rounded-2xl border border-dashed border-easytire-border bg-white p-8 text-center" data-testid="catalog-empty"><h2 class="text-xl font-black">{{ __('storefront.empty_title') }}</h2><p class="mx-auto mt-3 max-w-lg leading-7 text-easytire-muted">{{ __('storefront.empty_text') }}</p><a href="{{ route($routePrefix.($isTire ? 'tires.index' : 'wheels.index')) }}" class="mt-5 inline-block font-bold text-easytire-brand underline">{{ __('storefront.all_catalog') }}</a></div>
             @else
-                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="catalog-results">@foreach ($items->items as $item) @include('storefront.catalog._card', ['item' => $item]) @endforeach</div>
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="catalog-results">@foreach ($items->items as $item) @include('storefront.catalog._card', ['item' => $item, 'sellingPrice' => $sellingPrices->get($item->sku)]) @endforeach</div>
                 @if ($items->total > $items->perPage)
                     <nav class="mt-8 flex items-center justify-between" aria-label="{{ __('storefront.catalog') }}">
                         @if ($items->page > 1)
