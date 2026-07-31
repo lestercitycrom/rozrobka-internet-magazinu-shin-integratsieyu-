@@ -14,6 +14,17 @@ test('published Norwegian service pages are public and drafts are not', function
     $this->get('/tjenester/draft')->assertNotFound();
 });
 
+test('homepage hides the services block when no services are published in NB and RU preview', function (): void {
+    $this->get('/')->assertOk()->assertDontSee('data-testid="services-section"', false);
+    config()->set('storefront.ru_preview_enabled', true);
+    $this->get('/ru')->assertOk()->assertDontSee('data-testid="services-section"', false);
+});
+
+test('homepage renders the services block when a service is published', function (): void {
+    servicePreviewPage('mobile', ServicePagePublicationStatus::Published);
+    $this->get('/')->assertOk()->assertSee('data-testid="services-section"', false)->assertSee('Mobil tjeneste');
+});
+
 test('Russian service preview is gated and noindexed with Norwegian canonical', function (): void {
     servicePreviewPage('mobile', ServicePagePublicationStatus::Published);
     config()->set('storefront.ru_preview_enabled', false);

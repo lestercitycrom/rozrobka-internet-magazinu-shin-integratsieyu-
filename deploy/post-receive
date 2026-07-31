@@ -50,6 +50,7 @@ while read -r oldrev newrev refname; do
         npm ci --no-audit --no-fund
         npm run build
         php artisan test
+        php artisan easytire:backup:mysql --no-interaction
         php artisan migrate --force --no-interaction
         php artisan config:cache
         php artisan route:cache
@@ -61,6 +62,11 @@ while read -r oldrev newrev refname; do
     mv -Tf -- "$new_current" "$CURRENT"
     trap - ERR
     log "Activated release $release_id."
+
+    (
+        cd "$app"
+        php artisan easytire:backup:prune --no-interaction
+    ) || log 'Backup retention cleanup failed; completed backups were left intact.'
 
     mapfile -t old_releases < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | awk 'NR > 5 {print $2}')
     for old_release in "${old_releases[@]}"; do

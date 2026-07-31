@@ -1,5 +1,9 @@
 # EasyTire — стратегия тестирования
 
+## Безопасность тестовой БД
+
+Feature/Security тесты разрешены только при `database.default=sqlite` и `database.connections.sqlite.database=:memory:`. Базовый `tests/TestCase.php` fail-closed до любых DB mutations. PHPUnit запускается лишь из fresh release/temp после удаления `bootstrap/cache/config.php`; запуск из active cached `current` запрещён.
+
 Статус: принят, применяется с первого инкремента  
 Дата: 2026-07-31  
 Ответственный: Mister Black (QA/автоматизация)

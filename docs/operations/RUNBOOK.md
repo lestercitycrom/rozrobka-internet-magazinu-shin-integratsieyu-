@@ -12,6 +12,12 @@
 - Verify the health command, homepage, admin login, queue worker and scheduler.
 - Roll back to the prior release and restore compatible application code if verification fails; never run destructive schema rollback without an approved recovery plan.
 
+## Test and migration safety
+
+- Take and verify a backup before production migrations.
+- Run PHPUnit only in a fresh release or temporary workspace, after removing `bootstrap/cache/config.php` from that test copy.
+- Never run PHPUnit from an active cached `current` release: cached configuration can target a production database.
+
 ## Backup checklist
 
 - Verify encrypted database backups and a recent restore test.

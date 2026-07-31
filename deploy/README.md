@@ -26,7 +26,9 @@ The repository includes `push-staging.ps1`. It refuses a dirty worktree or a bra
   -NpmBinary 'C:\Program Files\nodejs\npm.cmd'
 ```
 
-Only pushes to `main` run the hook. Each deployment checks out an isolated release, enters `release/application`, uses the shared `.env`, symlinks `application/storage` to the persistent shared storage, then runs Composer, `npm ci`, the production build, tests, and migrations before atomically updating `current`. The hook keeps five releases. Redis is deliberately not installed; `.env` selects database-backed cache, queues, and sessions. Nginx serves `current/application/public`.
+Only pushes to `main` run the hook. Each deployment checks out an isolated release, enters `release/application`, uses the shared `.env`, symlinks `application/storage` to the persistent shared storage, then runs Composer, `npm ci`, the production build, tests, an atomic MySQL backup, and migrations before atomically updating `current`. The hook keeps five releases and, after successful activation, retains the 14 most recent completed database backups in shared `storage/app/backups`. Redis is deliberately not installed; `.env` selects database-backed cache, queues, and sessions. Nginx serves `current/application/public`.
+
+The backup command reads credentials only through Laravel configuration. It invokes `mysqldump` as an argument array, passes the password only as `MYSQL_PWD` in the child process environment, writes a `*.partial` gzip before atomically renaming it, and aborts before migrations when the active connection is not MySQL or a non-empty backup cannot be produced.
 
 The hook records the activated Git hash in `current/REVISION`. After push, the local script reads that marker over SSH and fails explicitly if Git accepted the commit but the post-receive build did not activate it. This distinction matters because Git cannot roll back a received ref when a post-receive hook fails.
 
