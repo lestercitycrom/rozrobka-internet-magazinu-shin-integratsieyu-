@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 uses(RefreshDatabase::class);
 
 test('the restricted E2E seed is repeatable and provides a priced buyer and admin fixture', function (): void {
+    Storage::fake('public');
+
     $this->seed(E2eStorefrontSeeder::class);
 
     $orderId = Order::query()->where('public_reference', 'ET-E2E-ORDER')->value('id');
