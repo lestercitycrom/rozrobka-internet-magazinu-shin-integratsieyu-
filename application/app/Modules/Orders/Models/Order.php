@@ -8,6 +8,7 @@ use App\Modules\Orders\Enums\FulfilmentMethod;
 use App\Modules\Orders\Enums\NdiOrderStatus;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Enums\PaymentStatus;
+use App\Modules\Payments\Models\PaymentAttempt;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
@@ -49,6 +50,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function serviceItems(): HasMany
+    {
+        return $this->hasMany(OrderServiceItem::class);
+    }
+
     public function statusHistory(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class);
@@ -62,5 +68,10 @@ class Order extends Model
     public function ndiOrderAttempt(): HasOne
     {
         return $this->hasOne(NdiOrderAttempt::class);
+    }
+
+    public function paymentAttempt(): HasOne
+    {
+        return $this->hasOne(PaymentAttempt::class);
     }
 }

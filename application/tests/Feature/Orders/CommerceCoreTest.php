@@ -61,11 +61,26 @@ test('confirmed payment is idempotent and publishes encrypted outbox messages af
     $order->update([
         'ndi_status' => NdiOrderStatus::Accepted,
         'payment_status' => PaymentStatus::Authorized,
+        'subtotal_minor' => 510000,
+        'total_minor' => 510000,
+    ]);
+    $order->serviceItems()->create([
+        'service_code' => 'balancing',
+        'title_nb' => 'Balansering',
+        'title_ru' => 'Балансировка',
+        'applicability' => 'all',
+        'billing_mode' => 'per_item',
+        'quantity' => 4,
+        'unit_price_minor' => 2500,
+        'line_total_minor' => 10000,
+        'currency' => 'NOK',
+        'service_snapshot' => ['code' => 'balancing'],
     ]);
     $confirm = app(ConfirmPayment::class);
 
-    $paid = $confirm->execute($order, 'fake', 'event-1', 'provider-ref-1', 500000, 'NOK', hash('sha256', 'fixture'));
-    $same = $confirm->execute($paid, 'fake', 'event-1', 'provider-ref-1', 500000, 'NOK', hash('sha256', 'fixture'));
+    $paid = $confirm->execute($order, 'fake', 'event-1', 'provider-ref-1', 510000, 'NOK', hash('sha256', 'fixture'));
+    $same = $confirm->execute($paid, 'fake', 'event-1', 'provider-ref-1', 510000, 'NOK', hash('sha256', 'fixture'));
+    $payload = OutboxMessage::query()->firstOrFail()->payload_encrypted;
 
     expect($paid->status)->toBe(OrderStatus::Paid)
         ->and($paid->payment_status)->toBe(PaymentStatus::Paid)
@@ -73,6 +88,11 @@ test('confirmed payment is idempotent and publishes encrypted outbox messages af
         ->and(PaymentWebhookEvent::query()->count())->toBe(1)
         ->and(OutboxMessage::query()->count())->toBe(2)
         ->and(OutboxMessage::query()->pluck('type')->all())->toContain('notion.order_paid', 'telegram.order_paid')
+        ->and($payload['product_item_count'])->toBe(4)
+        ->and($payload['service_item_count'])->toBe(4)
+        ->and($payload['product_line_count'])->toBe(1)
+        ->and($payload['service_line_count'])->toBe(1)
+        ->and($payload['line_count'])->toBe(2)
         ->and(OutboxMessage::query()->first()->getRawOriginal('payload_encrypted'))->not->toContain('buyer@example.test');
 });
 

@@ -18,8 +18,13 @@ test('buyer can use the private Russian storefront preview', async ({ page }) =>
     await expect(page.getByRole('heading', { name: 'Корзина' })).toBeVisible();
     await expect(page.getByText('Demo 205/55 R16')).toBeVisible();
     await expect(page.getByLabel('Количество')).toHaveValue('1');
+    const service = page.getByTestId('service-addon').filter({ hasText: 'E2E-сервис для шин' });
+    await expect(service).toBeVisible();
+    await service.getByTestId('service-addon-toggle').click();
+    await expect(service).toContainText('Выбрано');
     await page.getByRole('link', { name: 'К оформлению' }).click();
     await expect(page.getByRole('heading', { name: 'Оформление' })).toBeVisible();
+    await expect(page.getByTestId('checkout-service-item')).toContainText('E2E-сервис для шин');
     await page.goto('/ru/tjenester');
     await page.getByRole('link', { name: /Подробнее/ }).first().click();
     await expect(page).toHaveURL(/\/ru\/tjenester\//);

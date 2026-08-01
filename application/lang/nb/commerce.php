@@ -1,3 +1,31 @@
 <?php
 
-return ['cart' => 'Handlekurv', 'checkout' => 'Kasse', 'to_checkout' => 'Til kassen', 'name' => 'Navn', 'email' => 'E-post', 'phone' => 'Telefon', 'registration' => 'Registreringsnummer', 'note' => 'Merknad', 'consent' => 'Samtykke', 'terms' => 'Vilkår', 'submit' => 'Send bestilling', 'received' => 'Bestilling mottatt', 'reference' => 'Referanse', 'pending' => 'Betaling og NDI-bestilling er ikke startet.', 'empty' => 'Handlekurven er tom.', 'update' => 'Oppdater', 'remove' => 'Fjern', 'quantity' => 'Antall', 'pickup' => 'Kun henting. Bestillingen er ikke bekreftet før den følges opp.', 'issues' => 'Handlekurven må oppdateres før du kan gå videre.', 'continue_shopping' => 'Fortsett å handle', 'sku' => 'Varenr.', 'unit_price' => 'Pris per stk.', 'line_total' => 'Linjesum', 'cart_total' => 'Totalt'];
+return [
+    'cart' => 'Handlekurv', 'checkout' => 'Kasse', 'to_checkout' => 'Til kassen',
+    'name' => 'Navn', 'email' => 'E-post', 'phone' => 'Telefon', 'registration' => 'Registreringsnummer', 'note' => 'Merknad',
+    'consent' => 'Samtykke', 'terms' => 'Vilkår', 'submit' => 'Send bestilling',
+    'received' => 'Bestilling mottatt', 'reference' => 'Referanse', 'pending' => 'Betaling og NDI-bestilling er ikke startet.',
+    'empty' => 'Handlekurven er tom.', 'update' => 'Oppdater', 'remove' => 'Fjern', 'quantity' => 'Antall',
+    'pickup' => 'Kun henting. Bestillingen er ikke bekreftet før den følges opp.',
+    'issues' => 'Handlekurven må oppdateres før du kan gå videre.',
+    'checkout_not_ready' => 'Handlekurven er tom eller har endringer som må løses før du kan gå til kassen.',
+    'continue_shopping' => 'Fortsett å handle', 'sku' => 'Varenr.', 'unit_price' => 'Pris per stk.', 'line_total' => 'Linjesum', 'cart_total' => 'Totalt',
+    'issue_title' => 'Denne varen må oppdateres',
+    'issue_product_unavailable' => 'Varen :sku er ikke lenger tilgjengelig i katalogen. Fjern den for å fortsette.',
+    'issue_price_unavailable' => 'Varen :sku har ikke en gyldig utsalgspris akkurat nå. Fjern den eller prøv igjen senere.',
+    'issue_stock_changed' => 'Du valgte :quantity av :sku, men bare :available er registrert på lager. Juster antallet eller fjern varen.',
+    'issue_currency_mismatch' => 'Varen :sku kan ikke kombineres med resten av handlekurven på grunn av valuta. Fjern den for å fortsette.',
+    'additional_services' => 'Tilleggstjenester',
+    'additional_services_intro' => 'Velg bare tjenestene du trenger. Antall og sum oppdateres med varene i handlekurven.',
+    'add_service' => 'Legg til',
+    'remove_service' => 'Fjern tjeneste',
+    'service_selected' => 'Valgt',
+    'service_per_item' => 'Pris per passende vare',
+    'service_per_order' => 'Fast pris per bestilling',
+    'products_total' => 'Varer',
+    'services_total' => 'Tjenester',
+    'service_issue_title' => 'En valgt tjeneste må fjernes',
+    'service_issue_unavailable' => 'Tjenesten :code er ikke lenger tilgjengelig eller har ingen gyldig pris.',
+    'service_issue_not_applicable' => 'Tjenesten :code passer ikke lenger til varene i handlekurven.',
+    'service_issue_currency_mismatch' => 'Tjenesten :code kan ikke kombineres med handlekurvens valuta.',
+];

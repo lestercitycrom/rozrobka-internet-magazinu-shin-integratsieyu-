@@ -1,7 +1,9 @@
 <?php
 
+use App\Jobs\RecordQueueHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -10,3 +12,11 @@ Artisan::command('inspire', function () {
 
 Schedule::command('easytire:outbox --limit=25')->everyMinute()->withoutOverlapping();
 Schedule::command('ndi:media:sync --limit=25')->hourly()->withoutOverlapping();
+Schedule::call(fn () => Cache::forever('easytire.health.scheduler_heartbeat_at', now()->toIso8601String()))
+    ->name('health:scheduler-heartbeat')
+    ->everyMinute()
+    ->withoutOverlapping();
+Schedule::job(new RecordQueueHeartbeat)
+    ->name('health:queue-heartbeat')
+    ->everyMinute()
+    ->withoutOverlapping();

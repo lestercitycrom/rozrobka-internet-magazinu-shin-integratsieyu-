@@ -14,6 +14,8 @@ use App\Modules\Outbox\Contracts\NotionOrderDestination;
 use App\Modules\Outbox\Contracts\TelegramOrderDestination;
 use App\Modules\Outbox\DisabledNotionOrderDestination;
 use App\Modules\Outbox\DisabledTelegramOrderDestination;
+use App\Modules\Outbox\HttpNotionOrderDestination;
+use App\Modules\Outbox\HttpTelegramOrderDestination;
 use App\Modules\Payments\Contracts\PaymentGateway;
 use App\Modules\Payments\DisabledPaymentGateway;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -33,8 +35,20 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(NdiOrderStatusClient::class, HttpNdiOrderStatusClient::class);
         $this->app->bind(NdiDespatchClient::class, HttpNdiDespatchClient::class);
         $this->app->bind(PaymentGateway::class, DisabledPaymentGateway::class);
-        $this->app->bind(NotionOrderDestination::class, DisabledNotionOrderDestination::class);
-        $this->app->bind(TelegramOrderDestination::class, DisabledTelegramOrderDestination::class);
+        $this->app->bind(NotionOrderDestination::class, function ($app): NotionOrderDestination {
+            if (config('outbox.notion_enabled') && config('outbox.notion.token') && config('outbox.notion.database_id')) {
+                return $app->make(HttpNotionOrderDestination::class);
+            }
+
+            return $app->make(DisabledNotionOrderDestination::class);
+        });
+        $this->app->bind(TelegramOrderDestination::class, function ($app): TelegramOrderDestination {
+            if (config('outbox.telegram_enabled') && config('outbox.telegram.bot_token') && config('outbox.telegram.chat_id')) {
+                return $app->make(HttpTelegramOrderDestination::class);
+            }
+
+            return $app->make(DisabledTelegramOrderDestination::class);
+        });
     }
 
     /**

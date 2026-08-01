@@ -1,64 +1,38 @@
-# EasyTire — этапы реализации
+# EasyTire — этапы и фактический статус
 
-> Status update — 2026-08-01: M3 is **partially implemented**, not unstarted: session cart, checkout, local order state machine, payment webhook/idempotency boundary, read-only admin orders, and disabled-by-default transactional outbox exist. External activation remains blocked by payment-provider selection, SFTP details, Statens key, Notion/Telegram contracts, and written C1 authorization/notice. Official bundle import has succeeded in staging; the pricing policy is test-only and catalog products remain draft. The latest NDI credential smoke returned HTTP 401 and all NDI runtime flags are disabled.
+Владелец плана: Mister Red. Обновлено: 2026-08-01.
 
-Владелец плана: Mister Red  
-Дата: 2026-07-31
+Этот файл описывает фактическое состояние, а не обещания. Подробный срез — [CURRENT_PROJECT_STATUS_2026-08-01.md](CURRENT_PROJECT_STATUS_2026-08-01.md).
 
-## M0 — фундамент
+## M0 — фундамент и поставка: выполнен
 
-Статус: **выполнен**.
+- Laravel, собственная админка, NB/RU internal preview, Pest и Playwright;
+- автоматическая staging-поставка, HTTPS, health-check и базовые operational checks;
+- без готового admin framework.
 
-- Laravel 13 и структура репозитория;
-- Pest + Playwright buyer/admin;
-- собственная административная авторизация и оболочка `nb`/`ru`;
-- Git, автоматический staging-deploy и HTTPS;
-- принятые архитектура, модель данных и стратегия тестирования.
+## M1 — каталог и данные NDI: выполнен для безопасного staging-каталога
 
-Готовность: все тесты зелёные, staging разворачивается одним push, в зависимостях нет готового admin framework.
+- официальный пакет из трёх файлов валидирован, импорт идемпотентен и сохраняет raw-artifacts;
+- 1 584 товара: 1 082 шины и 502 диска; импорт не означает автоматическую коммерческую публикацию;
+- фильтры, поиск, автодополнение, карточки, admin media/import controls готовы;
+- фотографии: 621 назначение от NDI, 34 уникальных локально сохранённых файла, 963 честных fallback. Полнота зависит от недостающего фида/прав на изображения.
 
-## M1 — каталог и NDI-файлы
+Доказательства: [валидация пакета](../research/NDI_OFFICIAL_DATA_BUNDLE_VALIDATION_2026-07-31.md), [аудит медиа](../research/NDI_MEDIA_COMPLETENESS_2026-08-01.md).
 
-Статус: **реализован и принят на реальном пакете NDI; публикация коммерческих данных ждёт подтверждения валюты и правил цены**.
+## M2 — подбор и сервисы: реализовано внутреннее ядро, внешний запуск заблокирован
 
-- raw-артефакты и import runs;
-- идемпотентный импорт шин, дисков, цен и семи складов;
-- quarantine для stock-only и ошибочных строк;
-- отчёт импорта в собственной админке;
-- публичный read-only каталог и базовые фильтры.
+- доступны каталоговый подбор, запрос услуги, CMS-страницы услуг и русская тестовая локаль;
+- Statens-адаптер существует, но фактический запрос не включается без ключа и одобрения;
+- сервисные цены, правила доступности, реальные слоты и публичный legal/contact copy не утверждены.
 
-Готовность: повтор файла не создаёт дублей, плохой файл не меняет опубликованное состояние, buyer/admin Playwright покрывают просмотр каталога и отчёта.
+## M3 — корзина, заказ, оплата и допуслуги: в работе, не завершён
 
-## M2 — подбор и услуги
+- реализованы локальная корзина, checkout guard, заказ, идемпотентные границы payment/webhook и outbox;
+- NDI A2/C1 жизненный цикл и Notion/Telegram HTTP-адаптеры существуют только как disabled-by-default integration boundaries;
+- payment provider, NDI credentials/разрешение C1, коммерческие правила и финальная модель допуслуг ещё не приняты.
 
-Статус: **частично выполнен** — ручные фильтры, редактируемые страницы услуг NB/RU и скрытый русский preview готовы; vehicle API, формы записи и подтверждённые цены ожидают входных данных.
+Ни оплату, ни допуслуги нельзя считать завершёнными или включать в production до отдельных acceptance-проверок.
 
-- ручной подбор по размеру;
-- адаптер Statens vegvesen и поиск по номеру после получения ключа;
-- правила совместимости шин/дисков;
-- услуги, цены, контент, формы записи и SEO-страницы Tromsø;
-- перенос только подтверждённых материалов текущего сайта.
+## M4 — production release: не начат
 
-Готовность: безопасные fixture-сценарии работают без внешней сети, реальный read-only API включается только конфигурацией staging.
-
-## M3 — корзина, оплата и заказ
-
-Статус: **не начат** — архитектурно заблокированы только провайдер-зависимые и мутационные шаги; локальную корзину и order state machine можно разрабатывать заранее.
-
-- корзина, услуги и итог NOK;
-- финальный NDI Inquiry;
-- выбранный payment provider и authorization/capture либо согласованный fallback;
-- локальный заказ, идемпотентный NDI Order;
-- Notion outbox и Telegram notifications.
-
-Готовность: повторные webhook/jobs не создают дубли; ни один автоматический тест не вызывает боевые изменения; мутационный NDI-тест отдельно разрешён письменно.
-
-## M4 — запуск
-
-- полный responsive/a11y/security/performance прогон;
-- резервное копирование и восстановление;
-- мониторинг устаревшего импорта, очередей и интеграций;
-- production-конфигурация, инструкции владельцу и smoke после deploy;
-- подтверждённые юридические тексты, контакты, цены и права на материалы.
-
-Готовность: пройден release checklist, rollback проверен, критические P0-сценарии автоматизированы и зелёные.
+Production gate требует закрыть внешние входные данные, провести финальный regression/security/accessibility/performance прогон, настроить off-host backup и выполнить owner acceptance. См. [release checklist](../operations/RELEASE_READINESS.md).

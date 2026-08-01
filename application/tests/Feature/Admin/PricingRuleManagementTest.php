@@ -26,6 +26,33 @@ test('guests and customers cannot manage pricing rules', function (): void {
     $this->actingAs(User::factory()->customer()->create())->get('/admin/pricing-rules')->assertForbidden();
 });
 
+test('pricing rule inputs reject negative and excessive adjustments', function (): void {
+    $admin = User::factory()->operations()->create();
+
+    foreach ([
+        ['markup_percent' => '-0.01'],
+        ['markup_percent' => '500.01'],
+        ['fixed_markup_nok' => '-1'],
+        ['fixed_markup_nok' => '1000000.01'],
+        ['rounding_nok' => '10000.01'],
+    ] as $invalid) {
+        $field = array_key_first($invalid);
+        $this->actingAs($admin)
+            ->post('/admin/pricing-rules', pricingPayload($invalid))
+            ->assertSessionHasErrors($field);
+    }
+
+    expect(PricingRule::query()->count())->toBe(0);
+});
+
+test('pricing safety errors use the administrators Russian locale', function (): void {
+    $admin = User::factory()->operations()->create(['locale' => 'ru']);
+
+    $this->actingAs($admin)
+        ->post('/admin/pricing-rules', pricingPayload(['rounding_nok' => '0']))
+        ->assertSessionHasErrors(['rounding_nok' => 'Шаг округления должен быть не меньше 0,01 NOK.']);
+});
+
 test('pricing rule screens expose accessible controls and responsive status presentation', function (): void {
     $admin = User::factory()->operations()->create();
     PricingRule::create(['name' => 'Active retail', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'ndi-file-current', 'currency' => 'NOK', 'markup_basis_points' => 1000, 'fixed_markup_minor' => 0, 'rounding_increment_minor' => 100, 'priority' => 1, 'is_active' => true]);

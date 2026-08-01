@@ -1,4 +1,8 @@
 <x-layouts.storefront :title="__('commerce.checkout')">
+    @php
+        $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+        $legalPages = app(\App\Modules\Content\ReadModel\PublishedContentPageReadService::class)->publishedSlugs(['personvern', 'kjopsvilkar']);
+    @endphp
     <section class="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
             <form method="post" class="easytire-card space-y-6 rounded-2xl p-5 sm:p-8">
@@ -54,13 +58,21 @@
                     <legend class="sr-only">{{ __('commerce.consent') }}</legend>
                     <label class="flex min-h-11 items-center gap-3 rounded-lg border border-easytire-border bg-easytire-surface px-4 text-sm font-bold">
                         <input required type="checkbox" name="consent" value="1" @checked(old('consent')) class="size-5 rounded border-easytire-border text-easytire-brand focus:ring-easytire-brand">
-                        {{ __('commerce.consent') }}
+                        @if (isset($legalPages['personvern']))
+                            <span>{{ __('legal.consent_prefix') }} <a class="underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('legal.privacy') }}</a>.</span>
+                        @else
+                            {{ __('commerce.consent') }}
+                        @endif
                     </label>
                     @error('consent')<p class="text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
 
                     <label class="flex min-h-11 items-center gap-3 rounded-lg border border-easytire-border bg-easytire-surface px-4 text-sm font-bold">
                         <input required type="checkbox" name="terms" value="1" @checked(old('terms')) class="size-5 rounded border-easytire-border text-easytire-brand focus:ring-easytire-brand">
-                        {{ __('commerce.terms') }}
+                        @if (isset($legalPages['kjopsvilkar']))
+                            <span>{{ __('legal.terms_prefix') }} <a class="underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('legal.terms') }}</a>.</span>
+                        @else
+                            {{ __('commerce.terms') }}
+                        @endif
                     </label>
                     @error('terms')<p class="text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
                 </fieldset>
@@ -81,7 +93,17 @@
                     @empty
                         <p class="text-white/70">{{ __('commerce.empty') }}</p>
                     @endforelse
+                    @foreach($cart->serviceLines as $line)
+                        <div class="flex justify-between gap-4" data-testid="checkout-service-item">
+                            <span>{{ $line->title(app()->getLocale()) }} × {{ $line->quantity }}</span>
+                            <span class="shrink-0 font-bold">{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</span>
+                        </div>
+                    @endforeach
                 </div>
+                <dl class="mt-5 space-y-2 text-sm">
+                    <div class="flex justify-between gap-4"><dt class="text-white/70">{{ __('commerce.products_total') }}</dt><dd class="font-bold">{{ number_format($cart->productsTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->productsTotal()->currency }}</dd></div>
+                    @if ($cart->servicesTotal()->minor > 0)<div class="flex justify-between gap-4"><dt class="text-white/70">{{ __('commerce.services_total') }}</dt><dd class="font-bold">{{ number_format($cart->servicesTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->servicesTotal()->currency }}</dd></div>@endif
+                </dl>
                 <p class="mt-5 text-3xl font-black">{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</p>
             </aside>
         </div>

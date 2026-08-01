@@ -8,7 +8,7 @@
                 <p class="mb-5 text-sm font-bold tracking-[.18em] text-easytire-brand uppercase">{{ __('storefront.hero_kicker') }}</p><h1 class="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">{{ __('storefront.hero_title') }}</h1><p class="mt-6 max-w-2xl text-lg leading-8 text-white/75">{{ __('storefront.hero_text') }}</p><div class="mt-8 flex flex-col gap-3 sm:flex-row"><a href="{{ route($routePrefix.'tires.index') }}" class="rounded-xl bg-easytire-brand px-5 py-3 text-center font-bold text-white transition hover:bg-easytire-brand-strong">{{ __('storefront.see_tires') }}</a><a href="{{ route($routePrefix.'wheels.index') }}" class="rounded-xl border border-white/40 px-5 py-3 text-center font-bold text-white hover:bg-white/10">{{ __('storefront.see_wheels') }}</a></div>
             </div>
             <aside class="rounded-3xl border border-white/20 bg-black/45 p-6 shadow-2xl backdrop-blur-sm" aria-label="{{ __('storefront.catalog_finder_aria') }}">
-                <p class="text-sm font-bold text-easytire-brand">{{ __('storefront.start_size') }}</p><p class="mt-2 text-2xl font-bold">{{ __('storefront.starting_point') }}</p><p class="mt-3 leading-7 text-white/75">{{ __('storefront.starting_text') }}</p>
+                <p class="text-sm font-bold text-easytire-brand">{{ __('storefront.start_size') }}</p><p class="mt-2 text-2xl font-bold">{{ __('storefront.starting_point') }}</p><p class="mt-3 leading-7 text-white/75">{{ __('storefront.starting_text') }}</p><a href="{{ route($routePrefix.'fitment.create') }}" class="mt-5 inline-flex min-h-11 items-center rounded-lg border border-white/40 px-4 font-bold text-white transition-colors hover:bg-white/10">{{ __('fitment.home_cta') }}</a>
             </aside>
         </div>
     </section>

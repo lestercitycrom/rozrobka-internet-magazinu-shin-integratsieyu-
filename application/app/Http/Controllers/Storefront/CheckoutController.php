@@ -9,6 +9,7 @@ use App\Modules\Cart\SessionCart;
 use App\Modules\Orders\CreatePendingOrder;
 use App\Modules\Orders\Data\CheckoutData;
 use App\Modules\Orders\Enums\FulfilmentMethod;
+use App\Modules\Orders\Exceptions\CartNotReady;
 use App\Modules\Orders\Models\Order;
 use Illuminate\Support\Str;
 
@@ -16,25 +17,36 @@ class CheckoutController extends Controller
 {
     public function create(CartResolver $cart)
     {
+        $snapshot = $cart->resolve();
+        if (! $snapshot->isCheckoutReady()) {
+            return redirect()->route($this->routePrefix().'cart.index')
+                ->with('cart_error', __('commerce.checkout_not_ready'));
+        }
+
         $key = session('checkout.key');
         if (! is_string($key) || Order::query()->where('idempotency_key', $key)->exists()) {
             $key = (string) Str::uuid();
             session(['checkout.key' => $key]);
         }
 
-        return view('storefront.checkout.create', ['cart' => $cart->resolve(), 'idempotencyKey' => $key]);
+        return view('storefront.checkout.create', ['cart' => $snapshot, 'idempotencyKey' => $key]);
     }
 
     public function store(CheckoutRequest $request, CartResolver $cart, CreatePendingOrder $orders, SessionCart $session)
     {
         $key = (string) session('checkout.key', '');
         abort_unless($key !== '' && hash_equals($key, (string) $request->input('idempotency_key')), 419);
-        $result = $orders->execute(new CheckoutData($key, app()->getLocale(), $request->string('name'), $request->string('email'), $request->string('phone'), FulfilmentMethod::Pickup, $request->input('registration'), $request->input('note')), $cart->resolve());
+        try {
+            $result = $orders->execute(new CheckoutData($key, app()->getLocale(), $request->string('name'), $request->string('email'), $request->string('phone'), FulfilmentMethod::Pickup, $request->input('registration'), $request->input('note')), $cart->resolve());
+        } catch (CartNotReady) {
+            return redirect()->route($this->routePrefix().'cart.index')
+                ->with('cart_error', __('commerce.checkout_not_ready'));
+        }
         if ($result->created) {
             $session->clear();
         }
 
-        return redirect()->route((app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.').'orders.thanks', $result->order->public_reference);
+        return redirect()->route($this->routePrefix().'orders.thanks', $result->order->public_reference);
     }
 
     public function thanks(string $reference)
@@ -42,5 +54,10 @@ class CheckoutController extends Controller
         abort_unless(Order::query()->where('public_reference', $reference)->exists(), 404);
 
         return view('storefront.checkout.thanks', compact('reference'));
+    }
+
+    private function routePrefix(): string
+    {
+        return app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
     }
 }

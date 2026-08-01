@@ -8,6 +8,8 @@ final class SessionCart
 {
     private const KEY = 'storefront.cart.lines';
 
+    private const SERVICE_KEY = 'storefront.cart.service_addons';
+
     public function __construct(private readonly Session $session) {}
 
     /** @return array<string, int> */
@@ -54,8 +56,39 @@ final class SessionCart
         $this->session->put(self::KEY, $items);
     }
 
+    /** @return list<string> */
+    public function serviceAddons(): array
+    {
+        $stored = $this->session->get(self::SERVICE_KEY, []);
+        if (! is_array($stored)) {
+            return [];
+        }
+
+        return collect($stored)
+            ->filter(fn ($code): bool => is_string($code) && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/', $code) === 1)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function addServiceAddon(string $code): void
+    {
+        $selected = $this->serviceAddons();
+        if (! in_array($code, $selected, true)) {
+            $this->session->put(self::SERVICE_KEY, [...$selected, $code]);
+        }
+    }
+
+    public function removeServiceAddon(string $code): void
+    {
+        $this->session->put(
+            self::SERVICE_KEY,
+            array_values(array_filter($this->serviceAddons(), fn (string $selected): bool => $selected !== $code)),
+        );
+    }
+
     public function clear(): void
     {
-        $this->session->forget(self::KEY);
+        $this->session->forget([self::KEY, self::SERVICE_KEY]);
     }
 }

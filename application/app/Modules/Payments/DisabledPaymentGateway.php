@@ -3,14 +3,31 @@
 namespace App\Modules\Payments;
 
 use App\Modules\Payments\Contracts\PaymentGateway;
-use App\Modules\Payments\Data\PaymentStartRequest;
-use App\Modules\Payments\Data\PaymentStartResult;
+use App\Modules\Payments\Data\PaymentAuthorizationRequest;
+use App\Modules\Payments\Data\PaymentAuthorizationResult;
+use App\Modules\Payments\Data\PaymentOperationRequest;
+use App\Modules\Payments\Data\PaymentOperationResult;
 use App\Modules\Payments\Exceptions\PaymentsDisabled;
 
 final class DisabledPaymentGateway implements PaymentGateway
 {
-    public function start(PaymentStartRequest $request): PaymentStartResult
+    public function provider(): string
     {
-        throw new PaymentsDisabled('Payment initiation is disabled until a provider contract is configured.');
+        return 'disabled';
+    }
+
+    public function authorize(PaymentAuthorizationRequest $request): PaymentAuthorizationResult
+    {
+        throw new PaymentsDisabled('Payment authorization is disabled until a provider contract is configured.');
+    }
+
+    public function capture(PaymentOperationRequest $request): PaymentOperationResult
+    {
+        throw new PaymentsDisabled('Payment capture is disabled until a provider contract is configured.');
+    }
+
+    public function void(PaymentOperationRequest $request): PaymentOperationResult
+    {
+        throw new PaymentsDisabled('Payment void is disabled until a provider contract is configured.');
     }
 }

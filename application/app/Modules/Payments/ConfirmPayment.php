@@ -13,7 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 final class ConfirmPayment
 {
-    public function __construct(private readonly OutboxPublisher $outbox) {}
+    public function __construct(
+        private readonly OutboxPublisher $outbox,
+        private readonly PaidOrderPayload $paidOrderPayload,
+    ) {}
 
     public function execute(
         Order $order,
@@ -36,7 +39,7 @@ final class ConfirmPayment
             }
 
             /** @var Order $locked */
-            $locked = Order::query()->with('items')->lockForUpdate()->findOrFail($order->getKey());
+            $locked = Order::query()->with(['items', 'serviceItems'])->lockForUpdate()->findOrFail($order->getKey());
             if ($amountMinor !== $locked->total_minor || strtoupper($currency) !== $locked->currency) {
                 throw new PaymentConfirmationRejected('Payment amount or currency does not match the order snapshot.');
             }
@@ -87,23 +90,7 @@ final class ConfirmPayment
                 'occurred_at' => now(),
             ]);
 
-            $payload = [
-                'order_id' => $locked->id,
-                'reference' => $locked->public_reference,
-                'amount_minor' => $locked->total_minor,
-                'currency' => $locked->currency,
-                'customer' => [
-                    'name' => $locked->customer_name,
-                    'email' => $locked->customer_email,
-                    'phone' => $locked->customer_phone,
-                ],
-                'items' => $locked->items->map(fn ($item): array => [
-                    'sku' => $item->external_sku,
-                    'title' => $item->product_title,
-                    'quantity' => $item->quantity,
-                    'unit_price_minor' => $item->unit_price_minor,
-                ])->all(),
-            ];
+            $payload = $this->paidOrderPayload->for($locked);
 
             $this->outbox->forOrder($locked, 'notion.order_paid', "notion:order-paid:{$locked->id}", $payload);
             $this->outbox->forOrder($locked, 'telegram.order_paid', "telegram:order-paid:{$locked->id}", $payload);

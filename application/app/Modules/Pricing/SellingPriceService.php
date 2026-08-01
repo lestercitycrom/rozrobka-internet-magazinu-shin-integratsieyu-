@@ -7,7 +7,9 @@ use App\Modules\Pricing\Data\SellingPrice;
 use App\Modules\Pricing\Enums\PricingRuleScope;
 use App\Modules\Pricing\Models\PricingRule;
 use App\Modules\Pricing\ValueObjects\Money;
+use ArithmeticError;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 final class SellingPriceService
 {
@@ -56,11 +58,19 @@ final class SellingPriceService
             return null;
         }
 
-        $sourceMoney = Money::fromDecimal($source->amount, strtoupper($source->currency));
-        $sellingMoney = $sourceMoney
-            ->addBasisPoints($rule->markup_basis_points)
-            ->addMinor($rule->fixed_markup_minor)
-            ->roundUpTo($rule->rounding_increment_minor);
+        try {
+            $sourceMoney = Money::fromDecimal($source->amount, strtoupper($source->currency));
+            $sellingMoney = $sourceMoney
+                ->addBasisPoints($rule->markup_basis_points)
+                ->addMinor($rule->fixed_markup_minor)
+                ->roundUpTo($rule->rounding_increment_minor);
+        } catch (InvalidArgumentException|ArithmeticError) {
+            return null;
+        }
+
+        if ($sellingMoney->minor < 1) {
+            return null;
+        }
 
         return new SellingPrice(
             money: $sellingMoney,

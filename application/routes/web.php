@@ -7,9 +7,12 @@ use App\Http\Controllers\Storefront\ContentPageController;
 use App\Http\Controllers\Storefront\ServiceController;
 use App\Http\Controllers\Storefront\ServiceRequestController;
 use App\Http\Controllers\Storefront\VehicleFitmentController;
+use App\Modules\Catalog\Enums\ProductType;
+use App\Modules\Catalog\ReadModel\CatalogReadService;
 use App\Modules\Content\Enums\ServicePageLocale;
 use App\Modules\Content\Models\ServicePage;
 use App\Modules\Content\ReadModel\PublishedServicePageReadService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -35,11 +38,11 @@ Route::middleware('public.locale')->group(function (): void {
         return view('welcome', ['services' => $services->list(ServicePageLocale::NorwegianBokmal)]);
     })->name('storefront.home');
     Route::get('/dekk', [CatalogController::class, 'tires'])->name('storefront.tires.index');
-    Route::get('/dekk/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Tire))->middleware('throttle:60,1')->name('storefront.tires.suggestions');
+    Route::get('/dekk/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Tire))->middleware('throttle:60,1')->name('storefront.tires.suggestions');
     Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('storefront.fitment.create');
     Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('storefront.fitment.store');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('storefront.wheels.index');
-    Route::get('/felger/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Wheel))->middleware('throttle:60,1')->name('storefront.wheels.suggestions');
+    Route::get('/felger/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Wheel))->middleware('throttle:60,1')->name('storefront.wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('storefront.products.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('storefront.services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('storefront.services.show');
@@ -51,6 +54,8 @@ Route::middleware('public.locale')->group(function (): void {
     Route::post('/handlekurv', [CartController::class, 'add'])->name('storefront.cart.add');
     Route::patch('/handlekurv', [CartController::class, 'update'])->name('storefront.cart.update');
     Route::delete('/handlekurv', [CartController::class, 'remove'])->name('storefront.cart.remove');
+    Route::post('/handlekurv/tjenester', [CartController::class, 'addServiceAddon'])->name('storefront.cart.services.add');
+    Route::delete('/handlekurv/tjenester', [CartController::class, 'removeServiceAddon'])->name('storefront.cart.services.remove');
     Route::get('/kasse', [CheckoutController::class, 'create'])->name('storefront.checkout.create');
     Route::post('/kasse', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('storefront.checkout.store');
     Route::get('/bestilling/{reference}', [CheckoutController::class, 'thanks'])->name('storefront.orders.thanks');
@@ -59,11 +64,11 @@ Route::middleware('public.locale')->group(function (): void {
 Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')->group(function (): void {
     Route::get('/', fn (PublishedServicePageReadService $services) => view('welcome', ['services' => $services->list(ServicePageLocale::Russian)]))->name('home');
     Route::get('/dekk', [CatalogController::class, 'tires'])->name('tires.index');
-    Route::get('/dekk/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Tire))->middleware('throttle:60,1')->name('tires.suggestions');
+    Route::get('/dekk/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Tire))->middleware('throttle:60,1')->name('tires.suggestions');
     Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('fitment.create');
     Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('fitment.store');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('wheels.index');
-    Route::get('/felger/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Wheel))->middleware('throttle:60,1')->name('wheels.suggestions');
+    Route::get('/felger/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Wheel))->middleware('throttle:60,1')->name('wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('products.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('services.show');
@@ -75,6 +80,8 @@ Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')-
     Route::post('/handlekurv', [CartController::class, 'add'])->name('cart.add');
     Route::patch('/handlekurv', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/handlekurv', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/handlekurv/tjenester', [CartController::class, 'addServiceAddon'])->name('cart.services.add');
+    Route::delete('/handlekurv/tjenester', [CartController::class, 'removeServiceAddon'])->name('cart.services.remove');
     Route::get('/kasse', [CheckoutController::class, 'create'])->name('checkout.create');
     Route::post('/kasse', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
     Route::get('/bestilling/{reference}', [CheckoutController::class, 'thanks'])->name('orders.thanks');

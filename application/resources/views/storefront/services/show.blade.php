@@ -10,5 +10,9 @@
         @if ($service->body)
             <div class="prose mt-8 max-w-none">{!! nl2br(e($service->body)) !!}</div>
         @endif
+        <aside class="mt-10 rounded-2xl border border-easytire-border bg-easytire-brand-soft p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+            <p class="max-w-xl text-sm leading-6 text-easytire-muted">{{ __('services.request_note') }}</p>
+            <a href="{{ route($prefix.'requests.create', $service->slug) }}" class="mt-4 inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-easytire-brand px-5 font-bold text-white transition-colors hover:bg-easytire-brand-strong sm:mt-0">{{ __('services.request_cta') }}</a>
+        </aside>
     </article>
 </x-layouts.storefront>

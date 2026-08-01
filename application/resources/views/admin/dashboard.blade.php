@@ -10,7 +10,7 @@
                 <h2 id="orders-overview-heading" class="mt-2 text-3xl font-black">{{ $orderCounts['total'] }}</h2>
             </div>
             <div class="border-t border-easytire-border pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-                <p class="text-sm font-bold text-easytire-muted">attention</p>
+                <p class="text-sm font-bold text-easytire-muted">{{ __('dashboard.attention') }}</p>
                 <p class="mt-2 text-3xl font-black text-easytire-brand">{{ $orderCounts['attention'] }}</p>
             </div>
         </section>
@@ -22,14 +22,18 @@
 
         <section class="mt-8" aria-labelledby="admin-actions-heading">
             <h2 id="admin-actions-heading" class="text-sm font-semibold">{{ __('dashboard.actions') }}</h2>
-            <div class="mt-4 grid gap-4 sm:grid-cols-3">
-                @foreach (['catalog' => 'catalog.index', 'imports' => 'imports.index', 'services' => 'services.index'] as $action => $route)
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                @foreach (['catalog' => 'catalog.index', 'imports' => 'imports.index', 'services' => 'services.index', 'service_requests' => 'service-requests.index'] as $action => $route)
                     <a href="{{ route('admin.'.$route) }}" class="easytire-card easytire-interactive rounded-2xl p-5 focus:outline-2 focus:outline-offset-2 focus:outline-easytire-brand">
                         <span class="block text-sm font-semibold">{{ __('dashboard.'.$action) }}</span>
                         <span class="mt-1 block text-sm text-easytire-muted">{{ __('dashboard.'.$action.'_description') }}</span>
                     </a>
                 @endforeach
             </div>
+        </section>
+        <section class="easytire-card mt-8 grid gap-4 rounded-2xl p-6 sm:grid-cols-2" aria-labelledby="requests-overview-heading">
+            <div><p class="text-sm font-bold uppercase tracking-[0.12em] text-easytire-muted">{{ __('service_requests.title') }}</p><h2 id="requests-overview-heading" class="mt-2 text-3xl font-black">{{ $serviceRequestCounts['total'] }}</h2></div>
+            <div class="border-t border-easytire-border pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0"><p class="text-sm font-bold text-easytire-muted">{{ __('dashboard.new_requests') }}</p><p class="mt-2 text-3xl font-black text-easytire-brand">{{ $serviceRequestCounts['attention'] }}</p><a class="mt-3 inline-flex min-h-11 items-center rounded underline decoration-2 underline-offset-4 hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand" href="{{ route('admin.service-requests.index') }}">{{ __('service_requests.title') }}</a></div>
         </section>
     </div>
 </x-layouts.admin>

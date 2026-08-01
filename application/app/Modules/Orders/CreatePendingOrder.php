@@ -85,6 +85,32 @@ final class CreatePendingOrder
                 ]);
             }
 
+            foreach ($cart->serviceLines as $line) {
+                $order->serviceItems()->create([
+                    'service_addon_id' => $line->serviceAddonId,
+                    'service_code' => $line->code,
+                    'title_nb' => $line->titleNb,
+                    'title_ru' => $line->titleRu,
+                    'applicability' => $line->applicability,
+                    'billing_mode' => $line->billingMode,
+                    'quantity' => $line->quantity,
+                    'unit_price_minor' => $line->unitPrice->minor,
+                    'line_total_minor' => $line->total()->minor,
+                    'currency' => $line->unitPrice->currency,
+                    'service_snapshot' => [
+                        'code' => $line->code,
+                        'title_nb' => $line->titleNb,
+                        'title_ru' => $line->titleRu,
+                        'applicability' => $line->applicability->value,
+                        'billing_mode' => $line->billingMode->value,
+                        'currency' => $line->unitPrice->currency,
+                        'unit_price_minor' => $line->unitPrice->minor,
+                        'quantity' => $line->quantity,
+                        'line_total_minor' => $line->total()->minor,
+                    ],
+                ]);
+            }
+
             $order->statusHistory()->create([
                 'from_status' => null,
                 'to_status' => OrderStatus::PendingReview,

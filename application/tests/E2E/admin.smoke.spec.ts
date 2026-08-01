@@ -13,6 +13,14 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
 
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole('heading', { name: /oversikt/i })).toBeVisible();
+    await page.getByRole('navigation').getByRole('link', { name: 'Tjenesteforespørsler', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/service-requests/);
+    await expect(page.getByRole('heading', { name: 'Tjenesteforespørsler', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Oversikt', exact: true }).click();
+    await page.getByRole('link', { name: 'Tilleggstjenester', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/service-addons/);
+    await expect(page.getByRole('heading', { name: 'Tilleggstjenester', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Oversikt', exact: true }).click();
 
     await page.getByRole('link', { name: 'Katalog', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/catalog/);
@@ -25,15 +33,15 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await page.getByRole('combobox', { name: /status/i }).selectOption('pending_review');
     await page.getByRole('button', { name: /filtrer/i }).click();
     await page.getByText('ET-E2E-ORDER').click();
-    await expect(page.getByText('Immutable items and pricing snapshot')).toBeVisible();
-    await expect(page.getByText(/NDI reserve\/cancel unavailable/i)).toBeVisible();
+    await expect(page.getByText(/Uforanderlig varelinje-/i)).toBeVisible();
+    await expect(page.getByText(/NDI-reservering/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Submit NDI|Reserve|Cancel API/i })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Submit NDI|Reserve|Cancel API/i })).toHaveCount(0);
 
     await page.getByTestId('switch-language-ru').click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
     await expect(page.getByRole('heading', { name: 'ET-E2E-ORDER' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Товары и снимок цены' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Товары', exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Панель управления' }).click();
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole('heading', { name: 'Панель управления' })).toBeVisible();

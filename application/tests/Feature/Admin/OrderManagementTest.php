@@ -20,10 +20,11 @@ test('guests and customers cannot access order administration', function (): voi
 
 test('admin filters orders, sees detail snapshots, and dashboard exposes no customer pii', function (): void {
     $admin = User::factory()->operations()->create();
-    $order = adminOrder(['public_reference' => 'ET-FILTER', 'customer_email' => 'person@example.test']);
+    $order = adminOrder(['public_reference' => 'ET-FILTER', 'customer_email' => 'person@example.test', 'subtotal_minor' => 300, 'total_minor' => 300]);
     $order->items()->create(['external_sku' => '001', 'product_title' => 'Tyre', 'quantity' => 1, 'unit_price_minor' => 100, 'line_total_minor' => 100, 'currency' => 'NOK', 'product_snapshot' => ['brand' => 'B'], 'pricing_snapshot' => ['rule_name' => 'Rule']]);
-    $this->actingAs($admin)->get('/admin/orders?q=ET-FILTER&status=pending_review')->assertOk()->assertSee('ET-FILTER')->assertSee('Til gjennomgang')->assertSee('Ikke startet')->assertSee('Ikke sendt');
-    $this->actingAs($admin)->get('/admin/orders/'.$order->id)->assertOk()->assertSee('Immutable items and pricing snapshot')->assertSee('NDI reserve/cancel unavailable')->assertDontSee('Mark paid')->assertDontSee('Submit NDI')->assertDontSee('product_snapshot')->assertDontSee('<pre>', false);
+    $order->serviceItems()->create(['service_code' => 'mounting', 'title_nb' => 'Montering', 'title_ru' => 'Монтаж', 'applicability' => 'tire', 'billing_mode' => 'per_item', 'quantity' => 1, 'unit_price_minor' => 200, 'line_total_minor' => 200, 'currency' => 'NOK', 'service_snapshot' => ['code' => 'mounting']]);
+    $this->actingAs($admin)->get('/admin/orders?q=ET-FILTER&status=pending_review')->assertOk()->assertSee('ET-FILTER')->assertSee('Til gjennomgang')->assertSee('Ikke startet')->assertSee('Ikke sendt')->assertSee('1,00 NOK')->assertSee('2,00 NOK');
+    $this->actingAs($admin)->get('/admin/orders/'.$order->id)->assertOk()->assertSee(__('order_ui.immutable_snapshot'))->assertSee('Montering')->assertSee('Tjenestesum')->assertSee('2,00 NOK')->assertSee(__('order_ui.ndi_unavailable'))->assertSee('action="'.route('admin.orders.transition', $order).'"', false)->assertSee('name="note" required', false)->assertDontSee('Mark paid')->assertDontSee('Submit NDI')->assertDontSee('product_snapshot')->assertDontSee('<pre>', false);
     $this->actingAs($admin)->get('/admin')->assertOk()->assertDontSee('person@example.test')->assertDontSee('ET-FILTER');
 });
 
@@ -35,6 +36,14 @@ test('valid enum order filter is applied', function (): void {
     $admin = User::factory()->operations()->create();
     adminOrder(['public_reference' => 'ET-VALID']);
     $this->actingAs($admin)->get('/admin/orders?status=pending_review')->assertOk()->assertSee('ET-VALID')->assertSee('Til gjennomgang');
+});
+
+test('admin order detail localizes ordered service snapshots to Russian', function (): void {
+    $admin = User::factory()->operations()->create(['locale' => 'ru']);
+    $order = adminOrder();
+    $order->serviceItems()->create(['service_code' => 'mounting', 'title_nb' => 'Montering', 'title_ru' => 'Монтаж', 'applicability' => 'tire', 'billing_mode' => 'per_item', 'quantity' => 2, 'unit_price_minor' => 5000, 'line_total_minor' => 10000, 'currency' => 'NOK', 'service_snapshot' => ['code' => 'mounting']]);
+
+    $this->actingAs($admin)->get('/admin/orders/'.$order->id)->assertOk()->assertSee('Монтаж')->assertSee('Дополнительные услуги');
 });
 
 test('admin can execute an allowed transition and history is retained', function (): void {

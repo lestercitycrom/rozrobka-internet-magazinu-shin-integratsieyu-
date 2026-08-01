@@ -7,8 +7,8 @@ use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\ReadModel\CatalogQuery;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
 use App\Modules\Pricing\SellingPriceService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CatalogController extends Controller

@@ -24,19 +24,27 @@
                 <span class="grid size-9 place-items-center" aria-hidden="true"><img src="/brand/easytire-mark.svg" alt="" class="size-9 object-contain"></span><span>EasyTire</span>
             </a>
             <nav aria-label="{{ __('storefront.main_navigation') }}" class="hidden items-center gap-7 text-sm font-semibold text-slate-700 md:flex" data-testid="desktop-navigation">
-                <a href="{{ route($routePrefix.'tires.index') }}" class="rounded hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.tires') }}</a><a href="{{ route($routePrefix.'wheels.index') }}" class="rounded hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.wheels') }}</a><a href="{{ route($routePrefix.'services.index') }}" class="rounded hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.services') }}</a>
+                <a href="{{ route($routePrefix.'tires.index') }}" class="rounded hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.tires') }}</a><a href="{{ route($routePrefix.'wheels.index') }}" class="rounded hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.wheels') }}</a><a href="{{ route($routePrefix.'fitment.create') }}" class="rounded hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('fitment.nav') }}</a><a href="{{ route($routePrefix.'services.index') }}" class="rounded hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.services') }}</a>
             </nav>
             <a href="{{ route($routePrefix.'tires.index') }}" class="rounded-full bg-easytire-brand px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-easytire-brand-strong focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.find_tires') }}</a>
             <a href="{{ route($routePrefix.'cart.index') }}" class="min-h-11 rounded px-2 py-2 text-sm font-bold text-easytire-ink">{{ __('storefront.cart') }} ({{ $cartCount }})</a>
         </div>
         <nav aria-label="{{ __('storefront.quick_links') }}" class="border-t border-easytire-border px-5 py-3 md:hidden" data-testid="mobile-navigation">
             <div class="mx-auto flex max-w-7xl gap-5 overflow-x-auto text-sm font-semibold text-easytire-muted">
-                <a href="{{ route($routePrefix.'tires.index') }}" class="shrink-0">{{ __('storefront.tires') }}</a><a href="{{ route($routePrefix.'wheels.index') }}" class="shrink-0">{{ __('storefront.wheels') }}</a><a href="{{ route($routePrefix.'home') }}#tjenester" class="shrink-0">{{ __('storefront.services') }}</a>
+                <a href="{{ route($routePrefix.'tires.index') }}" class="shrink-0">{{ __('storefront.tires') }}</a><a href="{{ route($routePrefix.'wheels.index') }}" class="shrink-0">{{ __('storefront.wheels') }}</a><a href="{{ route($routePrefix.'fitment.create') }}" class="shrink-0">{{ __('fitment.nav') }}</a><a href="{{ route($routePrefix.'home') }}#tjenester" class="shrink-0">{{ __('storefront.services') }}</a>
             </div>
         </nav>
     </header>
     <main id="innhold">{{ $slot }}</main>
+    @php($footerPages = app(\App\Modules\Content\ReadModel\PublishedContentPageReadService::class)->publishedSlugs(['om-oss', 'kontakt', 'personvern', 'kjopsvilkar']))
     <footer class="mt-16 bg-easytire-ink px-5 py-9 text-sm text-white/75 sm:px-8">
+        <nav class="mx-auto mb-5 flex max-w-7xl flex-wrap gap-x-5 gap-y-3" aria-label="{{ __('legal.terms') }}">
+            @foreach (['om-oss' => 'about', 'kontakt' => 'contact', 'personvern' => 'privacy', 'kjopsvilkar' => 'terms'] as $slug => $label)
+                @if (isset($footerPages[$slug]))
+                    <a class="rounded underline decoration-white/40 underline-offset-4 hover:text-white focus:outline-2 focus:outline-offset-4 focus:outline-white" href="{{ route($routePrefix.'content.show', $slug) }}">{{ __('legal.'.$label) }}</a>
+                @endif
+            @endforeach
+        </nav>
         <div class="mx-auto flex max-w-7xl flex-col justify-between gap-2 sm:flex-row"><p class="font-semibold text-white">EasyTire · Tromsø</p><p>{{ __('storefront.footer') }}</p></div>
     </footer>
 </body>

@@ -47,6 +47,11 @@ install -d -m 2770 -o "$APP_USER" -g "$APP_GROUP" \
 [[ -e "$REPO" ]] || git init --bare --shared=group "$REPO"
 chown -R "$APP_USER:$APP_GROUP" "$REPO"
 install -m 755 -o "$APP_USER" -g "$APP_GROUP" "$DEPLOY_SOURCE/post-receive" "$REPO/hooks/post-receive"
+install -m 644 "$DEPLOY_SOURCE/easytire-queue.service" /etc/systemd/system/easytire-queue.service
+install -m 644 "$DEPLOY_SOURCE/easytire-schedule.service" /etc/systemd/system/easytire-schedule.service
+install -m 644 "$DEPLOY_SOURCE/easytire-schedule.timer" /etc/systemd/system/easytire-schedule.timer
+systemctl daemon-reload
+systemctl enable easytire-queue.service easytire-schedule.timer
 
 if [[ ! -f "$APP_ROOT/shared/.env" ]]; then
 db_password="$(openssl rand -base64 36 | tr -d '\n' | tr '/+' 'ab' | cut -c1-32)"
@@ -88,5 +93,9 @@ mv -Tf "$enabled_tmp" "/etc/nginx/sites-enabled/$DOMAIN"
 nginx -t
 systemctl reload nginx
 certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email -d "$DOMAIN" --redirect
+systemctl start easytire-schedule.timer
+if [[ -L "$APP_ROOT/current" ]]; then
+  systemctl restart easytire-queue.service
+fi
 
 echo "Bootstrap complete. Git remote: $APP_USER@95.217.153.189:$REPO"

@@ -20,7 +20,7 @@ final class MediaAssetController extends Controller
     {
         $mediaAsset->update($request->validate(['alt_nb' => ['nullable', 'string', 'max:255'], 'alt_ru' => ['nullable', 'string', 'max:255']]));
 
-        return back();
+        return back()->with('status', __('media_ui.updated'));
     }
 
     public function store(Request $r)
@@ -35,7 +35,7 @@ final class MediaAssetController extends Controller
         Storage::disk('public')->putFileAs('media', $f, basename($path));
         MediaAsset::create(['disk' => 'public', 'path' => $path, 'original_name' => $f->getClientOriginalName(), 'mime' => $mime, 'byte_size' => $f->getSize(), 'width' => $w, 'height' => $h, 'sha256' => hash_file('sha256', $f->getRealPath()), 'alt_nb' => $r->input('alt_nb'), 'alt_ru' => $r->input('alt_ru'), 'uploader_id' => $r->user()->id]);
 
-        return back();
+        return back()->with('status', __('media_ui.uploaded'));
     }
 
     public function destroy(MediaAsset $mediaAsset)

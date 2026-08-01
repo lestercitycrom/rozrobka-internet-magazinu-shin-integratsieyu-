@@ -12,5 +12,8 @@ return [
     'price_unavailable' => 'Pris er ikke klar for netthandel',
     'selling_price_note' => 'Pris beregnet etter den aktive prisregelen.',
     'unavailable_note' => 'Produktet kan ikke bestilles før pris og tilgjengelighet er bekreftet.',
-    'any' => 'Alle', 'all_brands' => 'Alle merker', 'center_bore' => 'Navdiameter', 'in_stock' => 'Kun på lager', 'sort' => 'Sorter', 'sort_recommended' => 'Anbefalt', 'sort_title' => 'Produktnavn', 'sort_brand' => 'Merke', 'active_filters' => 'Valgte filtre', 'remove_filter' => 'Fjern filter', 'reset_all' => 'Nullstill alle', 'yes' => 'Ja',
+    'any' => 'Alle', 'all_brands' => 'Alle merker', 'center_bore' => 'Navdiameter', 'in_stock' => 'Kun på lager', 'sort' => 'Sorter', 'sort_recommended' => 'Anbefalt', 'sort_title' => 'Produktnavn', 'sort_brand' => 'Merke', 'active_filters' => 'Valgte filtre', 'remove_filter' => 'Fjern filter', 'reset_all' => 'Nullstill alle', 'yes' => 'Ja', 'no' => 'Nei',
+    'image_unavailable' => 'Produktbilde mangler', 'image_unavailable_for' => 'Produktbilde er ikke tilgjengelig for :product',
+    'technical_details' => 'Tekniske spesifikasjoner', 'load_index' => 'Belastningsindeks', 'speed_symbol' => 'Hastighetskode', 'construction' => 'Konstruksjon', 'reinforced' => 'Forsterket', 'run_flat' => 'Run-flat', 'winter_type' => 'Vintertype', 'three_peak_mountain_snowflake' => '3PMSF vintermerking', 'ice_grip' => 'Isgrep', 'production_year' => 'Produksjonsår', 'color' => 'Farge', 'bolt_hole_boring' => 'Bolthull',
+    'eu_label' => 'EU-dekkmerking', 'rolling_resistance' => 'Rullemotstand', 'wet_grip' => 'Våtgrep', 'external_noise' => 'Utvendig støy', 'noise_class' => 'Støyklasse', 'label_not_reported' => 'Ingen EU-merkedata er oppgitt for denne varen.',
 ];

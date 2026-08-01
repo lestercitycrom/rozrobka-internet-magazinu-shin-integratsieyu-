@@ -48,6 +48,25 @@ class CatalogDemoSeeder extends Seeder
         CurrentStock::query()->firstOrCreate([
             'supplier_sku_id' => $sku->id, 'warehouse_id' => $warehouse->id,
         ], ['quantity' => 4, 'observed_at' => now(), 'source_artifact_id' => $artifactId]);
+
+        $wheel = Product::query()->firstOrCreate(['title' => 'Demo 8x18 5x112'], [
+            'product_type' => ProductType::Wheel,
+            'brand_id' => $brand->id,
+            'model_name' => 'Urban Demo',
+            'publication_status' => PublicationStatus::Published,
+            'first_seen_at' => now(),
+        ]);
+        $wheel->wheelSpec()->firstOrCreate([], [
+            'width_in' => '8.00', 'diameter_in' => '18.00', 'bolt_holes' => 5,
+            'pcd_mm' => '112.00', 'offset_et_mm' => '45.00', 'center_bore_mm' => '66.60',
+            'color' => 'Silver',
+        ]);
+        $wheelSku = SupplierSku::query()->firstOrCreate([
+            'supplier_id' => $supplier->id, 'external_sku' => 'DEMO-WHEEL-18112',
+        ], ['product_id' => $wheel->id, 'catalog_state' => CatalogState::Catalog]);
+        CurrentStock::query()->firstOrCreate([
+            'supplier_sku_id' => $wheelSku->id, 'warehouse_id' => $warehouse->id,
+        ], ['quantity' => 4, 'observed_at' => now(), 'source_artifact_id' => $artifactId]);
     }
 
     private function artifactId(int $supplierId): string

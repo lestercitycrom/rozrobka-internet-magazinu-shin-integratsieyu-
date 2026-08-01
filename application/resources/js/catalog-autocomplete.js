@@ -48,5 +48,6 @@ document.querySelectorAll('[data-mobile-filter]').forEach((filters) => {
     const sync = () => { filters.open = desktop.matches; };
 
     sync();
+    filters.dataset.filterReady = 'true';
     desktop.addEventListener('change', sync);
 });

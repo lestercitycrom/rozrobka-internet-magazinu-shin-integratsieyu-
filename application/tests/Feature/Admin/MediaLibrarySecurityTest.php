@@ -51,6 +51,16 @@ test('an assigned asset cannot be deleted', function (): void {
     expect(MediaAsset::query()->whereKey($asset->id)->exists())->toBeTrue();
 });
 
+test('supplier-managed media is visible but has no delete control', function (): void {
+    Storage::fake('public');
+    $admin = User::factory()->operations()->create();
+    $path = 'media/supplier.png';
+    Storage::disk('public')->put($path, 'fixture');
+    MediaAsset::create(['disk' => 'public', 'path' => $path, 'original_name' => 'supplier.png', 'mime' => 'image/png', 'byte_size' => 7, 'width' => 1, 'height' => 1, 'sha256' => hash('sha256', $path), 'uploader_id' => null]);
+
+    $this->actingAs($admin)->get('/admin/media')->assertOk()->assertSee('Administrert av NDI')->assertDontSee('action="'.route('admin.media.destroy', 1).'"', false);
+});
+
 test('an unassigned asset delete removes its public storage object', function (): void {
     Storage::fake('public');
     $admin = User::factory()->operations()->create();

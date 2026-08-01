@@ -1,5 +1,21 @@
 # EasyTire staging deployment
 
+The one-time bootstrap also installs two systemd units:
+
+- `easytire-queue.service` keeps the database queue worker alive and restarts it after failure;
+- `easytire-schedule.timer` runs Laravel's scheduler every minute.
+
+Every activated release calls `queue:restart`, so the long-running worker switches to the new code without granting the deploy hook unrestricted `sudo` access.
+
+Verify them after bootstrap or a server change:
+
+```bash
+systemctl is-active easytire-queue.service
+systemctl is-active easytire-schedule.timer
+systemctl list-timers easytire-schedule.timer --no-pager
+sudo -u easytire-deploy /usr/bin/php /var/www/staging-easytire.bethub.fun/current/application/artisan schedule:list
+```
+
 This directory contains the reviewed server bootstrap material only. It does not initialize, commit, or push the local repository. The Laravel project is intentionally located in repository subdirectory `application/`.
 
 ## One-time server setup

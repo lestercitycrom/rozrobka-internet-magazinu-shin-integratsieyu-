@@ -88,6 +88,26 @@ test('batch pricing loads the active rule set only once', function (): void {
         ->and($ruleQueries)->toHaveCount(1);
 });
 
+test('invalid stored adjustments fail closed instead of exposing zero price or crashing the catalog', function (int $basisPoints, int $fixedMinor, int $roundingMinor): void {
+    PricingRule::create([
+        'name' => 'Unsafe imported rule',
+        'scope' => PricingRuleScope::Global,
+        'source_price_list_code' => 'public',
+        'currency' => 'NOK',
+        'markup_basis_points' => $basisPoints,
+        'fixed_markup_minor' => $fixedMinor,
+        'rounding_increment_minor' => $roundingMinor,
+        'priority' => 1,
+        'is_active' => true,
+    ]);
+
+    expect(app(SellingPriceService::class)->forItem(pricingCatalogItem()))->toBeNull();
+})->with([
+    'zero result' => [-10000, 0, 1],
+    'negative result' => [-20000, 0, 1],
+    'invalid rounding' => [0, 0, 0],
+]);
+
 function pricingCatalogItem(): CatalogItem
 {
     return new CatalogItem(

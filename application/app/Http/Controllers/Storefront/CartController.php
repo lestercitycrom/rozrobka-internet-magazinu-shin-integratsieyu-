@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Storefront\CartLineRequest;
+use App\Http\Requests\Storefront\CartServiceAddonRequest;
 use App\Modules\Cart\CartResolver;
 use App\Modules\Cart\SessionCart;
 
@@ -31,6 +32,20 @@ class CartController extends Controller
     public function remove(CartLineRequest $r, SessionCart $cart)
     {
         $cart->remove($r->string('sku')->toString());
+
+        return back();
+    }
+
+    public function addServiceAddon(CartServiceAddonRequest $request, SessionCart $cart)
+    {
+        $cart->addServiceAddon($request->string('code')->toString());
+
+        return back();
+    }
+
+    public function removeServiceAddon(CartServiceAddonRequest $request, SessionCart $cart)
+    {
+        $cart->removeServiceAddon($request->string('code')->toString());
 
         return back();
     }

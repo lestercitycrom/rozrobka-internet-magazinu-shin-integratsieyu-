@@ -4,5 +4,10 @@ namespace App\Modules\Cart\Data;
 
 final readonly class CartIssue
 {
-    public function __construct(public string $sku, public int $quantity, public string $reason) {}
+    public function __construct(
+        public string $sku,
+        public int $quantity,
+        public string $reason,
+        public ?int $availableQuantity = null,
+    ) {}
 }

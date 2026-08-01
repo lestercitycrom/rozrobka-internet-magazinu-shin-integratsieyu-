@@ -5,6 +5,7 @@ namespace App\Modules\NdiImport;
 use App\Modules\Catalog\Models\ProductMediaSource;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\MediaAssignment;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -214,7 +215,7 @@ final class NdiProductMediaSynchronizer
         ];
     }
 
-    /** @param \Illuminate\Support\Collection<int, ProductMediaSource> $sources */
+    /** @param Collection<int, ProductMediaSource> $sources */
     private function markDownloaded($sources, MediaAsset $asset): int
     {
         return DB::transaction(function () use ($sources, $asset): int {
@@ -256,7 +257,7 @@ final class NdiProductMediaSynchronizer
         });
     }
 
-    /** @param \Illuminate\Support\Collection<int, ProductMediaSource> $sources */
+    /** @param Collection<int, ProductMediaSource> $sources */
     private function markFailed($sources, \Throwable $exception): void
     {
         foreach ($sources as $source) {

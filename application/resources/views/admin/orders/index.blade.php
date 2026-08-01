@@ -66,6 +66,8 @@
                             <th class="p-4">{{ __('orders.status') }}</th>
                             <th class="p-4">{{ __('orders.payment') }}</th>
                             <th class="p-4">{{ __('orders.ndi') }}</th>
+                            <th class="p-4">{{ __('order_ui.product_total') }}</th>
+                            <th class="p-4">{{ __('order_ui.service_total') }}</th>
                             <th class="p-4">{{ __('orders.total') }}</th>
                             <th class="p-4">{{ __('orders.submitted') }}</th>
                         </tr>
@@ -77,6 +79,8 @@
                                 <td class="p-4">{{ __('order_statuses.'.$order->status->value) }}</td>
                                 <td class="p-4">{{ __('payment_statuses.'.$order->payment_status->value) }}</td>
                                 <td class="p-4">{{ __('ndi_statuses.'.$order->ndi_status->value) }}</td>
+                                <td class="p-4">{{ number_format(($order->product_total_minor ?? 0) / 100, 2, ',', ' ') }} {{ $order->currency }}</td>
+                                <td class="p-4">{{ number_format(($order->service_total_minor ?? 0) / 100, 2, ',', ' ') }} {{ $order->currency }}</td>
                                 <td class="p-4 font-bold">{{ number_format($order->total_minor / 100, 2, ',', ' ') }} {{ $order->currency }}</td>
                                 <td class="p-4">{{ $order->submitted_at?->format('Y-m-d H:i') ?? '—' }}</td>
                             </tr>

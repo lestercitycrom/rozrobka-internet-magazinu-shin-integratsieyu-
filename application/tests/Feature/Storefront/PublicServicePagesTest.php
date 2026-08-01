@@ -10,8 +10,20 @@ test('published Norwegian service pages are public and drafts are not', function
     servicePreviewPage('mobile', ServicePagePublicationStatus::Published);
     servicePreviewPage('draft', ServicePagePublicationStatus::Draft);
     $this->get('/tjenester')->assertOk()->assertSee('Mobil tjeneste');
-    $this->get('/tjenester/mobile')->assertOk()->assertSee('Norsk innhold');
+    $this->get('/tjenester/mobile')
+        ->assertOk()
+        ->assertSee('Norsk innhold')
+        ->assertSee('href="'.route('storefront.requests.create', 'mobile').'"', false);
     $this->get('/tjenester/draft')->assertNotFound();
+});
+
+test('Russian service preview keeps the selected service in its request CTA', function (): void {
+    servicePreviewPage('mobile', ServicePagePublicationStatus::Published);
+    config()->set('storefront.ru_preview_enabled', true);
+
+    $this->get('/ru/tjenester/mobile')
+        ->assertOk()
+        ->assertSee('href="'.route('storefront.preview.requests.create', 'mobile').'"', false);
 });
 
 test('homepage hides the services block when no services are published in NB and RU preview', function (): void {

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the EasyTire Laravel scheduler every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Persistent=true
+Unit=easytire-schedule.service
+
+[Install]
+WantedBy=timers.target

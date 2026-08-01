@@ -6,6 +6,9 @@ use App\Modules\Catalog\Enums\TaxMode;
 use App\Modules\Catalog\Models\PriceList;
 use App\Modules\Catalog\Models\SkuPrice;
 use App\Modules\Catalog\Models\SupplierSku;
+use App\Modules\Commerce\Enums\ServiceAddonApplicability;
+use App\Modules\Commerce\Enums\ServiceAddonBillingMode;
+use App\Modules\Commerce\Models\ServiceAddon;
 use App\Modules\Orders\Enums\FulfilmentMethod;
 use App\Modules\Orders\Enums\NdiOrderStatus;
 use App\Modules\Orders\Enums\OrderStatus;
@@ -26,9 +29,31 @@ class E2eStorefrontSeeder extends Seeder
             throw new LogicException('E2E storefront fixtures are restricted to testing/local.');
         }
 
-        $this->call([CatalogDemoSeeder::class, ServicePageSeeder::class]);
+        $this->call([CatalogDemoSeeder::class, ServicePageSeeder::class, ServiceAddonSeeder::class]);
+
+        ServiceAddon::query()->updateOrCreate(['code' => 'e2e-wheel-care'], [
+            'title_nb' => 'E2E felgservice',
+            'title_ru' => 'E2E-сервис для дисков',
+            'applicability' => ServiceAddonApplicability::Wheel,
+            'billing_mode' => ServiceAddonBillingMode::PerItem,
+            'currency' => 'NOK',
+            'price_minor' => 9900,
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        ServiceAddon::query()->updateOrCreate(['code' => 'e2e-tire-care'], [
+            'title_nb' => 'E2E dekkservice',
+            'title_ru' => 'E2E-сервис для шин',
+            'applicability' => ServiceAddonApplicability::Tire,
+            'billing_mode' => ServiceAddonBillingMode::PerOrder,
+            'currency' => 'NOK',
+            'price_minor' => 7900,
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
 
         $sku = SupplierSku::query()->where('external_sku', '000205550016')->firstOrFail();
+        $wheelSku = SupplierSku::query()->where('external_sku', 'DEMO-WHEEL-18112')->firstOrFail();
         $priceList = PriceList::query()->firstOrCreate([
             'supplier_id' => $sku->supplier_id,
             'code' => 'public',
@@ -40,6 +65,16 @@ class E2eStorefrontSeeder extends Seeder
             ['supplier_sku_id' => $sku->id, 'price_list_id' => $priceList->id],
             [
                 'amount' => '1499.0000',
+                'observed_at' => now(),
+                'source_artifact_id' => DB::table('source_artifacts')
+                    ->where('storage_key', 'demo/catalog-seed.xlsx')
+                    ->value('id'),
+            ],
+        );
+        SkuPrice::query()->updateOrCreate(
+            ['supplier_sku_id' => $wheelSku->id, 'price_list_id' => $priceList->id],
+            [
+                'amount' => '2199.0000',
                 'observed_at' => now(),
                 'source_artifact_id' => DB::table('source_artifacts')
                     ->where('storage_key', 'demo/catalog-seed.xlsx')

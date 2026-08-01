@@ -61,7 +61,9 @@ final class CatalogReadService
     public function suggestions(ProductType $productType, string $term): array
     {
         $term = trim($term);
-        if (mb_strlen($term) < 2) return [];
+        if (mb_strlen($term) < 2) {
+            return [];
+        }
 
         return $this->baseQuery(new CatalogQuery(productType: $productType))
             ->where(function (Builder $query) use ($term): void {
@@ -89,6 +91,7 @@ final class CatalogReadService
             ->join('suppliers', 'suppliers.id', '=', 'supplier_skus.supplier_id')
             ->join('brands', 'brands.id', '=', 'products.brand_id')
             ->leftJoin('tire_specs', 'tire_specs.product_id', '=', 'products.id')
+            ->leftJoin('tire_labels', 'tire_labels.product_id', '=', 'products.id')
             ->leftJoin('wheel_specs', 'wheel_specs.product_id', '=', 'products.id')
             ->where('products.publication_status', PublicationStatus::Published->value)
             ->where('suppliers.is_active', true)
@@ -129,8 +132,14 @@ final class CatalogReadService
             'supplier_skus.*',
             'products.product_type as catalog_product_type', 'products.model_name as catalog_model_name', 'products.title as catalog_title',
             'brands.canonical_name as catalog_brand',
-            'tire_specs.width_mm as tire_width_mm', 'tire_specs.aspect_ratio as tire_aspect_ratio', 'tire_specs.rim_diameter_in as tire_rim_diameter_in', 'tire_specs.season as tire_season',
-            'wheel_specs.width_in as wheel_width_in', 'wheel_specs.diameter_in as wheel_diameter_in', 'wheel_specs.bolt_holes as wheel_bolt_holes', 'wheel_specs.pcd_mm as wheel_pcd_mm', 'wheel_specs.offset_et_mm as wheel_offset_et_mm', 'wheel_specs.center_bore_mm as wheel_center_bore_mm',
+            'tire_specs.width_mm as tire_width_mm', 'tire_specs.width_inch as tire_width_inch', 'tire_specs.aspect_ratio as tire_aspect_ratio', 'tire_specs.rim_diameter_in as tire_rim_diameter_in',
+            'tire_specs.load_index as tire_load_index', 'tire_specs.speed_symbol as tire_speed_symbol', 'tire_specs.construction as tire_construction', 'tire_specs.season as tire_season',
+            'tire_specs.reinforced as tire_reinforced', 'tire_specs.winter_type as tire_winter_type', 'tire_specs.three_peak_mountain_snowflake as tire_3pmsf',
+            'tire_specs.ice_grip as tire_ice_grip', 'tire_specs.run_flat as tire_run_flat', 'tire_specs.production_year as tire_production_year',
+            'tire_labels.rolling_resistance as tire_rolling_resistance', 'tire_labels.wet_grip as tire_wet_grip', 'tire_labels.noise_db as tire_noise_db',
+            'tire_labels.noise_class as tire_noise_class', 'tire_labels.eu_tyre_class as tire_eu_tyre_class', 'tire_labels.eu_label_regulation as tire_eu_label_regulation',
+            'wheel_specs.width_in as wheel_width_in', 'wheel_specs.diameter_in as wheel_diameter_in', 'wheel_specs.bolt_holes as wheel_bolt_holes', 'wheel_specs.pcd_mm as wheel_pcd_mm',
+            'wheel_specs.offset_et_mm as wheel_offset_et_mm', 'wheel_specs.center_bore_mm as wheel_center_bore_mm', 'wheel_specs.bolt_hole_boring as wheel_bolt_hole_boring', 'wheel_specs.color as wheel_color',
         ];
     }
 
@@ -171,11 +180,20 @@ final class CatalogReadService
             ->join('media_assets', 'media_assets.id', '=', 'media_assignments.media_asset_id')
             ->where('media_assignments.assignable_type', Product::class)
             ->where('media_assignments.role', 'primary')
+            ->where('media_assets.is_active', true)
             ->whereIn('media_assignments.assignable_id', $productIds)
             ->get(['media_assignments.assignable_id', 'media_assets.disk', 'media_assets.path', 'media_assets.alt_nb', 'media_assets.alt_ru'])
             ->keyBy('assignable_id');
 
-        return array_map(function (SupplierSku $sku) use ($prices, $stocks, $media): CatalogItem {
+        $nullableBool = static function (mixed $value): ?bool {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+        };
+
+        return array_map(function (SupplierSku $sku) use ($prices, $stocks, $media, $nullableBool): CatalogItem {
             $stock = $stocks->get($sku->id);
             $asset = $media->get($sku->product_id);
             $quantity = $stock === null
@@ -194,8 +212,26 @@ final class CatalogReadService
                     ->values()
                     ->all(),
                 stock: new CatalogStock($quantity, $stock?->observed_at),
-                tire: $sku->getAttribute('tire_rim_diameter_in') === null ? null : ['width_mm' => $sku->getAttribute('tire_width_mm'), 'aspect_ratio' => $sku->getAttribute('tire_aspect_ratio'), 'rim_diameter_in' => $sku->getAttribute('tire_rim_diameter_in'), 'season' => $sku->getAttribute('tire_season')],
-                wheel: $sku->getAttribute('wheel_diameter_in') === null ? null : ['width_in' => $sku->getAttribute('wheel_width_in'), 'diameter_in' => $sku->getAttribute('wheel_diameter_in'), 'bolt_holes' => $sku->getAttribute('wheel_bolt_holes'), 'pcd_mm' => $sku->getAttribute('wheel_pcd_mm'), 'offset_et_mm' => $sku->getAttribute('wheel_offset_et_mm'), 'center_bore_mm' => $sku->getAttribute('wheel_center_bore_mm')],
+                tire: $sku->getAttribute('tire_rim_diameter_in') === null ? null : [
+                    'width_mm' => $sku->getAttribute('tire_width_mm'), 'width_inch' => $sku->getAttribute('tire_width_inch'),
+                    'aspect_ratio' => $sku->getAttribute('tire_aspect_ratio'), 'rim_diameter_in' => $sku->getAttribute('tire_rim_diameter_in'),
+                    'load_index' => $sku->getAttribute('tire_load_index'), 'speed_symbol' => $sku->getAttribute('tire_speed_symbol'),
+                    'construction' => $sku->getAttribute('tire_construction'), 'season' => $sku->getAttribute('tire_season'),
+                    'reinforced' => $nullableBool($sku->getAttribute('tire_reinforced')), 'winter_type' => $sku->getAttribute('tire_winter_type'),
+                    'three_peak_mountain_snowflake' => $nullableBool($sku->getAttribute('tire_3pmsf')), 'ice_grip' => $nullableBool($sku->getAttribute('tire_ice_grip')),
+                    'run_flat' => $nullableBool($sku->getAttribute('tire_run_flat')), 'production_year' => $sku->getAttribute('tire_production_year'),
+                    'label' => [
+                        'rolling_resistance' => $sku->getAttribute('tire_rolling_resistance'), 'wet_grip' => $sku->getAttribute('tire_wet_grip'),
+                        'noise_db' => $sku->getAttribute('tire_noise_db'), 'noise_class' => $sku->getAttribute('tire_noise_class'),
+                        'eu_tyre_class' => $sku->getAttribute('tire_eu_tyre_class'), 'regulation' => $sku->getAttribute('tire_eu_label_regulation'),
+                    ],
+                ],
+                wheel: $sku->getAttribute('wheel_diameter_in') === null ? null : [
+                    'width_in' => $sku->getAttribute('wheel_width_in'), 'diameter_in' => $sku->getAttribute('wheel_diameter_in'),
+                    'bolt_holes' => $sku->getAttribute('wheel_bolt_holes'), 'pcd_mm' => $sku->getAttribute('wheel_pcd_mm'),
+                    'offset_et_mm' => $sku->getAttribute('wheel_offset_et_mm'), 'center_bore_mm' => $sku->getAttribute('wheel_center_bore_mm'),
+                    'bolt_hole_boring' => $sku->getAttribute('wheel_bolt_hole_boring'), 'color' => $sku->getAttribute('wheel_color'),
+                ],
                 primaryMedia: $asset === null ? null : ['url' => Storage::disk($asset->disk)->url($asset->path), 'alt_nb' => $asset->alt_nb, 'alt_ru' => $asset->alt_ru],
             );
         }, $skus);

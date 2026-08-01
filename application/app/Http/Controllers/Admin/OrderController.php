@@ -19,14 +19,14 @@ final class OrderController
             abort(422);
         }
 
-        $orders = Order::query()->when($f->status, fn ($q, $v) => $q->where('status', $v->value))->when($f->payment, fn ($q, $v) => $q->where('payment_status', $v->value))->when($f->ndi, fn ($q, $v) => $q->where('ndi_status', $v->value))->when($f->query, fn ($q, $v) => $q->where(fn ($x) => $x->where('public_reference', 'like', "%$v%")->orWhere('customer_email', 'like', "%$v%")))->when($f->from, fn ($q, $v) => $q->whereDate('submitted_at', '>=', $v))->when($f->to, fn ($q, $v) => $q->whereDate('submitted_at', '<=', $v))->latest('submitted_at')->paginate(30)->withQueryString();
+        $orders = Order::query()->withSum('items as product_total_minor', 'line_total_minor')->withSum('serviceItems as service_total_minor', 'line_total_minor')->when($f->status, fn ($q, $v) => $q->where('status', $v->value))->when($f->payment, fn ($q, $v) => $q->where('payment_status', $v->value))->when($f->ndi, fn ($q, $v) => $q->where('ndi_status', $v->value))->when($f->query, fn ($q, $v) => $q->where(fn ($x) => $x->where('public_reference', 'like', "%$v%")->orWhere('customer_email', 'like', "%$v%")))->when($f->from, fn ($q, $v) => $q->whereDate('submitted_at', '>=', $v))->when($f->to, fn ($q, $v) => $q->whereDate('submitted_at', '<=', $v))->latest('submitted_at')->paginate(30)->withQueryString();
 
         return view('admin.orders.index', ['orders' => $orders, 'f' => $request->query()]);
     }
 
     public function show(Order $order, TransitionOrder $t)
     {
-        $order->load(['items', 'statusHistory.actor', 'ndiOrderAttempt']);
+        $order->load(['items', 'serviceItems', 'statusHistory.actor', 'ndiOrderAttempt']);
 
         return view('admin.orders.show', ['order' => $order, 'allowed' => $t->allowedFor($order)]);
     }

@@ -1,29 +1,33 @@
 # Release readiness checklist
 
-This checklist reflects the current `deploy/post-receive`, `deploy/README.md`, `.env.example`, and operations runbook. It does not add deployment commands beyond those artifacts.
+Статус на 2026-08-01: **не готово к production release**. Staging и внутренние тесты не заменяют production acceptance.
 
-## Before release
+Текущая фактическая картина и внешние блокеры: [CURRENT_PROJECT_STATUS_2026-08-01.md](../management/CURRENT_PROJECT_STATUS_2026-08-01.md).
 
-- Confirm the release can pass the hook's existing Composer install, `npm ci`, production build, `php artisan test`, migration, and cache steps.
-- Review new migrations for backup/restore compatibility. The hook runs `php artisan migrate --force --no-interaction` before the atomic `current` switch.
-- Keep all NDI mutation flags disabled: `NDI_INQUIRY_ENABLED=false`, `NDI_ORDER_ENABLED=false`, `NDI_C1_TEST_MODE=false`, and `NDI_FULFILMENT_READ_ENABLED=false` unless separately approved.
-- Keep `OUTBOX_NOTION_ENABLED=false` and `OUTBOX_TELEGRAM_ENABLED=false` until each destination contract is approved.
-- Confirm no NDI credentials, payloads, or supplier files are committed or placed in release notes.
+## Перед release
 
-## C1 gate
+- Прогнать существующие Composer install, `npm ci`, production build, `php artisan test`, миграции и cache steps release hook.
+- Проверить новые миграции на backup/restore. Hook выполняет `migrate --force --no-interaction` до атомарного переключения `current`.
+- Не включать NDI A2/C1, payment, Notion, Telegram или Statens по умолчанию. Каждый флаг требует отдельного подтверждённого набора внешних данных и smoke test.
+- Подтвердить утверждённые NB legal/contact/service тексты и права на изображения/поставочный фид.
+- Не включать исходные файлы NDI, credential values, PII или webhook payloads в repository, release notes или логи.
 
-**C1 notice must be sent and acknowledged before enabling any NDI order/C1-related capability.** This release does not authorize C1 order notice, reserve, cancellation, or production order traffic.
+## Внешние gates
 
-## After deployment
+- NDI: исправленные Basic credentials для sales endpoint, production PartyID, SFTP/schedule, уведомление и письменное разрешение C1; см. [credential check](../research/NDI_LIVE_CREDENTIAL_CHECK_2026-08-01.md) и [official reply](../research/NDI_API_OFFICIAL_REPLY_2026-07-31.md).
+- Коммерция: утверждённые VAT/environmental fee/markup/rounding и service/add-on pricing rules.
+- Оплата: выбранный provider с подтверждёнными authorization, capture и void/refund policy.
+- Operations: off-host encrypted backup destination и проверенный restore.
 
-- Run the existing redacted health check: `php artisan easytire:health`.
-- For the first supplier-media release, verify the shared environment has `NDI_PARSER_VERSION=1.1.0`, re-import the official three-workbook bundle once, then run `php artisan ndi:media:sync --limit=50` and record downloaded/failed counts.
-- Confirm the existing database queue worker and minute scheduler/cron are running; the scheduler invokes the outbox cadence without overlap.
-- Smoke-test `/`, `/dekk`, `/tjenester`, `/admin/login`, an authorized `/admin`, `/admin/orders`, and `/admin/health`.
-- Confirm `/robots.txt` and `/sitemap.xml` respond as intended for the environment.
+## После deployment
 
-## Rollback and backup verification
+- Запустить redacted `php artisan easytire:health`.
+- Проверить scheduler и queue worker, pending/failed outbox, public routes и admin login.
+- Для supplier-media release: `NDI_PARSER_VERSION=1.1.0`, повторный импорт официального пакета и `php artisan ndi:media:sync --limit=50`; записать counts downloaded/failed.
+- Проверить `/robots.txt`, `/sitemap.xml`, `/`, `/dekk`, `/tjenester`, `/admin/login`, authorized `/admin`, `/admin/orders`, `/admin/health`.
 
-- Before switching a release, confirm an encrypted database backup and a tested restore path exist.
-- If post-deploy verification fails, restore the previous atomic release as described by the deployment mechanism; do not run destructive schema rollback without an approved recovery plan.
-- Recheck health, public routes, admin authentication, queue worker, scheduler, and pending/failed outbox counts after rollback.
+## Rollback и backup
+
+- До переключения должна существовать encrypted backup и проверенный restore на независимой off-host площадке.
+- При сбое вернуть предыдущий атомарный release по deploy-механизму; не делать destructive schema rollback без согласованного recovery plan.
+- После rollback перепроверить health, admin auth, queue, scheduler и pending/failed outbox.

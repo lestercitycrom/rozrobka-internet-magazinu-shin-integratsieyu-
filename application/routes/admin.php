@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\MediaAssetController;
 use App\Http\Controllers\Admin\MediaHeroAssignmentController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PricingRuleController;
+use App\Http\Controllers\Admin\ServiceAddonController;
 use App\Http\Controllers\Admin\ServicePageController;
 use App\Http\Controllers\Admin\ServiceRequestController;
 use App\Http\Controllers\Admin\SystemHealthController;
@@ -32,6 +33,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/imports', [ImportRunController::class, 'index'])->name('imports.index');
         Route::get('/imports/{runId}', [ImportRunController::class, 'show'])->name('imports.show');
         Route::resource('services', ServicePageController::class)->except('show', 'destroy');
+        Route::get('/service-addons', [ServiceAddonController::class, 'index'])->name('service-addons.index');
+        Route::get('/service-addons/{serviceAddon}/edit', [ServiceAddonController::class, 'edit'])->name('service-addons.edit');
+        Route::put('/service-addons/{serviceAddon}', [ServiceAddonController::class, 'update'])->name('service-addons.update');
         Route::get('/health', SystemHealthController::class)->name('health');
         Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests.index');
         Route::get('/service-requests/{request}', [ServiceRequestController::class, 'show'])->name('service-requests.show');

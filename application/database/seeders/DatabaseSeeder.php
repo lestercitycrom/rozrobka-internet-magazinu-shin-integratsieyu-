@@ -15,5 +15,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Production seeding never creates a default user or password.
+        $this->call(ServiceAddonSeeder::class);
     }
 }

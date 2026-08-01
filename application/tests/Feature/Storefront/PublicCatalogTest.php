@@ -131,7 +131,29 @@ test('primary product media uses lazy card loading, eager detail loading, russia
     $this->get('/produkter/SKU-MEDIA')->assertSee('loading="eager"', false)->assertSee('fetchpriority="high"', false);
     $this->get('/ru/produkter/SKU-MEDIA')->assertSee('alt="Fallback alt"', false);
     storefrontProduct(ProductType::Tire, 'SKU-NO-MEDIA', ['width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00', 'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter']);
-    $this->get('/produkter/SKU-NO-MEDIA')->assertDontSee('data-testid="product-primary-media"', false)->assertSee('data-testid="product-visual-fallback"', false)->assertSee('aria-hidden="true"', false);
+    $this->get('/produkter/SKU-NO-MEDIA')
+        ->assertDontSee('data-testid="product-primary-media"', false)
+        ->assertSee('data-testid="product-visual-fallback"', false)
+        ->assertSee('role="img"', false)
+        ->assertSee('Produktbilde mangler');
+});
+
+test('product detail presents supplier technical data and EU tyre label', function (): void {
+    $sku = storefrontProduct(ProductType::Tire, 'SKU-LABELLED', [
+        'width_mm' => '225.00', 'aspect_ratio' => '45.00', 'rim_diameter_in' => '18.00',
+        'load_index' => '95', 'speed_symbol' => 'Y', 'season' => 'Summer', 'construction' => 'Radial',
+        'reinforced' => true, 'three_peak_mountain_snowflake' => false, 'run_flat' => true,
+    ]);
+    $sku->product->tireLabel()->create([
+        'rolling_resistance' => 'B', 'wet_grip' => 'A', 'noise_db' => 69, 'noise_class' => 'A',
+    ]);
+
+    $this->get('/produkter/SKU-LABELLED')
+        ->assertOk()
+        ->assertSee('Tekniske spesifikasjoner')
+        ->assertSee('Forsterket')
+        ->assertSee('EU-dekkmerking')
+        ->assertSee('69 dB');
 });
 
 function storefrontProduct(ProductType $type, string $skuCode, array $spec): SupplierSku

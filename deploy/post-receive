@@ -65,6 +65,11 @@ while read -r oldrev newrev refname; do
 
     (
         cd "$app"
+        php artisan queue:restart --no-interaction
+    ) || log 'Queue restart signal failed; the max-time limit will still recycle the worker.'
+
+    (
+        cd "$app"
         php artisan easytire:backup:prune --no-interaction
     ) || log 'Backup retention cleanup failed; completed backups were left intact.'
 
