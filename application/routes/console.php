@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('easytire:outbox --limit=25')->everyMinute()->withoutOverlapping();
+Schedule::command('ndi:media:sync --limit=25')->hourly()->withoutOverlapping();

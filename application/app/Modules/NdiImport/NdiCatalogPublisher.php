@@ -11,6 +11,7 @@ use App\Modules\Catalog\Models\CurrentStock;
 use App\Modules\Catalog\Models\EntityChange;
 use App\Modules\Catalog\Models\PriceList;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Catalog\Models\ProductMediaSource;
 use App\Modules\Catalog\Models\SkuPrice;
 use App\Modules\Catalog\Models\SkuPriceHistory;
 use App\Modules\Catalog\Models\StockSnapshot;
@@ -20,6 +21,7 @@ use App\Modules\Catalog\Models\TireLabel;
 use App\Modules\Catalog\Models\TireSpec;
 use App\Modules\Catalog\Models\Warehouse;
 use App\Modules\Catalog\Models\WheelSpec;
+use App\Modules\Content\Models\MediaAssignment;
 use App\Modules\NdiImport\Data\PreparedDataset;
 use App\Modules\NdiImport\Data\PublishSummary;
 use App\Modules\NdiImport\Enums\DatasetRole;
@@ -134,6 +136,8 @@ class NdiCatalogPublisher
             $this->persistTracked($spec, $row['spec'], $runId, $artifactId, $summary);
         }
 
+        $this->publishMediaSource($product, $row['media_url'] ?? null, $artifactId);
+
         foreach ([TaxMode::Gross, TaxMode::Net] as $taxMode) {
             $priceList = PriceList::query()->firstOrCreate([
                 'supplier_id' => $supplier->id,
@@ -163,6 +167,39 @@ class NdiCatalogPublisher
                 'observed_at' => $observedAt,
             ]);
         }
+    }
+
+    private function publishMediaSource(Product $product, ?string $sourceUrl, string $artifactId): void
+    {
+        if ($sourceUrl === null) {
+            $source = ProductMediaSource::query()->where('product_id', $product->id)->first();
+
+            if ($source !== null) {
+                MediaAssignment::query()
+                    ->where('assignable_type', $product::class)
+                    ->where('assignable_id', $product->id)
+                    ->where('role', 'primary')
+                    ->where('media_asset_id', $source->media_asset_id)
+                    ->delete();
+                $source->delete();
+            }
+
+            return;
+        }
+
+        $source = ProductMediaSource::query()->firstOrNew(['product_id' => $product->id]);
+
+        if ($source->exists && $source->source_url !== $sourceUrl) {
+            $source->status = 'pending';
+            $source->last_error = null;
+            $source->attempt_count = 0;
+            $source->last_attempted_at = null;
+            $source->downloaded_at = null;
+        }
+
+        $source->source_url = $sourceUrl;
+        $source->source_artifact_id = $artifactId;
+        $source->save();
     }
 
     private function publishStock(

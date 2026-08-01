@@ -40,7 +40,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: 'php -r "file_exists(\'database/e2e.sqlite\') || touch(\'database/e2e.sqlite\');" && php artisan migrate --force && php artisan e2e:seed-admin && php artisan db:seed --class=E2eStorefrontSeeder && php artisan serve --host=127.0.0.1 --port=8000',
+        command: 'php -r "file_exists(\'database/e2e.sqlite\') || touch(\'database/e2e.sqlite\');" && php artisan migrate:fresh --force && php artisan e2e:seed-admin && php artisan db:seed --class=E2eStorefrontSeeder && php artisan serve --host=127.0.0.1 --port=8000',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

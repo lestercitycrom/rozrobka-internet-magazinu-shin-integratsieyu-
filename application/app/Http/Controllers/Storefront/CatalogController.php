@@ -8,6 +8,7 @@ use App\Modules\Catalog\ReadModel\CatalogQuery;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
 use App\Modules\Pricing\SellingPriceService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class CatalogController extends Controller
@@ -31,8 +32,16 @@ class CatalogController extends Controller
         return view('storefront.catalog.show', ['item' => $item, 'sellingPrice' => $pricing->forItem($item)]);
     }
 
+    public function suggestions(Request $request, CatalogReadService $catalog, ProductType $productType): JsonResponse
+    {
+        return response()->json(['suggestions' => $catalog->suggestions($productType, $this->input($request, 'q') ?? '')]);
+    }
+
     private function index(Request $request, CatalogReadService $catalog, ProductType $productType): View
     {
+        $sort = $this->input($request, 'sort');
+        $inStockOnly = $this->input($request, 'in_stock') === '1';
+        $page = $this->positiveIntegerInput($request, 'page') ?? 1;
         $items = $catalog->search(new CatalogQuery(
             productType: $productType,
             brand: $this->input($request, 'brand'),
@@ -43,27 +52,50 @@ class CatalogController extends Controller
             tireSeason: $productType === ProductType::Tire ? $this->input($request, 'season') : null,
             wheelWidthIn: $productType === ProductType::Wheel ? $this->decimalInput($request, 'width') : null,
             wheelDiameterIn: $productType === ProductType::Wheel ? $this->decimalInput($request, 'diameter') : null,
-            wheelBoltHoles: $productType === ProductType::Wheel ? ($request->integer('bolt_holes') ?: null) : null,
+            wheelBoltHoles: $productType === ProductType::Wheel ? $this->positiveIntegerInput($request, 'bolt_holes') : null,
             wheelPcdMm: $productType === ProductType::Wheel ? $this->decimalInput($request, 'pcd') : null,
             wheelOffsetEtMm: $productType === ProductType::Wheel ? $this->decimalInput($request, 'et') : null,
             wheelCenterBoreMm: $productType === ProductType::Wheel ? $this->decimalInput($request, 'center_bore') : null,
-            page: max(1, $request->integer('page', 1)),
+            inStockOnly: $inStockOnly,
+            sort: in_array($sort, ['title', 'brand'], true) ? $sort : null,
+            page: $page,
         ));
 
         $pricing = app(SellingPriceService::class);
         $sellingPrices = collect($items->items)
             ->mapWithKeys(fn ($item): array => [$item->sku => $pricing->forItem($item)]);
 
+        $filterKeys = ['q', 'brand', 'width', 'aspect', 'rim', 'season', 'diameter', 'bolt_holes', 'pcd', 'et', 'center_bore'];
+        $filters = collect($filterKeys)
+            ->mapWithKeys(fn (string $key): array => [$key => $this->input($request, $key)])
+            ->filter(fn (?string $value): bool => $value !== null)
+            ->all();
+
+        if ($inStockOnly) {
+            $filters['in_stock'] = '1';
+        }
+        if (in_array($sort, ['title', 'brand'], true)) {
+            $filters['sort'] = $sort;
+        }
+
         return view('storefront.catalog.index', [
             'items' => $items,
             'productType' => $productType,
             'sellingPrices' => $sellingPrices,
+            'filterOptions' => $catalog->filterOptions($productType),
+            'filters' => $filters,
         ]);
     }
 
     private function input(Request $request, string $key): ?string
     {
-        $value = trim((string) $request->input($key));
+        $input = $request->query($key);
+
+        if (! is_string($input) && ! is_numeric($input)) {
+            return null;
+        }
+
+        $value = mb_substr(trim((string) $input), 0, 100);
 
         return $value === '' ? null : $value;
     }
@@ -77,11 +109,22 @@ class CatalogController extends Controller
 
         $value = str_replace(',', '.', $value);
         if (preg_match('/^-?\d+(?:\.\d{1,2})?$/', $value) !== 1) {
-            return $value;
+            return null;
         }
 
         [$whole, $fraction] = array_pad(explode('.', $value, 2), 2, '');
 
         return $whole.'.'.str_pad($fraction, 2, '0');
+    }
+
+    private function positiveIntegerInput(Request $request, string $key): ?int
+    {
+        $value = $this->input($request, $key);
+
+        if ($value === null || preg_match('/^[1-9]\d{0,8}$/', $value) !== 1) {
+            return null;
+        }
+
+        return (int) $value;
     }
 }

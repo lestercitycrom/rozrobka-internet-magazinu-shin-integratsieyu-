@@ -17,6 +17,7 @@ This checklist reflects the current `deploy/post-receive`, `deploy/README.md`, `
 ## After deployment
 
 - Run the existing redacted health check: `php artisan easytire:health`.
+- For the first supplier-media release, verify the shared environment has `NDI_PARSER_VERSION=1.1.0`, re-import the official three-workbook bundle once, then run `php artisan ndi:media:sync --limit=50` and record downloaded/failed counts.
 - Confirm the existing database queue worker and minute scheduler/cron are running; the scheduler invokes the outbox cadence without overlap.
 - Smoke-test `/`, `/dekk`, `/tjenester`, `/admin/login`, an authorized `/admin`, `/admin/orders`, and `/admin/health`.
 - Confirm `/robots.txt` and `/sitemap.xml` respond as intended for the environment.

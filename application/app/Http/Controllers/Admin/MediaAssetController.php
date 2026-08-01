@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Catalog\Models\ProductMediaSource;
 use App\Modules\Content\Models\MediaAsset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -40,6 +41,7 @@ final class MediaAssetController extends Controller
     public function destroy(MediaAsset $mediaAsset)
     {
         abort_if($mediaAsset->assignments()->exists(), 409);
+        abort_if(ProductMediaSource::query()->where('media_asset_id', $mediaAsset->id)->exists(), 409);
         Storage::disk($mediaAsset->disk)->delete($mediaAsset->path);
         $mediaAsset->delete();
 

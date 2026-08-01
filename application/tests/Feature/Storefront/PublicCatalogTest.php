@@ -36,7 +36,7 @@ test('visitor can filter published tires and open a product page', function (): 
     $response->assertOk()
         ->assertSee('SKU-TIRE-205')
         ->assertDontSee('SKU-TIRE-195')
-        ->assertSee('value="205"', false)
+        ->assertSee('value="205" selected', false)
         ->assertSee('value="Summer" selected', false)
         ->assertSee('easytire-card easytire-interactive', false);
 
@@ -45,6 +45,61 @@ test('visitor can filter published tires and open a product page', function (): 
         ->assertSee('205/55 R16')
         ->assertSee(__('storefront.price_unavailable'))
         ->assertSee('SKU-TIRE-205');
+});
+
+test('catalog exposes faceted controls, active filters, stock filter and safe suggestions', function (): void {
+    storefrontProduct(ProductType::Tire, 'SKU-FILTER-205', [
+        'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
+        'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer',
+    ]);
+    storefrontProduct(ProductType::Tire, 'SKU-FILTER-195', [
+        'width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00',
+        'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter',
+    ]);
+
+    $this->get('/dekk?width=205&in_stock=1&sort=title')
+        ->assertOk()
+        ->assertSee('data-catalog-autocomplete="'.route('storefront.tires.suggestions').'"', false)
+        ->assertSee('list="catalog-suggestions"', false)
+        ->assertSee('name="in_stock" value="1" checked', false)
+        ->assertSee('option value="title" selected', false)
+        ->assertSee('data-testid="active-filters"', false)
+        ->assertSee('value="205" selected', false)
+        ->assertSee('SKU-FILTER-205')
+        ->assertDontSee('SKU-FILTER-195');
+
+    $this->getJson('/dekk/suggestions?q=SKU-FILTER')
+        ->assertOk()
+        ->assertJsonFragment(['sku' => 'SKU-FILTER-205']);
+
+    $this->getJson('/dekk/suggestions?q=x')->assertOk()->assertExactJson(['suggestions' => []]);
+});
+
+test('catalog safely ignores non scalar public filter and autocomplete inputs', function (): void {
+    storefrontProduct(ProductType::Tire, 'SKU-SAFE-QUERY', [
+        'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
+        'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer',
+    ]);
+
+    $this->get('/dekk?q%5B%5D=x&sort%5B%5D=title&width%5B%5D=205')->assertOk()->assertSee('SKU-SAFE-QUERY');
+    $this->getJson('/dekk/suggestions?q%5B%5D=x')->assertOk()->assertExactJson(['suggestions' => []]);
+});
+
+test('active season and sort chips use localized labels', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+    storefrontProduct(ProductType::Tire, 'SKU-LOCALIZED-CHIP', [
+        'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
+        'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer',
+    ]);
+
+    $this->get('/dekk?season=Summer&sort=title')
+        ->assertOk()
+        ->assertSee('Sesong: Sommer')
+        ->assertSee('Sorter: Produktnavn');
+    $this->get('/ru/dekk?season=Summer&sort=title')
+        ->assertOk()
+        ->assertSee('Сезон: Лето')
+        ->assertSee('Сортировка: По названию');
 });
 
 test('wheel listing exposes a clear empty state and preserves filter query', function (): void {

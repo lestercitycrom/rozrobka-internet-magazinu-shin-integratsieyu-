@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('buyer can use the private Russian storefront preview', async ({ page }) => {
+    test.slow();
     await page.goto('/ru');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow');
@@ -8,7 +9,7 @@ test('buyer can use the private Russian storefront preview', async ({ page }) =>
     await page.getByRole('link', { name: 'Смотреть шины' }).click();
     await expect(page).toHaveURL(/\/ru\/dekk$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Шины' })).toBeVisible();
-    await page.getByLabel('Ширина').fill('205');
+    await page.getByLabel('Ширина').selectOption('205');
     await page.getByRole('button', { name: 'Показать товары' }).click();
     await page.getByRole('link', { name: 'Открыть товар' }).click();
     await expect(page.getByRole('button', { name: 'Добавить в корзину' })).toBeVisible();

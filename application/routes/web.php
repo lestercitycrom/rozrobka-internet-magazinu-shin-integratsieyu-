@@ -35,9 +35,11 @@ Route::middleware('public.locale')->group(function (): void {
         return view('welcome', ['services' => $services->list(ServicePageLocale::NorwegianBokmal)]);
     })->name('storefront.home');
     Route::get('/dekk', [CatalogController::class, 'tires'])->name('storefront.tires.index');
+    Route::get('/dekk/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Tire))->middleware('throttle:60,1')->name('storefront.tires.suggestions');
     Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('storefront.fitment.create');
     Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('storefront.fitment.store');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('storefront.wheels.index');
+    Route::get('/felger/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Wheel))->middleware('throttle:60,1')->name('storefront.wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('storefront.products.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('storefront.services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('storefront.services.show');
@@ -57,9 +59,11 @@ Route::middleware('public.locale')->group(function (): void {
 Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')->group(function (): void {
     Route::get('/', fn (PublishedServicePageReadService $services) => view('welcome', ['services' => $services->list(ServicePageLocale::Russian)]))->name('home');
     Route::get('/dekk', [CatalogController::class, 'tires'])->name('tires.index');
+    Route::get('/dekk/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Tire))->middleware('throttle:60,1')->name('tires.suggestions');
     Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('fitment.create');
     Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('fitment.store');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('wheels.index');
+    Route::get('/felger/suggestions', fn (\Illuminate\Http\Request $request, \App\Modules\Catalog\ReadModel\CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, \App\Modules\Catalog\Enums\ProductType::Wheel))->middleware('throttle:60,1')->name('wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('products.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('services.show');

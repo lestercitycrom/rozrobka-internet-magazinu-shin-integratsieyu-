@@ -59,6 +59,8 @@
 
 `products` разрешает со временем объединять несколько SKU/поставщиков под одной карточкой. Для первой поставки допустима связь 1:1, но внешний идентификатор всегда находится в `supplier_skus`, а не в `products`.
 
+> Media implementation update (2026-08-01): the earlier proposed `product_media` row is superseded by `product_media_sources`, `media_assets`, and polymorphic `media_assignments`. The source table stores one current, validated NDI URL candidate per product plus source artifact, status, retry state and the downloaded asset reference. Storefronts render only locally validated active assets; manual primary assignments take precedence over supplier media.
+
 ### 3.2 Спецификации шин
 
 | Таблица | Поля | Ключи/правила нормализации |

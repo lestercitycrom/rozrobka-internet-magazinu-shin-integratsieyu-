@@ -18,8 +18,22 @@ final class CatalogReadService
 {
     public function search(CatalogQuery $filters): CatalogPage
     {
-        $paginator = $this->baseQuery($filters)
-            ->orderBy('products.id')
+        $query = $this->baseQuery($filters);
+        if ($filters->inStockOnly) {
+            $query->whereExists(function ($stock): void {
+                $stock->selectRaw('1')->from('current_stock')->join('warehouses', 'warehouses.id', '=', 'current_stock.warehouse_id')
+                    ->whereColumn('current_stock.supplier_sku_id', 'supplier_skus.id')->where('warehouses.is_active', true)->where('current_stock.quantity', '>', 0);
+            });
+        }
+        if ($filters->sort === 'brand') {
+            $query->orderBy('brands.canonical_name')->orderBy('products.title');
+        } elseif ($filters->sort === 'title') {
+            $query->orderBy('products.title')->orderBy('brands.canonical_name');
+        } else {
+            $query->orderBy('products.id');
+        }
+
+        $paginator = $query
             ->orderBy('supplier_skus.id')
             ->paginate($filters->normalizedPerPage(), $this->columns(), 'page', $filters->normalizedPage());
 
@@ -29,6 +43,32 @@ final class CatalogReadService
             page: $paginator->currentPage(),
             perPage: $paginator->perPage(),
         );
+    }
+
+    /** @return array<string, list<string>> */
+    public function filterOptions(ProductType $productType): array
+    {
+        $query = $this->baseQuery(new CatalogQuery(productType: $productType));
+        $values = fn (string $column): array => (clone $query)->whereNotNull($column)->distinct()->orderBy($column)->pluck($column)->map(fn ($value) => (string) $value)->all();
+        $options = ['brands' => $values('brands.canonical_name')];
+
+        return $productType === ProductType::Tire
+            ? $options + ['widths' => $values('tire_specs.width_mm'), 'aspects' => $values('tire_specs.aspect_ratio'), 'rims' => $values('tire_specs.rim_diameter_in'), 'seasons' => $values('tire_specs.season')]
+            : $options + ['widths' => $values('wheel_specs.width_in'), 'diameters' => $values('wheel_specs.diameter_in'), 'bolt_holes' => $values('wheel_specs.bolt_holes'), 'pcds' => $values('wheel_specs.pcd_mm'), 'ets' => $values('wheel_specs.offset_et_mm'), 'center_bores' => $values('wheel_specs.center_bore_mm')];
+    }
+
+    /** @return list<array{sku: string, title: string, brand: string}> */
+    public function suggestions(ProductType $productType, string $term): array
+    {
+        $term = trim($term);
+        if (mb_strlen($term) < 2) return [];
+
+        return $this->baseQuery(new CatalogQuery(productType: $productType))
+            ->where(function (Builder $query) use ($term): void {
+                $query->where('supplier_skus.external_sku', 'like', $term.'%')->orWhere('products.title', 'like', '%'.$term.'%')->orWhere('products.model_name', 'like', '%'.$term.'%')->orWhere('brands.canonical_name', 'like', '%'.$term.'%');
+            })->orderByRaw('CASE WHEN supplier_skus.external_sku = ? THEN 0 ELSE 1 END', [$term])->orderBy('products.title')->limit(8)
+            ->get(['supplier_skus.external_sku as sku', 'products.title as title', 'brands.canonical_name as brand'])
+            ->map(fn ($row): array => ['sku' => $row->sku, 'title' => $row->title, 'brand' => $row->brand])->all();
     }
 
     public function findPublicSku(string $sku): ?CatalogItem

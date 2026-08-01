@@ -8,6 +8,7 @@ test('buyer sees the safe vehicle lookup fallback and manual selection link', as
 });
 
 test('buyer can browse the Norwegian storefront and open a catalog product', async ({ page }, testInfo) => {
+    test.slow();
     const response = await page.goto('/');
 
     expect(response).not.toBeNull();
@@ -28,11 +29,42 @@ test('buyer can browse the Norwegian storefront and open a catalog product', asy
     await expect(page.getByTestId('catalog-foundation')).toContainText('Velg kategori og filtrer deg frem');
     await expect(page.getByTestId('services-section')).toContainText('Mobilt dekkskift');
 
+    const catalogueCard = page.getByTestId('catalog-foundation').getByRole('link').first();
+    await expect(catalogueCard).toHaveCSS('transform', 'none');
+    if (testInfo.project.name === 'buyer-desktop') {
+        await catalogueCard.scrollIntoViewIfNeeded();
+        const cardBoundsBeforeHover = await catalogueCard.boundingBox();
+        await catalogueCard.hover();
+        await expect(catalogueCard).toHaveCSS('transform', 'none');
+        expect(await catalogueCard.boundingBox()).toEqual(cardBoundsBeforeHover);
+        await catalogueCard.focus();
+        await expect(catalogueCard).toHaveCSS('outline-style', 'solid');
+    }
+
     await page.getByRole('link', { name: 'Se dekk' }).first().click();
     await expect(page).toHaveURL(/\/dekk$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Dekk' })).toBeVisible();
-    await page.getByLabel('Bredde').fill('205');
-    await page.getByLabel('Profil').fill('55');
+    if (testInfo.project.name === 'buyer-mobile') {
+        await page.locator('[data-mobile-filter] summary').click();
+    }
+    const suggestionsResponse = page.waitForResponse((response) => response.url().includes('/dekk/suggestions?q=Demo') && response.ok());
+    await page.getByLabel('Søk').fill('Demo');
+    await suggestionsResponse;
+    await expect(page.locator('#catalog-suggestions option')).not.toHaveCount(0);
+    await page.getByLabel('Bredde').selectOption('205');
+    await page.getByLabel('Profil').selectOption('55');
+    await page.getByLabel('Kun på lager').check();
+    await page.getByRole('button', { name: 'Vis produkter' }).click();
+    await expect(page).toHaveURL(/width=205.*aspect=55.*in_stock=1/);
+    await expect(page.getByTestId('active-filters')).toBeVisible();
+    await page.getByRole('link', { name: 'Nullstill alle' }).click();
+    await expect(page).toHaveURL(/\/dekk$/);
+    await expect(page.getByLabel('Kun på lager')).not.toBeChecked();
+    if (testInfo.project.name === 'buyer-mobile') {
+        await page.locator('[data-mobile-filter] summary').click();
+    }
+    await page.getByLabel('Bredde').selectOption('205');
+    await page.getByLabel('Profil').selectOption('55');
     await page.getByRole('button', { name: 'Vis produkter' }).click();
     await expect(page).toHaveURL(/width=205.*aspect=55/);
     await expect(page.getByTestId('catalog-product')).toContainText('Demo 205/55 R16');

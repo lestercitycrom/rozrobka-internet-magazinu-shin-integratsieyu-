@@ -19,6 +19,13 @@
 ## Test and migration safety
 
 - Take and verify a backup before production migrations.
+
+## NDI product media backfill
+
+- `NDI_PARSER_VERSION` must be `1.1.0` or newer so tire image identifiers are captured from the official workbook.
+- After the release containing product media sources is deployed, run one full `ndi:import` of the three official workbooks. Reusing an already imported bundle is expected because the parser version changed.
+- Run `php artisan ndi:media:sync --limit=50` after that import. The hourly scheduler continues bounded retries and future downloads.
+- Confirm product media source, downloaded and failed counts before considering the backfill complete. NDI currently supplies image identifiers for only part of the tire rows and none of the wheel rows; missing supplier images use the storefront fallback until an administrator uploads media.
 - Run PHPUnit only in a fresh release or temporary workspace, after removing `bootstrap/cache/config.php` from that test copy.
 - Never run PHPUnit from an active cached `current` release: cached configuration can target a production database.
 

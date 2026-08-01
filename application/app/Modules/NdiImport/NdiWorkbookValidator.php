@@ -135,6 +135,9 @@ final class NdiWorkbookValidator
                 'eu_label_regulation' => $this->text($values['EU_label_regulative']),
                 'eprel_url' => $this->text($values['Eprel_link']),
             ],
+            // The catalog uses PlainUrl for the supplier image endpoint. It is
+            // normalized here but downloaded only by the separate media command.
+            'media_url' => NdiMediaUrl::canonicalize($this->text($values['PlainUrl'])),
             'source_fields' => $values,
         ];
     }

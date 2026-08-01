@@ -12,4 +12,5 @@ return [
     'price_unavailable' => 'Pris er ikke klar for netthandel',
     'selling_price_note' => 'Pris beregnet etter den aktive prisregelen.',
     'unavailable_note' => 'Produktet kan ikke bestilles før pris og tilgjengelighet er bekreftet.',
+    'any' => 'Alle', 'all_brands' => 'Alle merker', 'center_bore' => 'Navdiameter', 'in_stock' => 'Kun på lager', 'sort' => 'Sorter', 'sort_recommended' => 'Anbefalt', 'sort_title' => 'Produktnavn', 'sort_brand' => 'Merke', 'active_filters' => 'Valgte filtre', 'remove_filter' => 'Fjern filter', 'reset_all' => 'Nullstill alle', 'yes' => 'Ja',
 ];
