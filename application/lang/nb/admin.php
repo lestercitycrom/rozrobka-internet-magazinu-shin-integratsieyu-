@@ -25,6 +25,7 @@ return array_replace_recursive([
         'profile' => 'Bruker',
         'logout' => 'Logg ut',
         'menu' => 'Åpne navigasjon',
+        'unsaved_changes' => 'Du har ulagrede endringer. Vil du bytte språk og forkaste dem?',
     ],
 ], ['imports' => ['created' => 'Opprettet', 'updated' => 'Oppdatert', 'unchanged' => 'Uendret', 'rejected' => 'Avvist']], ['nav' => ['services' => 'Tjenestesider'], 'services' => ['title' => 'Tjenestesider', 'heading' => 'Tjenestesider', 'intro' => 'Rediger norsk original og russisk testoversettelse.', 'new' => 'Ny tjenesteside', 'edit' => 'Rediger', 'slug' => 'Slug', 'status' => 'Status', 'order' => 'Rekkefølge', 'title_nb' => 'Norsk tittel', 'title_ru' => 'Russisk tittel', 'excerpt' => 'Ingress', 'body' => 'Brødtekst', 'seo' => 'SEO', 'seo_title' => 'SEO-tittel', 'seo_description' => 'SEO-beskrivelse', 'ru_hint' => 'Russisk er en testoversettelse. Kontroller innholdet før publisering.', 'save' => 'Lagre', 'saved' => 'Tjenestesiden er lagret.', 'empty' => 'Ingen tjenestesider ennå.']], [
     'nav' => ['content' => 'Innholdssider'],

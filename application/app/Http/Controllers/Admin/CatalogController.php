@@ -7,8 +7,10 @@ use App\Modules\Catalog\Enums\PublicationStatus;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Publication\EligibleCatalogPublication;
 use App\Modules\Content\Models\MediaAsset;
+use App\Modules\Content\Models\MediaAssignment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 final class CatalogController
 {
@@ -37,12 +39,59 @@ final class CatalogController
         ]);
 
         $mediaAssets = MediaAsset::query()->where('is_active', true)->latest()->get();
+        $mediaContexts = MediaAssignment::query()
+            ->whereIn('media_asset_id', $mediaAssets->modelKeys())
+            ->where('assignable_type', Product::class)
+            ->select('media_asset_id')
+            ->selectRaw('MIN(assignable_id) as representative_product_id')
+            ->selectRaw('COUNT(DISTINCT assignable_id) as product_count')
+            ->groupBy('media_asset_id')
+            ->get()
+            ->keyBy('media_asset_id');
+        $representativeProducts = Product::query()
+            ->whereKey($mediaContexts->pluck('representative_product_id')->filter())
+            ->with(['brand', 'supplierSkus' => fn ($query) => $query->orderBy('id')])
+            ->get()
+            ->keyBy('id');
+        $mediaChoices = $mediaAssets->map(function (MediaAsset $asset) use ($mediaContexts, $representativeProducts): array {
+            $context = $mediaContexts->get($asset->getKey());
+            $representative = $context === null
+                ? null
+                : $representativeProducts->get((int) $context->representative_product_id);
+
+            return [
+                'asset' => $asset,
+                'label' => $this->mediaChoiceLabel($asset, $representative, (int) ($context?->product_count ?? 0)),
+            ];
+        });
 
         return view('admin.catalog.show', [
             'product' => $product,
-            'mediaAssets' => $mediaAssets,
+            'mediaChoices' => $mediaChoices,
             'publicationStatuses' => PublicationStatus::cases(),
         ]);
+    }
+
+    private function mediaChoiceLabel(MediaAsset $asset, ?Product $representative, int $productCount): string
+    {
+        $parts = [__('media.short_id').' '.Str::upper(Str::substr((string) $asset->getKey(), -8))];
+
+        if ($representative !== null) {
+            $parts[] = $representative->brand?->canonical_name;
+            $parts[] = $representative->model_name;
+
+            if ($sku = $representative->supplierSkus->first()?->external_sku) {
+                $parts[] = 'SKU '.$sku;
+            }
+
+            if ($productCount > 1) {
+                $parts[] = __('media.linked_products', ['count' => $productCount]);
+            }
+        } else {
+            $parts[] = Str::limit($asset->original_name, 48);
+        }
+
+        return implode(' · ', array_values(array_unique(array_filter($parts))));
     }
 
     public function updatePublication(UpdateProductPublicationRequest $request, Product $product): RedirectResponse

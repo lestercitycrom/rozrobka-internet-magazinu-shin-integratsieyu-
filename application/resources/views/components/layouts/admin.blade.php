@@ -31,7 +31,7 @@
                     <p class="text-sm text-easytire-muted">{{ $title ?? __('admin.dashboard.title') }}</p>
                     @include('admin.partials.topbar')
                 </header>
-                <main id="main-content" class="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-12">
+                <main id="main-content" data-admin-dirty-root data-admin-unsaved-message="{{ __('admin.topbar.unsaved_changes') }}" class="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-12">
                     {{ $slot }}
                 </main>
             </div>

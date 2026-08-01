@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Catalog\Enums\ProductType;
+use App\Modules\Catalog\Presentation\CatalogItemPresenter;
 use App\Modules\Catalog\ReadModel\CatalogQuery;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
 use App\Modules\Pricing\SellingPriceService;
@@ -29,7 +30,11 @@ class CatalogController extends Controller
 
         abort_if($item === null, 404);
 
-        return view('storefront.catalog.show', ['item' => $item, 'sellingPrice' => $pricing->forItem($item)]);
+        return view('storefront.catalog.show', [
+            'item' => $item,
+            'presenter' => new CatalogItemPresenter($item),
+            'sellingPrice' => $pricing->forItem($item),
+        ]);
     }
 
     public function suggestions(Request $request, CatalogReadService $catalog, ProductType $productType): JsonResponse

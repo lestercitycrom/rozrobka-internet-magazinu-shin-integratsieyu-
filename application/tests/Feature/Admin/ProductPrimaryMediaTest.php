@@ -1,12 +1,17 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Catalog\Enums\CatalogState;
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\Enums\PublicationStatus;
 use App\Modules\Catalog\Models\Brand;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Catalog\Models\Supplier;
+use App\Modules\Catalog\Models\SupplierSku;
 use App\Modules\Content\Models\MediaAsset;
+use App\Modules\Content\Models\MediaAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 test('admin attaches replaces and detaches product primary media', function () {
@@ -36,28 +41,52 @@ test('product media section is localized and handles an empty active library', f
     $this->actingAs($admin)->get('/admin/catalog/'.$product->id)->assertOk()->assertSee('Hovedbilde')->assertSee('Ingen aktive mediefiler er tilgjengelige.');
     $this->actingAs($admin->fresh()->forceFill(['locale' => 'ru']))->get('/admin/catalog/'.$product->id)->assertOk()->assertSee('Основное изображение')->assertSee('Нет доступных активных медиафайлов.');
 });
-test('product media selector has a localized accessible label and contains long asset names', function () {
+test('product media chooser shows real previews and factual product context instead of generic file names', function () {
     $admin = User::factory()->operations()->create(['locale' => 'nb']);
     $product = mediaProduct();
-    $asset = mediaFor($admin, ['original_name' => str_repeat('langt-filnavn-', 20).'.png']);
+    $asset = mediaFor($admin, [
+        'original_name' => str_repeat('hash-', 20).'.png',
+        'alt_nb' => 'Produktbilde',
+        'alt_ru' => 'Изображение товара',
+    ]);
+    $this->actingAs($admin)->post('/admin/media/hero/product/'.$product->id, ['media_asset_id' => $asset->id])->assertRedirect();
+    $otherProduct = Product::create([
+        'product_type' => ProductType::Tire,
+        'brand_id' => $product->brand_id,
+        'model_name' => 'M',
+        'title' => 'P2',
+        'publication_status' => PublicationStatus::Draft,
+        'first_seen_at' => now(),
+    ]);
+    MediaAssignment::create(['media_asset_id' => $asset->id, 'assignable_type' => Product::class, 'assignable_id' => $otherProduct->id, 'role' => 'primary']);
 
     $this->actingAs($admin)->get('/admin/catalog/'.$product->id)
         ->assertOk()
-        ->assertSee('for="product-primary-media"', false)
+        ->assertSee('data-testid="current-product-media-preview"', false)
+        ->assertSee('data-testid="product-media-chooser"', false)
         ->assertSee('Velg mediefil')
-        ->assertSee($asset->original_name)
-        ->assertSee('max-w-xl', false);
+        ->assertSee('type="radio"', false)
+        ->assertSee('value="'.$asset->id.'"', false)
+        ->assertSee('SKU MEDIA-SKU')
+        ->assertSee('2 tilknyttede produkter')
+        ->assertSee(Storage::disk('public')->url($asset->path), false)
+        ->assertDontSee($asset->original_name);
 
     $admin->forceFill(['locale' => 'ru'])->save();
     $this->actingAs($admin)->get('/admin/catalog/'.$product->id)
         ->assertOk()
-        ->assertSee('Выберите медиафайл');
+        ->assertSee('Выберите медиафайл')
+        ->assertSee('Связано товаров: 2')
+        ->assertSee('Изображение товара');
 });
 function mediaProduct(): Product
 {
     $brand = Brand::create(['canonical_name' => 'M', 'slug' => 'm']);
+    $supplier = Supplier::create(['code' => 'media', 'name' => 'Media supplier', 'is_active' => true]);
+    $product = Product::create(['product_type' => ProductType::Tire, 'brand_id' => $brand->id, 'model_name' => 'M', 'title' => 'P', 'publication_status' => PublicationStatus::Draft, 'first_seen_at' => now()]);
+    SupplierSku::create(['supplier_id' => $supplier->id, 'product_id' => $product->id, 'external_sku' => 'MEDIA-SKU', 'catalog_state' => CatalogState::Catalog]);
 
-    return Product::create(['product_type' => ProductType::Tire, 'brand_id' => $brand->id, 'model_name' => 'M', 'title' => 'P', 'publication_status' => PublicationStatus::Draft, 'first_seen_at' => now()]);
+    return $product;
 }
 function mediaFor(User $u, array $x = []): MediaAsset
 {

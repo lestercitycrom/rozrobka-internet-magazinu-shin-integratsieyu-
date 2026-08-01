@@ -2,7 +2,7 @@
     <span class="hidden text-sm text-easytire-muted sm:inline">{{ auth()->user()->name }}</span>
     <div class="flex border border-easytire-border" role="group" aria-label="{{ __('admin.topbar.locale') }}">
         @foreach (['nb' => 'NO', 'ru' => 'RU'] as $locale => $label)
-            <form method="POST" action="{{ route('admin.locale.update') }}">
+            <form method="POST" action="{{ route('admin.locale.update') }}" data-admin-locale-form>
                 @csrf
                 <input type="hidden" name="locale" value="{{ $locale }}">
                 <input type="hidden" name="redirect_to" value="{{ request()->getRequestUri() }}">

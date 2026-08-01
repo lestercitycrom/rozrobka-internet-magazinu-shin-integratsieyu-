@@ -186,6 +186,58 @@ test('product detail presents supplier technical data and EU tyre label', functi
         ->assertSee('69 dB');
 });
 
+test('product detail normalizes confirmed tire data and hides uncontracted supplier text in NB and RU', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+    storefrontProduct(ProductType::Tire, '063965255551871001', [
+        'width_mm' => '255.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '18.00',
+        'load_index' => '109', 'speed_symbol' => 'Y', 'season' => 'Summer',
+        'construction' => 'PCR radial tyre > 240 km/h', 'winter_type' => 'Winter tyre type',
+    ]);
+
+    $norwegian = $this->get('/produkter/063965255551871001')->assertOk();
+    $norwegian
+        ->assertSee('255/55 R18')
+        ->assertSee('Radialdekk')
+        ->assertDontSee('255.00/55.00 R18.00')
+        ->assertDontSee('PCR radial tyre > 240 km/h')
+        ->assertDontSee('Winter tyre type')
+        ->assertDontSee('Vintertype');
+    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.tires.index'), 'Dekk'))->toBe(2);
+
+    $russian = $this->get('/ru/produkter/063965255551871001')->assertOk();
+    $russian
+        ->assertSee('255/55 R18')
+        ->assertSee('Радиальная шина')
+        ->assertDontSee('PCR radial tyre > 240 km/h')
+        ->assertDontSee('Winter tyre type')
+        ->assertDontSee('Тип зимней шины');
+    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.tires.index'), 'Шины'))->toBe(2);
+});
+
+test('wheel detail normalizes fitment values and marks the wheel navigation in NB and RU', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+    storefrontProduct(ProductType::Wheel, 'SKU-WHEEL-DETAIL', [
+        'width_in' => '8.00', 'diameter_in' => '18.00', 'bolt_holes' => 5,
+        'pcd_mm' => '112.00', 'offset_et_mm' => '45.00', 'center_bore_mm' => '66.60',
+        'color' => 'Silver', 'bolt_hole_boring' => 'Supplier drilling text',
+    ]);
+
+    $norwegian = $this->get('/produkter/SKU-WHEEL-DETAIL')->assertOk();
+    $norwegian
+        ->assertSee('8 × 18')
+        ->assertSee('5×112')
+        ->assertSee('66.6')
+        ->assertDontSee('8.00')
+        ->assertDontSee('112.00')
+        ->assertDontSee('Silver')
+        ->assertDontSee('Supplier drilling text');
+    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.wheels.index'), 'Felger'))->toBe(2);
+
+    $russian = $this->get('/ru/produkter/SKU-WHEEL-DETAIL')->assertOk();
+    $russian->assertSee('8 × 18')->assertSee('5×112')->assertSee('66.6')->assertDontSee('Silver');
+    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.wheels.index'), 'Диски'))->toBe(2);
+});
+
 function storefrontProduct(ProductType $type, string $skuCode, array $spec): SupplierSku
 {
     $supplier = Supplier::query()->firstOrCreate(['code' => 'storefront-ndi'], ['name' => 'Storefront NDI', 'is_active' => true]);
@@ -221,4 +273,11 @@ function storefrontMediaAsset(User $uploader, string $suffix, bool $active): Med
         'sha256' => hash('sha256', $suffix), 'alt_nb' => 'Produktbilde', 'alt_ru' => 'Фото товара',
         'uploader_id' => $uploader->id, 'is_active' => $active,
     ]);
+}
+
+function activeCatalogNavigationCount(string $html, string $href, string $label): int
+{
+    $pattern = '/<a\s+href="'.preg_quote($href, '/').'"[^>]*aria-current="page"[^>]*>\s*'.preg_quote($label, '/').'\s*<\/a>/u';
+
+    return preg_match_all($pattern, $html);
 }

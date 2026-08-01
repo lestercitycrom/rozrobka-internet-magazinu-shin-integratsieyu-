@@ -18,8 +18,9 @@
             <h2 class="text-lg font-black">{{ __('media.primary') }}</h2>
 
             @if ($primary)
-                <img src="{{ Storage::disk($primary->disk)->url($primary->path) }}" alt="{{ $primary->alt_nb }}" class="mt-4 aspect-video w-40 rounded-lg border border-easytire-border object-contain p-2">
-                <p class="mt-2 max-w-xl break-words text-sm">{{ $primary->alt_nb }}</p>
+                @php($primaryAlt = app()->getLocale() === 'ru' && filled($primary->alt_ru) ? $primary->alt_ru : $primary->alt_nb)
+                <img src="{{ Storage::disk($primary->disk)->url($primary->path) }}" alt="{{ $primaryAlt }}" class="mt-4 aspect-square w-40 rounded-lg border border-easytire-border object-contain p-2" data-testid="current-product-media-preview">
+                <p class="mt-2 max-w-xl break-words text-sm">{{ $primaryAlt }}</p>
                 <form class="mt-3" method="POST" action="{{ route('admin.media.hero.destroy', ['type' => 'product', 'id' => $product->id]) }}">
                     @csrf
                     @method('DELETE')
@@ -27,18 +28,26 @@
                 </form>
             @endif
 
-            @if ($mediaAssets->isNotEmpty())
-                <form class="mt-4 flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:items-end" method="POST" action="{{ route('admin.media.hero.store', ['type' => 'product', 'id' => $product->id]) }}">
+            @if ($mediaChoices->isNotEmpty())
+                <form class="mt-5 min-w-0" method="POST" action="{{ route('admin.media.hero.store', ['type' => 'product', 'id' => $product->id]) }}">
                     @csrf
-                    <label class="block w-full min-w-0 max-w-xl text-sm font-bold" for="product-primary-media">
-                        {{ __('media.asset_label') }}
-                        <select id="product-primary-media" name="media_asset_id" required class="easytire-input mt-2 min-h-11 w-full min-w-0 max-w-full truncate rounded-lg px-3">
-                            @foreach ($mediaAssets as $asset)
-                                <option value="{{ $asset->id }}" @selected($primary?->is($asset))>{{ $asset->original_name }} — {{ $asset->alt_nb }}</option>
+                    <fieldset class="max-h-[34rem] min-w-0 overflow-y-auto overscroll-contain rounded-xl border border-easytire-border bg-easytire-surface p-3 sm:p-4" data-testid="product-media-chooser">
+                        <legend class="px-2 text-sm font-bold">{{ __('media.asset_label') }}</legend>
+                        <div class="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                            @foreach ($mediaChoices as $choice)
+                                @php($asset = $choice['asset'])
+                                @php($assetAlt = app()->getLocale() === 'ru' && filled($asset->alt_ru) ? $asset->alt_ru : $asset->alt_nb)
+                                <label class="relative min-w-0 cursor-pointer">
+                                    <input type="radio" name="media_asset_id" value="{{ $asset->getKey() }}" required @checked($primary?->is($asset)) class="peer absolute left-3 top-3 z-10 size-5 border-easytire-border text-easytire-brand focus:ring-easytire-brand">
+                                    <span class="flex h-full min-w-0 flex-col rounded-xl border border-easytire-border bg-white p-2 transition peer-checked:border-easytire-brand peer-checked:ring-2 peer-checked:ring-easytire-brand/25 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-easytire-brand">
+                                        <img src="{{ Storage::disk($asset->disk)->url($asset->path) }}" alt="" loading="lazy" class="aspect-square w-full rounded-lg bg-white object-contain p-2">
+                                        <span class="mt-2 break-words text-xs font-bold leading-5">{{ $choice['label'] }}</span>
+                                    </span>
+                                </label>
                             @endforeach
-                        </select>
-                    </label>
-                    <button class="min-h-11 shrink-0 rounded-lg border border-easytire-brand px-4 text-sm font-bold text-easytire-brand" type="submit">{{ __('media.attach_replace') }}</button>
+                        </div>
+                    </fieldset>
+                    <button class="mt-4 min-h-11 rounded-lg border border-easytire-brand px-4 text-sm font-bold text-easytire-brand" type="submit">{{ __('media.attach_replace') }}</button>
                 </form>
             @else
                 <p class="mt-4 text-sm text-easytire-muted">{{ __('media.no_active') }}</p>

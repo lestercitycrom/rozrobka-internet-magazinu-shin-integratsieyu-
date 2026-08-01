@@ -5,7 +5,7 @@
         $preview = app()->getLocale() === 'ru';
         $routePrefix = $preview ? 'storefront.preview.' : 'storefront.';
         $cartCount = array_sum(app(\App\Modules\Cart\SessionCart::class)->items());
-        $activeSection = match (true) {
+        $activeSection = $activeSection ?? match (true) {
             request()->routeIs($routePrefix.'tires.*') => 'tires',
             request()->routeIs($routePrefix.'wheels.*') => 'wheels',
             request()->routeIs($routePrefix.'fitment.*') => 'fitment',

@@ -4,11 +4,14 @@ namespace Database\Seeders;
 
 use App\Modules\Catalog\Enums\TaxMode;
 use App\Modules\Catalog\Models\PriceList;
+use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\SkuPrice;
 use App\Modules\Catalog\Models\SupplierSku;
 use App\Modules\Commerce\Enums\ServiceAddonApplicability;
 use App\Modules\Commerce\Enums\ServiceAddonBillingMode;
 use App\Modules\Commerce\Models\ServiceAddon;
+use App\Modules\Content\Models\MediaAsset;
+use App\Modules\Content\Models\MediaAssignment;
 use App\Modules\Orders\Enums\FulfilmentMethod;
 use App\Modules\Orders\Enums\NdiOrderStatus;
 use App\Modules\Orders\Enums\OrderStatus;
@@ -18,6 +21,7 @@ use App\Modules\Pricing\Enums\PricingRuleScope;
 use App\Modules\Pricing\Models\PricingRule;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use LogicException;
 
@@ -54,6 +58,7 @@ class E2eStorefrontSeeder extends Seeder
 
         $sku = SupplierSku::query()->where('external_sku', '000205550016')->firstOrFail();
         $wheelSku = SupplierSku::query()->where('external_sku', 'DEMO-WHEEL-18112')->firstOrFail();
+        $this->seedDemoProductMedia($sku);
         $priceList = PriceList::query()->firstOrCreate([
             'supplier_id' => $sku->supplier_id,
             'code' => 'public',
@@ -135,5 +140,38 @@ class E2eStorefrontSeeder extends Seeder
                 'source_price_observed_at' => now(),
             ],
         );
+    }
+
+    private function seedDemoProductMedia(SupplierSku $sku): void
+    {
+        $bytes = file_get_contents(public_path('brand/apple-touch-icon.png'));
+        $dimensions = $bytes === false ? false : getimagesizefromstring($bytes);
+
+        if ($bytes === false || $dimensions === false) {
+            throw new LogicException('Invalid E2E media fixture.');
+        }
+
+        $path = 'media/e2e-demo-product.png';
+        Storage::disk('public')->put($path, $bytes);
+        $asset = MediaAsset::query()->firstOrNew(['path' => $path]);
+        $asset->fill([
+            'disk' => 'public',
+            'original_name' => 'e2e-demo-product.png',
+            'mime' => 'image/png',
+            'byte_size' => strlen($bytes),
+            'width' => $dimensions[0],
+            'height' => $dimensions[1],
+            'sha256' => hash('sha256', $bytes),
+            'alt_nb' => 'Demo produktbilde',
+            'alt_ru' => 'Демонстрационное изображение товара',
+            'uploader_id' => null,
+            'is_active' => true,
+        ])->save();
+
+        MediaAssignment::query()->updateOrCreate([
+            'assignable_type' => Product::class,
+            'assignable_id' => $sku->product_id,
+            'role' => 'primary',
+        ], ['media_asset_id' => $asset->getKey()]);
     }
 }

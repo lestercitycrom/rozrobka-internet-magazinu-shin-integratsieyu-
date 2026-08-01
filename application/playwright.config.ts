@@ -21,17 +21,17 @@ export default defineConfig({
         {
             name: 'buyer-desktop',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation)\.spec\.ts/,
+            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail)\.spec\.ts/,
         },
         {
             name: 'buyer-mobile',
             use: { ...devices['iPhone 13'], browserName: 'chromium' },
-            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation)\.spec\.ts/,
+            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation)\.spec\.ts/,
+            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation|product-detail)\.spec\.ts/,
         },
         {
             name: 'admin-desktop',
@@ -46,7 +46,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: 'php -r "file_exists(\'database/e2e.sqlite\') || touch(\'database/e2e.sqlite\');" && php artisan migrate:fresh --force && php artisan e2e:seed-admin && php artisan db:seed --class=E2eStorefrontSeeder && php artisan serve --host=127.0.0.1 --port=8000',
+        command: 'php -r "file_exists(\'database/e2e.sqlite\') || touch(\'database/e2e.sqlite\');" && php artisan migrate:fresh --force && php artisan e2e:seed-admin && php artisan db:seed --class=E2eStorefrontSeeder && php artisan storage:link && php artisan serve --host=127.0.0.1 --port=8000',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
