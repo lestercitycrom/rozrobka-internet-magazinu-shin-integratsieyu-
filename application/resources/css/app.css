@@ -7,8 +7,9 @@
 /* Shared EasyTire design tokens. Both storefront and admin consume this single palette. */
 :root {
     --easytire-ink: #111111;
-    --easytire-brand: #ff0000;
-    --easytire-brand-strong: #c90000;
+    /* #c90000 keeps white button labels above WCAG AA's 4.5:1 threshold. */
+    --easytire-brand: #c90000;
+    --easytire-brand-strong: #920000;
     --easytire-brand-soft: #fff1f1;
     --easytire-surface: #fafafa;
     --easytire-panel: #ffffff;
@@ -92,8 +93,10 @@
     box-shadow: var(--easytire-shadow-hover);
 }
 .easytire-input { border: 1px solid var(--easytire-border); background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease; }
-.easytire-input:focus { border-color: var(--easytire-brand); box-shadow: 0 0 0 4px rgb(255 0 0 / 0.14); outline: none; }
-.admin-shell { background: radial-gradient(circle at 100% 0, rgb(255 0 0 / 0.07), transparent 28rem), var(--easytire-surface); }
+.easytire-input:focus { border-color: var(--easytire-brand); box-shadow: 0 0 0 4px rgb(201 0 0 / 0.14); outline: none; }
+[data-catalog-loading] { visibility: hidden; opacity: 0; }
+[data-catalog-live-root][aria-busy='true'] [data-catalog-loading] { visibility: visible; opacity: 1; }
+.admin-shell { background: radial-gradient(circle at 100% 0, rgb(201 0 0 / 0.07), transparent 28rem), var(--easytire-surface); }
 ::selection { background: var(--easytire-brand); color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {

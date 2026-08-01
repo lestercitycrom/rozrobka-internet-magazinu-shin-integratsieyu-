@@ -21,22 +21,28 @@ export default defineConfig({
         {
             name: 'buyer-desktop',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.smoke|checkout\.smoke)\.spec\.ts/,
+            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation)\.spec\.ts/,
         },
         {
             name: 'buyer-mobile',
             use: { ...devices['iPhone 13'], browserName: 'chromium' },
-            testMatch: /(buyer\.smoke|checkout\.smoke)\.spec\.ts/,
+            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.ru-preview|checkout\.smoke)\.spec\.ts/,
+            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation)\.spec\.ts/,
         },
         {
             name: 'admin-desktop',
             use: { ...devices['Desktop Chrome'] },
             testMatch: /admin\.smoke\.spec\.ts/,
+        },
+        {
+            name: 'admin-mobile',
+            dependencies: ['admin-desktop'],
+            use: { ...devices['iPhone 13'], browserName: 'chromium' },
+            testMatch: /admin\.p0\.spec\.ts/,
         },
     ],
     webServer: {

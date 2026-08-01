@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Modules\Catalog\Enums\CatalogState;
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\Enums\PublicationStatus;
@@ -14,6 +15,8 @@ use App\Modules\Catalog\Models\SupplierSku;
 use App\Modules\Catalog\Models\Warehouse;
 use App\Modules\Catalog\ReadModel\CatalogQuery;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
+use App\Modules\Content\Models\MediaAsset;
+use App\Modules\Content\Models\MediaAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -50,6 +53,25 @@ test('it excludes unpublished and quarantined catalog rows', function (): void {
 
     expect($result->total)->toBe(1)
         ->and($result->items[0]->sku)->toBe('PUBLIC-01');
+});
+
+test('it filters to an active primary product image without duplicating catalog rows', function (): void {
+    $withImage = publicCatalogSku('IMAGE-01');
+    publicCatalogSku('IMAGE-02');
+    $uploader = User::factory()->operations()->create();
+    $asset = MediaAsset::create([
+        'disk' => 'public', 'path' => 'media/catalog-read.png', 'original_name' => 'catalog-read.png',
+        'mime' => 'image/png', 'byte_size' => 1, 'width' => 1, 'height' => 1,
+        'sha256' => hash('sha256', 'catalog-read-image'), 'alt_nb' => 'Bilde', 'alt_ru' => 'Фото',
+        'uploader_id' => $uploader->id, 'is_active' => true,
+    ]);
+    MediaAssignment::create(['media_asset_id' => $asset->id, 'assignable_type' => Product::class, 'assignable_id' => $withImage->product_id, 'role' => 'primary']);
+
+    $result = app(CatalogReadService::class)->search(new CatalogQuery(hasImageOnly: true));
+
+    expect($result->total)->toBe(1)
+        ->and($result->items)->toHaveCount(1)
+        ->and($result->items[0]->sku)->toBe('IMAGE-01');
 });
 
 test('it paginates and hydrates prices and stock in a bounded number of queries', function (): void {

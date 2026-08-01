@@ -21,6 +21,7 @@ final readonly class CatalogQuery
         public ?string $wheelOffsetEtMm = null,
         public ?string $wheelCenterBoreMm = null,
         public bool $inStockOnly = false,
+        public bool $hasImageOnly = false,
         public ?string $sort = null,
         public int $page = 1,
         public int $perPage = 24,

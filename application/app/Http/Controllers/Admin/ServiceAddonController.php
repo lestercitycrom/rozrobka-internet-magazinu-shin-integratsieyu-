@@ -18,7 +18,16 @@ final class ServiceAddonController
 
     public function edit(ServiceAddon $serviceAddon)
     {
-        return view('admin.service-addons.form', ['addon' => $serviceAddon, 'applicabilities' => ServiceAddonApplicability::cases(), 'billingModes' => ServiceAddonBillingMode::cases()]);
+        $price = $serviceAddon->price_minor === null
+            ? ''
+            : number_format($serviceAddon->price_minor / 100, 2, '.', '');
+
+        return view('admin.service-addons.form', [
+            'addon' => $serviceAddon,
+            'applicabilities' => ServiceAddonApplicability::cases(),
+            'billingModes' => ServiceAddonBillingMode::cases(),
+            'price' => $price,
+        ]);
     }
 
     public function update(Request $request, ServiceAddon $serviceAddon)

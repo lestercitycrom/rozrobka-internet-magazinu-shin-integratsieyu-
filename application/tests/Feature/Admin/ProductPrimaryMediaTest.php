@@ -36,6 +36,23 @@ test('product media section is localized and handles an empty active library', f
     $this->actingAs($admin)->get('/admin/catalog/'.$product->id)->assertOk()->assertSee('Hovedbilde')->assertSee('Ingen aktive mediefiler er tilgjengelige.');
     $this->actingAs($admin->fresh()->forceFill(['locale' => 'ru']))->get('/admin/catalog/'.$product->id)->assertOk()->assertSee('Основное изображение')->assertSee('Нет доступных активных медиафайлов.');
 });
+test('product media selector has a localized accessible label and contains long asset names', function () {
+    $admin = User::factory()->operations()->create(['locale' => 'nb']);
+    $product = mediaProduct();
+    $asset = mediaFor($admin, ['original_name' => str_repeat('langt-filnavn-', 20).'.png']);
+
+    $this->actingAs($admin)->get('/admin/catalog/'.$product->id)
+        ->assertOk()
+        ->assertSee('for="product-primary-media"', false)
+        ->assertSee('Velg mediefil')
+        ->assertSee($asset->original_name)
+        ->assertSee('max-w-xl', false);
+
+    $admin->forceFill(['locale' => 'ru'])->save();
+    $this->actingAs($admin)->get('/admin/catalog/'.$product->id)
+        ->assertOk()
+        ->assertSee('Выберите медиафайл');
+});
 function mediaProduct(): Product
 {
     $brand = Brand::create(['canonical_name' => 'M', 'slug' => 'm']);

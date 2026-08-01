@@ -8,4 +8,5 @@ return [
     'positive_price_required' => 'En aktiv tilleggstjeneste må ha en positiv NOK-pris.', 'currency_fixed' => 'Valuta er fast NOK.',
     'applicability_tire' => 'Dekk', 'applicability_wheel' => 'Felg', 'applicability_all' => 'Dekk og felg',
     'billing_mode_per_item' => 'Per vare', 'billing_mode_per_order' => 'Per bestilling',
+    'table_label' => 'Tilleggstjenester', 'empty' => 'Ingen tilleggstjenester er opprettet.',
 ];

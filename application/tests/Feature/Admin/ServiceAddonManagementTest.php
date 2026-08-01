@@ -16,6 +16,7 @@ test('administrator can edit a seeded service add-on with a decimal NOK price', 
     $addon = serviceAddon();
 
     $this->actingAs($admin)->get('/admin/service-addons')->assertOk()->assertSee('Tilleggstjenester')->assertSee('Pris mangler');
+    $this->actingAs($admin)->get('/admin/service-addons/'.$addon->id.'/edit')->assertOk();
     $this->actingAs($admin)->put('/admin/service-addons/'.$addon->id, ['title_nb' => 'Montering', 'title_ru' => 'Монтаж', 'applicability' => 'tire', 'billing_mode' => 'per_item', 'price_nok' => '349,50', 'is_active' => '1', 'sort_order' => '5'])->assertRedirect()->assertSessionHas('status');
 
     expect($addon->fresh()->price_minor)->toBe(34950)->and($addon->fresh()->currency)->toBe('NOK')->and($addon->fresh()->is_active)->toBeTrue()->and($addon->fresh()->sort_order)->toBe(5);

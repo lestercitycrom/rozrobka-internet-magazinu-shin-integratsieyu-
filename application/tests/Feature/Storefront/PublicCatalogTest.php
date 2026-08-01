@@ -138,6 +138,36 @@ test('primary product media uses lazy card loading, eager detail loading, russia
         ->assertSee('Produktbilde mangler');
 });
 
+test('catalog has image filter includes only products with an active primary assignment', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+    $withImage = storefrontProduct(ProductType::Tire, 'SKU-WITH-IMAGE', ['width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00', 'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer']);
+    $inactiveImage = storefrontProduct(ProductType::Tire, 'SKU-INACTIVE-IMAGE', ['width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00', 'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter']);
+    $secondaryImage = storefrontProduct(ProductType::Tire, 'SKU-SECONDARY-IMAGE', ['width_mm' => '225.00', 'aspect_ratio' => '45.00', 'rim_diameter_in' => '18.00', 'load_index' => '95', 'speed_symbol' => 'Y', 'season' => 'Summer']);
+    storefrontProduct(ProductType::Tire, 'SKU-FALLBACK-ONLY', ['width_mm' => '215.00', 'aspect_ratio' => '60.00', 'rim_diameter_in' => '17.00', 'load_index' => '94', 'speed_symbol' => 'H', 'season' => 'All season']);
+    $uploader = User::factory()->operations()->create();
+    $primary = storefrontMediaAsset($uploader, 'primary', true);
+    $inactive = storefrontMediaAsset($uploader, 'inactive', false);
+    $secondary = storefrontMediaAsset($uploader, 'secondary', true);
+    MediaAssignment::create(['media_asset_id' => $primary->id, 'assignable_type' => Product::class, 'assignable_id' => $withImage->product_id, 'role' => 'primary']);
+    MediaAssignment::create(['media_asset_id' => $inactive->id, 'assignable_type' => Product::class, 'assignable_id' => $inactiveImage->product_id, 'role' => 'primary']);
+    MediaAssignment::create(['media_asset_id' => $secondary->id, 'assignable_type' => Product::class, 'assignable_id' => $secondaryImage->product_id, 'role' => 'gallery']);
+
+    $this->get('/dekk?has_image=1')
+        ->assertOk()
+        ->assertSee('name="has_image" value="1" checked', false)
+        ->assertSee('Kun med produktbilde: Ja')
+        ->assertSee('SKU-WITH-IMAGE')
+        ->assertDontSee('SKU-INACTIVE-IMAGE')
+        ->assertDontSee('SKU-SECONDARY-IMAGE')
+        ->assertDontSee('SKU-FALLBACK-ONLY');
+
+    $this->get('/ru/dekk?has_image=1')
+        ->assertOk()
+        ->assertSee('Только с фото товара')
+        ->assertSee('SKU-WITH-IMAGE')
+        ->assertDontSee('storefront.has_image');
+});
+
 test('product detail presents supplier technical data and EU tyre label', function (): void {
     $sku = storefrontProduct(ProductType::Tire, 'SKU-LABELLED', [
         'width_mm' => '225.00', 'aspect_ratio' => '45.00', 'rim_diameter_in' => '18.00',
@@ -181,4 +211,14 @@ function storefrontArtifact(int $supplierId): string
     DB::table('source_artifacts')->insert(['id' => $id, 'supplier_id' => $supplierId, 'kind' => 'fixture', 'original_filename' => 'storefront.xlsx', 'storage_key' => 'fixtures/'.Str::lower(Str::random(8)).'.xlsx', 'byte_size' => 1, 'sha256' => hash('sha256', $id), 'received_at' => now(), 'is_redacted' => true]);
 
     return $id;
+}
+
+function storefrontMediaAsset(User $uploader, string $suffix, bool $active): MediaAsset
+{
+    return MediaAsset::create([
+        'disk' => 'public', 'path' => "media/{$suffix}.png", 'original_name' => "{$suffix}.png",
+        'mime' => 'image/png', 'byte_size' => 1, 'width' => 1, 'height' => 1,
+        'sha256' => hash('sha256', $suffix), 'alt_nb' => 'Produktbilde', 'alt_ru' => 'Фото товара',
+        'uploader_id' => $uploader->id, 'is_active' => $active,
+    ]);
 }

@@ -13,3 +13,16 @@ test('storefront interactive cards stay anchored and remain keyboard accessible'
         ->toContain('easytire-card easytire-interactive')
         ->not->toContain('hover:-translate-y');
 });
+
+test('shared red design tokens keep white labels at wcag aa contrast', function (): void {
+    $styles = file_get_contents(resource_path('css/app.css'));
+    $layout = file_get_contents(resource_path('views/components/layouts/storefront.blade.php'));
+
+    expect($styles)
+        ->toContain('--easytire-brand: #c90000;')
+        ->toContain('--easytire-brand-strong: #920000;')
+        ->toContain('rgb(201 0 0 / 0.14)')
+        ->not->toContain('--easytire-brand: #ff0000;');
+
+    expect($layout)->toContain('<meta name="theme-color" content="#c90000">');
+});

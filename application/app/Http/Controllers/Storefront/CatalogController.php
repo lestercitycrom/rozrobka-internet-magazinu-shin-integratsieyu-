@@ -41,6 +41,7 @@ class CatalogController extends Controller
     {
         $sort = $this->input($request, 'sort');
         $inStockOnly = $this->input($request, 'in_stock') === '1';
+        $hasImageOnly = $this->input($request, 'has_image') === '1';
         $page = $this->positiveIntegerInput($request, 'page') ?? 1;
         $items = $catalog->search(new CatalogQuery(
             productType: $productType,
@@ -57,6 +58,7 @@ class CatalogController extends Controller
             wheelOffsetEtMm: $productType === ProductType::Wheel ? $this->decimalInput($request, 'et') : null,
             wheelCenterBoreMm: $productType === ProductType::Wheel ? $this->decimalInput($request, 'center_bore') : null,
             inStockOnly: $inStockOnly,
+            hasImageOnly: $hasImageOnly,
             sort: in_array($sort, ['title', 'brand'], true) ? $sort : null,
             page: $page,
         ));
@@ -73,6 +75,9 @@ class CatalogController extends Controller
 
         if ($inStockOnly) {
             $filters['in_stock'] = '1';
+        }
+        if ($hasImageOnly) {
+            $filters['has_image'] = '1';
         }
         if (in_array($sort, ['title', 'brand'], true)) {
             $filters['sort'] = $sort;

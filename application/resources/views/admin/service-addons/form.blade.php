@@ -1,2 +1,69 @@
-@php($price = old('price_nok', $addon->price_minor === null ? '' : number_format($addon->price_minor / 100, 2, '.', '')))
-<x-layouts.admin :title="__('service_addons.title')"><div class="max-w-4xl space-y-8"><header><a class="inline-flex min-h-11 items-center rounded underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.service-addons.index') }}">{{ __('service_addons.title') }}</a><h1 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{{ $addon->code }}</h1></header>@if(session('status'))<p class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800" role="status">{{ session('status') }}</p>@endif@if($errors->any())<p class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ $errors->first() }}</p>@endif<form method="post" action="{{ route('admin.service-addons.update', $addon) }}" class="easytire-card space-y-7 rounded-2xl p-5 sm:p-8">@csrf @method('PUT')<fieldset class="grid gap-5 sm:grid-cols-2"><legend class="text-lg font-black">{{ __('service_addons.title') }}</legend>@foreach(['title_nb', 'title_ru'] as $field)<label class="block text-sm font-bold" for="addon-{{ $field }}">{{ __('service_addons.'.$field) }}<input id="addon-{{ $field }}" name="{{ $field }}" value="{{ old($field, $addon->$field) }}" required class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 @error($field) border-red-600 @enderror"></label>@endforeach<label class="block text-sm font-bold" for="addon-applicability">{{ __('service_addons.applicability') }}<select id="addon-applicability" name="applicability" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">@foreach($applicabilities as $option)<option value="{{ $option->value }}" @selected(old('applicability', $addon->applicability->value) === $option->value)>{{ __('service_addons.applicability_'.$option->value) }}</option>@endforeach</select></label><label class="block text-sm font-bold" for="addon-billing-mode">{{ __('service_addons.billing_mode') }}<select id="addon-billing-mode" name="billing_mode" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">@foreach($billingModes as $option)<option value="{{ $option->value }}" @selected(old('billing_mode', $addon->billing_mode->value) === $option->value)>{{ __('service_addons.billing_mode_'.$option->value) }}</option>@endforeach</select></label><label class="block text-sm font-bold" for="addon-price">{{ __('service_addons.price_nok') }}<input id="addon-price" name="price_nok" inputmode="decimal" value="{{ $price }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 @error('price_nok') border-red-600 @enderror" aria-describedby="addon-price-help"><span id="addon-price-help" class="mt-1 block text-xs font-normal text-easytire-muted">{{ __('service_addons.currency_fixed') }}</span></label><label class="block text-sm font-bold" for="addon-sort">{{ __('service_addons.sort_order') }}<input id="addon-sort" name="sort_order" type="number" value="{{ old('sort_order', $addon->sort_order) }}" required class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3"></label></fieldset><label class="flex min-h-11 items-center gap-3 rounded-lg border border-easytire-border bg-easytire-surface px-4 text-sm font-bold"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $addon->is_active)) class="size-5 rounded border-easytire-border text-easytire-brand focus:ring-easytire-brand">{{ __('service_addons.active') }}</label><button class="min-h-11 rounded-lg bg-easytire-brand px-5 text-sm font-bold text-white shadow-sm transition hover:bg-easytire-brand-strong" type="submit">{{ __('service_addons.save') }}</button></form></div></x-layouts.admin>
+<x-layouts.admin :title="__('service_addons.title')">
+    <div class="mx-auto max-w-4xl space-y-8">
+        <header>
+            <a class="inline-flex min-h-11 items-center rounded text-sm font-semibold text-easytire-brand underline decoration-2 underline-offset-4" href="{{ route('admin.service-addons.index') }}">
+                ← {{ __('service_addons.title') }}
+            </a>
+            <h1 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{{ $addon->code }}</h1>
+        </header>
+
+        @if (session('status'))
+            <p class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800" role="status">{{ session('status') }}</p>
+        @endif
+
+        @if ($errors->any())
+            <p class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ $errors->first() }}</p>
+        @endif
+
+        <form method="POST" action="{{ route('admin.service-addons.update', $addon) }}" class="easytire-card space-y-7 rounded-2xl p-5 sm:p-8">
+            @csrf
+            @method('PUT')
+
+            <fieldset class="grid gap-5 sm:grid-cols-2">
+                <legend class="mb-4 text-lg font-black">{{ __('service_addons.title') }}</legend>
+                @foreach (['title_nb', 'title_ru'] as $field)
+                    <label class="block text-sm font-bold" for="addon-{{ $field }}">
+                        {{ __('service_addons.'.$field) }}
+                        <input id="addon-{{ $field }}" name="{{ $field }}" value="{{ old($field, $addon->{$field}) }}" required class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 @error($field) border-red-600 @enderror">
+                    </label>
+                @endforeach
+
+                <label class="block text-sm font-bold" for="addon-applicability">
+                    {{ __('service_addons.applicability') }}
+                    <select id="addon-applicability" name="applicability" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
+                        @foreach ($applicabilities as $option)
+                            <option value="{{ $option->value }}" @selected(old('applicability', $addon->applicability->value) === $option->value)>{{ __('service_addons.applicability_'.$option->value) }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block text-sm font-bold" for="addon-billing-mode">
+                    {{ __('service_addons.billing_mode') }}
+                    <select id="addon-billing-mode" name="billing_mode" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
+                        @foreach ($billingModes as $option)
+                            <option value="{{ $option->value }}" @selected(old('billing_mode', $addon->billing_mode->value) === $option->value)>{{ __('service_addons.billing_mode_'.$option->value) }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block text-sm font-bold" for="addon-price">
+                    {{ __('service_addons.price_nok') }}
+                    <input id="addon-price" name="price_nok" inputmode="decimal" value="{{ old('price_nok', $price) }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 @error('price_nok') border-red-600 @enderror" aria-describedby="addon-price-help">
+                    <span id="addon-price-help" class="mt-1 block text-xs font-normal text-easytire-muted">{{ __('service_addons.currency_fixed') }}</span>
+                </label>
+
+                <label class="block text-sm font-bold" for="addon-sort">
+                    {{ __('service_addons.sort_order') }}
+                    <input id="addon-sort" name="sort_order" type="number" value="{{ old('sort_order', $addon->sort_order) }}" required class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
+                </label>
+            </fieldset>
+
+            <label class="flex min-h-11 items-center gap-3 rounded-lg border border-easytire-border bg-easytire-surface px-4 text-sm font-bold">
+                <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $addon->is_active)) class="size-5 rounded border-easytire-border text-easytire-brand focus:ring-easytire-brand">
+                {{ __('service_addons.active') }}
+            </label>
+
+            <button class="min-h-11 rounded-lg bg-easytire-brand px-5 text-sm font-bold text-white shadow-sm transition hover:bg-easytire-brand-strong" type="submit">{{ __('service_addons.save') }}</button>
+        </form>
+    </div>
+</x-layouts.admin>

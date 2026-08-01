@@ -9,8 +9,9 @@ test('buyer can use the private Russian storefront preview', async ({ page }) =>
     await page.getByRole('link', { name: 'Смотреть шины' }).click();
     await expect(page).toHaveURL(/\/ru\/dekk$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Шины' })).toBeVisible();
+    await expect(page.locator('[data-catalog-live-root]')).toHaveAttribute('data-catalog-live-ready', 'true');
     await page.getByLabel('Ширина').selectOption('205');
-    await page.getByRole('button', { name: 'Показать товары' }).click();
+    await expect(page).toHaveURL(/width=205/);
     await page.getByRole('link', { name: 'Открыть товар' }).click();
     await expect(page.getByRole('button', { name: 'Добавить в корзину' })).toBeVisible();
     await page.getByRole('button', { name: 'Добавить в корзину' }).click();

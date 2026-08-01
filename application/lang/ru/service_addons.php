@@ -8,4 +8,5 @@ return [
     'positive_price_required' => 'Для активной услуги нужна положительная цена в NOK.', 'currency_fixed' => 'Валюта фиксирована: NOK.',
     'applicability_tire' => 'Шины', 'applicability_wheel' => 'Диски', 'applicability_all' => 'Шины и диски',
     'billing_mode_per_item' => 'За единицу', 'billing_mode_per_order' => 'За заказ',
+    'table_label' => 'Дополнительные услуги', 'empty' => 'Дополнительных услуг пока нет.',
 ];

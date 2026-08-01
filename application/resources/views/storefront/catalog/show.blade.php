@@ -23,13 +23,22 @@
                         'color' => $item->wheel['color'], 'bolt_hole_boring' => $item->wheel['bolt_hole_boring'],
                     ];
                     $technicalDetails = collect($technicalDetails)->filter(fn ($value) => $value !== null && $value !== '');
+                    $technicalLabels = [
+                        'load_index' => __('storefront.load_index'), 'speed_symbol' => __('storefront.speed_symbol'),
+                        'construction' => __('storefront.construction'), 'reinforced' => __('storefront.reinforced'),
+                        'run_flat' => __('storefront.run_flat'), 'winter_type' => __('storefront.winter_type'),
+                        'three_peak_mountain_snowflake' => __('storefront.three_peak_mountain_snowflake'), 'ice_grip' => __('storefront.ice_grip'),
+                        'production_year' => __('storefront.production_year'), 'offset' => __('storefront.offset'),
+                        'center_bore' => __('storefront.center_bore'), 'color' => __('storefront.color'),
+                        'bolt_hole_boring' => __('storefront.bolt_hole_boring'),
+                    ];
                 @endphp
                 @if ($technicalDetails->isNotEmpty())
                     <section class="mt-8 rounded-2xl border border-easytire-border bg-easytire-surface p-5" aria-labelledby="technical-details-heading">
                         <h2 id="technical-details-heading" class="text-lg font-black">{{ __('storefront.technical_details') }}</h2>
                         <dl class="mt-4 grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
                             @foreach ($technicalDetails as $key => $value)
-                                <div><dt class="text-easytire-muted">{{ __('storefront.'.$key) }}</dt><dd class="mt-1 font-bold">{{ is_bool($value) ? ($value ? __('storefront.yes') : __('storefront.no')) : $value }}</dd></div>
+                                <div><dt class="text-easytire-muted">{{ $technicalLabels[$key] }}</dt><dd class="mt-1 font-bold">{{ is_bool($value) ? ($value ? __('storefront.yes') : __('storefront.no')) : $value }}</dd></div>
                             @endforeach
                         </dl>
                     </section>
@@ -37,13 +46,14 @@
 
                 @if ($item->tire)
                     @php($label = collect($item->tire['label'])->filter(fn ($value) => $value !== null && $value !== ''))
+                    @php($labelNames = ['rolling_resistance' => __('storefront.rolling_resistance'), 'wet_grip' => __('storefront.wet_grip'), 'noise_db' => __('storefront.external_noise'), 'noise_class' => __('storefront.noise_class')])
                     @if ($label->isNotEmpty())
                         <section class="mt-6 rounded-2xl border border-easytire-border bg-white p-5" aria-labelledby="eu-label-heading">
                             <h2 id="eu-label-heading" class="text-lg font-black">{{ __('storefront.eu_label') }}</h2>
                             <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                                 @foreach (['rolling_resistance', 'wet_grip', 'noise_db', 'noise_class'] as $key)
                                     @if (($item->tire['label'][$key] ?? null) !== null && $item->tire['label'][$key] !== '')
-                                        <div class="rounded-xl bg-easytire-surface p-3"><dt class="text-xs font-semibold text-easytire-muted">{{ __('storefront.'.($key === 'noise_db' ? 'external_noise' : $key)) }}</dt><dd class="mt-2 text-xl font-black">{{ $item->tire['label'][$key] }}{{ $key === 'noise_db' ? ' dB' : '' }}</dd></div>
+                                        <div class="rounded-xl bg-easytire-surface p-3"><dt class="text-xs font-semibold text-easytire-muted">{{ $labelNames[$key] }}</dt><dd class="mt-2 text-xl font-black">{{ $item->tire['label'][$key] }}{{ $key === 'noise_db' ? ' dB' : '' }}</dd></div>
                                     @endif
                                 @endforeach
                             </dl>

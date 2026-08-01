@@ -49,6 +49,7 @@ test('an administrator can create update and delete localized content pages', fu
     $payload = contentPayload('kjopsvilkar');
     $payload['publication_status'] = $payload['publication_status']->value;
 
+    $this->actingAs($admin)->get('/admin/content-pages/create')->assertOk();
     $this->actingAs($admin)->post('/admin/content-pages', $payload)->assertRedirect();
     $page = ContentPage::query()->where('slug', 'kjopsvilkar')->firstOrFail();
     $this->actingAs($admin)->get('/admin/content-pages')->assertOk()->assertSee('Bare publiserte sider er synlige på nettstedet');

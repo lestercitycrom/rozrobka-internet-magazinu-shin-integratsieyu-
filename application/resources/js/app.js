@@ -1,2 +1,2 @@
 import './bootstrap';
-import './catalog-autocomplete';
+import './catalog-live';

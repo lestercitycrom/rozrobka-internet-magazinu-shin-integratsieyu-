@@ -25,6 +25,17 @@ final class CatalogReadService
                     ->whereColumn('current_stock.supplier_sku_id', 'supplier_skus.id')->where('warehouses.is_active', true)->where('current_stock.quantity', '>', 0);
             });
         }
+        if ($filters->hasImageOnly) {
+            $query->whereExists(function ($media): void {
+                $media->selectRaw('1')
+                    ->from('media_assignments')
+                    ->join('media_assets', 'media_assets.id', '=', 'media_assignments.media_asset_id')
+                    ->whereColumn('media_assignments.assignable_id', 'products.id')
+                    ->where('media_assignments.assignable_type', Product::class)
+                    ->where('media_assignments.role', 'primary')
+                    ->where('media_assets.is_active', true);
+            });
+        }
         if ($filters->sort === 'brand') {
             $query->orderBy('brands.canonical_name')->orderBy('products.title');
         } elseif ($filters->sort === 'title') {

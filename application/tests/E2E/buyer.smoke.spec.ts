@@ -113,10 +113,12 @@ test('buyer can browse the Norwegian storefront and open a catalog product', asy
     await page.getByLabel('Søk').fill('Demo');
     await suggestionsResponse;
     await expect(page.locator('#catalog-suggestions option')).not.toHaveCount(0);
+    await expect(page).toHaveURL(/q=Demo/);
     await page.getByLabel('Bredde').selectOption('205');
+    await expect(page).toHaveURL(/width=205/);
     await page.getByLabel('Profil').selectOption('55');
+    await expect(page).toHaveURL(/aspect=55/);
     await page.getByLabel('Kun på lager').check();
-    await page.getByRole('button', { name: 'Vis produkter' }).click();
     await expect(page).toHaveURL(/width=205.*aspect=55.*in_stock=1/);
     await expect(page.getByTestId('active-filters')).toBeVisible();
     await page.getByRole('link', { name: 'Nullstill alle' }).click();
@@ -124,8 +126,9 @@ test('buyer can browse the Norwegian storefront and open a catalog product', asy
     await expect(page.getByLabel('Kun på lager')).not.toBeChecked();
     await openMobileFilters();
     await page.getByLabel('Bredde').selectOption('205');
+    await expect(page).toHaveURL(/width=205/);
     await page.getByLabel('Profil').selectOption('55');
-    await page.getByRole('button', { name: 'Vis produkter' }).click();
+    await expect(page).toHaveURL(/aspect=55/);
     await expect(page).toHaveURL(/width=205.*aspect=55/);
     await expect(page.getByTestId('catalog-product')).toContainText('Demo 205/55 R16');
     await page.getByRole('link', { name: 'Se produkt' }).click();
