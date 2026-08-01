@@ -1,6 +1,6 @@
 # NDI credential check — 2026-08-01
 
-Owner: Mister Red  
+Owner: Mister Red
 Environment: isolated EasyTire staging
 
 ## Safe check performed
