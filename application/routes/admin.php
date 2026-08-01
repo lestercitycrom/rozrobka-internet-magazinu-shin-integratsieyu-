@@ -25,6 +25,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware(['admin.active', 'admin.locale'])->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
+        Route::get('/catalog/publication-preview', [CatalogController::class, 'publicationPreview'])->name('catalog.publication.preview');
+        Route::put('/catalog/publication', [CatalogController::class, 'publishEligible'])->name('catalog.publication.publish');
         Route::get('/catalog/{product}', [CatalogController::class, 'show'])->name('catalog.show');
         Route::put('/catalog/{product}/publication', [CatalogController::class, 'updatePublication'])->name('catalog.publication.update');
         Route::get('/imports', [ImportRunController::class, 'index'])->name('imports.index');

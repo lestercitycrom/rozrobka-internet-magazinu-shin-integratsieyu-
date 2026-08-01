@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Pricing\Enums\PricingRuleScope;
+use App\Modules\Pricing\Models\PricingRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -41,6 +44,23 @@ test('publication controls are localized for Russian administrators', function (
         ->assertSee('Опубликован');
 });
 
+test('administrator previews and publishes only draft products with a positive computable retail price', function (): void {
+    $admin = User::factory()->operations()->create();
+    $eligibleId = pricedDraftProductId('PUBLISH-1', '100.0000');
+    $zeroId = pricedDraftProductId('PUBLISH-0', '0.0000');
+    PricingRule::create(['name' => 'Test retail', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'ndi-file-current', 'currency' => 'NOK', 'markup_basis_points' => 1000, 'fixed_markup_minor' => 0, 'rounding_increment_minor' => 100, 'priority' => 1, 'is_active' => true]);
+
+    $this->actingAs($admin)->get('/admin/catalog/publication-preview')
+        ->assertOk()
+        ->assertSee('PUBLISH-1')
+        ->assertDontSee('PUBLISH-0')
+        ->assertSee('110,00 NOK');
+    $this->actingAs($admin)->put('/admin/catalog/publication')->assertRedirect('/admin/catalog');
+
+    expect(DB::table('products')->where('id', $eligibleId)->value('publication_status'))->toBe('published')
+        ->and(DB::table('products')->where('id', $zeroId)->value('publication_status'))->toBe('draft');
+});
+
 function catalogProductId(): int
 {
     $brandId = DB::table('brands')->insertGetId([
@@ -60,4 +80,18 @@ function catalogProductId(): int
         'created_at' => now(),
         'updated_at' => now(),
     ]);
+}
+
+function pricedDraftProductId(string $sku, string $amount): int
+{
+    $supplierId = DB::table('suppliers')->insertGetId(['code' => $sku, 'name' => 'NDI', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+    $brandId = DB::table('brands')->insertGetId(['canonical_name' => $sku, 'slug' => strtolower($sku), 'created_at' => now(), 'updated_at' => now()]);
+    $productId = DB::table('products')->insertGetId(['product_type' => 'tire', 'brand_id' => $brandId, 'model_name' => 'Model', 'title' => $sku, 'publication_status' => 'draft', 'first_seen_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+    $skuId = DB::table('supplier_skus')->insertGetId(['supplier_id' => $supplierId, 'product_id' => $productId, 'external_sku' => $sku, 'catalog_state' => 'catalog', 'created_at' => now(), 'updated_at' => now()]);
+    $artifactId = (string) Str::ulid();
+    DB::table('source_artifacts')->insert(['id' => $artifactId, 'supplier_id' => $supplierId, 'kind' => 'workbook', 'original_filename' => 'fixture.xlsx', 'storage_key' => strtolower($sku).'.xlsx', 'byte_size' => 1, 'sha256' => str_repeat('b', 64), 'received_at' => now(), 'is_redacted' => true]);
+    $listId = DB::table('price_lists')->insertGetId(['supplier_id' => $supplierId, 'code' => 'ndi-file-current', 'currency' => 'NOK', 'tax_mode' => 'gross', 'valid_from' => now()->subMinute(), 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('sku_prices')->insert(['supplier_sku_id' => $skuId, 'price_list_id' => $listId, 'amount' => $amount, 'observed_at' => now(), 'source_artifact_id' => $artifactId, 'created_at' => now(), 'updated_at' => now()]);
+
+    return $productId;
 }
