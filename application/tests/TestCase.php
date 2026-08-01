@@ -24,6 +24,23 @@ abstract class TestCase extends BaseTestCase
             ));
         }
 
+        $externalFlags = [
+            'ndi_api.inquiry_enabled',
+            'ndi_api.order_enabled',
+            'ndi_api.c1_test_mode',
+            'ndi_api.fulfilment_read_enabled',
+            'payments.enabled',
+            'outbox.notion_enabled',
+            'outbox.telegram_enabled',
+            'vehicle_fitment.enabled',
+        ];
+
+        foreach ($externalFlags as $flag) {
+            if ($app['config']->get($flag, false)) {
+                throw new \LogicException("Refusing to run tests while external integration {$flag} is enabled.");
+            }
+        }
+
         return $app;
     }
 }
