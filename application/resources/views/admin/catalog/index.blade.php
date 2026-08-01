@@ -1,9 +1,14 @@
 <x-layouts.admin :title="__('admin.catalog.title')">
     <div class="space-y-8">
-        <header>
-            <p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">{{ __('admin.brand') }}</p>
-            <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{{ __('admin.catalog.heading') }}</h1>
-            <p class="mt-3 max-w-2xl leading-7 text-easytire-muted">{{ __('admin.catalog.intro') }}</p>
+        <header class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">{{ __('admin.brand') }}</p>
+                <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{{ __('admin.catalog.heading') }}</h1>
+                <p class="mt-3 max-w-2xl leading-7 text-easytire-muted">{{ __('admin.catalog.intro') }}</p>
+            </div>
+            <a class="easytire-interactive inline-flex min-h-11 items-center justify-center rounded-xl bg-easytire-brand px-5 text-sm font-black text-white hover:bg-easytire-brand-strong" href="{{ route('admin.catalog.publication.preview') }}">
+                {{ __('catalog.bulk_preview') }}
+            </a>
         </header>
 
         <form class="easytire-card grid gap-4 rounded-2xl p-5 md:grid-cols-4 md:p-6" method="GET">

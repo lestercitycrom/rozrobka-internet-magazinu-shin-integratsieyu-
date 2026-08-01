@@ -27,7 +27,7 @@ test('an administrator can inspect catalog and safe import audit details', funct
     DB::table('current_stock')->insert(['supplier_sku_id' => $skuId, 'warehouse_id' => $warehouseId, 'quantity' => 17, 'observed_at' => now(), 'source_artifact_id' => $artifactId, 'created_at' => now(), 'updated_at' => now()]);
     DB::table('import_run_artifacts')->insert(['import_run_id' => $runId, 'source_artifact_id' => $artifactId, 'dataset_role' => 'catalog', 'parser_version' => '1']);
     DB::table('import_rejections')->insert(['import_run_id' => $runId, 'source_artifact_id' => $artifactId, 'reason' => 'Invalid width', 'raw_row_json' => json_encode(['password' => 'secret-value'])]);
-    $this->actingAs($admin)->get('/admin/catalog?q=Nord')->assertOk()->assertSee('Nord X1')->assertSee('easytire-card', false)->assertSee('type="search"', false);
+    $this->actingAs($admin)->get('/admin/catalog?q=Nord')->assertOk()->assertSee('Nord X1')->assertSee('easytire-card', false)->assertSee('type="search"', false)->assertSee(route('admin.catalog.publication.preview'), false);
     DB::enableQueryLog();
     DB::flushQueryLog();
     $this->actingAs($admin)->get('/admin/catalog/'.$productId)->assertOk()->assertSee('N-1')->assertSee('123.4500')->assertSee('98.7600')->assertSee('17')->assertSee('ikke utsalgspriser');
