@@ -14,6 +14,8 @@
     --easytire-panel: #ffffff;
     --easytire-border: #dedede;
     --easytire-muted: #595959;
+    --easytire-shadow: 0 16px 38px rgb(17 17 17 / 0.08);
+    --easytire-shadow-hover: 0 20px 48px rgb(17 17 17 / 0.14);
 }
 
 /* Self-host only the Latin/Norwegian and Russian Cyrillic subsets that this project uses. */
@@ -75,6 +77,19 @@
     outline: 3px solid #ffffff;
     outline-offset: 3px;
     box-shadow: 0 0 0 5px var(--easytire-brand);
+}
+
+.admin-shell :focus-visible { outline: 3px solid var(--easytire-brand); outline-offset: 3px; }
+.easytire-card { border: 1px solid var(--easytire-border); background: var(--easytire-panel); box-shadow: var(--easytire-shadow); }
+.easytire-interactive { transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease; }
+.easytire-interactive:hover { border-color: var(--easytire-brand); box-shadow: var(--easytire-shadow-hover); transform: translateY(-2px); }
+.easytire-input { border: 1px solid var(--easytire-border); background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease; }
+.easytire-input:focus { border-color: var(--easytire-brand); box-shadow: 0 0 0 4px rgb(255 0 0 / 0.14); outline: none; }
+.admin-shell { background: radial-gradient(circle at 100% 0, rgb(255 0 0 / 0.07), transparent 28rem), var(--easytire-surface); }
+::selection { background: var(--easytire-brand); color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
 
 @theme {

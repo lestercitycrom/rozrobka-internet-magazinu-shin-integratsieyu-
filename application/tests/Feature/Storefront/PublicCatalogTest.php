@@ -37,7 +37,8 @@ test('visitor can filter published tires and open a product page', function (): 
         ->assertSee('SKU-TIRE-205')
         ->assertDontSee('SKU-TIRE-195')
         ->assertSee('value="205"', false)
-        ->assertSee('value="Summer" selected', false);
+        ->assertSee('value="Summer" selected', false)
+        ->assertSee('easytire-card easytire-interactive', false);
 
     $this->get('/produkter/SKU-TIRE-205')
         ->assertOk()
