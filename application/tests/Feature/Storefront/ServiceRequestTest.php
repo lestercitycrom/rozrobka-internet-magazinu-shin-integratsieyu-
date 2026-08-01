@@ -11,6 +11,17 @@ test('buyer submits a non-binding service request with a public reference', func
     $this->post('/tjenester/test/foresporsel', ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1'])->assertRedirect();
     expect(ServiceRequest::query()->first()->reference)->toStartWith('SR-');
 });
+
+test('service request form exposes accessible styled controls', function (): void {
+    ServicePage::create(['slug' => 'form-test', 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => 'Test', 'title_ru' => 'Тест']);
+
+    $this->get('/tjenester/form-test/foresporsel')
+        ->assertOk()
+        ->assertSee('for="booking-name"', false)
+        ->assertSee('id="booking-fulfilment"', false)
+        ->assertSee('type="checkbox"', false)
+        ->assertSee('easytire-input', false);
+});
 test('honeypot rejects a service request', function () {
     $this->post('/tjenester/test/foresporsel', ['service_slug' => 'test', 'fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1', 'website' => 'bot'])->assertSessionHasErrors('website');
 });

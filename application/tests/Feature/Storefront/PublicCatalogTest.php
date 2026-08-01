@@ -76,7 +76,7 @@ test('primary product media uses lazy card loading, eager detail loading, russia
     $this->get('/produkter/SKU-MEDIA')->assertSee('loading="eager"', false)->assertSee('fetchpriority="high"', false);
     $this->get('/ru/produkter/SKU-MEDIA')->assertSee('alt="Fallback alt"', false);
     storefrontProduct(ProductType::Tire, 'SKU-NO-MEDIA', ['width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00', 'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter']);
-    $this->get('/produkter/SKU-NO-MEDIA')->assertDontSee('data-testid="product-primary-media"', false);
+    $this->get('/produkter/SKU-NO-MEDIA')->assertDontSee('data-testid="product-primary-media"', false)->assertSee('data-testid="product-visual-fallback"', false)->assertSee('aria-hidden="true"', false);
 });
 
 function storefrontProduct(ProductType $type, string $skuCode, array $spec): SupplierSku

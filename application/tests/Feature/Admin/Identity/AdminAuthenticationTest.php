@@ -107,6 +107,10 @@ test('an admin locale is persisted for the user and does not change the public s
         ->get('/admin')
         ->assertOk()
         ->assertSee('Панель управления')
+        ->assertSee(__('admin_nav.content', [], 'ru'))
+        ->assertSee(__('admin_nav.media', [], 'ru'))
+        ->assertDontSee('Innholdssider')
+        ->assertDontSee('admin.nav.media')
         ->assertSee('lang="ru"', false);
 
     $this->get('/')

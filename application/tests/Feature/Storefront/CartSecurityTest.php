@@ -13,6 +13,17 @@ test('unknown public order reference is not exposed', function (): void {
     $this->get('/bestilling/ET-UNKNOWN-REFERENCE')->assertNotFound();
 });
 
+test('cart and checkout expose the styled accessible purchase controls', function (): void {
+    $this->get('/handlekurv')->assertOk()->assertSee('border-dashed', false);
+
+    $this->get('/kasse')
+        ->assertOk()
+        ->assertSee('for="checkout-name"', false)
+        ->assertSee('id="checkout-email"', false)
+        ->assertSee('type="checkbox"', false)
+        ->assertSee('easytire-input', false);
+});
+
 test('checkout rejects an idempotency key that does not match the session', function (): void {
     $this->withSession(['checkout.key' => '11111111-1111-4111-8111-111111111111'])
         ->post('/kasse', ['idempotency_key' => '22222222-2222-4222-8222-222222222222', 'name' => 'Test', 'email' => 'a@example.test', 'phone' => '1', 'consent' => 1, 'terms' => 1])
