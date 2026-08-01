@@ -1,5 +1,7 @@
 # Первичный backlog
 
+> Status update — 2026-08-01: M1 official bundle has been published in staging (1,573 products; see validation evidence); products remain draft pending an approved retail pricing policy. Local cart/checkout/order/payment-webhook/outbox foundations are implemented. Live payment provider, SFTP delivery, Statens vegvesen key, Notion/Telegram destinations, and C1 remain externally blocked. NDI staging credential smoke returned HTTP 401; Inquiry was returned to disabled.
+
 ## Исследование и решения
 
 - `RED-001` — первичный аудит NDI API. Статус: выполнен.

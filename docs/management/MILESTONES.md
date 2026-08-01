@@ -1,5 +1,7 @@
 # EasyTire — этапы реализации
 
+> Status update — 2026-08-01: M3 is **partially implemented**, not unstarted: session cart, checkout, local order state machine, payment webhook/idempotency boundary, read-only admin orders, and disabled-by-default transactional outbox exist. External activation remains blocked by payment-provider selection, SFTP details, Statens key, Notion/Telegram contracts, and written C1 authorization/notice. Official bundle import has succeeded in staging; the pricing policy is test-only and catalog products remain draft. The latest NDI credential smoke returned HTTP 401 and all NDI runtime flags are disabled.
+
 Владелец плана: Mister Red  
 Дата: 2026-07-31
 
