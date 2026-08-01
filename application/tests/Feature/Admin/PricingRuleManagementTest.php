@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Pricing\Enums\PricingRuleScope;
 use App\Modules\Pricing\Models\PricingRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -23,6 +24,25 @@ test('active overlapping rules are rejected but inactive and nonoverlapping rule
 test('guests and customers cannot manage pricing rules', function (): void {
     $this->get('/admin/pricing-rules')->assertRedirect(route('admin.login'));
     $this->actingAs(User::factory()->customer()->create())->get('/admin/pricing-rules')->assertForbidden();
+});
+
+test('pricing rule screens expose accessible controls and responsive status presentation', function (): void {
+    $admin = User::factory()->operations()->create();
+    PricingRule::create(['name' => 'Active retail', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'ndi-file-current', 'currency' => 'NOK', 'markup_basis_points' => 1000, 'fixed_markup_minor' => 0, 'rounding_increment_minor' => 100, 'priority' => 1, 'is_active' => true]);
+
+    $this->actingAs($admin)->get('/admin/pricing-rules')
+        ->assertOk()
+        ->assertSee('easytire-card', false)
+        ->assertSee('rounded-full', false)
+        ->assertSee('Active retail');
+
+    $this->actingAs($admin)->get('/admin/pricing-rules/create')
+        ->assertOk()
+        ->assertSee('for="name"', false)
+        ->assertSee('id="scope"', false)
+        ->assertSee('type="checkbox"', false)
+        ->assertSee('type="date"', false)
+        ->assertSee('easytire-input', false);
 });
 function pricingPayload(array $overrides = []): array
 {
