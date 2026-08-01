@@ -6,6 +6,7 @@
 /tmp/
 /output/
 /docs/primary/*.png
+/docs/access.md
 /application/.env
 /application/.phpunit.result.cache
 /application/node_modules/

@@ -13,13 +13,36 @@ final class SellingPriceService
 {
     public function forItem(CatalogItem $item): ?SellingPrice
     {
-        $rules = PricingRule::query()
+        return $this->calculate($item, $this->activeRules());
+    }
+
+    /** @param iterable<CatalogItem> $items @return list<SellingPrice|null> */
+    public function forItems(iterable $items): array
+    {
+        $rules = $this->activeRules();
+        $prices = [];
+
+        foreach ($items as $item) {
+            $prices[] = $this->calculate($item, $rules);
+        }
+
+        return $prices;
+    }
+
+    /** @return Collection<int, PricingRule> */
+    private function activeRules(): Collection
+    {
+        return PricingRule::query()
             ->where('is_active', true)
             ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
             ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>', now()))
             ->orderByDesc('priority')
             ->get();
+    }
 
+    /** @param Collection<int, PricingRule> $rules */
+    private function calculate(CatalogItem $item, Collection $rules): ?SellingPrice
+    {
         $rule = $this->firstMatchingRule($rules, $item);
         if ($rule === null) {
             return null;

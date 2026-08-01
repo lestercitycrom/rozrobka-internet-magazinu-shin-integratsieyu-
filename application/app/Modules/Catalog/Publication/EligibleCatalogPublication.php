@@ -20,35 +20,41 @@ final class EligibleCatalogPublication
     /** @return Collection<int, array{product: Product, price: SellingPrice}> */
     public function preview(): Collection
     {
-        return Product::query()
+        $options = Product::query()
             ->where('publication_status', PublicationStatus::Draft->value)
             ->with(['brand', 'supplierSkus.supplier', 'supplierSkus.prices.priceList'])
             ->orderBy('id')
             ->get()
-            ->map(function (Product $product): ?array {
-                foreach ($product->supplierSkus as $sku) {
-                    if ($sku->catalog_state !== CatalogState::Catalog || ! $sku->supplier?->is_active) {
-                        continue;
-                    }
+            ->flatMap(function (Product $product): array {
+                return $product->supplierSkus
+                    ->filter(fn ($sku): bool => $sku->catalog_state === CatalogState::Catalog && (bool) $sku->supplier?->is_active)
+                    ->map(function ($sku) use ($product): array {
+                        $prices = $sku->prices->filter(fn ($price): bool => $price->priceList !== null
+                            && $price->priceList->tax_mode === TaxMode::Gross
+                            && $price->priceList->valid_from <= now()
+                            && ($price->priceList->valid_to === null || $price->priceList->valid_to > now()))
+                            ->map(fn ($price) => new CatalogPrice($price->amount, $price->priceList->currency, TaxMode::Gross, $price->observed_at, $price->priceList->code))
+                            ->values()
+                            ->all();
 
-                    $prices = $sku->prices->filter(fn ($price): bool => $price->priceList !== null
-                        && $price->priceList->tax_mode === TaxMode::Gross
-                        && $price->priceList->valid_from <= now()
-                        && ($price->priceList->valid_to === null || $price->priceList->valid_to > now()))
-                        ->map(fn ($price) => new CatalogPrice($price->amount, $price->priceList->currency, TaxMode::Gross, $price->observed_at, $price->priceList->code))
-                        ->values()
-                        ->all();
+                        $item = new CatalogItem($sku->external_sku, $product->product_type, $product->brand->canonical_name, $product->model_name, $product->title, $prices, new CatalogStock(0, null), null, null);
 
-                    $item = new CatalogItem($sku->external_sku, $product->product_type, $product->brand->canonical_name, $product->model_name, $product->title, $prices, new CatalogStock(0, null), null, null);
-                    $price = $this->pricing->forItem($item);
-                    if ($price !== null && $price->money->minor > 0) {
-                        return ['product' => $product, 'price' => $price];
-                    }
-                }
-
-                return null;
+                        return ['product' => $product, 'item' => $item];
+                    })
+                    ->values()
+                    ->all();
             })
-            ->filter()
+            ->values();
+
+        $prices = $this->pricing->forItems($options->pluck('item'));
+
+        return $options
+            ->map(fn (array $option, int $index): array => [
+                'product' => $option['product'],
+                'price' => $prices[$index],
+            ])
+            ->filter(fn (array $candidate): bool => $candidate['price'] !== null && $candidate['price']->money->minor > 0)
+            ->unique(fn (array $candidate): int => $candidate['product']->id)
             ->values();
     }
 
