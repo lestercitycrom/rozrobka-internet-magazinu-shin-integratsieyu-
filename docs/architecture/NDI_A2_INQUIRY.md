@@ -2,6 +2,11 @@
 
 `App\Modules\NdiApi\Contracts\NdiInquiryClient` is the only application boundary for an NDI availability check. The HTTP implementation serializes `inquiry_A2`, requires the confirmed `http://www.reifen.net` namespace, posts only to HTTPS, and parses `quote_A2` into typed result values.
 
+The confirmed request contract uses `DocumentID=A2`, `Variant=5`, the element
+order `DocumentID -> Variant -> CustomerReference -> BuyerParty -> OrderLine`,
+and `EANUCCArticleID` for the outgoing supplier identifier. The response parser
+also accepts the `ManufacturersArticleID` field present in NDI's earlier fixture.
+
 ## Safety defaults
 
 - `NDI_INQUIRY_ENABLED=false` by default; CI and ordinary local runs cannot reach NDI.
@@ -16,4 +21,4 @@ The current verified response supplies availability and delivery date but no pri
 
 ## Test layers
 
-Synthetic redacted fixtures cover success and the observed PartyID error. HTTP tests use Laravel's fake transport and reject stray requests. A staging read-only smoke check may be enabled only after NDI confirms the correct EasyTire `PartyID`; it must use a known safe SKU and must never be promoted to an automatic production test.
+Synthetic redacted fixtures cover success and the observed PartyID error. HTTP tests use Laravel's fake transport and reject stray requests. A staging read-only smoke check may be enabled only with the NDI-confirmed account and known safe SKU; it must never be promoted to an automatic production test.

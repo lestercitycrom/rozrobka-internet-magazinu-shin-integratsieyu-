@@ -41,7 +41,7 @@ final class NdiInquirySmoke extends Command
 
         try {
             $result = $client->inquire(new NdiInquiryRequest(
-                documentId: 'INQ-'.Str::ulid(),
+                documentId: 'A2',
                 customerReference: $reference,
                 lines: [new NdiInquiryLine('1', $sku, (int) $quantity)],
             ));

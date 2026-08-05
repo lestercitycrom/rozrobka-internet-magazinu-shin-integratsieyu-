@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Http;
 
 function ndiInquiryRequest(): NdiInquiryRequest
 {
-    return new NdiInquiryRequest('INQUIRY-001', 'CHECKOUT-001', [new NdiInquiryLine('1', '000205550016', 4)]);
+    return new NdiInquiryRequest('A2', 'CHECKOUT-001', [new NdiInquiryLine('1', '000205550016', 4)]);
 }
 
 test('external inquiry is disabled by default', function (): void {
@@ -42,7 +42,7 @@ test('it posts an authenticated A2 inquiry to the configured HTTPS endpoint', fu
             && $request->method() === 'POST'
             && $authorization === 'Basic '.base64_encode('fixture-user:fixture-password')
             && str_contains($request->body(), 'xmlns:ew="http://www.reifen.net"')
-            && str_contains($request->body(), '<ManufacturersArticleID>000205550016</ManufacturersArticleID>');
+            && str_contains($request->body(), '<EANUCCArticleID>000205550016</EANUCCArticleID>');
     });
 });
 

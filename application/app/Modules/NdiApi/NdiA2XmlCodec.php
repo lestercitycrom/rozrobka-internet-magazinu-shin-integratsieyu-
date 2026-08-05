@@ -27,20 +27,20 @@ final class NdiA2XmlCodec
         $document->appendChild($root);
 
         $this->appendText($document, $root, 'DocumentID', $request->documentId);
-        $buyerParty = $document->createElement('BuyerParty');
-        $root->appendChild($buyerParty);
-        $this->appendText($document, $buyerParty, 'PartyID', $partyId);
-        $this->appendText($document, $buyerParty, 'AgencyCode', $agencyCode);
+        $this->appendText($document, $root, 'Variant', $request->variant);
 
         $reference = $document->createElement('CustomerReference');
         $root->appendChild($reference);
         $this->appendText($document, $reference, 'DocumentID', $request->customerReference);
 
+        $buyerParty = $document->createElement('BuyerParty');
+        $root->appendChild($buyerParty);
+        $this->appendText($document, $buyerParty, 'PartyID', $partyId);
+        $this->appendText($document, $buyerParty, 'AgencyCode', $agencyCode);
+
         foreach ($request->lines as $line) {
             $this->appendLine($document, $root, $line);
         }
-
-        $this->appendText($document, $root, 'Variant', $request->variant);
 
         $xml = $document->saveXML();
         if ($xml === false) {
@@ -89,7 +89,12 @@ final class NdiA2XmlCodec
             $availableText = $this->optionalText($xpath, $node, './*[local-name()="OrderedArticle"]/*[local-name()="ScheduleDetails"]/*[local-name()="AvailableQuantity"]/*[local-name()="QuantityValue"]');
             $lines[] = new NdiQuoteLine(
                 lineId: $this->requiredText($xpath, $node, './*[local-name()="LineID"]', 'LineID'),
-                sku: $this->requiredText($xpath, $node, './*[local-name()="OrderedArticle"]/*[local-name()="ArticleIdentification"]/*[local-name()="ManufacturersArticleID"]', 'ManufacturersArticleID'),
+                sku: $this->requiredText(
+                    $xpath,
+                    $node,
+                    './*[local-name()="OrderedArticle"]/*[local-name()="ArticleIdentification"]/*[local-name()="EANUCCArticleID" or local-name()="ManufacturersArticleID"]',
+                    'article identifier',
+                ),
                 requestedQuantity: $requested,
                 availableQuantity: $availableText === null ? 0 : $this->nonNegativeInteger($availableText),
                 deliveryDate: $this->optionalText($xpath, $node, './*[local-name()="OrderedArticle"]/*[local-name()="ScheduleDetails"]/*[local-name()="DeliveryDate"]'),
@@ -112,7 +117,7 @@ final class NdiA2XmlCodec
         $orderLine->appendChild($article);
         $identification = $document->createElement('ArticleIdentification');
         $article->appendChild($identification);
-        $this->appendText($document, $identification, 'ManufacturersArticleID', $line->sku);
+        $this->appendText($document, $identification, 'EANUCCArticleID', $line->sku);
         $quantity = $document->createElement('RequestedQuantity');
         $article->appendChild($quantity);
         $this->appendText($document, $quantity, 'QuantityValue', (string) $line->quantity);

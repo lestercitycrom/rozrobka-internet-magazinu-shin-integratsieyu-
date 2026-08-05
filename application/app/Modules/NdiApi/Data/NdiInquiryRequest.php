@@ -11,10 +11,10 @@ final readonly class NdiInquiryRequest
         public string $documentId,
         public string $customerReference,
         public array $lines,
-        public string $variant = '',
+        public string $variant = '5',
     ) {
-        if ($this->documentId === '' || mb_strlen($this->documentId) > 50) {
-            throw new InvalidArgumentException('NDI document ID must contain 1 to 50 characters.');
+        if ($this->documentId !== 'A2') {
+            throw new InvalidArgumentException('NDI A2 inquiry document ID must be A2.');
         }
 
         if ($this->customerReference === '' || mb_strlen($this->customerReference) > 50) {
@@ -23,6 +23,10 @@ final readonly class NdiInquiryRequest
 
         if ($this->lines === []) {
             throw new InvalidArgumentException('NDI inquiry must contain at least one line.');
+        }
+
+        if ($this->variant === '' || mb_strlen($this->variant) > 10) {
+            throw new InvalidArgumentException('NDI inquiry variant must contain 1 to 10 characters.');
         }
 
         foreach ($this->lines as $line) {

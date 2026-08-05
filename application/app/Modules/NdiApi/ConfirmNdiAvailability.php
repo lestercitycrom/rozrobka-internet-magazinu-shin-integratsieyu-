@@ -59,7 +59,7 @@ final class ConfirmNdiAvailability
 
         try {
             $quote = $this->client->inquire(new NdiInquiryRequest(
-                documentId: $documentId,
+                documentId: 'A2',
                 customerReference: $order->public_reference,
                 lines: $requested->all(),
             ));

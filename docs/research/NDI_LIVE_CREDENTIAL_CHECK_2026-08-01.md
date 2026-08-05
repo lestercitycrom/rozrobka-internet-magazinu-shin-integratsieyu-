@@ -1,5 +1,8 @@
 # NDI credential check — 2026-08-01
 
+> Superseded on 2026-08-05 by `NDI_ACCESS_RECHECK_2026-08-05.md`. NDI supplied a
+> different credential pair, and the exact read-only example then succeeded.
+
 Owner: Mister Red
 Environment: isolated EasyTire staging
 
