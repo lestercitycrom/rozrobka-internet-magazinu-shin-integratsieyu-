@@ -189,7 +189,11 @@ class NdiCatalogPublisher
 
         $source = ProductMediaSource::query()->firstOrNew(['product_id' => $product->id]);
 
-        if ($source->exists && $source->source_url !== $sourceUrl) {
+        $newArtifactRetriesFailedSource = $source->exists
+            && $source->status === 'failed'
+            && $source->source_artifact_id !== $artifactId;
+
+        if ($source->exists && ($source->source_url !== $sourceUrl || $newArtifactRetriesFailedSource)) {
             $source->status = 'pending';
             $source->last_error = null;
             $source->attempt_count = 0;

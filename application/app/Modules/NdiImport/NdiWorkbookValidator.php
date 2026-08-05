@@ -92,6 +92,12 @@ final class NdiWorkbookValidator
         $sku = $this->identifier($values['ItemID'], 'ItemID');
         $gross = $this->decimal($values['Gross_Price'], 'Gross_Price');
         $net = $this->decimal($values['Net_Price'], 'Net_Price');
+        $rawMediaUrl = $this->text($values['PlainUrl']);
+        $mediaUrl = NdiMediaUrl::canonicalize($rawMediaUrl);
+
+        if ($rawMediaUrl !== null && $mediaUrl === null && ! NdiMediaUrl::isExplicitlyEmpty($rawMediaUrl)) {
+            throw new RowValidationException('PlainUrl', 'unrecognized_non_empty_ndi_media_url');
+        }
 
         $this->nonNegative($gross, 'Gross_Price');
         $this->nonNegative($net, 'Net_Price');
@@ -137,7 +143,7 @@ final class NdiWorkbookValidator
             ],
             // The catalog uses PlainUrl for the supplier image endpoint. It is
             // normalized here but downloaded only by the separate media command.
-            'media_url' => NdiMediaUrl::canonicalize($this->text($values['PlainUrl'])),
+            'media_url' => $mediaUrl,
             'source_fields' => $values,
         ];
     }

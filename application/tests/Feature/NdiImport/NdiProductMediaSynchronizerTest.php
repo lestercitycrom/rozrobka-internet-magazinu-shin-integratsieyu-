@@ -33,6 +33,20 @@ test('it only accepts the documented NDI image endpoint and upgrades it to HTTPS
         ->and(NdiMediaUrl::canonicalize('https://example.invalid/image.png?id=4f0b9d8c-b171-49cb-9ee8-b46fe79e4661'))
         ->toBeNull()
         ->and(NdiMediaUrl::canonicalize('https://files.ndias.com/Imagev2.aspx?id=not-a-uuid'))
+        ->toBeNull()
+        ->and(NdiMediaUrl::isExplicitlyEmpty('http://files.ndias.com/Imagev2.aspx?id='))
+        ->toBeTrue()
+        ->and(NdiMediaUrl::isExplicitlyEmpty('https://files.ndias.com/Imagev3.aspx?id='))
+        ->toBeFalse()
+        ->and(NdiMediaUrl::isExplicitlyEmpty('https://files.ndias.com/Imagev2.aspx?id=#fragment'))
+        ->toBeFalse()
+        ->and(NdiMediaUrl::isExplicitlyEmpty('https://user@files.ndias.com/Imagev2.aspx?id='))
+        ->toBeFalse()
+        ->and(NdiMediaUrl::isExplicitlyEmpty('https://user:pass@files.ndias.com/Imagev2.aspx?id='))
+        ->toBeFalse()
+        ->and(NdiMediaUrl::isExplicitlyEmpty('https://files.ndias.com/Imagev2.aspx?id=&extra=1'))
+        ->toBeFalse()
+        ->and(NdiMediaUrl::canonicalize('https://user@files.ndias.com/Imagev2.aspx?id=4f0b9d8c-b171-49cb-9ee8-b46fe79e4661'))
         ->toBeNull();
 });
 
@@ -86,6 +100,33 @@ test('it respects retry backoff and does not request failed source media every h
     Http::assertNothingSent();
 });
 
+test('it keeps retrying an available source after the former maximum attempt count', function (): void {
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['status' => 'failed', 'attempt_count' => 5, 'last_attempted_at' => now()->subDays(2)]);
+    Http::fake(['https://files.ndias.com/*' => Http::response(ndiPngBytes(), 200, ['Content-Type' => 'image/png'])]);
+
+    $summary = app(NdiProductMediaSynchronizer::class)->sync();
+
+    expect($summary['downloaded'])->toBe(1)
+        ->and($source->fresh()->status)->toBe('downloaded');
+});
+
+test('force sync retries a failed source immediately despite its backoff', function (): void {
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['status' => 'failed', 'attempt_count' => 1, 'last_attempted_at' => now()]);
+    Http::fake(['https://files.ndias.com/*' => Http::response(ndiPngBytes(), 200, ['Content-Type' => 'image/png'])]);
+
+    expect(app(NdiProductMediaSynchronizer::class)->sync(25, true)['downloaded'])->toBe(1)
+        ->and($source->fresh()->status)->toBe('downloaded');
+});
+
+test('media sync command reports failure when a supplier image download fails', function (): void {
+    ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    Http::fake(['https://files.ndias.com/*' => Http::response('', 503)]);
+
+    $this->artisan('ndi:media:sync')->assertExitCode(1);
+});
+
 test('it replaces a corrupt local destination only after validated NDI bytes are available', function (): void {
     $bytes = ndiPngBytes();
     $sha256 = hash('sha256', $bytes);
@@ -108,12 +149,119 @@ test('it repairs an existing supplier asset whose local file is missing', functi
         'uploader_id' => null, 'is_active' => true,
     ]);
     $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['media_asset_id' => $asset->id, 'status' => 'downloaded', 'downloaded_at' => now()]);
+    MediaAssignment::create(['media_asset_id' => $asset->id, 'assignable_type' => Product::class, 'assignable_id' => $source->product_id, 'role' => 'primary']);
     Http::fake(['https://files.ndias.com/*' => Http::response($bytes, 200, ['Content-Type' => 'image/png'])]);
 
     app(NdiProductMediaSynchronizer::class)->sync();
 
     expect($source->fresh()->media_asset_id)->toBe($asset->id)
         ->and(Storage::disk('public')->get($path))->toBe($bytes);
+});
+
+test('it restores a missing supplier primary assignment without downloading again', function (): void {
+    $bytes = ndiPngBytes();
+    $sha256 = hash('sha256', $bytes);
+    $path = 'media/ndi/'.$sha256.'.png';
+    Storage::disk('public')->put($path, $bytes);
+    $asset = MediaAsset::create([
+        'disk' => 'public', 'path' => $path, 'original_name' => 'supplier.png', 'mime' => 'image/png',
+        'byte_size' => strlen($bytes), 'width' => 24, 'height' => 16, 'sha256' => $sha256,
+        'uploader_id' => null, 'is_active' => true,
+    ]);
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['media_asset_id' => $asset->id, 'status' => 'downloaded', 'downloaded_at' => now()]);
+    Http::fake();
+
+    $summary = app(NdiProductMediaSynchronizer::class)->sync();
+
+    expect($summary)->toBe(['downloaded' => 0, 'failed' => 0, 'assigned' => 1])
+        ->and(MediaAssignment::query()->where('assignable_id', $source->product_id)->where('role', 'primary')->value('media_asset_id'))->toBe($asset->id);
+    Http::assertNothingSent();
+});
+
+test('it respects an administrator suppression when reconciling downloaded media', function (): void {
+    $bytes = ndiPngBytes();
+    $sha256 = hash('sha256', $bytes);
+    $path = 'media/ndi/'.$sha256.'.png';
+    Storage::disk('public')->put($path, $bytes);
+    $asset = MediaAsset::create([
+        'disk' => 'public', 'path' => $path, 'original_name' => 'supplier.png', 'mime' => 'image/png',
+        'byte_size' => strlen($bytes), 'width' => 24, 'height' => 16, 'sha256' => $sha256,
+        'uploader_id' => null, 'is_active' => true,
+    ]);
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['media_asset_id' => $asset->id, 'status' => 'downloaded', 'downloaded_at' => now(), 'is_suppressed' => true]);
+    Http::fake();
+
+    expect(app(NdiProductMediaSynchronizer::class)->sync())->toBe(['downloaded' => 0, 'failed' => 0, 'assigned' => 0])
+        ->and(MediaAssignment::query()->where('assignable_id', $source->product_id)->exists())->toBeFalse();
+    Http::assertNothingSent();
+});
+
+test('it treats a deactivated supplier asset as an explicit suppression instead of retrying forever', function (): void {
+    $bytes = ndiPngBytes();
+    $sha256 = hash('sha256', $bytes);
+    $path = 'media/ndi/'.$sha256.'.png';
+    Storage::disk('public')->put($path, $bytes);
+    $asset = MediaAsset::create([
+        'disk' => 'public', 'path' => $path, 'original_name' => 'inactive.png', 'mime' => 'image/png',
+        'byte_size' => strlen($bytes), 'width' => 24, 'height' => 16, 'sha256' => $sha256,
+        'uploader_id' => null, 'is_active' => false,
+    ]);
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['media_asset_id' => $asset->id, 'status' => 'downloaded', 'downloaded_at' => now()]);
+    Http::fake();
+
+    expect(app(NdiProductMediaSynchronizer::class)->sync())->toBe(['downloaded' => 0, 'failed' => 0, 'assigned' => 0])
+        ->and($source->fresh()->status)->toBe('downloaded')
+        ->and($source->fresh()->is_suppressed)->toBeTrue();
+    Http::assertNothingSent();
+});
+
+test('it periodically refreshes a stable NDI URL and replaces the supplier assignment only after validation', function (): void {
+    config()->set('ndi.media_refresh_days', 7);
+    $oldBytes = ndiPngBytes(20, 20);
+    $oldSha = hash('sha256', $oldBytes);
+    $oldPath = 'media/ndi/'.$oldSha.'.png';
+    Storage::disk('public')->put($oldPath, $oldBytes);
+    $oldAsset = MediaAsset::create([
+        'disk' => 'public', 'path' => $oldPath, 'original_name' => 'old.png', 'mime' => 'image/png',
+        'byte_size' => strlen($oldBytes), 'width' => 20, 'height' => 20, 'sha256' => $oldSha,
+        'uploader_id' => null, 'is_active' => true,
+    ]);
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['media_asset_id' => $oldAsset->id, 'status' => 'downloaded', 'downloaded_at' => now()->subDays(8)]);
+    MediaAssignment::create(['media_asset_id' => $oldAsset->id, 'assignable_type' => Product::class, 'assignable_id' => $source->product_id, 'role' => 'primary']);
+    $newBytes = ndiPngBytes(25, 21);
+    Http::fake(['https://files.ndias.com/*' => Http::response($newBytes, 200, ['Content-Type' => 'image/png'])]);
+
+    $summary = app(NdiProductMediaSynchronizer::class)->sync();
+    $source->refresh();
+
+    expect($summary['downloaded'])->toBe(1)
+        ->and($source->status)->toBe('downloaded')
+        ->and($source->media_asset_id)->not->toBe($oldAsset->id)
+        ->and(MediaAssignment::query()->where('assignable_id', $source->product_id)->where('role', 'primary')->value('media_asset_id'))->toBe($source->media_asset_id);
+});
+
+test('a new catalog artifact resets a failed source even when its URL is unchanged', function (): void {
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update(['status' => 'failed', 'attempt_count' => 9, 'last_attempted_at' => now(), 'last_error' => 'temporary']);
+    $newArtifactId = (string) Str::ulid();
+    $supplierId = DB::table('source_artifacts')->where('id', $source->source_artifact_id)->value('supplier_id');
+    DB::table('source_artifacts')->insert([
+        'id' => $newArtifactId, 'supplier_id' => $supplierId, 'kind' => 'fixture', 'original_filename' => 'media-new.xlsx',
+        'storage_key' => 'fixtures/media-'.$newArtifactId.'.xlsx', 'byte_size' => 1, 'sha256' => hash('sha256', $newArtifactId),
+        'received_at' => now(), 'is_redacted' => true,
+    ]);
+
+    $method = new ReflectionMethod(NdiCatalogPublisher::class, 'publishMediaSource');
+    $method->invoke(app(NdiCatalogPublisher::class), $source->product, ndiMediaUrl(), $newArtifactId);
+
+    expect($source->fresh()->status)->toBe('pending')
+        ->and($source->fresh()->attempt_count)->toBe(0)
+        ->and($source->fresh()->last_error)->toBeNull();
 });
 
 test('removing an NDI image source removes only its own primary assignment', function (): void {
@@ -182,9 +330,9 @@ function ndiMediaUrl(): string
     return 'https://files.ndias.com/Imagev2.aspx?id=4f0b9d8c-b171-49cb-9ee8-b46fe79e4661';
 }
 
-function ndiPngBytes(): string
+function ndiPngBytes(int $width = 24, int $height = 16): string
 {
-    $file = UploadedFile::fake()->image('ndi.png', 24, 16);
+    $file = UploadedFile::fake()->image('ndi.png', $width, $height);
 
     return (string) file_get_contents($file->getRealPath());
 }

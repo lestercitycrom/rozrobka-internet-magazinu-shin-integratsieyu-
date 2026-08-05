@@ -16,9 +16,10 @@ use RuntimeException;
 final class NdiProductMediaSynchronizer
 {
     /** @return array{downloaded: int, failed: int, assigned: int} */
-    public function sync(int $limit = 25): array
+    public function sync(int $limit = 25, bool $force = false): array
     {
         $limit = max(1, $limit);
+        $summary = ['downloaded' => 0, 'failed' => 0, 'assigned' => $this->reconcileDownloadedSources()];
         $sourceQuery = ProductMediaSource::query()
             ->whereIn('status', ['pending', 'failed'])
             ->orderBy('id');
@@ -28,7 +29,7 @@ final class NdiProductMediaSynchronizer
         // Stream candidates so a large retry backlog does not have to be
         // loaded into memory merely to select this run's bounded URL batch.
         foreach ($sourceQuery->cursor() as $source) {
-            if (! $this->retryDue($source) || isset($targetUrls[$source->source_url])) {
+            if (! $this->retryDue($source, $force) || isset($targetUrls[$source->source_url])) {
                 continue;
             }
 
@@ -43,10 +44,8 @@ final class NdiProductMediaSynchronizer
             ->whereIn('source_url', array_keys($targetUrls))
             ->whereIn('status', ['pending', 'failed'])
             ->get()
-            ->filter(fn (ProductMediaSource $source): bool => $this->retryDue($source))
+            ->filter(fn (ProductMediaSource $source): bool => $this->retryDue($source, $force))
             ->groupBy('source_url');
-
-        $summary = ['downloaded' => 0, 'failed' => 0, 'assigned' => 0];
 
         foreach ($sources as $url => $group) {
             try {
@@ -62,22 +61,127 @@ final class NdiProductMediaSynchronizer
         return $summary;
     }
 
-    private function retryDue(ProductMediaSource $source): bool
+    private function retryDue(ProductMediaSource $source, bool $force = false): bool
     {
-        if ($source->status === 'pending') {
+        if ($source->status === 'pending' || $force || $source->last_attempted_at === null) {
             return true;
         }
 
-        $maxAttempts = max(1, (int) config('ndi.media_max_attempts', 5));
+        $baseMinutes = max(1, (int) config('ndi.media_retry_after_minutes', 60));
+        $maxMinutes = max($baseMinutes, (int) config('ndi.media_retry_max_minutes', 24 * 60));
+        $exponent = min(20, max(0, $source->attempt_count - 1));
+        $minutes = min($maxMinutes, $baseMinutes * (2 ** $exponent));
 
-        if ($source->attempt_count >= $maxAttempts || $source->last_attempted_at === null) {
+        return $source->last_attempted_at->addMinutes($minutes)->isPast();
+    }
+
+    /**
+     * Reconcile already-downloaded sources before selecting remote work.
+     * Missing or corrupt supplier files are put back into the normal download
+     * pipeline, while a missing assignment is repaired without touching an
+     * administrator's explicit override or suppression.
+     */
+    private function reconcileDownloadedSources(): int
+    {
+        $assigned = 0;
+        $assetValidity = [];
+
+        foreach (ProductMediaSource::query()->where('status', 'downloaded')->with(['mediaAsset', 'product'])->lazyById(500) as $source) {
+            $asset = $source->mediaAsset;
+            $assetId = $asset?->getKey();
+
+            if ($asset !== null && ! $asset->is_active) {
+                // Supplier assets are protected from deletion in the admin.
+                // If one is nevertheless deactivated operationally, treat that
+                // as an explicit display suppression rather than retrying the
+                // same immutable bytes forever.
+                $source->update(['is_suppressed' => true]);
+
+                continue;
+            }
+
+            $valid = $assetId !== null
+                ? ($assetValidity[$assetId] ??= $this->localAssetIsValid($asset))
+                : false;
+
+            if (! $valid) {
+                DB::transaction(function () use ($source, $assetId): void {
+                    if ($assetId !== null) {
+                        MediaAssignment::query()
+                            ->where('assignable_type', $source->product::class)
+                            ->where('assignable_id', $source->product_id)
+                            ->where('role', 'primary')
+                            ->where('media_asset_id', $assetId)
+                            ->delete();
+                    }
+
+                    $source->update([
+                        'status' => 'pending',
+                        'attempt_count' => 0,
+                        'last_error' => 'Local supplier media is missing or corrupt.',
+                        'last_attempted_at' => null,
+                        'downloaded_at' => null,
+                    ]);
+                });
+
+                continue;
+            }
+
+            $refreshDays = max(1, (int) config('ndi.media_refresh_days', 7));
+
+            if ($source->downloaded_at === null || $source->downloaded_at->addDays($refreshDays)->isPast()) {
+                // Keep the currently valid assignment visible while the URL is
+                // refreshed. A failed refresh is observable and retryable, but
+                // it must not turn a good local image into a storefront gap.
+                $source->update([
+                    'status' => 'pending',
+                    'attempt_count' => 0,
+                    'last_error' => null,
+                    'last_attempted_at' => null,
+                ]);
+
+                continue;
+            }
+
+            if ($source->is_suppressed) {
+                continue;
+            }
+
+            $primary = MediaAssignment::query()
+                ->where('assignable_type', $source->product::class)
+                ->where('assignable_id', $source->product_id)
+                ->where('role', 'primary')
+                ->first();
+
+            if ($primary === null) {
+                MediaAssignment::query()->create([
+                    'assignable_type' => $source->product::class,
+                    'assignable_id' => $source->product_id,
+                    'role' => 'primary',
+                    'media_asset_id' => $assetId,
+                ]);
+                $assigned++;
+            }
+        }
+
+        return $assigned;
+    }
+
+    private function localAssetIsValid(MediaAsset $asset): bool
+    {
+        if ($asset->disk !== 'public') {
             return false;
         }
 
-        $baseMinutes = max(1, (int) config('ndi.media_retry_after_minutes', 60));
-        $minutes = min(24 * 60, $baseMinutes * (2 ** max(0, $source->attempt_count - 1)));
+        try {
+            $disk = Storage::disk($asset->disk);
 
-        return $source->last_attempted_at->addMinutes($minutes)->isPast();
+            return $disk->exists($asset->path)
+                && is_file($disk->path($asset->path))
+                && hash_file('sha256', $disk->path($asset->path)) === $asset->sha256;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function download(string $sourceUrl): MediaAsset
@@ -231,6 +335,10 @@ final class NdiProductMediaSynchronizer
                     'last_attempted_at' => now(),
                     'downloaded_at' => now(),
                 ]);
+
+                if ($source->is_suppressed) {
+                    continue;
+                }
 
                 $primary = MediaAssignment::query()
                     ->where('assignable_type', $source->product::class)

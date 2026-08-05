@@ -21,7 +21,8 @@ final class NdiMediaUrl
 
         if (! is_array($parts)
             || ! in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
-            || isset($parts['user'], $parts['pass'])
+            || isset($parts['user'])
+            || isset($parts['pass'])
             || isset($parts['fragment'])
             || ! self::isAllowedHost((string) ($parts['host'] ?? ''))
             || ! self::isAllowedPort($parts['port'] ?? null)
@@ -38,6 +39,36 @@ final class NdiMediaUrl
         }
 
         return 'https://'.strtolower((string) $parts['host']).'/Imagev2.aspx?id='.$id;
+    }
+
+    /**
+     * NDI uses the same endpoint with an empty id as an explicit "no image"
+     * marker. Keep that case distinct from an unknown or malformed URL so a
+     * supplier format change cannot silently remove previously valid media.
+     */
+    public static function isExplicitlyEmpty(?string $value): bool
+    {
+        if ($value === null || trim($value) === '') {
+            return false;
+        }
+
+        $parts = parse_url(trim($value));
+
+        if (! is_array($parts)
+            || ! in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
+            || isset($parts['user'])
+            || isset($parts['pass'])
+            || isset($parts['fragment'])
+            || ! self::isAllowedHost((string) ($parts['host'] ?? ''))
+            || ! self::isAllowedPort($parts['port'] ?? null)
+            || strcasecmp((string) ($parts['path'] ?? ''), '/Imagev2.aspx') !== 0
+        ) {
+            return false;
+        }
+
+        parse_str((string) ($parts['query'] ?? ''), $query);
+
+        return array_keys($query) === ['id'] && $query['id'] === '';
     }
 
     private static function isAllowedHost(string $host): bool

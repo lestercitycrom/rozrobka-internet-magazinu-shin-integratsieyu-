@@ -43,6 +43,7 @@
         <env name="NDI_ORDER_ENABLED" value="false"/>
         <env name="NDI_C1_TEST_MODE" value="false"/>
         <env name="NDI_FULFILMENT_READ_ENABLED" value="false"/>
+        <env name="NDI_MEDIA_HOSTS" value="example.invalid"/>
         <env name="PAYMENTS_ENABLED" value="false"/>
         <env name="OUTBOX_NOTION_ENABLED" value="false"/>
         <env name="OUTBOX_TELEGRAM_ENABLED" value="false"/>

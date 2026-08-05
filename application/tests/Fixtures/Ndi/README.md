@@ -53,6 +53,7 @@ Types: `ItemID` is text; all seven stock columns are integer numbers. `InStockNo
 - `0001234567890` must round-trip as the exact text value shown. It is deliberately numeric-looking but stored as a text cell; the two leading zeroes must not be stripped and the value must not be converted to a number or scientific notation.
 - `TEST-TIRE-003` exercises inch width: `Width_mm` is blank and `Widht_inches` is the text value `12.5`.
 - Rows include both populated and blank optional label/EAN/EPREL/production-year fields.
+- Synthetic image URLs use the real `Imagev2.aspx?id=<UUID>` shape on the reserved `example.invalid` host, so URL validation is exercised without contacting or embedding a production supplier endpoint.
 
 ### `wheels_valid.xlsx`
 

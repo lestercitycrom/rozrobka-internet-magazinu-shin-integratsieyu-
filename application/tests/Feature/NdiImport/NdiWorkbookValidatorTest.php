@@ -27,6 +27,36 @@ test('valid tire rows preserve a numeric-looking SKU and normalize prices', func
         ->and($rows[0]['prices'])->toHaveKeys(['gross', 'net']);
 });
 
+test('an explicit empty NDI image id is accepted as no product image', function (): void {
+    $fixture = ndiTireFixtureWithFirstMediaUrl('https://example.invalid/Imagev2.aspx?id=');
+
+    try {
+        $result = app(NdiWorkbookValidator::class)->validate($fixture);
+        $rows = iterator_to_array($result->rows(), false);
+
+        expect($result->isValid())->toBeTrue()
+            ->and($rows[0]['media_url'])->toBeNull();
+    } finally {
+        @unlink($fixture);
+    }
+});
+
+test('an unrecognized nonempty NDI image URL quarantines the workbook row', function (): void {
+    $fixture = ndiTireFixtureWithFirstMediaUrl('https://example.invalid/Imagev3.aspx?id=11111111-1111-4111-8111-111111111111');
+
+    try {
+        $result = app(NdiWorkbookValidator::class)->validate($fixture);
+
+        expect($result->isValid())->toBeFalse()
+            ->and($result->acceptedCount)->toBe(0)
+            ->and($result->rejections)->toHaveCount(1)
+            ->and($result->rejections[0]->fieldName)->toBe('PlainUrl')
+            ->and($result->rejections[0]->reason)->toBe('unrecognized_non_empty_ndi_media_url');
+    } finally {
+        @unlink($fixture);
+    }
+});
+
 test('valid wheel rows retain zero prices as data', function (): void {
     $result = app(NdiWorkbookValidator::class)->validate(ndiFixture('wheels_valid.xlsx'));
     $rows = collect(iterator_to_array($result->rows(), false))->keyBy('external_sku');
@@ -80,3 +110,43 @@ test('negative stock identifies the exact Excel row and field without changing s
         ->and($result->rejections[0]->rowNumber)->toBe(2)
         ->and($result->rejections[0]->fieldName)->toBe('InStockNorway');
 });
+
+function ndiTireFixtureWithFirstMediaUrl(string $url): string
+{
+    $path = tempnam(sys_get_temp_dir(), 'ndi-media-url-');
+
+    if ($path === false || ! copy(ndiFixture('tires_valid.xlsx'), $path)) {
+        throw new RuntimeException('Unable to create a temporary NDI workbook fixture.');
+    }
+
+    $zip = new ZipArchive;
+
+    if ($zip->open($path) !== true) {
+        throw new RuntimeException('Unable to open the temporary NDI workbook fixture.');
+    }
+
+    $entry = 'xl/worksheets/sheet1.xml';
+    $xml = $zip->getFromName($entry);
+
+    if (! is_string($xml)) {
+        $zip->close();
+        throw new RuntimeException('Unable to read the temporary NDI worksheet.');
+    }
+
+    $replacement = htmlspecialchars($url, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    $updated = preg_replace(
+        '~https://example\.invalid/Imagev2\.aspx\?id=11111111-1111-4111-8111-111111111111~',
+        $replacement,
+        $xml,
+        1,
+    );
+
+    if (! is_string($updated) || $updated === $xml || ! $zip->addFromString($entry, $updated)) {
+        $zip->close();
+        throw new RuntimeException('Unable to update the temporary NDI worksheet.');
+    }
+
+    $zip->close();
+
+    return $path;
+}

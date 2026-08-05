@@ -10,8 +10,10 @@ return [
     'media_hosts' => array_values(array_filter(explode(',', (string) env('NDI_MEDIA_HOSTS', 'files.ndias.com')))),
     'media_max_bytes' => (int) env('NDI_MEDIA_MAX_BYTES', 5 * 1024 * 1024),
     'media_max_pixels' => (int) env('NDI_MEDIA_MAX_PIXELS', 20_000_000),
-    'media_max_attempts' => (int) env('NDI_MEDIA_MAX_ATTEMPTS', 5),
     'media_retry_after_minutes' => (int) env('NDI_MEDIA_RETRY_AFTER_MINUTES', 60),
+    'media_retry_max_minutes' => (int) env('NDI_MEDIA_RETRY_MAX_MINUTES', 24 * 60),
+    'media_refresh_days' => (int) env('NDI_MEDIA_REFRESH_DAYS', 7),
+    'media_lock_seconds' => (int) env('NDI_MEDIA_LOCK_SECONDS', 15 * 60),
     // NDI's national availability field is capped at 40 in the supplied feed.
     'stock_national_cap' => (int) env('NDI_STOCK_NATIONAL_CAP', 40),
 ];
