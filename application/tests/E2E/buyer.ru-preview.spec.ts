@@ -1,33 +1,31 @@
 import { expect, test } from '@playwright/test';
+import { cartLine, expectNoGlobalOverflow, productCard } from './helpers';
 
-test('buyer can use the private Russian storefront preview', async ({ page }) => {
-    test.slow();
+const tireSku = '000205550016';
+
+test('buyer can use the private Russian storefront, cart and checkout', async ({ page }) => {
     await page.goto('/ru');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow');
-    await expect(page.getByRole('heading', { level: 1, name: 'Шины и диски для вашего ритма жизни' })).toBeVisible();
-    await page.getByRole('link', { name: 'Смотреть шины' }).click();
-    await expect(page).toHaveURL(/\/ru\/dekk$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Шины' })).toBeVisible();
-    await expect(page.locator('[data-catalog-live-root]')).toHaveAttribute('data-catalog-live-ready', 'true');
-    await page.getByLabel('Ширина').selectOption('205');
-    await expect(page).toHaveURL(/width=205/);
-    await page.getByRole('link', { name: 'Открыть товар' }).click();
-    await expect(page.getByRole('button', { name: 'Добавить в корзину' })).toBeVisible();
-    await page.getByRole('button', { name: 'Добавить в корзину' }).click();
-    await page.getByRole('link', { name: /Корзина/ }).click();
-    await expect(page.getByRole('heading', { name: 'Корзина' })).toBeVisible();
-    await expect(page.getByText('Demo 205/55 R16')).toBeVisible();
-    await expect(page.getByLabel('Количество')).toHaveValue('1');
-    const service = page.getByTestId('service-addon').filter({ hasText: 'E2E-сервис для шин' });
-    await expect(service).toBeVisible();
-    await service.getByTestId('service-addon-toggle').click();
-    await expect(service).toContainText('Выбрано');
-    await page.getByRole('link', { name: 'К оформлению' }).click();
-    await expect(page.getByRole('heading', { name: 'Оформление' })).toBeVisible();
-    await expect(page.getByTestId('checkout-service-item')).toContainText('E2E-сервис для шин');
-    await page.goto('/ru/tjenester');
-    await page.getByRole('link', { name: /Подробнее/ }).first().click();
-    await expect(page).toHaveURL(/\/ru\/tjenester\//);
+    await expect(page.getByRole('heading', { level: 1, name: 'Меняем колёса там, где стоит автомобиль.' })).toBeVisible();
+
+    await page.goto('/ru/dekk?width=205');
+    const card = productCard(page, tireSku);
+    await expect(card).toBeVisible();
+    await card.getByTestId('catalog-product-link').click();
+    await page.getByTestId('product-add-to-cart').click();
+    await page.getByTestId('header-cart').click();
+
+    const line = cartLine(page, tireSku);
+    await expect(line).toBeVisible();
+    await expect(line.getByTestId('cart-line-quantity')).toHaveValue('1');
+    await page.getByTestId('cart-checkout').click();
+    await expect(page).toHaveURL(/\/ru\/kasse$/);
+    await expect(page.getByTestId('checkout-form')).toBeVisible();
+    await expect(page.locator('input[name="idempotency_key"]')).toHaveValue(/[0-9a-f-]{36}/);
+
+    await page.goto('/ru/tjenester/dekkhotell/foresporsel');
+    await expect(page.getByTestId('generic-service-request')).toBeVisible();
     await expect(page.locator('body')).not.toContainText('Norsk innhold');
+    await expectNoGlobalOverflow(page);
 });

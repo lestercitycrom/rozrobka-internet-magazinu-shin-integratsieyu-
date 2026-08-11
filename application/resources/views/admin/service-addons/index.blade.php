@@ -21,7 +21,7 @@
                 </thead>
                 <tbody class="divide-y divide-easytire-border">
                     @forelse ($addons as $addon)
-                        <tr class="transition hover:bg-easytire-brand-soft/50">
+                        <tr class="transition hover:bg-easytire-brand-soft/50" data-testid="service-addon-row" data-service-code="{{ $addon->code }}">
                             <td class="p-4 font-bold">{{ $addon->code }}</td>
                             <td class="p-4">{{ $addon->title_nb }}</td>
                             <td class="p-4 font-bold">{{ $addon->price_minor === null ? __('service_addons.unpriced') : number_format($addon->price_minor / 100, 2, ',', ' ').' NOK' }}</td>

@@ -1,9 +1,48 @@
-@php($season = match ($item->tire['season'] ?? '') { 'Summer' => __('storefront.season_summer'), 'Winter' => __('storefront.season_winter'), 'All season' => __('storefront.season_all'), default => $item->tire['season'] ?? '' })
-<article class="easytire-card easytire-interactive flex flex-col rounded-2xl p-5" data-testid="catalog-product">
-    <div class="mb-5 aspect-square overflow-hidden rounded-xl bg-easytire-surface">@include('storefront.catalog._product-visual', ['item' => $item, 'attributes' => new \Illuminate\View\ComponentAttributeBag(['loading' => 'lazy', 'class' => 'size-full object-contain p-4 transition duration-300'])])</div>
-    <p class="text-sm font-bold text-easytire-brand">{{ $item->brand }}</p><h2 class="mt-1 text-lg font-black leading-6">{{ $item->title }}</h2><p class="mt-1 text-sm text-easytire-muted">{{ $item->modelName }}</p><p class="mt-2 text-xs font-semibold text-slate-500">{{ __('storefront.item_number') }} {{ $item->sku }}</p>
-    <p class="mt-4 text-sm font-semibold text-slate-700">@if ($item->tire) {{ $item->tire['width_mm'] }}/{{ $item->tire['aspect_ratio'] }} R{{ $item->tire['rim_diameter_in'] }} · {{ $item->tire['load_index'] }}{{ $item->tire['speed_symbol'] }} · {{ $season }} @else {{ $item->wheel['width_in'] }} × {{ $item->wheel['diameter_in'] }} · {{ $item->wheel['bolt_holes'] }}×{{ $item->wheel['pcd_mm'] }} · ET {{ $item->wheel['offset_et_mm'] }} @endif</p>
-    @if ($sellingPrice)<p class="mt-4 text-lg font-black">{{ number_format($sellingPrice->money->minor / 100, 2, ',', ' ') }} {{ $sellingPrice->money->currency }}</p>@else<p class="mt-4 text-sm font-semibold text-easytire-muted">{{ __('storefront.price_unavailable') }}</p>@endif
-    <p class="mt-1 text-sm text-slate-600">{{ $item->stock->quantity > 0 ? __('storefront.registered_stock') : __('storefront.no_stock') }}</p>
-    <div class="mt-auto flex flex-wrap items-center gap-3 pt-5"><a href="{{ route((app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.').'products.show', ['sku' => $item->sku]) }}" class="inline-flex min-h-11 items-center font-bold text-easytire-brand underline decoration-2 underline-offset-4 hover:text-easytire-brand-strong">{{ __('storefront.view_product') }}</a>@if($sellingPrice && $item->stock->quantity > 0)<form method="post" action="{{ route((app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.').'cart.add') }}">@csrf<input type="hidden" name="sku" value="{{ $item->sku }}"><input type="hidden" name="quantity" value="1"><button class="min-h-11 rounded-lg bg-easytire-brand px-4 text-sm font-bold text-white shadow-sm transition hover:bg-easytire-brand-strong hover:shadow-md focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">{{ __('storefront.add_to_cart') }}</button></form>@endif</div>
+@php
+    $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+    $season = match ($item->tire['season'] ?? '') {
+        'Summer' => __('storefront.season_summer'),
+        'Winter' => __('storefront.season_winter'),
+        'All season' => __('storefront.season_all'),
+        default => $item->tire['season'] ?? '',
+    };
+    $specification = $item->tire
+        ? $item->tire['width_mm'].'/'.$item->tire['aspect_ratio'].' R'.$item->tire['rim_diameter_in'].' · '.$item->tire['load_index'].$item->tire['speed_symbol'].($season ? ' · '.$season : '')
+        : $item->wheel['width_in'].' × '.$item->wheel['diameter_in'].' · '.$item->wheel['bolt_holes'].'×'.$item->wheel['pcd_mm'].' · ET '.$item->wheel['offset_et_mm'];
+@endphp
+<article class="et-product-card easytire-card easytire-interactive" data-testid="catalog-product" data-product-sku="{{ $item->sku }}">
+    <div class="et-product-card__media">
+        <div class="et-product-visual">
+            @include('storefront.catalog._product-visual', ['item' => $item, 'attributes' => new \Illuminate\View\ComponentAttributeBag(['loading' => 'lazy', 'class' => 'size-full object-contain'])])
+        </div>
+        <div class="et-product-card__badges">
+            @if ($item->tire && $season)<span class="et-badge et-badge--red">{{ $season }}</span>@else<span></span>@endif
+            <span @class(['et-badge', 'et-badge--success' => $item->stock->quantity > 0])>{{ $item->stock->quantity > 0 ? __('storefront.registered_stock') : __('storefront.no_stock') }}</span>
+        </div>
+    </div>
+    <div class="et-product-card__body">
+        <span class="et-product-card__brand">{{ $item->brand }}</span>
+        <h2 class="et-product-card__title"><a href="{{ route($prefix.'products.show', ['sku' => $item->sku]) }}" data-testid="catalog-product-link">{{ $item->title }}</a></h2>
+        @if ($item->modelName)<p class="et-product-card__spec">{{ $item->modelName }}</p>@endif
+        <p class="et-product-card__spec">{{ $specification }}</p>
+        <p class="et-product-card__spec">{{ __('storefront.item_number') }} {{ $item->sku }}</p>
+        <div class="et-product-card__footer">
+            <div>
+                @if ($sellingPrice)
+                    <div class="et-price">{{ number_format($sellingPrice->money->minor / 100, 2, ',', ' ') }} {{ $sellingPrice->money->currency }}<small>{{ __('pro.catalog.price_backend') }}</small></div>
+                @else
+                    <p class="et-caption"><strong>{{ __('storefront.price_unavailable') }}</strong></p>
+                @endif
+                <a class="et-btn et-btn--link et-btn--small" href="{{ route($prefix.'products.show', ['sku' => $item->sku]) }}">{{ __('storefront.view_product') }}</a>
+            </div>
+            @if ($sellingPrice && $item->stock->quantity > 0)
+                <form method="post" action="{{ route($prefix.'cart.add') }}">
+                    @csrf
+                    <input type="hidden" name="sku" value="{{ $item->sku }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button class="et-icon-btn" type="submit" aria-label="{{ __('storefront.add_to_cart') }}: {{ $item->title }}" data-testid="catalog-add-to-cart">+</button>
+                </form>
+            @endif
+        </div>
+    </div>
 </article>

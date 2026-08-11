@@ -4,22 +4,22 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('vehicle lookup is discoverable from the Norwegian public navigation and homepage', function (): void {
+test('vehicle lookup is discoverable through the Norwegian canonical store landing', function (): void {
     $response = $this->get('/');
 
     $response
         ->assertOk()
-        ->assertSee('href="'.route('storefront.fitment.create').'"', false)
+        ->assertSee('href="'.route('storefront.store.index').'"', false)
         ->assertSee(__('fitment.nav'))
         ->assertSee(__('fitment.home_cta'));
 });
 
-test('vehicle lookup is discoverable in the private Russian preview', function (): void {
+test('vehicle lookup is discoverable through the private Russian store preview', function (): void {
     config()->set('storefront.ru_preview_enabled', true);
 
     $this->get('/ru')
         ->assertOk()
-        ->assertSee('href="'.route('storefront.preview.fitment.create').'"', false)
+        ->assertSee('href="'.route('storefront.preview.store.index').'"', false)
         ->assertSee(__('fitment.nav'));
 });
 

@@ -1,73 +1,92 @@
-@php($routePrefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.')
+@php
+    $routePrefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+    $isStoreLanding = request()->routeIs($routePrefix.'store.*');
+    $pageTitle = $isStoreLanding ? __('seo_store.title') : __('fitment.title');
+    $pageDescription = $isStoreLanding ? __('seo_store.description') : null;
+    $pageHeading = $isStoreLanding ? __('seo_store.heading') : __('fitment.title');
+    $pageLead = $isStoreLanding ? __('seo_store.lead') : __('fitment.notice');
+    $canonical = $isStoreLanding ? route('storefront.store.index') : null;
+@endphp
 
-<x-layouts.storefront :title="__('fitment.title')">
-    <section class="border-b border-easytire-border bg-easytire-panel">
-        <div class="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-            <div class="max-w-3xl">
-                <p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">EasyTire</p>
-                <h1 class="mt-3 text-4xl font-black tracking-tight text-easytire-ink sm:text-5xl">{{ __('fitment.title') }}</h1>
-                <p class="mt-5 max-w-2xl text-base leading-7 text-easytire-muted sm:text-lg">{{ __('fitment.notice') }}</p>
+<x-layouts.storefront :title="$pageTitle" :description="$pageDescription" :canonical="$canonical" active-section="store">
+    <section class="et-page-hero">
+        <img class="et-page-hero__photo" src="/brand/workshop-alt.webp" width="1400" height="900" alt="EasyTire verksted i Tromsø">
+        <div class="et-container et-page-hero__inner">
+            <div class="et-page-hero__content">
+                <div class="et-breadcrumbs"><span><a href="{{ route($routePrefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $pageHeading }}</span></div>
+                <p class="et-eyebrow et-eyebrow--light">{{ __('pro.fitment.kicker') }}</p>
+                <h1 class="et-h1">{{ $pageHeading }}</h1>
+                <p class="et-lead et-lead--light">{{ $pageLead }}</p>
             </div>
         </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
-        <div class="grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)] lg:items-start">
-            <div class="rounded-2xl border border-easytire-border bg-easytire-panel p-6 shadow-sm sm:p-8">
-                <h2 class="text-2xl font-black tracking-tight text-easytire-ink">{{ __('fitment.registration') }}</h2>
+    <section class="et-section et-section--compact">
+        <div class="et-container et-split">
+            <div class="et-card">
+                <div class="et-card__body">
+                    <p class="et-eyebrow">{{ __('pro.fitment.panel_title') }}</p>
+                    <h2 class="et-h2">{{ __('fitment.registration') }}</h2>
+                    <p class="et-copy">{{ __('fitment.registration_help') }}</p>
 
-                <form method="POST" action="{{ url()->current() }}" class="mt-7 space-y-5">
-                    @csrf
-                    <div>
-                        <label for="registration" class="block text-sm font-bold text-easytire-ink">{{ __('fitment.registration') }}</label>
-                        <input
-                            id="registration"
-                            name="registration"
-                            type="text"
-                            value="{{ old('registration') }}"
-                            required
-                            maxlength="16"
-                            autocomplete="off"
-                            autocapitalize="characters"
-                            aria-describedby="registration-help{{ $errors->has('registration') ? ' registration-error' : '' }}"
-                            @class(['mt-2 block min-h-12 w-full rounded-lg border bg-white px-4 text-base font-semibold uppercase tracking-wide text-easytire-ink outline-none transition placeholder:text-slate-400 focus:border-easytire-brand focus:ring-4 focus:ring-easytire-brand/15', 'border-red-600' => $errors->has('registration'), 'border-easytire-border' => ! $errors->has('registration')])
-                        >
-                        <p id="registration-help" class="mt-2 text-sm leading-6 text-easytire-muted">{{ __('fitment.registration_help') }}</p>
-                        @error('registration')
-                            <p id="registration-error" class="mt-2 text-sm font-semibold text-red-700" role="alert">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    @if ($errors->any())
+                        <div class="et-alert et-alert--error" role="alert" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
+                    @endif
 
-                    <button type="submit" class="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-easytire-brand px-6 py-3 text-base font-bold text-white shadow-sm transition hover:bg-easytire-brand-strong focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand sm:w-auto">
-                        {{ __('fitment.submit') }}
-                    </button>
-                </form>
+                    <form method="POST" action="{{ url()->current() }}" style="margin-top:1.4rem">
+                        @csrf
+                        <div class="et-field">
+                            <label class="et-label" for="registration">{{ __('fitment.registration') }}</label>
+                            <div class="et-reg-input">
+                                <input
+                                    class="et-input"
+                                    id="registration"
+                                    name="registration"
+                                    type="text"
+                                    value="{{ old('registration') }}"
+                                    required
+                                    maxlength="16"
+                                    autocomplete="off"
+                                    autocapitalize="characters"
+                                    aria-describedby="registration-help{{ $errors->has('registration') ? ' registration-error' : '' }}"
+                                    aria-invalid="{{ $errors->has('registration') ? 'true' : 'false' }}"
+                                >
+                            </div>
+                            <p class="et-help" id="registration-help">{{ __('pro.fitment.privacy') }}</p>
+                            @error('registration')<p class="et-form-error" id="registration-error" role="alert">{{ $message }}</p>@enderror
+                        </div>
+                        <button class="et-btn et-btn--primary" type="submit" style="margin-top:1rem">{{ __('fitment.submit') }}</button>
+                    </form>
+                </div>
             </div>
 
             @if (isset($fitment) && $fitment)
-                <aside class="rounded-2xl border border-easytire-border bg-white p-6 shadow-sm sm:p-8" aria-labelledby="fitment-result-title">
-                    <p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">EasyTire</p>
-                    <h2 id="fitment-result-title" class="mt-3 text-2xl font-black tracking-tight text-easytire-ink">{{ $fitment->make }} {{ $fitment->model }}</h2>
-                    <p class="mt-3 text-sm leading-6 text-easytire-muted">{{ __('fitment.results_notice') }}</p>
-                    <ul class="mt-6 space-y-3" aria-label="{{ __('fitment.results_notice') }}">
-                        @foreach ($fitment->tyres as $tyre)
-                            <li>
-                                <a href="{{ route($routePrefix.'tires.index', ['width' => $tyre['width'], 'aspect' => $tyre['aspect'], 'rim' => $tyre['rim']]) }}" class="flex min-h-12 items-center justify-between rounded-lg border border-easytire-border px-4 font-bold text-easytire-ink transition hover:border-easytire-brand hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">
-                                    <span>{{ $tyre['width'] }}/{{ $tyre['aspect'] }} R{{ $tyre['rim'] }}</span>
-                                    <span aria-hidden="true">→</span>
+                <aside class="et-card" aria-labelledby="fitment-result-title">
+                    <div class="et-card__body">
+                        <p class="et-eyebrow">{{ __('pro.fitment.result_kicker') }}</p>
+                        <h2 class="et-h2" id="fitment-result-title">{{ $fitment->make }} {{ $fitment->model }}</h2>
+                        <p class="et-copy">{{ __('fitment.results_notice') }}</p>
+                        <h3 class="et-h3" style="margin-top:1.5rem">{{ __('pro.fitment.result_title') }}</h3>
+                        <div class="et-stack" style="margin-top:1rem">
+                            @foreach ($fitment->tyres as $tyre)
+                                <a class="et-card et-card--interactive" href="{{ route($routePrefix.'tires.index', ['width' => $tyre['width'], 'aspect' => $tyre['aspect'], 'rim' => $tyre['rim']]) }}">
+                                    <div class="et-card__body" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+                                        <strong>{{ $tyre['width'] }}/{{ $tyre['aspect'] }} R{{ $tyre['rim'] }}</strong><span aria-hidden="true">→</span>
+                                    </div>
                                 </a>
-                            </li>
-                        @endforeach
-                    </ul>
+                            @endforeach
+                        </div>
+                    </div>
                 </aside>
             @else
-                <aside class="rounded-2xl border border-easytire-border bg-white p-6 shadow-sm sm:p-8" aria-labelledby="fitment-fallback-title">
-                    <p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">EasyTire</p>
-                    <h2 id="fitment-fallback-title" class="mt-3 text-2xl font-black tracking-tight text-easytire-ink">{{ __('fitment.fallback') }}</h2>
-                    <p class="mt-3 text-sm leading-6 text-easytire-muted">{{ __('fitment.manual_help') }}</p>
-                    <a href="{{ route($routePrefix.'tires.index') }}" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-full border border-easytire-ink px-5 py-3 text-sm font-bold text-easytire-ink transition hover:border-easytire-brand hover:text-easytire-brand focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand">
-                        {{ __('fitment.manual') }}
-                    </a>
+                <aside class="et-media-card" aria-labelledby="fitment-fallback-title">
+                    <img src="/brand/workshop.webp" width="1500" height="1000" loading="lazy" alt="EasyTire verksted">
+                    <div class="et-media-card__content">
+                        <p class="et-eyebrow et-eyebrow--light">{{ __('pro.fitment.manual_kicker') }}</p>
+                        <h2 class="et-h2" id="fitment-fallback-title">{{ __('fitment.fallback') }}</h2>
+                        <p>{{ __('fitment.manual_help') }}</p>
+                        <a class="et-btn et-btn--ghost" href="{{ route($routePrefix.'tires.index') }}">{{ __('fitment.manual') }}</a>
+                    </div>
                 </aside>
             @endif
         </div>

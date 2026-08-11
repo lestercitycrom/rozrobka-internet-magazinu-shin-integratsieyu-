@@ -6,7 +6,8 @@
         "build": "vite build",
         "dev": "vite",
         "test:e2e": "playwright test",
-        "test:e2e:ui": "playwright test --ui"
+        "test:e2e:ui": "playwright test --ui",
+        "test:preview": "playwright test --config=playwright.preview.config.ts"
     },
     "devDependencies": {
         "@fontsource/ubuntu": "^5.2.8",

@@ -2,11 +2,15 @@
 
 use App\Modules\Content\Enums\ServicePageLocale;
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
+use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
 use App\Modules\Content\ReadModel\PublishedServicePageReadService;
 use Database\Seeders\ServicePageSeeder;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -14,6 +18,7 @@ test('service page stores localized editable fields and enforces a stable unique
     $page = servicePage('mobilt-dekkskift');
 
     expect($page->publication_status)->toBe(ServicePagePublicationStatus::Published)
+        ->and($page->request_flow)->toBe(ServiceRequestFlow::Generic)
         ->and($page->sort_order)->toBeInt()
         ->and($page->title_nb)->toBe('Norsk tittel')
         ->and($page->body_ru)->toBe('Русский текст');
@@ -33,6 +38,7 @@ test('published service page reader returns only published pages in editorial or
 
     expect($list->pluck('slug')->all())->toBe(['first', 'later'])
         ->and($list->pluck('title')->all())->toBe(['Først', 'Senere'])
+        ->and($russian?->requestFlow)->toBe(ServiceRequestFlow::Generic)
         ->and($russian?->title)->toBe('Сначала')
         ->and($reader->findBySlug('draft'))->toBeNull()
         ->and($reader->findBySlug('missing'))->toBeNull();
@@ -44,12 +50,41 @@ test('service page seeder provides the six editable service foundations without 
     expect(ServicePage::query()->count())->toBe(6)
         ->and(ServicePage::query()->orderBy('sort_order')->pluck('slug')->all())->toBe([
             'mobilt-dekkskift', 'dekkverksted', 'tesla-og-elbil', 'bobil-og-varebil', 'dekkhotell', 'dekk-felg-og-hjulpakker',
-        ]);
+        ])
+        ->and(ServicePage::query()->where('slug', 'mobilt-dekkskift')->firstOrFail()->request_flow)->toBe(ServiceRequestFlow::Seasonal)
+        ->and(ServicePage::query()->where('slug', 'dekkverksted')->firstOrFail()->request_flow)->toBe(ServiceRequestFlow::Seasonal)
+        ->and(ServicePage::query()->where('slug', 'dekkhotell')->firstOrFail()->request_flow)->toBe(ServiceRequestFlow::Generic);
 
     ServicePage::query()->where('slug', 'dekkhotell')->update(['title_nb' => 'Redigert tittel']);
     $this->seed(ServicePageSeeder::class);
 
     expect(ServicePage::query()->where('slug', 'dekkhotell')->value('title_nb'))->toBe('Redigert tittel');
+});
+
+test('request flow migration backfills the real seasonal service slugs', function (): void {
+    Schema::table('service_pages', function (Blueprint $table): void {
+        $table->dropIndex(['request_flow']);
+        $table->dropColumn('request_flow');
+    });
+
+    foreach (['mobilt-dekkskift', 'dekkverksted', 'dekkhotell'] as $index => $slug) {
+        DB::table('service_pages')->insert([
+            'slug' => $slug,
+            'sort_order' => $index + 1,
+            'publication_status' => ServicePagePublicationStatus::Published->value,
+            'title_nb' => $slug,
+            'title_ru' => $slug,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    $migration = require database_path('migrations/2026_08_11_120000_add_request_flow_to_service_pages_table.php');
+    $migration->up();
+
+    expect(DB::table('service_pages')->where('slug', 'mobilt-dekkskift')->value('request_flow'))->toBe('seasonal')
+        ->and(DB::table('service_pages')->where('slug', 'dekkverksted')->value('request_flow'))->toBe('seasonal')
+        ->and(DB::table('service_pages')->where('slug', 'dekkhotell')->value('request_flow'))->toBe('generic');
 });
 
 function servicePage(

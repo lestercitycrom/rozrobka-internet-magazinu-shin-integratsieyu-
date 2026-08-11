@@ -27,7 +27,7 @@ return array_replace_recursive([
         'menu' => 'Åpne navigasjon',
         'unsaved_changes' => 'Du har ulagrede endringer. Vil du bytte språk og forkaste dem?',
     ],
-], ['imports' => ['created' => 'Opprettet', 'updated' => 'Oppdatert', 'unchanged' => 'Uendret', 'rejected' => 'Avvist']], ['nav' => ['services' => 'Tjenestesider'], 'services' => ['title' => 'Tjenestesider', 'heading' => 'Tjenestesider', 'intro' => 'Rediger norsk original og russisk testoversettelse.', 'new' => 'Ny tjenesteside', 'edit' => 'Rediger', 'slug' => 'Slug', 'status' => 'Status', 'order' => 'Rekkefølge', 'title_nb' => 'Norsk tittel', 'title_ru' => 'Russisk tittel', 'excerpt' => 'Ingress', 'body' => 'Brødtekst', 'seo' => 'SEO', 'seo_title' => 'SEO-tittel', 'seo_description' => 'SEO-beskrivelse', 'ru_hint' => 'Russisk er en testoversettelse. Kontroller innholdet før publisering.', 'save' => 'Lagre', 'saved' => 'Tjenestesiden er lagret.', 'empty' => 'Ingen tjenestesider ennå.']], [
+], ['imports' => ['created' => 'Opprettet', 'updated' => 'Oppdatert', 'unchanged' => 'Uendret', 'rejected' => 'Avvist']], ['nav' => ['services' => 'Tjenestesider'], 'services' => ['title' => 'Tjenestesider', 'heading' => 'Tjenestesider', 'intro' => 'Rediger norsk original og russisk testoversettelse.', 'new' => 'Ny tjenesteside', 'edit' => 'Rediger', 'slug' => 'Slug', 'canonical_path' => 'Offentlig SEO-adresse', 'canonical_path_hint' => 'Uten skråstrek, for eksempel dekkskift-tromso. Tomt felt bruker /tjenester/slug.', 'status' => 'Status', 'order' => 'Rekkefølge', 'title_nb' => 'Norsk tittel', 'title_ru' => 'Russisk tittel', 'excerpt' => 'Ingress', 'body' => 'Brødtekst', 'markdown_hint' => 'Brødteksten støtter enkel Markdown: ## mellomtittel, ### spørsmål, bindestrek for punktliste og [lenketekst](https://adresse).', 'seo' => 'SEO', 'seo_title' => 'SEO-tittel', 'seo_description' => 'SEO-beskrivelse', 'ru_hint' => 'Russisk er en testoversettelse. Kontroller innholdet før publisering.', 'save' => 'Lagre', 'saved' => 'Tjenestesiden er lagret.', 'empty' => 'Ingen tjenestesider ennå.']], [
     'nav' => ['content' => 'Innholdssider'],
     'content' => [
         'title' => 'Innholdssider',
@@ -54,5 +54,20 @@ return array_replace_recursive([
         'empty' => 'Ingen innholdssider ennå.',
         'actions' => 'Handlinger',
         'table_label' => 'Innholdssider',
+    ],
+    'homepage_promotions' => [
+        'title' => 'Forsidetilbud', 'heading' => 'Forsidetilbud', 'intro' => 'Vis bare publiserte tilbud med godkjent innhold. Tomme lister vises ikke offentlig.',
+        'new' => 'Nytt tilbud', 'edit' => 'Rediger', 'order' => 'Rekkefølge', 'status' => 'Status', 'title_nb' => 'Norsk tittel',
+        'cta_url' => 'Lenke for handling', 'cta_url_hint' => 'Bruk en intern sti som /dekk eller en fullstendig https-lenke.',
+        'field_title' => 'Tittel', 'body' => 'Beskrivelse', 'cta_label' => 'Knappetekst', 'locale_nb' => 'Norsk innhold', 'locale_ru' => 'Russisk testoversettelse',
+        'save' => 'Lagre tilbud', 'delete' => 'Slett tilbud', 'saved' => 'Tilbudet er lagret.', 'deleted' => 'Tilbudet er slettet.',
+        'empty' => 'Ingen forsidetilbud ennå.', 'empty_hint' => 'Et tilbud blir synlig på forsiden først når det er publisert.', 'actions' => 'Handlinger', 'table_label' => 'Forsidetilbud', 'invalid_url' => 'Lenken må være en intern sti eller en gyldig http/https-lenke.',
+    ],
+    'homepage_reviews' => [
+        'title' => 'Kundeomtaler', 'heading' => 'Kundeomtaler', 'intro' => 'Publiser bare omtaler og lenker som kunden har godkjent for offentlig bruk.',
+        'new' => 'Ny omtale', 'edit' => 'Rediger', 'order' => 'Rekkefølge', 'status' => 'Status', 'source' => 'Kilde', 'source_url' => 'Lenke til kilde', 'source_url_hint' => 'Påkrevd ved publisering. Bruk den godkjente, direkte kildelenken.',
+        'quote' => 'Sitat', 'author' => 'Navn eller visningstekst', 'source_label' => 'Lenketekst', 'locale_nb' => 'Norsk innhold', 'locale_ru' => 'Russisk testoversettelse',
+        'save' => 'Lagre omtale', 'delete' => 'Slett omtale', 'saved' => 'Omtalen er lagret.', 'deleted' => 'Omtalen er slettet.',
+        'empty' => 'Ingen kundeomtaler ennå.', 'source_hint' => 'Ikke opprett eller publiser en omtale uten en ekte, godkjent kilde. Uten publiserte data er omtaleseksjonen skjult offentlig.', 'actions' => 'Handlinger', 'table_label' => 'Kundeomtaler',
     ],
 ]);

@@ -4,7 +4,7 @@ const delay = (callback, wait) => {
 };
 
 const initialized = new WeakSet();
-const desktop = window.matchMedia('(min-width: 1024px)');
+const desktop = window.matchMedia('(min-width: 981px)');
 
 export const initializeCatalogAutocomplete = (scope = document) => {
     scope.querySelectorAll('[data-catalog-autocomplete]').forEach((input) => {

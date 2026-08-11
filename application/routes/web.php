@@ -4,6 +4,8 @@ use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CatalogController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\ContentPageController;
+use App\Http\Controllers\Storefront\PricingPageController;
+use App\Http\Controllers\Storefront\SeoServicePageController;
 use App\Http\Controllers\Storefront\ServiceController;
 use App\Http\Controllers\Storefront\ServiceRequestController;
 use App\Http\Controllers\Storefront\VehicleFitmentController;
@@ -16,6 +18,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
+$seoServicePaths = [
+    'dekkskift-tromso',
+    'dekkhotell-tromso',
+    'dekkskift-tesla-elbil-tromso',
+    'omlegging-balansering-dekk-tromso',
+    'dekkreparasjon-tromso',
+    'tpms-sensor-tromso',
+    'oljeskift-tromso',
+    'bilbatteri-tromso',
+    'bildiagnose-tromso',
+    'bytte-lyspaerer-viskerblad-tromso',
+];
+
 Route::get('/robots.txt', function () {
     if (! app()->environment('production')) {
         return response("User-agent: *\nDisallow: /\n", 200, ['Content-Type' => 'text/plain']);
@@ -25,15 +40,16 @@ Route::get('/robots.txt', function () {
 });
 
 Route::get('/sitemap.xml', function () {
-    $urls = [url('/'), url('/dekk'), url('/felger'), url('/tjenester')];
-    $urls = [...$urls, ...ServicePage::query()->where('publication_status', 'published')->orderBy('sort_order')->pluck('slug')->map(fn ($slug) => url('/tjenester/'.$slug))->all()];
+    $urls = [url('/'), url('/dekk-og-felger'), url('/dekk'), url('/felger'), url('/tjenester'), url('/priser')];
+    $servicePages = ServicePage::query()->where('publication_status', 'published')->orderBy('sort_order')->get(['slug', 'canonical_path']);
+    $urls = [...$urls, ...$servicePages->map(fn (ServicePage $page) => url('/'.($page->canonical_path ?: 'tjenester/'.$page->slug)))->all()];
     $urls = [...$urls, ...DB::table('supplier_skus')->join('products', 'products.id', '=', 'supplier_skus.product_id')->where('products.publication_status', 'published')->where('supplier_skus.catalog_state', 'catalog')->pluck('supplier_skus.external_sku')->map(fn ($sku) => url('/produkter/'.$sku))->all()];
     $xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.collect($urls)->unique()->map(fn ($location) => '<url><loc>'.e($location).'</loc></url>')->implode('').'</urlset>';
 
     return response($xml, 200, ['Content-Type' => 'application/xml']);
 });
 
-Route::middleware('public.locale')->group(function (): void {
+Route::middleware('public.locale')->group(function () use ($seoServicePaths): void {
     Route::get('/', function (PublishedServicePageReadService $services) {
         return view('welcome', ['services' => $services->list(ServicePageLocale::NorwegianBokmal)]);
     })->name('storefront.home');
@@ -41,9 +57,13 @@ Route::middleware('public.locale')->group(function (): void {
     Route::get('/dekk/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Tire))->middleware('throttle:60,1')->name('storefront.tires.suggestions');
     Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('storefront.fitment.create');
     Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('storefront.fitment.store');
+    Route::get('/dekk-og-felger', [VehicleFitmentController::class, 'create'])->name('storefront.store.index');
+    Route::post('/dekk-og-felger', [VehicleFitmentController::class, 'store'])->name('storefront.store.lookup');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('storefront.wheels.index');
     Route::get('/felger/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Wheel))->middleware('throttle:60,1')->name('storefront.wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('storefront.products.show');
+    Route::get('/priser', PricingPageController::class)->name('storefront.pricing.index');
+    Route::get('/{canonicalPath}', SeoServicePageController::class)->whereIn('canonicalPath', $seoServicePaths)->name('storefront.seo-services.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('storefront.services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('storefront.services.show');
     Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('storefront.content.show');
@@ -61,15 +81,19 @@ Route::middleware('public.locale')->group(function (): void {
     Route::get('/bestilling/{reference}', [CheckoutController::class, 'thanks'])->name('storefront.orders.thanks');
 });
 
-Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')->group(function (): void {
+Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')->group(function () use ($seoServicePaths): void {
     Route::get('/', fn (PublishedServicePageReadService $services) => view('welcome', ['services' => $services->list(ServicePageLocale::Russian)]))->name('home');
     Route::get('/dekk', [CatalogController::class, 'tires'])->name('tires.index');
     Route::get('/dekk/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Tire))->middleware('throttle:60,1')->name('tires.suggestions');
     Route::get('/biloppslag', [VehicleFitmentController::class, 'create'])->name('fitment.create');
     Route::post('/biloppslag', [VehicleFitmentController::class, 'store'])->name('fitment.store');
+    Route::get('/dekk-og-felger', [VehicleFitmentController::class, 'create'])->name('store.index');
+    Route::post('/dekk-og-felger', [VehicleFitmentController::class, 'store'])->name('store.lookup');
     Route::get('/felger', [CatalogController::class, 'wheels'])->name('wheels.index');
     Route::get('/felger/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Wheel))->middleware('throttle:60,1')->name('wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('products.show');
+    Route::get('/priser', PricingPageController::class)->name('pricing.index');
+    Route::get('/{canonicalPath}', SeoServicePageController::class)->whereIn('canonicalPath', $seoServicePaths)->name('seo-services.show');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('services.show');
     Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('content.show');

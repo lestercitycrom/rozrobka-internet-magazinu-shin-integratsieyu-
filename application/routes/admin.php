@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminLocaleController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ContentPageController;
+use App\Http\Controllers\Admin\HomepagePromotionController;
+use App\Http\Controllers\Admin\HomepageReviewController;
 use App\Http\Controllers\Admin\Identity\AdminLoginController;
 use App\Http\Controllers\Admin\Identity\AdminSessionController;
 use App\Http\Controllers\Admin\ImportRunController;
@@ -41,6 +43,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/service-requests/{request}', [ServiceRequestController::class, 'show'])->name('service-requests.show');
         Route::put('/service-requests/{request}', [ServiceRequestController::class, 'update'])->name('service-requests.update');
         Route::resource('content-pages', ContentPageController::class)->except('show');
+        Route::resource('homepage-promotions', HomepagePromotionController::class)->except('show');
+        Route::resource('homepage-reviews', HomepageReviewController::class)->except('show');
         Route::resource('pricing-rules', PricingRuleController::class)->except('show', 'destroy');
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');

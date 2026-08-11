@@ -6,6 +6,8 @@ return [
     'imports' => 'Импорты',
     'services' => 'Страницы услуг',
     'content' => 'Страницы содержимого',
+    'homepage_promotions' => 'Предложения главной',
+    'homepage_reviews' => 'Отзывы клиентов',
     'pricing' => 'Ценовые правила',
     'orders' => 'Заказы',
     'media' => 'Медиатека',

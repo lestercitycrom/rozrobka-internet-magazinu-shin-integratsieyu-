@@ -1,8 +1,143 @@
-<x-layouts.storefront :title="$page->metaTitle ?? ('EasyTire | '.$page->title)" :description="$page->metaDescription">
-    <article class="mx-auto max-w-4xl px-5 py-12 sm:px-8">
-        <h1 class="text-4xl font-black">{{ $page->title }}</h1>
-        @if($page->hero)<img data-testid="page-hero" src="{{ $page->hero['url'] }}" alt="{{ $page->hero['alt'] }}" loading="lazy" class="mt-6 aspect-video w-full rounded-xl object-cover">@endif
-        @if ($page->excerpt)<p class="mt-5 text-xl text-easytire-muted">{{ $page->excerpt }}</p>@endif
-        @if ($page->body)<div class="prose mt-8 max-w-none">{!! nl2br(e($page->body)) !!}</div>@endif
-    </article>
+@php
+    $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+    $slug = request()->route('slug');
+    $isContact = $slug === 'kontakt';
+    $isAbout = $slug === 'om-oss';
+    $isLegal = in_array($slug, ['personvern', 'kjopsvilkar'], true);
+    $fallbackHero = $isContact ? '/brand/exterior.webp' : ($isAbout ? '/brand/founders.webp' : '/brand/workshop-alt.webp');
+    $heroUrl = $page->hero['url'] ?? $fallbackHero;
+    $heroAlt = $page->hero['alt'] ?? ($isContact ? __('pro.content.contact_image_alt') : ($isAbout ? __('pro.content.about_image_alt') : 'EasyTire'));
+    $mapUrl = 'https://maps.app.goo.gl/cWq1CsBFJXH9mykF8?g_st=ic';
+    $mapEmbedUrl = \App\Support\GoogleMapsEmbedUrl::sanitize(
+        data_get($page, 'map_embed_url')
+        ?? data_get($page, 'metadata.map_embed_url')
+        ?? config('storefront.map_embed_url', '')
+    );
+@endphp
+
+<x-layouts.storefront :title="$page->metaTitle ?? ('EasyTire | '.$page->title)" :description="$page->metaDescription" :active-section="$isAbout ? 'about' : ($isContact ? 'contact' : null)">
+    @if ($isContact)
+        <article>
+            <section class="et-page-hero">
+                <img data-testid="page-hero" class="et-page-hero__photo" src="{{ $heroUrl }}" width="1400" height="900" alt="{{ $heroAlt }}" @if($page->hero) loading="eager" @else loading="lazy" @endif>
+                <div class="et-container et-page-hero__inner">
+                    <div class="et-page-hero__content">
+                        <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $page->title }}</span></div>
+                        <p class="et-eyebrow et-eyebrow--light">{{ __('pro.content.contact_kicker') }}</p>
+                        <h1 class="et-h1">{{ __('pro.content.contact_title') }}</h1>
+                        <p class="et-lead et-lead--light">{{ $page->excerpt ?: __('pro.content.contact_intro') }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="et-section et-section--white">
+                <div class="et-container">
+                    <div class="et-contact-grid">
+                        <div class="et-contact-card">
+                            <h2 class="et-h3">EasyTire Tromsø</h2>
+                            <dl class="et-contact-list">
+                                <div><dt>{{ __('pro.content.phone') }}</dt><dd><a href="tel:+4793958270">+47 939 58 270</a></dd></div>
+                                <div><dt>{{ __('pro.content.email') }}</dt><dd><a href="mailto:max.easytire@gmail.com">max.easytire@gmail.com</a></dd></div>
+                                <div><dt>{{ __('pro.content.address') }}</dt><dd>{{ __('pro.content.address_pending') }}</dd></div>
+                                <div><dt>{{ __('pro.content.hours') }}</dt><dd>{{ __('pro.content.hours_pending') }}</dd></div>
+                            </dl>
+                            <div class="et-page-actions" style="margin-top:1rem">
+                                <a class="et-btn et-btn--light" href="tel:+4793958270">{{ __('pro.content.call_now') }}</a>
+                                <a class="et-btn et-btn--ghost" href="mailto:max.easytire@gmail.com">{{ __('pro.home.email') }}</a>
+                            </div>
+                        </div>
+
+                        <div class="et-map" data-map-card data-testid="map-card" data-map-href="{{ $mapUrl }}" @if($mapEmbedUrl !== null) data-map-embed-url="{{ $mapEmbedUrl }}" @endif data-map-ready-title="{{ __('pro.content.map_ready_title') }}" data-map-ready-text="{{ __('pro.content.map_ready_text') }}" data-map-link-label="{{ __('pro.content.map_link') }}">
+                            <div class="et-map__card">
+                                <div class="et-map__pin" aria-hidden="true"><span>●</span></div>
+                                <h2 class="et-h3">{{ __('pro.content.map_title') }}</h2>
+                                <p>{{ __('pro.content.map_privacy') }}</p>
+                                @if ($mapEmbedUrl !== null)
+                                    <button class="et-btn et-btn--primary et-btn--full" type="button" data-map-consent data-testid="map-consent">{{ __('pro.content.map_activate') }}</button>
+                                @else
+                                    <a class="et-btn et-btn--primary et-btn--full" href="{{ $mapUrl }}" target="_blank" rel="noopener" data-testid="map-external-only">{{ __('pro.content.map_options') }}</a>
+                                @endif
+                                <a class="et-btn et-btn--link" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.content.map_link') }}</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if ($page->body)
+                        <div class="et-card et-card--flat" style="margin-top:1rem">
+                            <div class="et-card__body et-richtext">{!! nl2br(e($page->body)) !!}</div>
+                        </div>
+                    @endif
+
+                    <div class="et-grid-2" style="margin-top:1rem">
+                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.private_customer') }}</span><h2 class="et-h3">{{ __('pro.content.private_title') }}</h2><p class="et-copy">{{ __('pro.content.private_text') }}</p><a class="et-card__link" href="{{ route($prefix.'services.index') }}">{{ __('pro.nav.services') }}</a></div></article>
+                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.business_customer') }}</span><h2 class="et-h3">{{ __('pro.content.business_title') }}</h2><p class="et-copy">{{ __('pro.content.business_text') }}</p><a class="et-card__link" href="mailto:max.easytire@gmail.com">{{ __('pro.home.email') }}</a></div></article>
+                    </div>
+                </div>
+            </section>
+        </article>
+    @elseif ($isAbout)
+        <article>
+            <section class="et-page-hero">
+                <img data-testid="page-hero" class="et-page-hero__photo" src="{{ $heroUrl }}" width="1400" height="1050" alt="{{ $heroAlt }}" @if($page->hero) loading="eager" @else loading="lazy" @endif>
+                <div class="et-container et-page-hero__inner">
+                    <div class="et-page-hero__content">
+                        <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $page->title }}</span></div>
+                        <p class="et-eyebrow et-eyebrow--light">{{ __('pro.content.about_kicker') }}</p>
+                        <h1 class="et-h1">{{ $page->title }}</h1>
+                        @if ($page->excerpt)<p class="et-lead et-lead--light">{{ $page->excerpt }}</p>@endif
+                    </div>
+                </div>
+            </section>
+
+            <section class="et-section et-section--white">
+                <div class="et-container et-split">
+                    <div class="et-photo-pair">
+                        <div class="et-photo-pair__main"><img src="/brand/founders.webp" width="1400" height="1050" loading="lazy" alt="{{ __('pro.content.about_image_alt') }}"></div>
+                        <div class="et-photo-pair__small"><img src="/brand/mobile-service.webp" width="1200" height="900" loading="lazy" alt="{{ __('pro.content.mobile_image_alt') }}"></div>
+                    </div>
+                    <div>
+                        <p class="et-eyebrow">EasyTire Tromsø</p>
+                        <h2 class="et-h2">{{ __('pro.content.about_heading') }}</h2>
+                        @if ($page->body)
+                            <div class="et-richtext" style="margin-top:1.25rem">{!! nl2br(e($page->body)) !!}</div>
+                        @elseif ($page->excerpt)
+                            <p class="et-lead">{{ $page->excerpt }}</p>
+                        @endif
+                    </div>
+                </div>
+            </section>
+
+            <section class="et-section">
+                <div class="et-container et-grid-2">
+                    <article class="et-media-card"><img src="/brand/workshop.webp" width="1400" height="900" loading="lazy" alt="{{ __('pro.content.workshop_image_alt') }}"><div class="et-media-card__content"><h2 class="et-h2">{{ __('pro.content.workshop_title') }}</h2><p>{{ __('pro.content.workshop_text') }}</p></div></article>
+                    <article class="et-media-card"><img src="/brand/hero-mobile.webp" width="1400" height="1000" loading="lazy" alt="{{ __('pro.content.mobile_image_alt') }}"><div class="et-media-card__content"><h2 class="et-h2">{{ __('pro.content.mobile_title') }}</h2><p>{{ __('pro.content.mobile_text') }}</p></div></article>
+                </div>
+            </section>
+        </article>
+    @else
+        <article>
+            <section class="et-page-hero et-page-hero--light">
+                <div class="et-container et-page-hero__inner">
+                    <div class="et-page-hero__content">
+                        <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $page->title }}</span></div>
+                        <p class="et-eyebrow">{{ $isLegal ? __('pro.content.legal_kicker') : __('pro.content.page_kicker') }}</p>
+                        <h1 class="et-h1">{{ $page->title }}</h1>
+                        @if ($page->excerpt)<p class="et-lead">{{ $page->excerpt }}</p>@endif
+                    </div>
+                </div>
+            </section>
+            <section class="et-section et-section--white">
+                <div class="et-container" style="max-width:900px">
+                    @if ($page->hero)
+                        <img data-testid="page-hero" class="et-cms-hero" src="{{ $heroUrl }}" alt="{{ $heroAlt }}" loading="lazy">
+                    @endif
+                    @if ($page->body)
+                        <div class="et-richtext" @if($page->hero) style="margin-top:2rem" @endif>{!! nl2br(e($page->body)) !!}</div>
+                    @elseif ($page->excerpt)
+                        <p class="et-lead">{{ $page->excerpt }}</p>
+                    @endif
+                </div>
+            </section>
+        </article>
+    @endif
 </x-layouts.storefront>

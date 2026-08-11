@@ -277,7 +277,7 @@ function storefrontMediaAsset(User $uploader, string $suffix, bool $active): Med
 
 function activeCatalogNavigationCount(string $html, string $href, string $label): int
 {
-    $pattern = '/<a\s+href="'.preg_quote($href, '/').'"[^>]*aria-current="page"[^>]*>\s*'.preg_quote($label, '/').'\s*<\/a>/u';
+    $pattern = '/<a\b(?=[^>]*\bhref="'.preg_quote($href, '/').'\")(?=[^>]*\baria-current="page")[^>]*>\s*'.preg_quote($label, '/').'\s*<\/a>/u';
 
     return preg_match_all($pattern, $html);
 }

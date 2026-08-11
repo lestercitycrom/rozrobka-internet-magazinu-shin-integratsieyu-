@@ -24,5 +24,5 @@ test('shared red design tokens keep white labels at wcag aa contrast', function 
         ->toContain('rgb(201 0 0 / 0.14)')
         ->not->toContain('--easytire-brand: #ff0000;');
 
-    expect($layout)->toContain('<meta name="theme-color" content="#c90000">');
+    expect($layout)->toContain('<meta name="theme-color" content="#101010">');
 });

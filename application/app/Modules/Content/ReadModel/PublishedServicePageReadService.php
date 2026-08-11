@@ -37,6 +37,8 @@ final class PublishedServicePageReadService
 
         return new ServicePageReadItem(
             slug: $page->slug,
+            canonicalPath: $page->canonical_path,
+            requestFlow: $page->request_flow,
             title: $page->getAttribute("title_{$suffix}"),
             excerpt: $page->getAttribute("excerpt_{$suffix}"),
             body: $page->getAttribute("body_{$suffix}"),

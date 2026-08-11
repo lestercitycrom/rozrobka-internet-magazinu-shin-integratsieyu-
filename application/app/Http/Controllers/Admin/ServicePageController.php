@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
+use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,11 @@ final class ServicePageController
 
     public function create()
     {
-        return view('admin.services.form', ['page' => new ServicePage, 'statuses' => ServicePagePublicationStatus::cases()]);
+        return view('admin.services.form', [
+            'page' => new ServicePage,
+            'statuses' => ServicePagePublicationStatus::cases(),
+            'requestFlows' => ServiceRequestFlow::cases(),
+        ]);
     }
 
     public function store(Request $request)
@@ -30,7 +35,11 @@ final class ServicePageController
 
     public function edit(ServicePage $service)
     {
-        return view('admin.services.form', ['page' => $service, 'statuses' => ServicePagePublicationStatus::cases()]);
+        return view('admin.services.form', [
+            'page' => $service,
+            'statuses' => ServicePagePublicationStatus::cases(),
+            'requestFlows' => ServiceRequestFlow::cases(),
+        ]);
     }
 
     public function update(Request $request, ServicePage $service)
@@ -45,8 +54,10 @@ final class ServicePageController
     {
         return $request->validate([
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('service_pages', 'slug')->ignore($page)],
+            'canonical_path' => ['nullable', 'string', 'max:160', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('service_pages', 'canonical_path')->ignore($page)],
             'sort_order' => ['required', 'integer', 'min:0', 'max:65535'],
             'publication_status' => ['required', Rule::enum(ServicePagePublicationStatus::class)],
+            'request_flow' => ['required', Rule::enum(ServiceRequestFlow::class)],
             'title_nb' => ['required', 'string', 'max:255'], 'excerpt_nb' => ['nullable', 'string'], 'body_nb' => ['nullable', 'string'], 'seo_title_nb' => ['nullable', 'string', 'max:255'], 'seo_description_nb' => ['nullable', 'string'],
             'title_ru' => ['required', 'string', 'max:255'], 'excerpt_ru' => ['nullable', 'string'], 'body_ru' => ['nullable', 'string'], 'seo_title_ru' => ['nullable', 'string', 'max:255'], 'seo_description_ru' => ['nullable', 'string'],
         ]);

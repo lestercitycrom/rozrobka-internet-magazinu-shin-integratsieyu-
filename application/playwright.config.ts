@@ -4,6 +4,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8000';
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.test';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
 const e2eDatabase = process.env.E2E_DB_DATABASE ?? `${process.cwd()}/database/e2e.sqlite`;
+const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow)\.spec\.ts/;
 
 export default defineConfig({
     testDir: './tests/E2E',
@@ -21,17 +22,27 @@ export default defineConfig({
         {
             name: 'buyer-desktop',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail)\.spec\.ts/,
+            testMatch: buyerSpecs,
         },
         {
             name: 'buyer-mobile',
             use: { ...devices['iPhone 13'], browserName: 'chromium' },
-            testMatch: /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail)\.spec\.ts/,
+            testMatch: buyerSpecs,
         },
         {
             name: 'buyer-ru-preview',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation|product-detail)\.spec\.ts/,
+            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow)\.spec\.ts/,
+        },
+        {
+            name: 'buyer-cart-390',
+            use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
+            testMatch: /cart-mobile\.spec\.ts/,
+        },
+        {
+            name: 'buyer-cart-320',
+            use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
+            testMatch: /cart-mobile\.spec\.ts/,
         },
         {
             name: 'admin-desktop',
@@ -39,9 +50,15 @@ export default defineConfig({
             testMatch: /admin\.smoke\.spec\.ts/,
         },
         {
-            name: 'admin-mobile',
+            name: 'admin-mobile-390',
             dependencies: ['admin-desktop'],
-            use: { ...devices['iPhone 13'], browserName: 'chromium' },
+            use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
+            testMatch: /admin\.p0\.spec\.ts/,
+        },
+        {
+            name: 'admin-mobile-320',
+            dependencies: ['admin-mobile-390'],
+            use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
             testMatch: /admin\.p0\.spec\.ts/,
         },
     ],

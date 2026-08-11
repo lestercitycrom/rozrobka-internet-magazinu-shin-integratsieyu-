@@ -14,13 +14,14 @@
             <div class="overflow-x-auto border border-easytire-border bg-easytire-panel">
                 <table class="min-w-full text-left text-sm">
                     <thead class="bg-easytire-brand-soft">
-                        <tr><th class="p-3">{{ __('admin.services.order') }}</th><th class="p-3">{{ __('admin.services.title_nb') }}</th><th class="p-3">{{ __('admin.services.status') }}</th><th class="p-3"><span class="sr-only">{{ __('admin.services.edit') }}</span></th></tr>
+                        <tr><th class="p-3">{{ __('admin.services.order') }}</th><th class="p-3">{{ __('admin.services.title_nb') }}</th><th class="p-3">{{ __('service_flows.label') }}</th><th class="p-3">{{ __('admin.services.status') }}</th><th class="p-3"><span class="sr-only">{{ __('admin.services.edit') }}</span></th></tr>
                     </thead>
                     <tbody>
                         @foreach ($pages as $page)
                             <tr class="border-t border-easytire-border">
                                 <td class="p-3">{{ $page->sort_order }}</td>
                                 <td class="p-3 font-medium">{{ $page->title_nb }}</td>
+                                <td class="p-3">{{ __('service_flows.'.$page->request_flow->value) }}</td>
                                 <td class="p-3">{{ __('services.statuses.'.$page->publication_status->value) }}</td>
                                 <td class="p-3"><a class="underline underline-offset-4 hover:text-easytire-brand focus:outline-2 focus:outline-offset-2 focus:outline-easytire-brand" href="{{ route('admin.services.edit', $page) }}">{{ __('admin.services.edit') }}</a></td>
                             </tr>

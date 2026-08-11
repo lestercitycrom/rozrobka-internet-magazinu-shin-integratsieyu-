@@ -1,110 +1,123 @@
-<x-layouts.storefront :title="__('commerce.checkout')">
-    @php
-        $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
-        $legalPages = app(\App\Modules\Content\ReadModel\PublishedContentPageReadService::class)->publishedSlugs(['personvern', 'kjopsvilkar']);
-    @endphp
-    <section class="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-            <form method="post" class="easytire-card space-y-6 rounded-2xl p-5 sm:p-8">
+@php
+    $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+    $legalPages = [];
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('content_pages')) {
+            $legalPages = app(\App\Modules\Content\ReadModel\PublishedContentPageReadService::class)
+                ->publishedSlugs(['personvern', 'kjopsvilkar']);
+        }
+    } catch (\Throwable) {
+        $legalPages = [];
+    }
+@endphp
+
+<x-layouts.storefront :title="__('commerce.checkout')" active-section="cart">
+    <section class="et-page-hero et-page-hero--light">
+        <div class="et-container et-page-hero__inner">
+            <div class="et-page-hero__content">
+                <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span><a href="{{ route($prefix.'cart.index') }}">{{ __('commerce.cart') }}</a></span><span>{{ __('commerce.checkout') }}</span></div>
+                <p class="et-eyebrow">{{ __('pro.nav.store') }}</p>
+                <h1 class="et-h1">{{ __('commerce.checkout') }}</h1>
+                <p class="et-lead">{{ __('commerce.pickup') }}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="et-section et-section--compact">
+        <div class="et-container et-cart-layout">
+            <form method="post" class="et-booking-card" data-testid="checkout-form">
                 @csrf
                 <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
                 <input name="website" class="hidden" aria-hidden="true" tabindex="-1" autocomplete="off">
 
-                <header>
-                    <p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">EasyTire</p>
-                    <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{{ __('commerce.checkout') }}</h1>
-                    <p class="mt-3 leading-7 text-easytire-muted">{{ __('commerce.pickup') }}</p>
-                </header>
+                <div class="et-booking-card__head">
+                    <p class="et-caption">EasyTire</p>
+                    <h2 class="et-h3">{{ __('commerce.checkout') }}</h2>
+                </div>
 
-                @if($errors->any())
-                    <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ $errors->first() }}</div>
-                @endif
+                <div class="et-booking-card__body">
+                    @if($errors->any())
+                        <div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
+                    @endif
 
-                <fieldset class="grid gap-5 border-t border-easytire-border pt-6 sm:grid-cols-2">
-                    <legend class="sr-only">{{ __('commerce.checkout') }}</legend>
+                    <fieldset class="et-fieldset">
+                        <legend class="sr-only">{{ __('commerce.checkout') }}</legend>
+                        <div class="et-form-grid">
+                            <div class="et-field">
+                                <label class="et-label" for="checkout-name">{{ __('commerce.name') }} <span class="et-required">*</span></label>
+                                <input class="et-input easytire-input" id="checkout-name" data-testid="checkout-name" name="name" type="text" autocomplete="name" required value="{{ old('name') }}" aria-describedby="checkout-name-error" aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}">
+                                @error('name')<p class="et-form-error" id="checkout-name-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="et-field">
+                                <label class="et-label" for="checkout-email">{{ __('commerce.email') }} <span class="et-required">*</span></label>
+                                <input class="et-input easytire-input" id="checkout-email" data-testid="checkout-email" name="email" type="email" autocomplete="email" required value="{{ old('email') }}" aria-describedby="checkout-email-error" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
+                                @error('email')<p class="et-form-error" id="checkout-email-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="et-field">
+                                <label class="et-label" for="checkout-phone">{{ __('commerce.phone') }} <span class="et-required">*</span></label>
+                                <input class="et-input easytire-input" id="checkout-phone" data-testid="checkout-phone" name="phone" type="tel" autocomplete="tel" required value="{{ old('phone') }}" aria-describedby="checkout-phone-error" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}">
+                                @error('phone')<p class="et-form-error" id="checkout-phone-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="et-field">
+                                <label class="et-label" for="checkout-registration">{{ __('commerce.registration') }}</label>
+                                <input class="et-input easytire-input" id="checkout-registration" name="registration" type="text" autocomplete="off" value="{{ old('registration') }}" aria-describedby="checkout-registration-error" aria-invalid="{{ $errors->has('registration') ? 'true' : 'false' }}">
+                                @error('registration')<p class="et-form-error" id="checkout-registration-error">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="et-field et-field--full">
+                                <label class="et-label" for="checkout-note">{{ __('commerce.note') }}</label>
+                                <textarea class="et-textarea easytire-input" id="checkout-note" name="note" aria-describedby="checkout-note-error" aria-invalid="{{ $errors->has('note') ? 'true' : 'false' }}">{{ old('note') }}</textarea>
+                                @error('note')<p class="et-form-error" id="checkout-note-error">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </fieldset>
 
-                    <div>
-                        <label class="block text-sm font-bold" for="checkout-name">{{ __('commerce.name') }}</label>
-                        <input id="checkout-name" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 text-sm @error('name') border-red-600 @enderror" name="name" type="text" autocomplete="name" required value="{{ old('name') }}" aria-describedby="checkout-name-error">
-                        @error('name')<p id="checkout-name-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-                    </div>
+                    <fieldset class="et-fieldset" style="margin-top:1.5rem;border-top:1px solid var(--et-line);padding-top:1.3rem">
+                        <legend class="sr-only">{{ __('commerce.consent') }}</legend>
+                        <div class="et-stack">
+                            <label class="et-check">
+                                <input required type="checkbox" name="consent" value="1" @checked(old('consent')) aria-label="{{ __('commerce.consent') }}">
+                                @if (isset($legalPages['personvern']))
+                                    <span>{{ __('legal.consent_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('legal.privacy') }}</a>.</span>
+                                @else
+                                    <span>{{ __('commerce.consent') }}</span>
+                                @endif
+                            </label>
+                            @error('consent')<p class="et-form-error">{{ $message }}</p>@enderror
 
-                    <div>
-                        <label class="block text-sm font-bold" for="checkout-email">{{ __('commerce.email') }}</label>
-                        <input id="checkout-email" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 text-sm @error('email') border-red-600 @enderror" name="email" type="email" autocomplete="email" required value="{{ old('email') }}" aria-describedby="checkout-email-error">
-                        @error('email')<p id="checkout-email-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-                    </div>
+                            <label class="et-check">
+                                <input required type="checkbox" name="terms" value="1" @checked(old('terms')) aria-label="{{ __('commerce.terms') }}">
+                                @if (isset($legalPages['kjopsvilkar']))
+                                    <span>{{ __('legal.terms_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('legal.terms') }}</a>.</span>
+                                @else
+                                    <span>{{ __('commerce.terms') }}</span>
+                                @endif
+                            </label>
+                            @error('terms')<p class="et-form-error">{{ $message }}</p>@enderror
+                        </div>
+                    </fieldset>
 
-                    <div>
-                        <label class="block text-sm font-bold" for="checkout-phone">{{ __('commerce.phone') }}</label>
-                        <input id="checkout-phone" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 text-sm @error('phone') border-red-600 @enderror" name="phone" type="tel" autocomplete="tel" required value="{{ old('phone') }}" aria-describedby="checkout-phone-error">
-                        @error('phone')<p id="checkout-phone-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold" for="checkout-registration">{{ __('commerce.registration') }}</label>
-                        <input id="checkout-registration" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 text-sm @error('registration') border-red-600 @enderror" name="registration" type="text" autocomplete="off" value="{{ old('registration') }}" aria-describedby="checkout-registration-error">
-                        @error('registration')<p id="checkout-registration-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label class="block text-sm font-bold" for="checkout-note">{{ __('commerce.note') }}</label>
-                        <textarea id="checkout-note" class="easytire-input mt-2 min-h-28 w-full rounded-lg px-3 py-3 text-sm @error('note') border-red-600 @enderror" name="note" aria-describedby="checkout-note-error">{{ old('note') }}</textarea>
-                        @error('note')<p id="checkout-note-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-                    </div>
-                </fieldset>
-
-                <fieldset class="space-y-3 border-t border-easytire-border pt-6">
-                    <legend class="sr-only">{{ __('commerce.consent') }}</legend>
-                    <label class="flex min-h-11 items-center gap-3 rounded-lg border border-easytire-border bg-easytire-surface px-4 text-sm font-bold">
-                        <input required type="checkbox" name="consent" value="1" @checked(old('consent')) class="size-5 rounded border-easytire-border text-easytire-brand focus:ring-easytire-brand">
-                        @if (isset($legalPages['personvern']))
-                            <span>{{ __('legal.consent_prefix') }} <a class="underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('legal.privacy') }}</a>.</span>
-                        @else
-                            {{ __('commerce.consent') }}
-                        @endif
-                    </label>
-                    @error('consent')<p class="text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-
-                    <label class="flex min-h-11 items-center gap-3 rounded-lg border border-easytire-border bg-easytire-surface px-4 text-sm font-bold">
-                        <input required type="checkbox" name="terms" value="1" @checked(old('terms')) class="size-5 rounded border-easytire-border text-easytire-brand focus:ring-easytire-brand">
-                        @if (isset($legalPages['kjopsvilkar']))
-                            <span>{{ __('legal.terms_prefix') }} <a class="underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('legal.terms') }}</a>.</span>
-                        @else
-                            {{ __('commerce.terms') }}
-                        @endif
-                    </label>
-                    @error('terms')<p class="text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-                </fieldset>
-
-                <button class="min-h-11 w-full rounded-lg bg-easytire-brand px-5 font-bold text-white shadow-sm transition hover:bg-easytire-brand-strong hover:shadow-md focus:outline-2 focus:outline-offset-4 focus:outline-easytire-brand sm:w-auto" type="submit">
-                    {{ __('commerce.submit') }}
-                </button>
+                    <button class="et-btn et-btn--primary" type="submit" style="margin-top:1.5rem" data-testid="checkout-submit">{{ __('commerce.submit') }}</button>
+                </div>
             </form>
 
-            <aside class="rounded-2xl bg-easytire-ink p-6 text-white lg:sticky lg:top-24">
-                <p class="text-sm font-bold uppercase tracking-[0.16em] text-white/70">{{ __('commerce.cart_total') }}</p>
-                <div class="mt-5 space-y-3 border-y border-white/15 py-5 text-sm">
+            <aside class="et-order-summary">
+                <p class="et-eyebrow">{{ __('commerce.cart_total') }}</p>
+                <div class="et-stack" style="margin-top:1rem">
                     @forelse($cart->lines as $line)
-                        <div class="flex justify-between gap-4">
-                            <span>{{ $line->item->title }} × {{ $line->quantity }}</span>
-                            <span class="shrink-0 font-bold">{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</span>
-                        </div>
+                        <div class="et-order-summary__row"><span>{{ $line->item->title }} × {{ $line->quantity }}</span><strong>{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</strong></div>
                     @empty
-                        <p class="text-white/70">{{ __('commerce.empty') }}</p>
+                        <p class="et-caption">{{ __('commerce.empty') }}</p>
                     @endforelse
                     @foreach($cart->serviceLines as $line)
-                        <div class="flex justify-between gap-4" data-testid="checkout-service-item">
-                            <span>{{ $line->title(app()->getLocale()) }} × {{ $line->quantity }}</span>
-                            <span class="shrink-0 font-bold">{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</span>
-                        </div>
+                        <div class="et-order-summary__row" data-testid="checkout-service-item"><span>{{ $line->title(app()->getLocale()) }} × {{ $line->quantity }}</span><strong>{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</strong></div>
                     @endforeach
                 </div>
-                <dl class="mt-5 space-y-2 text-sm">
-                    <div class="flex justify-between gap-4"><dt class="text-white/70">{{ __('commerce.products_total') }}</dt><dd class="font-bold">{{ number_format($cart->productsTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->productsTotal()->currency }}</dd></div>
-                    @if ($cart->servicesTotal()->minor > 0)<div class="flex justify-between gap-4"><dt class="text-white/70">{{ __('commerce.services_total') }}</dt><dd class="font-bold">{{ number_format($cart->servicesTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->servicesTotal()->currency }}</dd></div>@endif
+                <dl style="margin-top:1rem;border-top:1px solid var(--et-line);padding-top:.5rem">
+                    <div class="et-order-summary__row"><dt>{{ __('commerce.products_total') }}</dt><dd><strong>{{ number_format($cart->productsTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->productsTotal()->currency }}</strong></dd></div>
+                    @if ($cart->servicesTotal()->minor > 0)<div class="et-order-summary__row"><dt>{{ __('commerce.services_total') }}</dt><dd><strong>{{ number_format($cart->servicesTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->servicesTotal()->currency }}</strong></dd></div>@endif
                 </dl>
-                <p class="mt-5 text-3xl font-black">{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</p>
+                <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span>{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</span></div>
+                <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('commerce.pending') }}</div></div>
             </aside>
         </div>
     </section>

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
+use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
 use Illuminate\Database\Seeder;
 
@@ -16,7 +17,7 @@ class ServicePageSeeder extends Seeder
         }
     }
 
-    /** @return list<array<string, string|int|ServicePagePublicationStatus>> */
+    /** @return list<array<string, string|int|ServicePagePublicationStatus|ServiceRequestFlow>> */
     private function pages(): array
     {
         return [
@@ -29,13 +30,16 @@ class ServicePageSeeder extends Seeder
         ];
     }
 
-    /** @return array<string, string|int|ServicePagePublicationStatus> */
+    /** @return array<string, string|int|ServicePagePublicationStatus|ServiceRequestFlow> */
     private function page(string $slug, int $sortOrder, string $titleNb, string $excerptNb, string $bodyNb, string $seoTitleNb, string $seoDescriptionNb, string $titleRu, string $excerptRu, string $bodyRu, string $seoTitleRu, string $seoDescriptionRu): array
     {
         return [
             'slug' => $slug,
             'sort_order' => $sortOrder,
             'publication_status' => ServicePagePublicationStatus::Published,
+            'request_flow' => in_array($slug, ['mobilt-dekkskift', 'dekkverksted'], true)
+                ? ServiceRequestFlow::Seasonal
+                : ServiceRequestFlow::Generic,
             'title_nb' => $titleNb, 'excerpt_nb' => $excerptNb, 'body_nb' => $bodyNb, 'seo_title_nb' => $seoTitleNb, 'seo_description_nb' => $seoDescriptionNb,
             'title_ru' => $titleRu, 'excerpt_ru' => $excerptRu, 'body_ru' => $bodyRu, 'seo_title_ru' => $seoTitleRu, 'seo_description_ru' => $seoDescriptionRu,
         ];

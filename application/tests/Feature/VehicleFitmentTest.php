@@ -18,7 +18,8 @@ test('fitment page honestly falls back to manual catalog selection', function ()
         ->assertSee('id="registration"', false)
         ->assertSee('type="text"', false)
         ->assertSee('aria-describedby="registration-help"', false)
-        ->assertSee('min-h-12', false);
+        ->assertSee('class="et-btn et-btn--primary"', false)
+        ->assertSee('type="submit"', false);
     $this->post('/biloppslag', ['registration' => 'AB12345'])->assertOk()->assertSee('Velg dekk manuelt');
 });
 

@@ -1,1 +1,11 @@
-<x-layouts.storefront :title="__('commerce.received')"><section class="mx-auto max-w-2xl px-5 py-14 sm:px-8 sm:py-20"><div class="easytire-card rounded-3xl p-6 sm:p-10"><p class="text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">EasyTire</p><h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{{ __('commerce.received') }}</h1><div class="mt-7 rounded-xl bg-easytire-brand-soft p-5"><p class="text-sm font-bold text-easytire-muted">{{ __('commerce.reference') }}</p><p class="mt-1 text-xl font-black text-easytire-ink">{{ $reference }}</p></div><p class="mt-6 leading-7 text-easytire-muted">{{ __('commerce.pending') }}</p></div></section></x-layouts.storefront>
+<x-layouts.storefront :title="__('commerce.received')" active-section="cart">
+    <section class="et-status-page">
+        <div class="et-status-card">
+            <div class="et-status-icon" aria-hidden="true">✓</div>
+            <p class="et-eyebrow">EasyTire</p>
+            <h1 class="et-h1" style="margin-inline:auto">{{ __('commerce.received') }}</h1>
+            <p class="et-lead" style="margin-inline:auto">{{ __('commerce.pending') }}</p>
+            <div class="et-alert et-alert--info" style="margin-top:1.5rem;text-align:left"><span class="et-alert__icon" aria-hidden="true">i</span><div><strong>{{ __('commerce.reference') }}</strong><br>{{ $reference }}</div></div>
+        </div>
+    </section>
+</x-layouts.storefront>

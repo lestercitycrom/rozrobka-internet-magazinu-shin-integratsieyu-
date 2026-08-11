@@ -1,22 +1,23 @@
 @import 'tailwindcss';
+@import './pro-design.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
 /* Shared EasyTire design tokens. Both storefront and admin consume this single palette. */
+
 :root {
-    --easytire-ink: #111111;
-    /* #c90000 keeps white button labels above WCAG AA's 4.5:1 threshold. */
+    --easytire-ink: var(--et-ink);
     --easytire-brand: #c90000;
     --easytire-brand-strong: #920000;
-    --easytire-brand-soft: #fff1f1;
-    --easytire-surface: #fafafa;
-    --easytire-panel: #ffffff;
-    --easytire-border: #dedede;
-    --easytire-muted: #595959;
-    --easytire-shadow: 0 16px 38px rgb(17 17 17 / 0.08);
-    --easytire-shadow-hover: 0 20px 48px rgb(17 17 17 / 0.14);
+    --easytire-brand-soft: var(--et-red-soft);
+    --easytire-surface: var(--et-warm);
+    --easytire-panel: var(--et-white);
+    --easytire-border: var(--et-line);
+    --easytire-muted: var(--et-muted);
+    --easytire-shadow: var(--et-shadow-sm);
+    --easytire-shadow-hover: var(--et-shadow);
 }
 
 /* Self-host only the Latin/Norwegian and Russian Cyrillic subsets that this project uses. */
@@ -80,7 +81,7 @@
     box-shadow: 0 0 0 5px var(--easytire-brand);
 }
 
-.admin-shell :focus-visible { outline: 3px solid var(--easytire-brand); outline-offset: 3px; }
+.admin-shell :focus-visible, .et-admin-shell :focus-visible { outline: 3px solid var(--easytire-brand); outline-offset: 3px; }
 .easytire-card { border: 1px solid var(--easytire-border); background: var(--easytire-panel); box-shadow: var(--easytire-shadow); }
 .easytire-interactive {
     transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
@@ -96,7 +97,7 @@
 .easytire-input:focus { border-color: var(--easytire-brand); box-shadow: 0 0 0 4px rgb(201 0 0 / 0.14); outline: none; }
 [data-catalog-loading] { visibility: hidden; opacity: 0; }
 [data-catalog-live-root][aria-busy='true'] [data-catalog-loading] { visibility: visible; opacity: 1; }
-.admin-shell { background: radial-gradient(circle at 100% 0, rgb(201 0 0 / 0.07), transparent 28rem), var(--easytire-surface); }
+.admin-shell, .et-admin-body { background: radial-gradient(circle at 100% 0, rgb(201 0 0 / 0.07), transparent 28rem), var(--easytire-surface); }
 ::selection { background: var(--easytire-brand); color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {

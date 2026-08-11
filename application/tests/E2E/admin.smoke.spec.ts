@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ensureAdminLocale } from './helpers';
 
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.test';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
@@ -12,7 +13,8 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await page.getByRole('button', { name: /logg inn/i }).click();
 
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole('heading', { name: /oversikt/i })).toBeVisible();
+    await ensureAdminLocale(page, 'nb');
+    await expect(page.getByRole('heading', { name: 'Det som trenger oppfølging nå.' })).toBeVisible();
     await page.getByRole('navigation').getByRole('link', { name: 'Tjenesteforespørsler', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/service-requests/);
     await expect(page.getByRole('heading', { name: 'Tjenesteforespørsler', exact: true })).toBeVisible();
@@ -44,10 +46,10 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await expect(page.getByRole('heading', { name: 'Товары', exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Панель управления' }).click();
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole('heading', { name: 'Панель управления' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'То, что требует внимания сейчас.' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Выйти' }).click();
 
     await expect(page).toHaveURL(/\/admin\/login$/);
-    await expect(page.getByRole('heading', { name: /logg inn/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /logg inn|войти/i })).toBeVisible();
 });
