@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { isMobileProject, isRussianProject } from './helpers';
 
 async function navigationFor(page: import('@playwright/test').Page, mobile: boolean) {
     if (mobile) {
@@ -14,8 +15,8 @@ async function navigationFor(page: import('@playwright/test').Page, mobile: bool
 }
 
 test('storefront header exposes the current section and accessible targets', async ({ page }, testInfo) => {
-    const russian = testInfo.project.name === 'buyer-ru-preview';
-    const mobile = testInfo.project.name === 'buyer-mobile';
+    const russian = isRussianProject(testInfo.project.name);
+    const mobile = isMobileProject(testInfo.project.name);
     await page.goto(russian ? '/ru/felger' : '/felger');
 
     const navigation = await navigationFor(page, mobile);

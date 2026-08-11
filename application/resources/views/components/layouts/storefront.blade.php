@@ -11,6 +11,8 @@
 <head>
     @php
         $preview = app()->getLocale() === 'ru';
+        $visualStyle = app(\App\Support\StorefrontVisualStyle::class);
+        $sharpPreview = $visualStyle->isSharp();
         $routePrefix = $preview ? 'storefront.preview.' : 'storefront.';
         $phoneDisplay = config('storefront.phone_display');
         $phoneHref = config('storefront.phone_href');
@@ -96,23 +98,25 @@
         if (isset($contentPages['kontakt'])) {
             $navigationItems[] = ['section' => 'contact', 'href' => route($routePrefix.'content.show', 'kontakt'), 'label' => __('pro.nav.contact')];
         }
+        $canonicalUrl = $canonical ?: ($preview ? preg_replace('#/ru(?=/|$)#', '', url()->current(), 1) : url()->current());
+        $canonicalUrl = $visualStyle->canonicalUrl($canonicalUrl);
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{ $description ?? __('storefront.site_description') }}">
     <meta name="theme-color" content="#101010">
     <title>{{ $title ?? __('storefront.site_title') }}</title>
-    @if ($preview)
+    @if ($preview || $sharpPreview)
         <meta name="robots" content="noindex,nofollow">
     @endif
-    <link rel="canonical" href="{{ $canonical ?: ($preview ? preg_replace('#/ru(?=/|$)#', '', url()->current(), 1) : url()->current()) }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/brand/easytire-icon-32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="storefront">
+<body class="storefront" data-storefront-style="{{ $visualStyle->value() }}">
     @if ($preview)
         <div class="et-demo-banner"><strong>QA</strong><span>{{ __('pro.qa_preview') }}</span></div>
     @endif

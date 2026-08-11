@@ -1,0 +1,95 @@
+/*
+ * Storefront shape variants.
+ *
+ * The sharp variant intentionally changes geometry only. Content, colour,
+ * typography, spacing and all buyer interactions stay shared with soft mode.
+ */
+
+.storefront[data-storefront-style='sharp'] {
+    --et-radius-xs: 2px;
+    --et-radius-sm: 2px;
+    --et-radius: 2px;
+    --et-radius-lg: 2px;
+    --et-radius-xl: 2px;
+    --v3-radius: 2px;
+    --v3-radius-lg: 2px;
+    --et-shadow-sm: 0 1px 0 rgb(11 11 12 / .12);
+    --et-shadow: 0 10px 24px rgb(11 11 12 / .1);
+    --et-shadow-dark: 0 14px 36px rgb(0 0 0 / .24);
+}
+
+/*
+ * Keep the comparison honest: every public surface uses the same crisp corner
+ * treatment, including legacy Blade/Tailwind utilities and mobile drawers.
+ */
+.storefront[data-storefront-style='sharp'] *,
+.storefront[data-storefront-style='sharp'] *::before,
+.storefront[data-storefront-style='sharp'] *::after {
+    border-radius: 2px !important;
+}
+
+.storefront[data-storefront-style='sharp'] :where(
+    .et-card,
+    .et-hero-card,
+    .et-choice-band__grid,
+    .et-store-panel,
+    .et-v3-chooser,
+    .et-v3-service,
+    .et-v3-store,
+    .et-v3-editorial,
+    .et-v3-review,
+    .et-v3-services-cta__media,
+    .et-production-filter__panel,
+    .et-product-card,
+    .et-product-gallery,
+    .et-product-info__top,
+    .et-booking-card,
+    .et-summary-card,
+    .et-cart-item,
+    .et-order-summary,
+    .et-status-card,
+    .et-contact-card,
+    .et-map,
+    .et-map__loaded
+) {
+    box-shadow: 0 1px 0 rgb(11 11 12 / .11), 0 8px 20px rgb(11 11 12 / .055);
+}
+
+.storefront[data-storefront-style='sharp'] :where(.et-product-card, .et-production-filter__panel) {
+    border: 1px solid var(--v3-line);
+}
+
+.storefront[data-storefront-style='sharp'] :where(.et-btn, .et-product-card__buy, .et-product-card__more):hover {
+    box-shadow: 0 4px 0 rgb(11 11 12 / .13);
+}
+
+/* True circular affordances and automotive illustrations stay circular. */
+.storefront[data-storefront-style='sharp'] :where(
+    input[type='radio'],
+    .et-cart__count,
+    .et-filter-counter,
+    .et-catalog-loading-dot,
+    .et-spinner,
+    .et-stock-dot,
+    .et-tire-illustration,
+    .et-wheel-illustration
+),
+.storefront[data-storefront-style='sharp'] .et-tire-illustration::before,
+.storefront[data-storefront-style='sharp'] .et-wheel-illustration::before,
+.storefront[data-storefront-style='sharp'] .et-wheel-illustration::after,
+.storefront[data-storefront-style='sharp'] .et-store-panel__intro::after {
+    border-radius: 50% !important;
+}
+
+.storefront[data-storefront-style='sharp'] .et-map__pin {
+    border-radius: 999px 999px 999px 2px !important;
+}
+
+@media (max-width: 860px) {
+    .storefront[data-storefront-style='sharp'] :where(
+        .et-filter-drawer__panel,
+        .et-production-filter[open] .et-production-filter__panel
+    ) {
+        border-radius: 2px 2px 0 0 !important;
+    }
+}

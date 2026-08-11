@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { isMobileProject, isRussianProject } from './helpers';
 
 async function expectStoreSection(page: import('@playwright/test').Page, mobile: boolean, label: string) {
     if (mobile) {
@@ -10,8 +11,8 @@ async function expectStoreSection(page: import('@playwright/test').Page, mobile:
 }
 
 test('tire and wheel details expose the store section and normalized values', async ({ page }, testInfo) => {
-    const russian = testInfo.project.name === 'buyer-ru-preview';
-    const mobile = testInfo.project.name === 'buyer-mobile';
+    const russian = isRussianProject(testInfo.project.name);
+    const mobile = isMobileProject(testInfo.project.name);
     const prefix = russian ? '/ru' : '';
 
     await page.goto(`${prefix}/produkter/000205550016`);

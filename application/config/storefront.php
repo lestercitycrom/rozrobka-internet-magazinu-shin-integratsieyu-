@@ -2,6 +2,7 @@
 
 return [
     'ru_preview_enabled' => (bool) env('STOREFRONT_RU_PREVIEW_ENABLED', false),
+    'sharp_host' => env('STOREFRONT_SHARP_HOST'),
     'phone_display' => '+47 939 58 270',
     'phone_href' => '+4793958270',
     'email' => 'max.easytire@gmail.com',

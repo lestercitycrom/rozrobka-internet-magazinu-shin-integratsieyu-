@@ -6,6 +6,7 @@ umask 0027
 readonly APP_USER='easytire-deploy'
 readonly APP_GROUP='www-data'
 readonly DOMAIN='staging-easytire.bethub.fun'
+readonly SHARP_DOMAIN='staging-sharp-easytire.bethub.fun'
 readonly APP_ROOT="/var/www/$DOMAIN"
 readonly REPO='/srv/git/shop-ndi.git'
 readonly DEPLOY_SOURCE='/root/shop-ndi-deploy'
@@ -72,6 +73,7 @@ APP_DEBUG=false
 APP_URL=https://$DOMAIN
 APP_LOCALE=nb
 APP_FALLBACK_LOCALE=nb
+STOREFRONT_SHARP_HOST=$SHARP_DOMAIN
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -92,7 +94,7 @@ ln -s "/etc/nginx/sites-available/$DOMAIN" "$enabled_tmp"
 mv -Tf "$enabled_tmp" "/etc/nginx/sites-enabled/$DOMAIN"
 nginx -t
 systemctl reload nginx
-certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email -d "$DOMAIN" --redirect
+certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email -d "$DOMAIN" -d "$SHARP_DOMAIN" --redirect
 systemctl start easytire-schedule.timer
 if [[ -L "$APP_ROOT/current" ]]; then
   systemctl restart easytire-queue.service
