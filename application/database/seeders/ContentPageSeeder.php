@@ -13,6 +13,20 @@ class ContentPageSeeder extends Seeder
         foreach ($this->pages() as $slug => $attributes) {
             $page = ContentPage::query()->firstOrNew(['slug' => $slug]);
 
+            if ($page->exists && $slug === 'personvern') {
+                $page->body_nb = str_replace(
+                    'Google Maps lastes ikke inn før du aktivt velger å åpne kartet. Da gjelder Googles egne personvernvilkår.',
+                    'Google Maps vises direkte på kontaktsidene og kan da motta IP-adresse og tekniske opplysninger. Googles egne personvernvilkår gjelder for karttjenesten.',
+                    (string) $page->body_nb,
+                );
+                $page->body_ru = str_replace(
+                    'Google Maps загружается только после вашего явного действия. После загрузки действуют условия конфиденциальности Google.',
+                    'Google Maps отображается непосредственно на страницах контактов и может получать IP-адрес и технические данные. Для карты действуют условия конфиденциальности Google.',
+                    (string) $page->body_ru,
+                );
+                $page->save();
+            }
+
             if ($page->exists
                 && ($page->publication_status !== ContentPageStatus::Draft
                     || mb_strlen(trim((string) $page->body_nb)) >= 200)
@@ -129,7 +143,7 @@ Opplysningene brukes for å svare på forespørsler, inngå og oppfylle avtaler,
 
 Vi deler bare det som er nødvendig med leverandører som bistår med drift, betaling og ordrebehandling, og med NDI når en vareordre skal kontrolleres eller sendes. Leverandørene skal bare behandle opplysningene for avtalt formål.
 
-Google Maps lastes ikke inn før du aktivt velger å åpne kartet. Da gjelder Googles egne personvernvilkår.
+Google Maps vises direkte på kontaktsidene og kan da motta IP-adresse og tekniske opplysninger. Googles egne personvernvilkår gjelder for karttjenesten.
 
 ## Lagringstid
 
@@ -162,7 +176,7 @@ EasyTask AS, org.nr. 934 860 187, Ringvegen 200, 9018 Tromsø. Контакты:
 
 Необходимые данные могут передаваться поставщикам хостинга, оплаты и обработки заказов, а также NDI для проверки и размещения заказа. Они могут использовать данные только для согласованных целей.
 
-Google Maps загружается только после вашего явного действия. После загрузки действуют условия конфиденциальности Google.
+Google Maps отображается непосредственно на страницах контактов и может получать IP-адрес и технические данные. Для карты действуют условия конфиденциальности Google.
 
 ## Срок хранения
 

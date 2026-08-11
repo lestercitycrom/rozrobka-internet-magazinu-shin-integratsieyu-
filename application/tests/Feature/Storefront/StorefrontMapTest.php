@@ -18,22 +18,23 @@ test('only approved HTTPS Google Maps embed URLs are accepted', function (): voi
         ->and(GoogleMapsEmbedUrl::sanitize('https://user:pass@www.google.com/maps/embed?pb=test'))->toBeNull();
 });
 
-test('contact page enables consent map only for an approved configured URL', function (): void {
+test('contact page renders an approved configured map immediately and keeps the safe external fallback', function (): void {
     contactPage();
 
     config(['storefront.map_embed_url' => 'https://www.google.com/maps/embed?pb=easytire']);
     $this->get('/kontakt')
         ->assertOk()
-        ->assertSee('data-testid="map-consent"', false)
-        ->assertSee('data-map-embed-url="https://www.google.com/maps/embed?pb=easytire"', false)
-        ->assertDontSee('<iframe', false);
+        ->assertSee('data-testid="map-iframe"', false)
+        ->assertSee('src="https://www.google.com/maps/embed?pb=easytire"', false)
+        ->assertSee('<iframe', false)
+        ->assertDontSee('data-testid="map-consent"', false);
 
     config(['storefront.map_embed_url' => 'https://evil.example/maps/embed?pb=easytire']);
     $this->get('/kontakt')
         ->assertOk()
         ->assertSee('data-testid="map-external-only"', false)
         ->assertDontSee('evil.example', false)
-        ->assertDontSee('data-testid="map-consent"', false);
+        ->assertDontSee('data-testid="map-iframe"', false);
 });
 
 function contactPage(): ContentPage

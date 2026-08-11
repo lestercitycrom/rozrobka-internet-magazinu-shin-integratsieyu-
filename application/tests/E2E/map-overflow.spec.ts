@@ -9,13 +9,11 @@ test('homepage map state is honest in NB and RU', async ({ page }, testInfo) => 
 
     const card = page.getByTestId('map-card');
     await expect(card).toBeVisible();
-    const consent = page.getByTestId('map-consent');
+    const iframe = page.getByTestId('map-iframe');
     const externalOnly = page.getByTestId('map-external-only');
 
-    if (await consent.count()) {
-        await expect(consent).toBeVisible();
-        await consent.click();
-        await expect(card.locator('iframe')).toBeVisible();
+    if (await iframe.count()) {
+        await expect(iframe).toBeVisible();
         await expect(card.locator(`a[href="${exactMapUrl}"]`)).toBeVisible();
     } else {
         await expect(externalOnly).toBeVisible();

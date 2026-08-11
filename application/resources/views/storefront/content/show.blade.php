@@ -52,18 +52,23 @@
                             </div>
                         </div>
 
-                        <div class="et-map" data-map-card data-testid="map-card" data-map-href="{{ $mapUrl }}" @if($mapEmbedUrl !== null) data-map-embed-url="{{ $mapEmbedUrl }}" @endif data-map-ready-title="{{ __('pro.content.map_ready_title') }}" data-map-ready-text="{{ __('pro.content.map_ready_text') }}" data-map-link-label="{{ __('pro.content.map_link') }}">
-                            <div class="et-map__card">
-                                <div class="et-map__pin" aria-hidden="true"><x-icon name="location" :size="24" /></div>
-                                <h2 class="et-h3">{{ __('pro.content.map_title') }}</h2>
-                                <p>{{ __('pro.content.map_privacy') }}</p>
-                                @if ($mapEmbedUrl !== null)
-                                    <button class="et-btn et-btn--primary et-btn--full" type="button" data-map-consent data-testid="map-consent">{{ __('pro.content.map_activate') }}</button>
-                                @else
+                        <div class="et-map" data-map-card data-testid="map-card">
+                            @if ($mapEmbedUrl !== null)
+                                <iframe class="et-map__frame" src="{{ $mapEmbedUrl }}" title="{{ __('pro.content.map_ready_title') }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen data-testid="map-iframe"></iframe>
+                                <div class="et-map__loaded">
+                                    <h2 class="et-h3">{{ __('pro.content.map_ready_title') }}</h2>
+                                    <p>{{ __('pro.content.map_ready_text') }}</p>
+                                    <a class="et-btn et-btn--primary" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.content.map_link') }}</a>
+                                </div>
+                            @else
+                                <div class="et-map__card">
+                                    <div class="et-map__pin" aria-hidden="true"><x-icon name="location" :size="24" /></div>
+                                    <h2 class="et-h3">{{ __('pro.content.map_title') }}</h2>
+                                    <p>{{ __('pro.content.map_privacy') }}</p>
                                     <a class="et-btn et-btn--primary et-btn--full" href="{{ $mapUrl }}" target="_blank" rel="noopener" data-testid="map-external-only">{{ __('pro.content.map_options') }}</a>
-                                @endif
-                                <a class="et-btn et-btn--link" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.content.map_link') }}</a>
-                            </div>
+                                    <a class="et-btn et-btn--link" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.content.map_link') }}</a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 

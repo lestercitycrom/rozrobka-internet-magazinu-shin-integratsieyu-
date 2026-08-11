@@ -185,52 +185,6 @@ const initConditionalAddress = () => {
     });
 };
 
-const initMapConsent = () => {
-    all('[data-map-consent]').forEach((button) => button.addEventListener('click', () => {
-        const card = button.closest('[data-map-card]');
-        if (!card) return;
-
-        const embedUrl = card.dataset.mapEmbedUrl?.trim();
-        const href = card.dataset.mapHref?.trim();
-        if (!embedUrl) {
-            one('[data-testid="map-external-only"], a[href]', card)?.focus();
-            return;
-        }
-
-        card.innerHTML = '';
-        const frame = document.createElement('iframe');
-        frame.className = 'et-map__frame';
-        frame.src = embedUrl;
-        frame.title = card.dataset.mapReadyTitle || 'EasyTire kart';
-        frame.loading = 'lazy';
-        frame.referrerPolicy = 'no-referrer-when-downgrade';
-        frame.allowFullscreen = true;
-        frame.dataset.testid = 'map-iframe';
-
-        const content = document.createElement('div');
-        content.className = 'et-map__loaded';
-        const title = document.createElement('h3');
-        title.className = 'et-h3';
-        title.textContent = card.dataset.mapReadyTitle || 'Kart er lastet';
-        const text = document.createElement('p');
-        text.textContent = card.dataset.mapReadyText || '';
-        content.append(title, text);
-
-        if (href) {
-            const link = document.createElement('a');
-            link.className = 'et-btn et-btn--primary';
-            link.href = href;
-            link.target = '_blank';
-            link.rel = 'noopener';
-            link.textContent = card.dataset.mapLinkLabel || 'Åpne i Google Maps';
-            content.append(link);
-        }
-
-        card.append(frame, content);
-        frame.focus({ preventScroll: true });
-    }));
-};
-
 const initAdminSidebar = () => {
     const sidebar = one('[data-admin-sidebar]');
     const overlay = one('[data-admin-overlay]');
@@ -262,5 +216,4 @@ initProductionFilters();
 initTabs();
 initBookingFlow();
 initConditionalAddress();
-initMapConsent();
 initAdminSidebar();
