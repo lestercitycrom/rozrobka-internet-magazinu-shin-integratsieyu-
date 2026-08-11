@@ -66,6 +66,25 @@ test('valid wheel rows retain zero prices as data', function (): void {
         ->and($rows['TEST-WHEEL-003']['prices']['net'])->toBe('0');
 });
 
+test('updated wheel workbooks accept the NDI PlainUrl media column', function (string $header): void {
+    $url = 'https://files.ndias.com/Imagev2.aspx?id=77777777-7777-4777-8777-777777777777';
+    $fixture = ndiWheelFixtureWithMediaColumn($header, $url);
+    config()->set('ndi.media_hosts', ['files.ndias.com']);
+
+    try {
+        $result = app(NdiWorkbookValidator::class)->validate($fixture);
+        $rows = iterator_to_array($result->rows(), false);
+
+        expect($result->rejections)->toBeEmpty()
+            ->and($result->isValid())->toBeTrue()
+            ->and($result->acceptedCount)->toBe(3)
+            ->and($rows[0]['media_url'])->toBe($url)
+            ->and($rows[1]['media_url'])->toBeNull();
+    } finally {
+        @unlink($fixture);
+    }
+})->with(['PlainUrl', 'PlainURL']);
+
 test('valid stock rows retain all warehouse observations and check the capped national availability', function (): void {
     $result = app(NdiWorkbookValidator::class)->validate(ndiFixture('stock_all_warehouses.xlsx'));
     $rows = iterator_to_array($result->rows(), false);
@@ -144,6 +163,45 @@ function ndiTireFixtureWithFirstMediaUrl(string $url): string
     if (! is_string($updated) || $updated === $xml || ! $zip->addFromString($entry, $updated)) {
         $zip->close();
         throw new RuntimeException('Unable to update the temporary NDI worksheet.');
+    }
+
+    $zip->close();
+
+    return $path;
+}
+
+function ndiWheelFixtureWithMediaColumn(string $header, string $url): string
+{
+    $path = tempnam(sys_get_temp_dir(), 'ndi-wheel-media-');
+
+    if ($path === false || ! copy(ndiFixture('wheels_valid.xlsx'), $path)) {
+        throw new RuntimeException('Unable to create a temporary NDI wheel workbook fixture.');
+    }
+
+    $zip = new ZipArchive;
+
+    if ($zip->open($path) !== true) {
+        throw new RuntimeException('Unable to open the temporary NDI wheel workbook fixture.');
+    }
+
+    $entry = 'xl/worksheets/sheet1.xml';
+    $xml = $zip->getFromName($entry);
+
+    if (! is_string($xml)) {
+        $zip->close();
+        throw new RuntimeException('Unable to read the temporary NDI wheel worksheet.');
+    }
+
+    $headerCell = '<x:c r="O1" s="7" t="str"><x:v>'.htmlspecialchars($header, ENT_XML1 | ENT_QUOTES, 'UTF-8').'</x:v></x:c>';
+    $urlCell = '<x:c r="O2" s="10" t="str"><x:v>'.htmlspecialchars($url, ENT_XML1 | ENT_QUOTES, 'UTF-8').'</x:v></x:c>';
+    $updated = preg_replace('~(<x:row r="1"[^>]*>.*?)(</x:row>)~s', '$1'.$headerCell.'$2', $xml, 1);
+    $updated = is_string($updated)
+        ? preg_replace('~(<x:row r="2"[^>]*>.*?)(</x:row>)~s', '$1'.$urlCell.'$2', $updated, 1)
+        : null;
+
+    if (! is_string($updated) || $updated === $xml || ! $zip->addFromString($entry, $updated)) {
+        $zip->close();
+        throw new RuntimeException('Unable to add PlainUrl to the temporary NDI wheel worksheet.');
     }
 
     $zip->close();

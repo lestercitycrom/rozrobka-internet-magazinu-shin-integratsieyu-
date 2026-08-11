@@ -15,10 +15,13 @@ use RuntimeException;
 
 final class NdiProductMediaSynchronizer
 {
+    public function __construct(private readonly NdiMediaInheritanceReconciler $mediaInheritance) {}
+
     /** @return array{downloaded: int, failed: int, assigned: int} */
     public function sync(int $limit = 25, bool $force = false): array
     {
         $limit = max(1, $limit);
+        $this->mediaInheritance->reconcile();
         $summary = ['downloaded' => 0, 'failed' => 0, 'assigned' => $this->reconcileDownloadedSources()];
         $sourceQuery = ProductMediaSource::query()
             ->whereIn('status', ['pending', 'failed'])

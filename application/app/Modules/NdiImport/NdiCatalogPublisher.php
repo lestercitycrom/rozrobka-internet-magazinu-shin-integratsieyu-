@@ -33,6 +33,8 @@ class NdiCatalogPublisher
 {
     private const CURRENT_PRICE_LIST_VALID_FROM = '2000-01-01 00:00:00';
 
+    public function __construct(private readonly NdiMediaInheritanceReconciler $mediaInheritance) {}
+
     /**
      * @param  array<string, PreparedDataset>  $datasets
      */
@@ -56,6 +58,8 @@ class NdiCatalogPublisher
                 );
             }
         }
+
+        $this->mediaInheritance->reconcile($supplier);
 
         $this->publishStock(
             $supplier,
@@ -174,7 +178,7 @@ class NdiCatalogPublisher
         if ($sourceUrl === null) {
             $source = ProductMediaSource::query()->where('product_id', $product->id)->first();
 
-            if ($source !== null) {
+            if ($source !== null && $source->source_kind !== NdiMediaInheritanceReconciler::INHERITED_SOURCE_KIND) {
                 MediaAssignment::query()
                     ->where('assignable_type', $product::class)
                     ->where('assignable_id', $product->id)
@@ -202,6 +206,7 @@ class NdiCatalogPublisher
         }
 
         $source->source_url = $sourceUrl;
+        $source->source_kind = NdiMediaInheritanceReconciler::EXPLICIT_SOURCE_KIND;
         $source->source_artifact_id = $artifactId;
         $source->save();
     }

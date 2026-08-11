@@ -154,6 +154,13 @@ final class NdiWorkbookValidator
         $values = $row->values;
         $gross = $this->decimal($values['Brutto'], 'Brutto');
         $net = $this->decimal($values['Netto'], 'Netto');
+        $mediaField = array_key_exists('PlainUrl', $values) ? 'PlainUrl' : 'PlainURL';
+        $rawMediaUrl = $this->text($values[$mediaField] ?? null);
+        $mediaUrl = NdiMediaUrl::canonicalize($rawMediaUrl);
+
+        if ($rawMediaUrl !== null && $mediaUrl === null && ! NdiMediaUrl::isExplicitlyEmpty($rawMediaUrl)) {
+            throw new RowValidationException($mediaField, 'unrecognized_non_empty_ndi_media_url');
+        }
 
         $this->nonNegative($gross, 'Brutto');
         $this->nonNegative($net, 'Netto');
@@ -178,6 +185,7 @@ final class NdiWorkbookValidator
                 'bolt_hole_boring' => $this->text($values['Boring bolthull']),
                 'color' => $this->text($values['GFARVEPOL']),
             ],
+            'media_url' => $mediaUrl,
             'source_fields' => $values,
         ];
     }

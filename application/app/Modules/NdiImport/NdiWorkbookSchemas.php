@@ -22,6 +22,18 @@ final class NdiWorkbookSchemas
     ];
 
     /** @var list<string> */
+    public const WHEELS_WITH_MEDIA = [
+        'Varenummer', 'Beskrivelse', 'Fabrikat', 'Modell', 'Bredde', 'Diameter', 'Bolthull', 'Boltsirkel',
+        'ET', 'Navåpning', 'Boring bolthull', 'GFARVEPOL', 'Brutto', 'Netto', 'PlainUrl',
+    ];
+
+    /** @var list<string> */
+    public const WHEELS_WITH_MEDIA_UPPER_URL = [
+        'Varenummer', 'Beskrivelse', 'Fabrikat', 'Modell', 'Bredde', 'Diameter', 'Bolthull', 'Boltsirkel',
+        'ET', 'Navåpning', 'Boring bolthull', 'GFARVEPOL', 'Brutto', 'Netto', 'PlainURL',
+    ];
+
+    /** @var list<string> */
     public const STOCK = [
         'ItemID', 'InStockNorway', 'InStockVestby', 'InStockKristiansand', 'InStockTrondheim',
         'InStockTromso', 'InStockBergen', 'InStockKopervik',
@@ -32,7 +44,9 @@ final class NdiWorkbookSchemas
     {
         return match (true) {
             $headers === self::TIRES => DatasetRole::Tires,
-            $headers === self::WHEELS => DatasetRole::Wheels,
+            $headers === self::WHEELS,
+            $headers === self::WHEELS_WITH_MEDIA,
+            $headers === self::WHEELS_WITH_MEDIA_UPPER_URL => DatasetRole::Wheels,
             $headers === self::STOCK => DatasetRole::Stock,
             default => null,
         };
