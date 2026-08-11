@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
     {
         // Production seeding never creates a default user or password.
         $this->call([
+            ContentPageSeeder::class,
+            HomepageContentSeeder::class,
+            PublicServicePriceSeeder::class,
             ServiceAddonSeeder::class,
             SeoServicePageSeeder::class,
         ]);

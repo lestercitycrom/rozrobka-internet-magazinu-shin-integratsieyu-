@@ -55,7 +55,12 @@
     $contactUrl = isset($contactPages['kontakt'])
         ? route($routePrefix.'content.show', 'kontakt')
         : 'mailto:max.easytire@gmail.com';
-    $mapUrl = 'https://maps.app.goo.gl/cWq1CsBFJXH9mykF8?g_st=ic';
+    $phoneDisplay = config('storefront.phone_display');
+    $phoneHref = config('storefront.phone_href');
+    $contactEmail = config('storefront.email');
+    $businessAddress = config('storefront.business_address');
+    $mapPinAddress = config('storefront.map_pin_address');
+    $mapUrl = config('storefront.map_url');
     $mapEmbedUrl = \App\Support\GoogleMapsEmbedUrl::sanitize(config('storefront.map_embed_url'));
     $homepageLocale = app()->getLocale() === 'ru' ? 'ru' : 'nb';
     $homepagePromotions = collect();
@@ -215,15 +220,15 @@
         <div class="et-container et-v3-process-layout">
             <div class="et-v3-process-intro">
                 <p class="et-eyebrow">{{ __('pro.home.process_kicker') }}</p>
-                <h2 class="et-h2" id="home-process-title">{{ __('pro.home.process_title') }}</h2>
-                <p>{{ __('pro.home.confirmation_note') }}</p>
+                <h2 class="et-h2" id="home-process-title">{{ __('project.home.process_title') }}</h2>
+                <p>{{ __('project.home.process_note') }}</p>
             </div>
             <div class="et-v3-process">
                 @foreach ([
-                    [__('pro.home.process_1_title'), __('pro.home.process_1_text')],
-                    [__('pro.home.process_2_title'), __('pro.home.process_2_text')],
-                    [__('pro.home.process_3_title'), __('pro.home.process_3_text')],
-                    [__('pro.home.process_4_title'), __('pro.home.process_4_text')],
+                    [__('project.home.process_1_title'), __('project.home.process_1_text')],
+                    [__('project.home.process_2_title'), __('project.home.process_2_text')],
+                    [__('project.home.process_3_title'), __('project.home.process_3_text')],
+                    [__('project.home.process_4_title'), __('project.home.process_4_text')],
                 ] as $index => [$stepTitle, $stepText])
                     <article class="et-v3-process__step">
                         <span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
@@ -288,8 +293,8 @@
                 <p class="et-lead">{{ __('pro.home.story_text') }}</p>
                 <blockquote>{{ __('pro.home.story_quote') }}</blockquote>
                 <article class="et-v3-business" data-testid="business-contact-card">
-                    <div><span>{{ __('pro.home.business_kicker') }}</span><h3>{{ __('pro.home.business_title') }}</h3><p>{{ __('pro.home.business_text') }}</p></div>
-                    <a href="{{ $contactUrl }}" aria-label="{{ __('pro.home.business_link') }}"><x-icon name="arrow" :size="20" /></a>
+                    <div><span>{{ __('pro.home.business_kicker') }}</span><h3>{{ __('project.home.business_title') }}</h3><p>{{ __('project.home.business_text') }}</p><strong class="et-v3-business__proof">{{ __('project.home.business_proof') }}</strong></div>
+                    <a href="{{ $contactUrl }}" aria-label="{{ __('project.home.business_link') }}"><x-icon name="arrow" :size="20" /></a>
                 </article>
             </div>
         </div>
@@ -324,7 +329,7 @@
     @if ($homepageReviews->isNotEmpty())
         <section class="et-v3-section et-v3-section--soft" aria-labelledby="home-reviews-title" data-testid="homepage-reviews">
             <div class="et-container">
-                <div class="et-v3-section-head"><div><p class="et-eyebrow">{{ __('pro.home.reviews_kicker') }}</p><h2 class="et-h2" id="home-reviews-title">{{ __('pro.home.reviews_title') }}</h2></div></div>
+                <div class="et-v3-section-head"><div><p class="et-eyebrow">{{ __('pro.home.reviews_kicker') }}</p><h2 class="et-h2" id="home-reviews-title">{{ __('project.home.reviews_title') }}</h2></div></div>
                 <div class="et-v3-review-grid">
                     @foreach ($homepageReviews as $review)
                         @php
@@ -350,13 +355,13 @@
                 <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.contact_kicker') }}</p>
                 <h2 class="et-h2" id="home-contact-title">{{ __('pro.home.contact_title') }}</h2>
                 <p class="et-lead et-lead--light">{{ __('pro.home.contact_text') }}</p>
-                <a class="et-v3-contact__line" href="tel:+4793958270"><x-icon name="phone" :size="22" /><span><small>{{ __('pro.content.phone') }}</small><strong>+47 939 58 270</strong></span></a>
-                <a class="et-v3-contact__line" href="mailto:max.easytire@gmail.com"><span class="et-v3-contact__at">@</span><span><small>{{ __('pro.content.email') }}</small><strong>max.easytire@gmail.com</strong></span></a>
-                <a class="et-v3-contact__line" href="{{ $mapUrl }}" target="_blank" rel="noopener"><x-icon name="location" :size="22" /><span><small>{{ __('pro.content.address') }}</small><strong>{{ __('pro.content.map_title') }}</strong></span></a>
+                <a class="et-v3-contact__line" href="tel:{{ $phoneHref }}"><x-icon name="phone" :size="22" /><span><small>{{ __('pro.content.phone') }}</small><strong>{{ $phoneDisplay }}</strong></span></a>
+                <a class="et-v3-contact__line" href="mailto:{{ $contactEmail }}"><span class="et-v3-contact__at">@</span><span><small>{{ __('pro.content.email') }}</small><strong>{{ $contactEmail }}</strong></span></a>
+                <a class="et-v3-contact__line" href="{{ $mapUrl }}" target="_blank" rel="noopener"><x-icon name="location" :size="22" /><span><small>{{ __('pro.content.address') }}</small><strong>{{ $businessAddress }}</strong><em>{{ __('project.contact.map_pin_note', ['address' => $mapPinAddress]) }}</em></span></a>
             </div>
             <div class="et-map" data-map-card data-testid="map-card" data-map-href="{{ $mapUrl }}" @if($mapEmbedUrl !== null) data-map-embed-url="{{ $mapEmbedUrl }}" @endif data-map-ready-title="{{ __('pro.content.map_ready_title') }}" data-map-ready-text="{{ __('pro.content.map_ready_text') }}" data-map-link-label="{{ __('pro.content.map_link') }}">
                 <div class="et-map__card">
-                    <div class="et-map__pin" aria-hidden="true"><span>●</span></div>
+                    <div class="et-map__pin" aria-hidden="true"><x-icon name="location" :size="24" /></div>
                     <h3 class="et-h3">{{ __('pro.content.map_title') }}</h3>
                     <p>{{ __('pro.content.map_privacy') }}</p>
                     @if ($mapEmbedUrl !== null)

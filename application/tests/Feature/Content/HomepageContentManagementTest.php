@@ -4,9 +4,23 @@ use App\Models\User;
 use App\Modules\Content\Enums\ContentPageStatus;
 use App\Modules\Content\Models\HomepagePromotion;
 use App\Modules\Content\Models\HomepageReview;
+use Database\Seeders\HomepageContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+test('homepage seed publishes the current offer and source-backed customer reviews', function (): void {
+    $this->seed(HomepageContentSeeder::class);
+
+    expect(HomepagePromotion::query()->published()->count())->toBe(1)
+        ->and(HomepageReview::query()->published()->count())->toBe(3);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Dekkskift på verksted fra 550 kr')
+        ->assertSee('Solveig Lundin')
+        ->assertSee('Avis · service for en bilpark på mer enn 300 biler');
+});
 
 test('homepage keeps draft promotions and all empty reviews out of public output while retaining the honest B2B contact CTA', function (): void {
     HomepagePromotion::create(homepagePromotionPayload(['publication_status' => ContentPageStatus::Draft, 'title_nb' => 'Ikke publisert tilbud']));

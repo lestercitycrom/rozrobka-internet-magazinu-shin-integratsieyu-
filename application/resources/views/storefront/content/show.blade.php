@@ -7,7 +7,12 @@
     $fallbackHero = $isContact ? '/brand/exterior.webp' : ($isAbout ? '/brand/founders.webp' : '/brand/workshop-alt.webp');
     $heroUrl = $page->hero['url'] ?? $fallbackHero;
     $heroAlt = $page->hero['alt'] ?? ($isContact ? __('pro.content.contact_image_alt') : ($isAbout ? __('pro.content.about_image_alt') : 'EasyTire'));
-    $mapUrl = 'https://maps.app.goo.gl/cWq1CsBFJXH9mykF8?g_st=ic';
+    $phoneDisplay = config('storefront.phone_display');
+    $phoneHref = config('storefront.phone_href');
+    $contactEmail = config('storefront.email');
+    $businessAddress = config('storefront.business_address');
+    $mapPinAddress = config('storefront.map_pin_address');
+    $mapUrl = config('storefront.map_url');
     $mapEmbedUrl = \App\Support\GoogleMapsEmbedUrl::sanitize(
         data_get($page, 'map_embed_url')
         ?? data_get($page, 'metadata.map_embed_url')
@@ -36,20 +41,20 @@
                         <div class="et-contact-card">
                             <h2 class="et-h3">EasyTire Tromsø</h2>
                             <dl class="et-contact-list">
-                                <div><dt>{{ __('pro.content.phone') }}</dt><dd><a href="tel:+4793958270">+47 939 58 270</a></dd></div>
-                                <div><dt>{{ __('pro.content.email') }}</dt><dd><a href="mailto:max.easytire@gmail.com">max.easytire@gmail.com</a></dd></div>
-                                <div><dt>{{ __('pro.content.address') }}</dt><dd>{{ __('pro.content.address_pending') }}</dd></div>
-                                <div><dt>{{ __('pro.content.hours') }}</dt><dd>{{ __('pro.content.hours_pending') }}</dd></div>
+                                <div><dt>{{ __('pro.content.phone') }}</dt><dd><a href="tel:{{ $phoneHref }}">{{ $phoneDisplay }}</a></dd></div>
+                                <div><dt>{{ __('pro.content.email') }}</dt><dd><a href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a></dd></div>
+                                <div><dt>{{ __('pro.content.address') }}</dt><dd>{{ $businessAddress }}<br><small>{{ __('project.contact.map_pin_note', ['address' => $mapPinAddress]) }}</small></dd></div>
+                                <div><dt>{{ __('pro.content.hours') }}</dt><dd>{{ __('project.contact.hours') }}</dd></div>
                             </dl>
                             <div class="et-page-actions" style="margin-top:1rem">
-                                <a class="et-btn et-btn--light" href="tel:+4793958270">{{ __('pro.content.call_now') }}</a>
-                                <a class="et-btn et-btn--ghost" href="mailto:max.easytire@gmail.com">{{ __('pro.home.email') }}</a>
+                                <a class="et-btn et-btn--light" href="tel:{{ $phoneHref }}">{{ __('pro.content.call_now') }}</a>
+                                <a class="et-btn et-btn--ghost" href="mailto:{{ $contactEmail }}">{{ __('pro.home.email') }}</a>
                             </div>
                         </div>
 
                         <div class="et-map" data-map-card data-testid="map-card" data-map-href="{{ $mapUrl }}" @if($mapEmbedUrl !== null) data-map-embed-url="{{ $mapEmbedUrl }}" @endif data-map-ready-title="{{ __('pro.content.map_ready_title') }}" data-map-ready-text="{{ __('pro.content.map_ready_text') }}" data-map-link-label="{{ __('pro.content.map_link') }}">
                             <div class="et-map__card">
-                                <div class="et-map__pin" aria-hidden="true"><span>●</span></div>
+                                <div class="et-map__pin" aria-hidden="true"><x-icon name="location" :size="24" /></div>
                                 <h2 class="et-h3">{{ __('pro.content.map_title') }}</h2>
                                 <p>{{ __('pro.content.map_privacy') }}</p>
                                 @if ($mapEmbedUrl !== null)
@@ -64,13 +69,13 @@
 
                     @if ($page->body)
                         <div class="et-card et-card--flat" style="margin-top:1rem">
-                            <div class="et-card__body et-richtext">{!! nl2br(e($page->body)) !!}</div>
+                            <div class="et-card__body et-richtext">{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
                         </div>
                     @endif
 
                     <div class="et-grid-2" style="margin-top:1rem">
                         <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.private_customer') }}</span><h2 class="et-h3">{{ __('pro.content.private_title') }}</h2><p class="et-copy">{{ __('pro.content.private_text') }}</p><a class="et-card__link" href="{{ route($prefix.'services.index') }}">{{ __('pro.nav.services') }}</a></div></article>
-                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.business_customer') }}</span><h2 class="et-h3">{{ __('pro.content.business_title') }}</h2><p class="et-copy">{{ __('pro.content.business_text') }}</p><a class="et-card__link" href="mailto:max.easytire@gmail.com">{{ __('pro.home.email') }}</a></div></article>
+                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.business_customer') }}</span><h2 class="et-h3">{{ __('pro.content.business_title') }}</h2><p class="et-copy">{{ __('pro.content.business_text') }}</p><a class="et-card__link" href="mailto:{{ $contactEmail }}">{{ __('pro.home.email') }}</a></div></article>
                     </div>
                 </div>
             </section>
@@ -99,7 +104,7 @@
                         <p class="et-eyebrow">EasyTire Tromsø</p>
                         <h2 class="et-h2">{{ __('pro.content.about_heading') }}</h2>
                         @if ($page->body)
-                            <div class="et-richtext" style="margin-top:1.25rem">{!! nl2br(e($page->body)) !!}</div>
+                            <div class="et-richtext" style="margin-top:1.25rem">{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
                         @elseif ($page->excerpt)
                             <p class="et-lead">{{ $page->excerpt }}</p>
                         @endif
@@ -132,7 +137,7 @@
                         <img data-testid="page-hero" class="et-cms-hero" src="{{ $heroUrl }}" alt="{{ $heroAlt }}" loading="lazy">
                     @endif
                     @if ($page->body)
-                        <div class="et-richtext" @if($page->hero) style="margin-top:2rem" @endif>{!! nl2br(e($page->body)) !!}</div>
+                        <div class="et-richtext" @if($page->hero) style="margin-top:2rem" @endif>{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
                     @elseif ($page->excerpt)
                         <p class="et-lead">{{ $page->excerpt }}</p>
                     @endif

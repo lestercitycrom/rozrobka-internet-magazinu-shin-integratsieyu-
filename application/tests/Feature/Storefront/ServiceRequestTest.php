@@ -30,3 +30,34 @@ test('service request form exposes accessible styled controls', function (): voi
 test('honeypot rejects a service request', function () {
     $this->post('/tjenester/test/foresporsel', ['service_slug' => 'test', 'fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1', 'website' => 'bot'])->assertSessionHasErrors('website');
 });
+
+test('mounting request requires and stores service variant and wheel count', function (): void {
+    ServicePage::create(['slug' => 'omlegging-balansering', 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => 'Omlegging', 'title_ru' => 'Шиномонтаж']);
+
+    $this->get('/tjenester/omlegging-balansering/foresporsel')
+        ->assertOk()
+        ->assertSee('id="booking-service-variant"', false)
+        ->assertSee('id="booking-wheel-count"', false);
+
+    $payload = ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1'];
+    $this->post('/tjenester/omlegging-balansering/foresporsel', $payload)
+        ->assertSessionHasErrors(['service_variant', 'wheel_count']);
+    $this->post('/tjenester/omlegging-balansering/foresporsel', [...$payload, 'service_variant' => 'balancing_only', 'wheel_count' => '2'])
+        ->assertRedirect();
+
+    $stored = ServiceRequest::query()->latest('id')->firstOrFail();
+    expect($stored->service_variant)->toBe('balancing_only')->and($stored->wheel_count)->toBe(2);
+});
+
+test('oil request stores selected additional services and diagnostic request requires a problem description', function (): void {
+    foreach (['oljeskift', 'bildiagnose'] as $slug) {
+        ServicePage::create(['slug' => $slug, 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => $slug, 'title_ru' => $slug]);
+    }
+
+    $payload = ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1'];
+    $this->post('/tjenester/oljeskift/foresporsel', [...$payload, 'additional_services' => ['air_filter', 'cabin_filter']])->assertRedirect();
+    expect(ServiceRequest::query()->latest('id')->firstOrFail()->additional_services)->toBe(['air_filter', 'cabin_filter']);
+
+    $this->post('/tjenester/bildiagnose/foresporsel', $payload)->assertSessionHasErrors('note');
+    $this->post('/tjenester/bildiagnose/foresporsel', [...$payload, 'note' => 'Motorlampen lyser'])->assertRedirect();
+});

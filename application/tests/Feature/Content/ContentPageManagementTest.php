@@ -59,10 +59,12 @@ test('an administrator can create update and delete localized content pages', fu
     expect(ContentPage::query()->count())->toBe(0);
 });
 
-test('content page seed is non-destructive and leaves legal and contact pages in review draft state', function (): void {
+test('content page seed publishes complete company, contact and legal pages without overwriting editor changes', function (): void {
     $this->seed(ContentPageSeeder::class);
     expect(ContentPage::query()->count())->toBe(4)
-        ->and(ContentPage::query()->whereIn('slug', ['kontakt', 'personvern', 'kjopsvilkar'])->where('publication_status', 'draft')->count())->toBe(3);
+        ->and(ContentPage::query()->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->where('publication_status', 'published')->count())->toBe(4)
+        ->and(ContentPage::query()->where('slug', 'kontakt')->value('body_nb'))->toContain('Ringvegen 202')
+        ->and(ContentPage::query()->where('slug', 'kjopsvilkar')->value('body_nb'))->toContain('EasyTask AS');
     ContentPage::query()->where('slug', 'om-oss')->update(['title_nb' => 'Redigert']);
     $this->seed(ContentPageSeeder::class);
     expect(ContentPage::query()->where('slug', 'om-oss')->value('title_nb'))->toBe('Redigert');

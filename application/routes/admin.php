@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\MediaAssetController;
 use App\Http\Controllers\Admin\MediaHeroAssignmentController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PricingRuleController;
+use App\Http\Controllers\Admin\PublicServicePriceController;
 use App\Http\Controllers\Admin\ServiceAddonController;
 use App\Http\Controllers\Admin\ServicePageController;
 use App\Http\Controllers\Admin\ServiceRequestController;
@@ -46,6 +47,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::resource('homepage-promotions', HomepagePromotionController::class)->except('show');
         Route::resource('homepage-reviews', HomepageReviewController::class)->except('show');
         Route::resource('pricing-rules', PricingRuleController::class)->except('show', 'destroy');
+        Route::resource('public-service-prices', PublicServicePriceController::class)->except('show');
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/transition', [OrderController::class, 'transition'])->name('orders.transition');

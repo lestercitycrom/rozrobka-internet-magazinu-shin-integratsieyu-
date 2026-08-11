@@ -14,4 +14,5 @@ return [
     'health' => 'Состояние системы',
     'service_requests' => 'Заявки на услуги',
     'service_addons' => 'Дополнительные услуги',
+    'public_service_prices' => 'Публичные цены',
 ];

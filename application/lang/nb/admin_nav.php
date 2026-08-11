@@ -6,6 +6,7 @@ return [
     'imports' => 'Importer',
     'services' => 'Tjenestesider',
     'service_addons' => 'Tilleggstjenester',
+    'public_service_prices' => 'Offentlige priser',
     'service_requests' => 'Tjenesteforespørsler',
     'content' => 'Innholdssider',
     'homepage_promotions' => 'Forsidetilbud',

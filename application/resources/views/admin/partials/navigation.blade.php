@@ -10,6 +10,7 @@
         __('pro.admin.system') => [
             ['key' => 'services', 'route' => 'services.index', 'patterns' => ['admin.services.*'], 'icon' => '¶'],
             ['key' => 'service_addons', 'route' => 'service-addons.index', 'patterns' => ['admin.service-addons.*'], 'icon' => '+'],
+            ['key' => 'public_service_prices', 'route' => 'public-service-prices.index', 'patterns' => ['admin.public-service-prices.*'], 'icon' => 'kr'],
             ['key' => 'content', 'route' => 'content-pages.index', 'patterns' => ['admin.content-pages.*'], 'icon' => 'T'],
             ['key' => 'homepage_promotions', 'route' => 'homepage-promotions.index', 'patterns' => ['admin.homepage-promotions.*'], 'icon' => '★'],
             ['key' => 'homepage_reviews', 'route' => 'homepage-reviews.index', 'patterns' => ['admin.homepage-reviews.*'], 'icon' => '✓'],

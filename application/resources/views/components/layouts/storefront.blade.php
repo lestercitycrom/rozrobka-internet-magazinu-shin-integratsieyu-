@@ -12,6 +12,11 @@
     @php
         $preview = app()->getLocale() === 'ru';
         $routePrefix = $preview ? 'storefront.preview.' : 'storefront.';
+        $phoneDisplay = config('storefront.phone_display');
+        $phoneHref = config('storefront.phone_href');
+        $contactEmail = config('storefront.email');
+        $businessAddress = config('storefront.business_address');
+        $mapUrl = config('storefront.map_url');
         $contentPages = [];
         $headerServices = collect();
 
@@ -121,8 +126,8 @@
                 <span>{{ __('pro.topbar_service') }}</span>
             </div>
             <div class="et-topbar__list">
-                <a href="tel:+4793958270">+47 939 58 270</a>
-                <a href="https://maps.app.goo.gl/cWq1CsBFJXH9mykF8?g_st=ic" target="_blank" rel="noopener">{{ __('pro.find_workshop') }}</a>
+                <a href="tel:{{ $phoneHref }}">{{ $phoneDisplay }}</a>
+                <a href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.find_workshop') }}</a>
             </div>
         </div>
     </div>
@@ -168,8 +173,9 @@
                 <img class="et-footer__logo" src="/brand/easytire-logo.png" width="900" height="243" alt="EasyTire">
                 <p>{{ __('pro.footer.text') }}</p>
                 <div class="et-footer__contact">
-                    <a href="tel:+4793958270">+47 939 58 270</a>
-                    <a href="mailto:max.easytire@gmail.com">max.easytire@gmail.com</a>
+                    <a href="tel:{{ $phoneHref }}">{{ $phoneDisplay }}</a>
+                    <a href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a>
+                    <a href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ $businessAddress }}</a>
                 </div>
                 <a class="et-btn et-btn--ghost et-btn--small" href="{{ $bookingUrl }}" data-testid="footer-booking">{{ __('pro.nav.booking') }}</a>
             </div>

@@ -4,7 +4,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8000';
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.test';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
 const e2eDatabase = process.env.E2E_DB_DATABASE ?? `${process.cwd()}/database/e2e.sqlite`;
-const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow)\.spec\.ts/;
+const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow|project-content)\.spec\.ts/;
 
 export default defineConfig({
     testDir: './tests/E2E',
@@ -32,7 +32,7 @@ export default defineConfig({
         {
             name: 'buyer-ru-preview',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow)\.spec\.ts/,
+            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow|project-content)\.spec\.ts/,
         },
         {
             name: 'buyer-cart-390',

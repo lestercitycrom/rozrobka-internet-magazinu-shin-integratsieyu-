@@ -33,7 +33,14 @@ class E2eStorefrontSeeder extends Seeder
             throw new LogicException('E2E storefront fixtures are restricted to testing/local.');
         }
 
-        $this->call([CatalogDemoSeeder::class, ServicePageSeeder::class, SeoServicePageSeeder::class, ServiceAddonSeeder::class]);
+        $this->call([
+            CatalogDemoSeeder::class,
+            ServicePageSeeder::class,
+            SeoServicePageSeeder::class,
+            HomepageContentSeeder::class,
+            PublicServicePriceSeeder::class,
+            ServiceAddonSeeder::class,
+        ]);
 
         ServiceAddon::query()->updateOrCreate(['code' => 'e2e-wheel-care'], [
             'title_nb' => 'E2E felgservice',

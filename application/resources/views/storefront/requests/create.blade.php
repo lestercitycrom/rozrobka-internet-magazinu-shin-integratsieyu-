@@ -19,6 +19,11 @@
         : in_array($serviceSlug, $seasonalSlugs, true);
     $requestedFulfilment = old('fulfilment', request()->query('fulfilment', 'workshop'));
     $requestedFulfilment = in_array($requestedFulfilment, ['workshop', 'mobile'], true) ? $requestedFulfilment : 'workshop';
+    $isMountingService = $serviceSlug === 'omlegging-balansering';
+    $isOilService = $serviceSlug === 'oljeskift';
+    $requiresProblem = in_array($serviceSlug, ['tpms-sensor', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
+    $selectedAdditionalServices = old('additional_services', []);
+    $selectedAdditionalServices = is_array($selectedAdditionalServices) ? $selectedAdditionalServices : [];
 @endphp
 
 <x-layouts.storefront :title="__('booking.title')" active-section="services">
@@ -211,6 +216,23 @@
 
                             <p class="et-copy">{{ __('pro.booking.generic_form_intro') }}</p>
                             <div class="et-form-grid" style="margin-top:1.2rem">
+                                @if ($isMountingService)
+                                    <div class="et-field">
+                                        <label class="et-label" for="booking-service-variant">{{ __('project.request.variant') }} <span class="et-required">*</span></label>
+                                        <select class="et-select easytire-input" id="booking-service-variant" name="service_variant" required aria-invalid="{{ $errors->has('service_variant') ? 'true' : 'false' }}">
+                                            <option value="mounting_balancing" @selected(old('service_variant') === 'mounting_balancing')>{{ __('project.request.mounting_balancing') }}</option>
+                                            <option value="balancing_only" @selected(old('service_variant') === 'balancing_only')>{{ __('project.request.balancing_only') }}</option>
+                                        </select>
+                                        @error('service_variant')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div class="et-field">
+                                        <label class="et-label" for="booking-wheel-count">{{ __('project.request.wheel_count') }} <span class="et-required">*</span></label>
+                                        <select class="et-select easytire-input" id="booking-wheel-count" name="wheel_count" required aria-invalid="{{ $errors->has('wheel_count') ? 'true' : 'false' }}">
+                                            @foreach (range(1, 4) as $count)<option value="{{ $count }}" @selected((int) old('wheel_count', 4) === $count)>{{ $count }}</option>@endforeach
+                                        </select>
+                                        @error('wheel_count')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    </div>
+                                @endif
                                 <div class="et-field">
                                     <label class="et-label" for="booking-fulfilment">{{ __('booking.fulfilment') }}</label>
                                     <select class="et-select easytire-input" id="booking-fulfilment" name="fulfilment" data-fulfilment-controller aria-invalid="{{ $errors->has('fulfilment') ? 'true' : 'false' }}">
@@ -265,10 +287,25 @@
                                     @error('phone')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field et-field--full">
-                                    <label class="et-label" for="booking-note">{{ __('pro.booking.generic_problem_label') }}</label>
-                                    <textarea class="et-textarea easytire-input" id="booking-note" name="note" aria-invalid="{{ $errors->has('note') ? 'true' : 'false' }}">{{ old('note') }}</textarea>
+                                    <label class="et-label" for="booking-note">{{ __('project.request.problem') }} @if($requiresProblem)<span class="et-required">*</span>@endif</label>
+                                    <textarea class="et-textarea easytire-input" id="booking-note" name="note" placeholder="{{ __('project.request.problem_placeholder') }}" @required($requiresProblem) aria-invalid="{{ $errors->has('note') ? 'true' : 'false' }}">{{ old('note') }}</textarea>
                                     @error('note')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
+                                @if ($isOilService || $serviceSlug === 'lyspaerer-viskerblad')
+                                    <fieldset class="et-field et-field--full">
+                                        <legend class="et-label">{{ __('project.request.additional_services') }}</legend>
+                                        <div class="et-radio-grid" style="margin-top:.6rem">
+                                            @foreach (($isOilService ? ['air_filter', 'cabin_filter', 'wiper_blades'] : ['wiper_blades']) as $additionalService)
+                                                <label class="et-radio-card">
+                                                    <input name="additional_services[]" type="checkbox" value="{{ $additionalService }}" @checked(in_array($additionalService, $selectedAdditionalServices, true))>
+                                                    <span><strong>{{ __('project.request.'.$additionalService) }}</strong><small>{{ __('project.request.'.$additionalService.'_help') }}</small></span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                        @error('additional_services')<p class="et-form-error">{{ $message }}</p>@enderror
+                                        @error('additional_services.*')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    </fieldset>
+                                @endif
                             </div>
 
                             <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('booking.intro') }}</div></div>

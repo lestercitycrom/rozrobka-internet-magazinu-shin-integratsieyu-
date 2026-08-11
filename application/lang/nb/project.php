@@ -1,0 +1,41 @@
+<?php
+
+return [
+    'home' => [
+        'process_title' => 'Slik foregår et hjulskift med EasyTire.',
+        'process_note' => 'En forespørsel er først en avtale når EasyTire har bekreftet tidspunktet.',
+        'process_1_title' => 'Velg sted og ønsket tid',
+        'process_1_text' => 'Bestill hjemme, på jobb eller ved verkstedet, og oppgi bilen det gjelder.',
+        'process_2_title' => 'Vi bekrefter avtalen',
+        'process_2_text' => 'EasyTire kontakter deg og bekrefter tidspunkt, sted og praktiske detaljer.',
+        'process_3_title' => 'Vi utfører arbeidet',
+        'process_3_text' => 'Teamet møter opp med nødvendig utstyr. Et vanlig hjulskift tar normalt rundt 20 minutter.',
+        'process_4_title' => 'Betal etter utført arbeid',
+        'process_4_text' => 'Betaling skjer etter at arbeidet er utført og den endelige prisen er avklart.',
+        'business_title' => 'En lokal partner for bilparken.',
+        'business_text' => 'EasyTire samarbeider med lokale bedrifter og tilpasser hjulservice, lagring og oppfølging til bilparken.',
+        'business_proof' => 'Avis · service for en bilpark på mer enn 300 biler',
+        'business_link' => 'Be om et bedriftsopplegg',
+        'reviews_title' => 'Kunder som velger EasyTire igjen.',
+    ],
+    'contact' => [
+        'map_pin_note' => 'Kartnålen viser riktig innkjøring ved :address.',
+        'hours' => 'Etter avtale',
+    ],
+    'request' => [
+        'variant' => 'Tjeneste',
+        'mounting_balancing' => 'Omlegging og balansering',
+        'balancing_only' => 'Kun balansering',
+        'wheel_count' => 'Antall hjul',
+        'additional_services' => 'Tilleggstjenester',
+        'air_filter' => 'Skift av luftfilter',
+        'air_filter_help' => 'Gir motoren renere luft og bidrar til stabil drift.',
+        'cabin_filter' => 'Skift av kupefilter',
+        'cabin_filter_help' => 'Renser luften i bilen for støv og smuss.',
+        'wiper_blades' => 'Bytte av viskerblad',
+        'wiper_blades_help' => 'Oppgi bilmodell eller registreringsnummer, så kontrollerer vi riktig del.',
+        'problem' => 'Beskriv problemet eller arbeidet du ønsker',
+        'problem_placeholder' => 'Gi oss de opplysningene du kjenner, så vurderer vi riktig løsning.',
+        'problem_required' => 'Beskriv kort hva du trenger hjelp med.',
+    ],
+];

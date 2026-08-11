@@ -22,6 +22,10 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await page.getByRole('link', { name: 'Tilleggstjenester', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/service-addons/);
     await expect(page.getByRole('heading', { name: 'Tilleggstjenester', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Offentlige priser', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/public-service-prices/);
+    await expect(page.getByRole('heading', { name: 'Tjenestepriser', exact: true })).toBeVisible();
+    await expect(page.getByTestId('public-service-price-row')).toHaveCount(11);
     await page.getByRole('link', { name: 'Oversikt', exact: true }).click();
 
     await page.getByRole('link', { name: 'Katalog', exact: true }).click();

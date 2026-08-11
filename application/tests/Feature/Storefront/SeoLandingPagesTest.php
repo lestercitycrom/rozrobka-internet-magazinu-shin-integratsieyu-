@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Commerce\Models\ServiceAddon;
+use App\Modules\Commerce\Models\PublicServicePrice;
 use App\Modules\Content\Models\ServicePage;
 use Database\Seeders\SeoServicePageSeeder;
 use Database\Seeders\ServicePageSeeder;
@@ -74,9 +74,19 @@ test('store and pricing landing pages are available in Norwegian and gated Russi
 
     $this->get('/priser')->assertOk()->assertSee('Prislisten klargjøres');
 
-    $addon = ServiceAddon::query()->firstOrFail();
-    $addon->update(['price_minor' => 14900, 'is_active' => true]);
-    $this->get('/priser')->assertOk()->assertSee('149,00 NOK')->assertSee('data-testid="public-price-list"', false);
+    PublicServicePrice::create([
+        'code' => 'test-price',
+        'category_code' => 'test',
+        'category_title_nb' => 'Testtjeneste',
+        'category_title_ru' => 'Тестовая услуга',
+        'title_nb' => 'Teststørrelse',
+        'title_ru' => 'Тестовый размер',
+        'price_minor' => 14900,
+        'currency' => 'NOK',
+        'is_active' => true,
+        'sort_order' => 1,
+    ]);
+    $this->get('/priser')->assertOk()->assertSee('149 NOK')->assertSee('data-testid="public-price-list"', false);
 
     config()->set('storefront.ru_preview_enabled', true);
     $this->get('/ru/dekk-og-felger')->assertOk()->assertSee('Шины и диски для вашего автомобиля')->assertSee('noindex,nofollow', false);

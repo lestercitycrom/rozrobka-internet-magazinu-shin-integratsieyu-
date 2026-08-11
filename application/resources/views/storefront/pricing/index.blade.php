@@ -14,18 +14,30 @@
 
     <section class="et-section et-section--compact">
         <div class="et-container">
-            @if ($addons->isNotEmpty())
-                <div class="et-card" data-testid="public-price-list">
-                    <div class="et-card__body">
-                        <div class="et-stack">
-                            @foreach ($addons as $addon)
-                                <div class="et-card et-card--flat" style="padding:1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem">
-                                    <div><strong>{{ $addon->title(app()->getLocale()) }}</strong><p class="et-caption">{{ __('public_pricing.billing_'.$addon->billing_mode->value) }}</p></div>
-                                    <strong>{{ number_format($addon->price_minor / 100, 2, ',', ' ') }} NOK</strong>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
+            @if ($prices->isNotEmpty())
+                <div class="et-public-prices" data-testid="public-price-list">
+                    @foreach ($prices as $categoryPrices)
+                        @php($category = $categoryPrices->first())
+                        <article class="et-public-price-group">
+                            <header class="et-public-price-group__head">
+                                <p class="et-eyebrow">{{ __('public_pricing.category_kicker') }}</p>
+                                <h2 class="et-h3">{{ $category->localized('category_title', app()->getLocale()) }}</h2>
+                            </header>
+                            <div class="et-public-price-group__rows">
+                                @foreach ($categoryPrices as $price)
+                                    <div class="et-public-price-row" data-testid="public-price-row">
+                                        <div>
+                                            <strong>{{ $price->localized('title', app()->getLocale()) }}</strong>
+                                            @if ($description = $price->localized('description', app()->getLocale()))
+                                                <p>{{ $description }}</p>
+                                            @endif
+                                        </div>
+                                        <strong class="et-public-price-row__amount">{{ number_format($price->price_minor / 100, 0, ',', ' ') }} {{ $price->currency }}</strong>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
             @else
                 <div class="et-empty-state" data-testid="public-prices-pending">
@@ -33,7 +45,7 @@
                     <a class="et-btn et-btn--primary" href="{{ route($prefix.'services.index') }}">{{ __('public_pricing.cta') }}</a>
                 </div>
             @endif
-            <p class="et-help" style="margin-top:1rem">{{ __('public_pricing.confirmation') }}</p>
+            <div class="et-alert et-alert--info" style="margin-top:1.25rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('public_pricing.confirmation') }}</div></div>
         </div>
     </section>
 </x-layouts.storefront>
