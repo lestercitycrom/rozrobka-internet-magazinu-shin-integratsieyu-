@@ -1,25 +1,19 @@
 @php
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
-    $serviceImage = static function ($service, int $index): string {
-        $publishedHero = data_get($service, 'hero.url');
-        if (is_string($publishedHero) && $publishedHero !== '') {
-            return $publishedHero;
-        }
-
+    $serviceIcon = static function ($service): string {
         $slug = mb_strtolower((string) data_get($service, 'slug'));
+
         return match (true) {
-            str_contains($slug, 'hotell') => '/brand/dekkhotell.webp',
-            str_contains($slug, 'mobil') => '/brand/hero-mobile.webp',
-            str_contains($slug, 'verksted'), str_contains($slug, 'balanser') => '/brand/workshop.webp',
-            str_contains($slug, 'tesla'), str_contains($slug, 'elbil') => '/brand/mobile-service.webp',
-            default => $index % 2 === 0 ? '/brand/workshop-alt.webp' : '/brand/exterior.webp',
+            str_contains($slug, 'mobil'), str_contains($slug, 'bobil'), str_contains($slug, 'varebil') => 'mobile-service',
+            str_contains($slug, 'verksted'), str_contains($slug, 'batteri'), str_contains($slug, 'diagnose'), str_contains($slug, 'olje') => 'workshop',
+            default => 'tire',
         };
     };
 @endphp
 
 <x-layouts.storefront :title="__('storefront.services_title')" active-section="services">
     <section class="et-page-hero">
-        <img class="et-page-hero__photo" src="/brand/mobile-service.webp" width="1200" height="900" alt="EasyTire mobil service og verksted">
+        <img class="et-page-hero__photo" src="/brand/mobile-service.webp" width="1200" height="900" alt="{{ __('pro.home.hero_image_alt') }}">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ __('pro.nav.services') }}</span></div>
@@ -41,9 +35,17 @@
             </div>
             <div class="et-v3-services-index">
                 @forelse ($services as $index => $service)
+                    @php($publishedHero = data_get($service, 'hero.url'))
                     <article class="et-v3-service-row">
                         <a class="et-v3-service-row__media" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}" tabindex="-1" aria-hidden="true">
-                            <img src="{{ $serviceImage($service, $index) }}" width="1000" height="720" loading="lazy" alt="">
+                            @if (is_string($publishedHero) && $publishedHero !== '')
+                                <img src="{{ $publishedHero }}" width="1000" height="720" loading="lazy" alt="">
+                            @else
+                                <span class="et-v3-service-row__graphic et-v3-service-row__graphic--{{ $index % 3 }}">
+                                    <x-icon :name="$serviceIcon($service)" :size="72" />
+                                    <strong>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</strong>
+                                </span>
+                            @endif
                         </a>
                         <div class="et-v3-service-row__content">
                             <span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>

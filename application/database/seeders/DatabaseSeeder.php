@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             PublicServicePriceSeeder::class,
             ServiceAddonSeeder::class,
             SeoServicePageSeeder::class,
+            CustomerWordingCorrectionSeeder::class,
         ]);
     }
 }

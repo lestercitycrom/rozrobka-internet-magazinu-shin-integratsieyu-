@@ -147,7 +147,7 @@ Hjulene oppbevares organisert og beskyttet mot vær, snø, fuktighet og direkte 
 
 ### Hvor lenge oppbevares hjulene?
 
-Ett hjulsett oppbevares i opptil seks måneder, altså én sesong.
+Ett hjulsett oppbevares i opptil seks måneder, som tilsvarer en sesong.
 
 ### Er dekkskift inkludert i prisen?
 
@@ -159,7 +159,7 @@ Ikke dersom du bestiller dekkskift hjemme eller på jobb og transporten er avtal
 
 ### Kan jeg hente hjulene under lagringsperioden?
 
-Ja. Gi oss beskjed minst én til to dager på forhånd, så avtaler vi et tidspunkt.
+Ja. Gi oss beskjed minst en til to dager på forhånd, så avtaler vi et tidspunkt.
 MD,
                 seoTitleNb: 'Dekkhotell i Tromsø – trygg lagring av dekk | EasyTire',
                 seoDescriptionNb: 'Dekkhotell i Tromsø med dekkskift hjemme, på jobb eller på verksted. Trygg oppbevaring av hjul mellom sesongene.',

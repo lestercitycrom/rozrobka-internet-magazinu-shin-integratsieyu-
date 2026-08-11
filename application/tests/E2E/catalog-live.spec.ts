@@ -63,3 +63,22 @@ test('live wheel catalog combines dimensions and restores an empty state through
     await expect(productCard(page, 'DEMO-WHEEL-18112')).toBeVisible();
     await expectNoGlobalOverflow(page);
 });
+
+test('autocomplete remains available and focused after live search updates the results', async ({ page }, testInfo) => {
+    const prefix = localePrefix(testInfo.project.name);
+    await page.goto(`${prefix}/dekk`);
+    const form = await ensureCatalogFiltersVisible(page);
+    const search = form.locator('input[name="q"]');
+
+    await search.evaluate((element) => {
+        (window as Window & { __catalogSearchNode?: Element }).__catalogSearchNode = element;
+    });
+    await search.fill('Demo');
+
+    await expect(page).toHaveURL(/q=Demo/);
+    await expect(page.locator('#catalog-suggestions option')).not.toHaveCount(0);
+    await expect(search).toBeFocused();
+    await expect.poll(() => page.evaluate(() =>
+        (window as Window & { __catalogSearchNode?: Element }).__catalogSearchNode === document.querySelector('input[name="q"]')
+    )).toBe(true);
+});

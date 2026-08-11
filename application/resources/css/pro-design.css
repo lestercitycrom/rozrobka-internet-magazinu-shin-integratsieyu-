@@ -786,6 +786,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .et-product-card__title a:hover { color: var(--et-red-ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .2rem; }
 .et-product-visual { display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; background: linear-gradient(#fff, var(--et-warm)); }
 .et-product-visual > img { width: 100%; height: 100%; object-fit: contain; }
+.et-product-visual > img[hidden],
+.et-product-visual > [data-product-media-fallback][hidden] { display: none; }
 .et-product-visual [data-testid="product-visual-fallback"] { min-height: inherit; }
 .et-cms-hero { width: 100%; max-height: 620px; object-fit: cover; }
 .et-contact-plain { color: rgb(255 255 255 / .75); }
@@ -794,6 +796,8 @@ button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: no
 .et-booking-flow .et-step-panel.is-active { display: block; }
 .et-booking-flow[data-enhanced="false"] .et-step-panel { display: block; border-bottom: 1px solid var(--et-line); padding-bottom: 2rem; }
 .et-booking-flow[data-enhanced="false"] .et-step-actions { display: none; }
+.et-booking-flow { scroll-margin-top: calc(var(--et-header-h) + 1rem); }
+.et-booking-flow [data-booking-panel] h2[tabindex="-1"]:focus { outline: none; }
 .et-generic-request { width: min(100%, 920px); margin-inline: auto; }
 .et-summary-card dd { overflow-wrap: anywhere; text-align: right; }
 .et-native-map-fallback { display: grid; min-height: 100%; place-items: center; }

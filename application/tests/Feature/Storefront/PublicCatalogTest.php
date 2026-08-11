@@ -47,6 +47,24 @@ test('visitor can filter published tires and open a product page', function (): 
         ->assertSee('SKU-TIRE-205');
 });
 
+test('catalog cards normalize decimals and never invent a zero tire profile', function (): void {
+    storefrontProduct(ProductType::Tire, 'SKU-TIRE-COMMERCIAL', [
+        'width_mm' => '205.00', 'aspect_ratio' => '0.00', 'rim_diameter_in' => '16.00',
+        'load_index' => '110/108', 'speed_symbol' => 'T', 'season' => 'Summer',
+    ]);
+
+    $this->get('/dekk')
+        ->assertOk()
+        ->assertSee('205 R16 · 110/108T · Sommer')
+        ->assertDontSee('205.00/0.00 R16.00')
+        ->assertDontSee('205/0 R16');
+
+    $this->get('/produkter/SKU-TIRE-COMMERCIAL')
+        ->assertOk()
+        ->assertSee('205 R16')
+        ->assertDontSee('205/0 R16');
+});
+
 test('catalog exposes faceted controls, active filters, stock filter and safe suggestions', function (): void {
     storefrontProduct(ProductType::Tire, 'SKU-FILTER-205', [
         'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
@@ -127,7 +145,10 @@ test('primary product media uses lazy card loading, eager detail loading, russia
     $sku = storefrontProduct(ProductType::Tire, 'SKU-MEDIA', ['width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00', 'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer']);
     $asset = MediaAsset::create(['disk' => 'public', 'path' => 'media/test.png', 'original_name' => 'test.png', 'mime' => 'image/png', 'byte_size' => 1, 'width' => 1, 'height' => 1, 'sha256' => str_repeat('b', 64), 'alt_nb' => 'Fallback alt', 'alt_ru' => null, 'uploader_id' => User::factory()->operations()->create()->id, 'is_active' => true]);
     MediaAssignment::create(['media_asset_id' => $asset->id, 'assignable_type' => Product::class, 'assignable_id' => $sku->product_id, 'role' => 'primary']);
-    $this->get('/dekk')->assertSee('data-testid="product-primary-media"', false)->assertSee('loading="lazy"', false);
+    $this->get('/dekk')
+        ->assertSee('data-testid="product-primary-media"', false)
+        ->assertSee('data-product-media-fallback', false)
+        ->assertSee('loading="lazy"', false);
     $this->get('/produkter/SKU-MEDIA')->assertSee('loading="eager"', false)->assertSee('fetchpriority="high"', false);
     $this->get('/ru/produkter/SKU-MEDIA')->assertSee('alt="Fallback alt"', false);
     storefrontProduct(ProductType::Tire, 'SKU-NO-MEDIA', ['width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00', 'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter']);

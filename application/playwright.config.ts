@@ -4,6 +4,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8000';
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.test';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
 const e2eDatabase = process.env.E2E_DB_DATABASE ?? `${process.cwd()}/database/e2e.sqlite`;
+const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
 
 export default defineConfig({
@@ -35,16 +36,6 @@ export default defineConfig({
             testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow|project-content)\.spec\.ts/,
         },
         {
-            name: 'buyer-sharp-desktop',
-            use: { ...devices['Desktop Chrome'], baseURL: 'http://sharp.localhost:8000' },
-            testMatch: buyerSpecs,
-        },
-        {
-            name: 'buyer-sharp-mobile',
-            use: { ...devices['iPhone 13'], browserName: 'chromium', baseURL: 'http://sharp.localhost:8000' },
-            testMatch: buyerSpecs,
-        },
-        {
             name: 'buyer-cart-390',
             use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
             testMatch: /cart-mobile\.spec\.ts/,
@@ -73,7 +64,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: 'php -r "file_exists(\'database/e2e.sqlite\') || touch(\'database/e2e.sqlite\');" && php artisan migrate:fresh --force && php artisan e2e:seed-admin && php artisan db:seed --class=E2eStorefrontSeeder && php artisan storage:link && php artisan serve --host=127.0.0.1 --port=8000',
+        command: `"${phpBinary}" -r "file_exists('database/e2e.sqlite') || touch('database/e2e.sqlite');" && "${phpBinary}" artisan migrate:fresh --force && "${phpBinary}" artisan e2e:seed-admin && "${phpBinary}" artisan db:seed --class=E2eStorefrontSeeder && "${phpBinary}" artisan storage:link && "${phpBinary}" artisan serve --host=127.0.0.1 --port=8000`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
@@ -88,7 +79,6 @@ export default defineConfig({
             E2E_ADMIN_EMAIL: adminEmail,
             E2E_ADMIN_PASSWORD: adminPassword,
             STOREFRONT_RU_PREVIEW_ENABLED: 'true',
-            STOREFRONT_SHARP_HOST: 'sharp.localhost',
         },
     },
 });

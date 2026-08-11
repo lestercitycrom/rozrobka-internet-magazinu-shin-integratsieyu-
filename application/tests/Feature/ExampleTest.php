@@ -23,7 +23,7 @@ class ExampleTest extends TestCase
             ->assertSee('EasyTire | Dekk og felg i Tromsø', false)
             ->assertSee('Dekk og felg som passer hverdagen din')
             ->assertSee('Velg kategori og filtrer deg frem')
-            ->assertSee('Mobilt dekkskift')
+            ->assertSee('Dekkskift hjemme hos deg')
             ->assertSee('lang="nb"', false);
     }
 }

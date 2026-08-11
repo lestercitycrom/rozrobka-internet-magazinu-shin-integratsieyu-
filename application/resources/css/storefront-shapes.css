@@ -1,8 +1,8 @@
 /*
- * Storefront shape variants.
+ * Approved storefront geometry.
  *
- * The sharp variant intentionally changes geometry only. Content, colour,
- * typography, spacing and all buyer interactions stay shared with soft mode.
+ * The public site uses a crisp automotive shape language. True circular
+ * controls and illustrations keep their functional silhouette.
  */
 
 .storefront[data-storefront-style='sharp'] {
@@ -19,8 +19,8 @@
 }
 
 /*
- * Keep the comparison honest: every public surface uses the same crisp corner
- * treatment, including legacy Blade/Tailwind utilities and mobile drawers.
+ * Every public surface uses the same crisp corner treatment, including legacy
+ * Blade/Tailwind utilities and mobile drawers.
  */
 .storefront[data-storefront-style='sharp'] *,
 .storefront[data-storefront-style='sharp'] *::before,

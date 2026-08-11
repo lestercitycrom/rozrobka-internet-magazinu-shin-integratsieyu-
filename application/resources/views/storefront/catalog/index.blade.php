@@ -72,24 +72,28 @@
                         <form method="GET" action="{{ $baseUrl }}" data-testid="catalog-filters" data-catalog-live-form>
                             @if (isset($query['sort']))<input type="hidden" name="sort" value="{{ $query['sort'] }}">@endif
                             <div class="et-production-filter__body">
-                                <div class="et-field">
-                                    <label class="et-label" for="q">{{ __('storefront.search') }}</label>
-                                    <input class="et-input" id="q" name="q" type="search" value="{{ $query['q'] ?? '' }}" placeholder="{{ __('storefront.search_placeholder') }}" list="catalog-suggestions" autocomplete="off" aria-controls="catalog-suggestions" data-catalog-autocomplete="{{ route($suggestionsRoute) }}">
-                                    <datalist id="catalog-suggestions"></datalist>
-                                </div>
+                                <div class="et-filter-section et-filter-section--search">
+                                    <div class="et-field">
+                                        <label class="et-label" for="q">{{ __('storefront.search') }}</label>
+                                        <div class="et-filter-search"><x-icon name="search" :size="18" /><input class="et-input" id="q" name="q" type="search" value="{{ $query['q'] ?? '' }}" placeholder="{{ __('storefront.search_placeholder') }}" list="catalog-suggestions" autocomplete="off" aria-controls="catalog-suggestions" data-catalog-autocomplete="{{ route($suggestionsRoute) }}"></div>
+                                        <datalist id="catalog-suggestions"></datalist>
+                                    </div>
 
-                                <div class="et-field">
-                                    <label class="et-label" for="brand">{{ __('storefront.brand') }}</label>
-                                    <select class="et-select" id="brand" name="brand">
-                                        <option value="">{{ __('storefront.all_brands') }}</option>
-                                        @foreach ($filterOptions['brands'] as $brand)
-                                            <option value="{{ $brand }}" @selected(($query['brand'] ?? null) === $brand)>{{ $brand }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div class="et-field">
+                                        <label class="et-label" for="brand">{{ __('storefront.brand') }}</label>
+                                        <select class="et-select" id="brand" name="brand">
+                                            <option value="">{{ __('storefront.all_brands') }}</option>
+                                            @foreach ($filterOptions['brands'] as $brand)
+                                                <option value="{{ $brand }}" @selected(($query['brand'] ?? null) === $brand)>{{ $brand }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
 
                                 @if ($isTire)
-                                    <div class="et-form-grid">
+                                    <fieldset class="et-filter-section et-filter-fieldset">
+                                        <legend><span>01</span>{{ __('pro.catalog.dimensions') }}</legend>
+                                        <div class="et-size-builder et-size-builder--tire">
                                         @foreach (['width' => 'widths', 'aspect' => 'aspects'] as $field => $optionKey)
                                             <div class="et-field">
                                                 <label class="et-label" for="{{ $field }}">{{ $filterLabels[$field] }}</label>
@@ -98,38 +102,48 @@
                                                     @foreach ($filterOptions[$optionKey] as $value)<option value="{{ $value }}" @selected($matchesValue($field, $value))>{{ $formatOption($value) }}</option>@endforeach
                                                 </select>
                                             </div>
+                                            @if ($field === 'width')<span class="et-size-builder__separator" aria-hidden="true">/</span>@endif
                                         @endforeach
-                                    </div>
-                                    <div class="et-form-grid">
+                                        <span class="et-size-builder__separator" aria-hidden="true">R</span>
                                         <div class="et-field">
                                             <label class="et-label" for="rim">{{ __('storefront.rim') }}</label>
                                             <select class="et-select" id="rim" name="rim"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions['rims'] as $value)<option value="{{ $value }}" @selected($matchesValue('rim', $value))>{{ $formatOption($value) }}</option>@endforeach</select>
+                                        </div>
                                         </div>
                                         <div class="et-field">
                                             <label class="et-label" for="season">{{ __('storefront.season') }}</label>
                                             <select class="et-select" id="season" name="season"><option value="">{{ __('storefront.all_seasons') }}</option>@foreach ($filterOptions['seasons'] as $value)<option value="{{ $value }}" @selected(($query['season'] ?? null) === $value)>{{ $seasonLabel($value) }}</option>@endforeach</select>
                                         </div>
-                                    </div>
+                                    </fieldset>
                                 @else
-                                    <div class="et-form-grid">
+                                    <fieldset class="et-filter-section et-filter-fieldset">
+                                        <legend><span>01</span>{{ __('pro.catalog.wheel_size') }}</legend>
+                                        <div class="et-form-grid">
                                         @foreach (['width' => 'widths', 'diameter' => 'diameters'] as $field => $optionKey)
                                             <div class="et-field"><label class="et-label" for="{{ $field }}">{{ $filterLabels[$field] }}</label><select class="et-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions[$optionKey] as $value)<option value="{{ $value }}" @selected($matchesValue($field, $value))>{{ $formatOption($value) }}</option>@endforeach</select></div>
                                         @endforeach
-                                    </div>
-                                    <div class="et-form-grid">
+                                        </div>
+                                    </fieldset>
+                                    <fieldset class="et-filter-section et-filter-fieldset">
+                                        <legend><span>02</span>{{ __('pro.catalog.fitment') }}</legend>
+                                        <div class="et-form-grid">
                                         @foreach (['bolt_holes' => 'bolt_holes', 'pcd' => 'pcds'] as $field => $optionKey)
                                             <div class="et-field"><label class="et-label" for="{{ $field }}">{{ $filterLabels[$field] }}</label><select class="et-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions[$optionKey] as $value)<option value="{{ $value }}" @selected($matchesValue($field, $value))>{{ $formatOption($value) }}</option>@endforeach</select></div>
                                         @endforeach
-                                    </div>
-                                    <div class="et-form-grid">
+                                        </div>
+                                        <div class="et-form-grid">
                                         @foreach (['et' => 'ets', 'center_bore' => 'center_bores'] as $field => $optionKey)
                                             <div class="et-field"><label class="et-label" for="{{ $field }}">{{ $filterLabels[$field] }}</label><select class="et-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions[$optionKey] as $value)<option value="{{ $value }}" @selected($matchesValue($field, $value))>{{ $formatOption($value) }}</option>@endforeach</select></div>
                                         @endforeach
-                                    </div>
+                                        </div>
+                                    </fieldset>
                                 @endif
 
-                                <label class="et-check"><input type="checkbox" name="in_stock" value="1" @checked(($query['in_stock'] ?? null) === '1')><span>{{ __('storefront.in_stock') }}</span></label>
-                                <label class="et-check"><input type="checkbox" name="has_image" value="1" @checked(($query['has_image'] ?? null) === '1')><span>{{ __('storefront.has_image') }}</span></label>
+                                <fieldset class="et-filter-section et-filter-fieldset et-filter-availability">
+                                    <legend><span>{{ $isTire ? '02' : '03' }}</span>{{ __('pro.catalog.availability') }}</legend>
+                                    <label class="et-check et-filter-toggle"><input type="checkbox" name="in_stock" value="1" @checked(($query['in_stock'] ?? null) === '1')><span>{{ __('storefront.in_stock') }}</span></label>
+                                    <label class="et-check et-filter-toggle"><input type="checkbox" name="has_image" value="1" @checked(($query['has_image'] ?? null) === '1')><span>{{ __('storefront.has_image') }}</span></label>
+                                </fieldset>
                             </div>
 
                             <div class="et-production-filter__footer">

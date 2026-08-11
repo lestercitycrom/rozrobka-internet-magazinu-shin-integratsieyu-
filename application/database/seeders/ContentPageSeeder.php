@@ -47,11 +47,11 @@ class ContentPageSeeder extends Seeder
                 'sort_order' => 10,
                 'publication_status' => ContentPageStatus::Published,
                 'title_nb' => 'Om EasyTire',
-                'excerpt_nb' => 'Et lokalt bil- og dekkteam i Tromsø med både mobil service og eget verksted.',
+                'excerpt_nb' => 'Et lokalt bil- og dekkteam i Tromsø med dekkskift hjemme hos deg og eget verksted.',
                 'body_nb' => <<<'MD'
 EasyTire er den spesialiserte bil- og dekkavdelingen i **EasyTask AS**, org.nr. **934 860 187**.
 
-Vi hjelper privatpersoner og bedrifter med dekkskift, dekkhotell, dekk og felger og praktiske biltjenester i Tromsø. Arbeidet kan utføres ved verkstedet eller som mobil tjeneste når forholdene og oppdraget gjør det mulig.
+Vi hjelper privatpersoner og bedrifter med dekkskift, dekkhotell, dekk og felger og praktiske biltjenester i Tromsø. Dekkskift kan utføres hjemme hos deg, på jobb eller på verkstedet når forholdene gjør det mulig.
 
 Målet vårt er enkelt: kort vei fra spørsmål til et tydelig svar, ordentlig arbeid og en pris som er avklart før avtalen inngås.
 
@@ -64,7 +64,7 @@ EasyTire drives av mennesker du kan ringe og møte. Vi bruker egne bilder fra ar
 Vi tilbyr enkeltbestillinger for privatkunder og tilpassede opplegg for bedrifter med flere biler. EasyTire samarbeider blant annet med Avis og følger opp en bilpark på mer enn 300 biler.
 MD,
                 'meta_title_nb' => 'Om EasyTire | Bil- og dekkteam i Tromsø',
-                'meta_description_nb' => 'Bli kjent med EasyTire, et lokalt bil- og dekkteam i Tromsø med mobil service, verksted og bedriftsløsninger.',
+                'meta_description_nb' => 'Bli kjent med EasyTire, et lokalt bil- og dekkteam i Tromsø med dekkskift hjemme hos deg, verksted og bedriftsløsninger.',
                 'title_ru' => 'О компании EasyTire',
                 'excerpt_ru' => 'Локальная команда автомобильного и шинного сервиса в Тромсё: мобильное обслуживание и собственная мастерская.',
                 'body_ru' => <<<'MD'
@@ -203,7 +203,7 @@ EasyTask AS (EasyTire), org.nr. 934 860 187, Ringvegen 200, 9018 Tromsø. Telefo
 
 ## Bestilling og bekreftelse
 
-En tjenesteforespørsel er ikke en bekreftet time. Avtalen inngås først når EasyTire har bekreftet tidspunkt, sted, innhold og pris. Ved varekjøp vises en ordresammendrag før innsending. Dersom pris, lager eller levering endrer seg før ordren kan godkjennes, kontakter vi kunden før bindende gjennomføring.
+En tjenesteforespørsel er ikke en bekreftet time. Avtalen inngås først når EasyTire har bekreftet tidspunkt, sted, innhold og pris. Ved varekjøp vises et ordresammendrag før innsending. Dersom pris, lager eller levering endrer seg før ordren kan godkjennes, kontakter vi kunden før bindende gjennomføring.
 
 ## Pris og betaling
 

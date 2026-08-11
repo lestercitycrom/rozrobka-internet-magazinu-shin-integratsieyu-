@@ -12,7 +12,7 @@
 @endphp
 
 <x-layouts.storefront :title="__('commerce.checkout')" active-section="cart">
-    <section class="et-page-hero et-page-hero--light">
+    <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span><a href="{{ route($prefix.'cart.index') }}">{{ __('commerce.cart') }}</a></span><span>{{ __('commerce.checkout') }}</span></div>
@@ -104,7 +104,8 @@
                 <p class="et-eyebrow">{{ __('commerce.cart_total') }}</p>
                 <div class="et-stack" style="margin-top:1rem">
                     @forelse($cart->lines as $line)
-                        <div class="et-order-summary__row"><span>{{ $line->item->title }} × {{ $line->quantity }}</span><strong>{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</strong></div>
+                        @php($lineTitle = filled($line->item->modelName) ? trim($line->item->brand.' '.$line->item->modelName) : $line->item->title)
+                        <div class="et-order-summary__row"><span>{{ $lineTitle }} × {{ $line->quantity }}</span><strong>{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</strong></div>
                     @empty
                         <p class="et-caption">{{ __('commerce.empty') }}</p>
                     @endforelse

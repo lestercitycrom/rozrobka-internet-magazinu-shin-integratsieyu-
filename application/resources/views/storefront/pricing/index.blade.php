@@ -1,7 +1,7 @@
 @php($prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.')
 
 <x-layouts.storefront :title="__('public_pricing.title')" :description="__('public_pricing.description')" :canonical="route('storefront.pricing.index')" active-section="services">
-    <section class="et-page-hero et-page-hero--light">
+    <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ __('public_pricing.heading') }}</span></div>

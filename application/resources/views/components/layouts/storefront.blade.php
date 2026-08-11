@@ -11,8 +11,6 @@
 <head>
     @php
         $preview = app()->getLocale() === 'ru';
-        $visualStyle = app(\App\Support\StorefrontVisualStyle::class);
-        $sharpPreview = $visualStyle->isSharp();
         $routePrefix = $preview ? 'storefront.preview.' : 'storefront.';
         $phoneDisplay = config('storefront.phone_display');
         $phoneHref = config('storefront.phone_href');
@@ -99,14 +97,13 @@
             $navigationItems[] = ['section' => 'contact', 'href' => route($routePrefix.'content.show', 'kontakt'), 'label' => __('pro.nav.contact')];
         }
         $canonicalUrl = $canonical ?: ($preview ? preg_replace('#/ru(?=/|$)#', '', url()->current(), 1) : url()->current());
-        $canonicalUrl = $visualStyle->canonicalUrl($canonicalUrl);
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{ $description ?? __('storefront.site_description') }}">
     <meta name="theme-color" content="#101010">
     <title>{{ $title ?? __('storefront.site_title') }}</title>
-    @if ($preview || $sharpPreview)
+    @if ($preview)
         <meta name="robots" content="noindex,nofollow">
     @endif
     <link rel="canonical" href="{{ $canonicalUrl }}">
@@ -116,7 +113,7 @@
     <link rel="manifest" href="/site.webmanifest">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="storefront" data-storefront-style="{{ $visualStyle->value() }}">
+<body class="storefront" data-storefront-style="sharp">
     @if ($preview)
         <div class="et-demo-banner"><strong>QA</strong><span>{{ __('pro.qa_preview') }}</span></div>
     @endif
@@ -218,7 +215,6 @@
         </div>
         <div class="et-container et-footer__bottom">
             <span>{{ __('pro.footer.copyright', ['year' => now()->year]) }}</span>
-            <span>{{ __('pro.footer.locale_note') }}</span>
         </div>
     </footer>
 </body>

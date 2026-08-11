@@ -27,7 +27,7 @@
 @endphp
 
 <x-layouts.storefront :title="__('booking.title')" active-section="services">
-    <section class="et-page-hero et-page-hero--light">
+    <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span><a href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ $service->title }}</a></span><span>{{ __('booking.title') }}</span></div>

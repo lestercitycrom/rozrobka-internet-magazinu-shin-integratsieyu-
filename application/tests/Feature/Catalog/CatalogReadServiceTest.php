@@ -71,7 +71,8 @@ test('it filters to an active primary product image without duplicating catalog 
 
     expect($result->total)->toBe(1)
         ->and($result->items)->toHaveCount(1)
-        ->and($result->items[0]->sku)->toBe('IMAGE-01');
+        ->and($result->items[0]->sku)->toBe('IMAGE-01')
+        ->and($result->items[0]->primaryMedia['url'])->toBe('/storage/media/catalog-read.png');
 });
 
 test('it paginates and hydrates prices and stock in a bounded number of queries', function (): void {

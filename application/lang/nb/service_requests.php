@@ -33,7 +33,7 @@ return [
     'no' => 'Nei',
     'not_provided' => 'Ikke oppgitt',
     'fulfilment_workshop' => 'Verksted',
-    'fulfilment_mobile' => 'Mobil tjeneste',
+    'fulfilment_mobile' => 'Hjemme hos kunden',
     'status_new' => 'Ny',
     'status_contacted' => 'Kontaktet',
     'status_closed' => 'Lukket',

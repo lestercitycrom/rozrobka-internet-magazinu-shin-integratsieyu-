@@ -126,7 +126,7 @@
         </article>
     @else
         <article>
-            <section class="et-page-hero et-page-hero--light">
+            <section @class(['et-page-hero', 'et-page-hero--light', 'et-page-hero--transactional' => $isLegal])>
                 <div class="et-container et-page-hero__inner">
                     <div class="et-page-hero__content">
                         <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $page->title }}</span></div>

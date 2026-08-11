@@ -1,7 +1,9 @@
-@php($prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.')
+@php
+    $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+@endphp
 
 <x-layouts.storefront :title="__('commerce.cart')" active-section="cart">
-    <section class="et-page-hero et-page-hero--light">
+    <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ __('commerce.cart') }}</span></div>
@@ -26,7 +28,7 @@
             @if ($cart->lines === [] && $cart->issues === [] && $cart->serviceIssues === [])
                 <div class="et-empty-state border-dashed" style="margin-top:1rem" data-testid="cart-empty">
                     <div>
-                        <div class="et-empty-state__icon" aria-hidden="true">⌑</div>
+                        <div class="et-empty-state__icon" aria-hidden="true"><x-icon name="cart" :size="34" /></div>
                         <h2 class="et-h3" style="margin-top:1rem">{{ __('commerce.empty') }}</h2>
                         <a class="et-btn et-btn--primary" href="{{ route($prefix.'tires.index') }}" style="margin-top:1rem">{{ __('commerce.continue_shopping') }}</a>
                     </div>
@@ -35,14 +37,18 @@
                 <div class="et-cart-layout" style="margin-top:1rem">
                     <div class="et-cart-list">
                         @foreach ($cart->lines as $line)
-                            @php($quantityId = 'cart-quantity-'.$loop->index)
+                            @php
+                                $quantityId = 'cart-quantity-'.$loop->index;
+                                $linePresenter = new \App\Modules\Catalog\Presentation\CatalogItemPresenter($line->item);
+                                $lineTitle = filled($line->item->modelName) ? trim($line->item->brand.' '.$line->item->modelName) : $line->item->title;
+                            @endphp
                             <article class="et-cart-item" data-testid="cart-line" data-product-sku="{{ $line->item->sku }}">
                                 <div class="et-cart-item__media" data-testid="cart-line-media">
                                     @include('storefront.catalog._product-visual', ['item' => $line->item, 'attributes' => new \Illuminate\View\ComponentAttributeBag(['loading' => 'lazy', 'class' => 'size-full object-contain'])])
                                 </div>
                                 <div>
-                                    <h2>{{ $line->item->title }}</h2>
-                                    <p>{{ __('commerce.sku') }}: {{ $line->item->sku }}</p>
+                                    <h2>{{ $lineTitle }}</h2>
+                                    <p>{{ $linePresenter->dimension() }} · {{ __('commerce.sku') }}: {{ $line->item->sku }}</p>
                                     <div class="et-cart-item__controls">
                                         <form class="et-cluster" method="post" action="{{ route($prefix.'cart.update') }}">
                                             @csrf @method('PATCH')

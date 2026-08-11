@@ -1,14 +1,8 @@
 @php
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
-    $season = match ($item->tire['season'] ?? '') {
-        'Summer' => __('storefront.season_summer'),
-        'Winter' => __('storefront.season_winter'),
-        'All season' => __('storefront.season_all'),
-        default => $item->tire['season'] ?? '',
-    };
-    $specification = $item->tire
-        ? $item->tire['width_mm'].'/'.$item->tire['aspect_ratio'].' R'.$item->tire['rim_diameter_in'].' · '.$item->tire['load_index'].$item->tire['speed_symbol'].($season ? ' · '.$season : '')
-        : $item->wheel['width_in'].' × '.$item->wheel['diameter_in'].' · '.$item->wheel['bolt_holes'].'×'.$item->wheel['pcd_mm'].' · ET '.$item->wheel['offset_et_mm'];
+    $presenter = new \App\Modules\Catalog\Presentation\CatalogItemPresenter($item);
+    $season = $presenter->season();
+    $specification = $presenter->summary();
     $cardTitle = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
 @endphp
 <article class="et-product-card" data-testid="catalog-product" data-product-sku="{{ $item->sku }}">

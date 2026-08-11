@@ -16,6 +16,9 @@ test('seasonal request maps five labels to five production panels and preserves 
     const russian = isRussianProject(testInfo.project.name);
     await page.goto(`${prefix}/tjenester/mobilt-dekkskift/foresporsel`);
 
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(10);
+    await expect(page.getByTestId('seasonal-step-location').locator('h2')).not.toBeFocused();
+
     const form = page.getByTestId('seasonal-service-request');
     await expect(form).toBeVisible();
     await expect(page.getByTestId('generic-service-request')).toHaveCount(0);

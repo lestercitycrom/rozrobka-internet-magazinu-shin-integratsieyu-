@@ -131,7 +131,7 @@ const initBookingFlow = () => {
                 target.textContent = value;
             });
         };
-        const show = (next) => {
+        const show = (next, userInitiated = false) => {
             index = Math.max(0, Math.min(panels.length - 1, next));
             panels.forEach((panel, i) => panel.classList.toggle('is-active', i === index));
             steps.forEach((step, i) => {
@@ -140,8 +140,10 @@ const initBookingFlow = () => {
                 step.setAttribute('aria-current', i === index ? 'step' : 'false');
             });
             updateSummary();
-            one('h2', panels[index])?.focus({ preventScroll: true });
-            root.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+            if (userInitiated) {
+                one('h2', panels[index])?.focus({ preventScroll: true });
+                root.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+            }
         };
         const panelIsValid = () => {
             const fields = all('input, select, textarea', panels[index]).filter((field) => !field.disabled && field.type !== 'hidden');
@@ -153,9 +155,9 @@ const initBookingFlow = () => {
         };
 
         all('[data-booking-next]', root).forEach((button) => button.addEventListener('click', () => {
-            if (panelIsValid()) show(index + 1);
+            if (panelIsValid()) show(index + 1, true);
         }));
-        all('[data-booking-back]', root).forEach((button) => button.addEventListener('click', () => show(index - 1)));
+        all('[data-booking-back]', root).forEach((button) => button.addEventListener('click', () => show(index - 1, true)));
         root.addEventListener('input', updateSummary);
         root.addEventListener('change', updateSummary);
         root.dataset.enhanced = 'true';

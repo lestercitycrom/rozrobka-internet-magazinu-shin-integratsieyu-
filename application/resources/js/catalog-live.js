@@ -1,4 +1,5 @@
 import { initializeCatalogAutocomplete, syncCatalogMobileFilters } from './catalog-autocomplete';
+import { initializeProductMedia } from './product-media';
 
 const rootSelector = '[data-catalog-live-root]';
 let requestController;
@@ -24,12 +25,40 @@ const setBusy = (root, busy) => {
     root.querySelector('[data-catalog-loading]')?.setAttribute('aria-hidden', busy ? 'false' : 'true');
 };
 
+const syncFilterState = (root, target) => {
+    const form = root.querySelector('[data-catalog-live-form]');
+    if (!(form instanceof HTMLFormElement)) return;
+
+    form.querySelectorAll('[name]').forEach((control) => {
+        if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement)) return;
+        const value = target.searchParams.get(control.name) ?? '';
+
+        if (control instanceof HTMLInputElement && control.type === 'checkbox') {
+            control.checked = target.searchParams.getAll(control.name).includes(control.value);
+            return;
+        }
+
+        control.value = value;
+    });
+};
+
+const syncFilterCounter = (root, nextRoot) => {
+    const currentSummary = root.querySelector('[data-testid="catalog-filter-toggle"]');
+    const nextCounter = nextRoot.querySelector('.et-filter-counter');
+    if (!currentSummary) return;
+
+    currentSummary.querySelector('.et-filter-counter')?.remove();
+    if (nextCounter) currentSummary.append(nextCounter.cloneNode(true));
+};
+
 const bindCatalog = (root, preserveMobileOpen = null) => {
     initializeCatalogAutocomplete(root);
+    initializeProductMedia(root);
     syncCatalogMobileFilters(root, preserveMobileOpen);
 
     const filters = root.querySelector('[data-catalog-live-form]');
-    if (filters) {
+    if (filters && filters.dataset.catalogLiveBound !== 'true') {
+        filters.dataset.catalogLiveBound = 'true';
         filters.addEventListener('submit', (event) => {
             event.preventDefault();
             void loadCatalog(formUrl(filters), 'push');
@@ -48,9 +77,14 @@ const bindCatalog = (root, preserveMobileOpen = null) => {
     }
 
     const sort = root.querySelector('[data-catalog-live-sort]');
-    sort?.addEventListener('change', () => void loadCatalog(formUrl(sort), 'push'));
+    if (sort && sort.dataset.catalogLiveBound !== 'true') {
+        sort.dataset.catalogLiveBound = 'true';
+        sort.addEventListener('change', () => void loadCatalog(formUrl(sort), 'push'));
+    }
 
     root.querySelectorAll('[data-catalog-live-link]').forEach((link) => {
+        if (link.dataset.catalogLiveBound === 'true') return;
+        link.dataset.catalogLiveBound = 'true';
         link.addEventListener('click', (event) => {
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
             event.preventDefault();
@@ -87,7 +121,13 @@ const loadCatalog = async (target, historyMode) => {
         if (!nextRoot) throw new Error('Catalog response is missing its live region');
         if (requestController !== controller) return;
 
-        root.replaceChildren(...nextRoot.childNodes);
+        const results = root.querySelector('[data-catalog-live-results]');
+        const nextResults = nextRoot.querySelector('[data-catalog-live-results]');
+        if (!results || !nextResults) throw new Error('Catalog response is missing its results region');
+
+        syncFilterCounter(root, nextRoot);
+        syncFilterState(root, new URL(response.url));
+        results.replaceChildren(...nextResults.childNodes);
         document.title = page.title || document.title;
         if (historyMode === 'push') history.pushState({ catalog: true }, '', response.url);
         setBusy(root, false);

@@ -286,7 +286,7 @@
 
     <section class="et-v3-section et-v3-story" aria-labelledby="home-story-title">
         <div class="et-container et-v3-story__grid">
-            <div class="et-v3-story__media"><img src="/brand/founders.webp" width="1400" height="1050" loading="lazy" alt="EasyTire-teamet i Tromsø"><span>EasyTire · Tromsø</span></div>
+            <div class="et-v3-story__media"><img src="/brand/founders.webp" width="1400" height="1050" loading="eager" alt="EasyTire-teamet i Tromsø"><span>EasyTire · Tromsø</span></div>
             <div class="et-v3-story__content">
                 <p class="et-eyebrow">{{ __('pro.home.story_kicker') }}</p>
                 <h2 class="et-h2" id="home-story-title">{{ __('pro.home.story_title') }}</h2>
@@ -314,7 +314,7 @@
                     </div>
                 </article>
                 <article class="et-v3-editorial">
-                    <img src="/brand/mobile-service.webp" width="1200" height="900" loading="lazy" alt="EasyTire mobil service">
+                    <img src="/brand/mobile-service.webp" width="1200" height="900" loading="lazy" alt="{{ __('pro.home.hero_image_alt') }}">
                     <div>
                         <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.mobile_kicker') }}</p>
                         <h3>{{ __('pro.home.mobile_title') }}</h3>

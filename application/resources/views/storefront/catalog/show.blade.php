@@ -7,15 +7,16 @@
     $isTire = $item->productType === \App\Modules\Catalog\Enums\ProductType::Tire;
     $catalogRoute = $prefix.($isTire ? 'tires.index' : 'wheels.index');
     $catalogLabel = $isTire ? __('storefront.tires') : __('storefront.wheels');
+    $productHeading = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
 @endphp
 
-<x-layouts.storefront :title="'EasyTire | '.$item->title" active-section="store" :store-route="route($catalogRoute)" :store-label="$catalogLabel">
+<x-layouts.storefront :title="'EasyTire | '.$productHeading" active-section="store" :store-route="route($catalogRoute)" :store-label="$catalogLabel">
     <section class="et-section et-section--compact">
         <div class="et-container">
             <div class="et-breadcrumbs" style="color:var(--et-muted)">
                 <span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span>
                 <span><a href="{{ route($catalogRoute) }}">{{ $catalogLabel }}</a></span>
-                <span>{{ $item->title }}</span>
+                <span>{{ $productHeading }}</span>
             </div>
 
             <a class="et-btn et-btn--link" href="{{ route($catalogRoute) }}">{{ __('pro.catalog.back') }}</a>
@@ -28,7 +29,7 @@
                                 @include('storefront.catalog._product-visual', ['item' => $item, 'attributes' => new \Illuminate\View\ComponentAttributeBag(['loading' => 'eager', 'fetchpriority' => 'high', 'class' => 'size-full object-contain'])])
                             </div>
                         </div>
-                        <div class="et-product-gallery__note">{{ $item->primaryMedia ? __('pro.catalog.media_note') : __('storefront.image_unavailable') }}</div>
+                        <div class="et-product-gallery__note" data-product-media-note data-fallback-text="{{ __('storefront.image_unavailable') }}">{{ $item->primaryMedia ? __('pro.catalog.media_note') : __('storefront.image_unavailable') }}</div>
                     </div>
 
                     <div class="et-fitment-notice">
@@ -41,8 +42,8 @@
                     <div class="et-product-info__top">
                         <p class="et-eyebrow">{{ __('pro.catalog.product_kicker') }}</p>
                         <span class="et-product-card__brand">{{ $item->brand }}</span>
-                        <h1 class="et-product-title">{{ $item->title }}</h1>
-                        @if ($item->modelName)<p class="et-product-subtitle">{{ $item->modelName }}</p>@endif
+                        <h1 class="et-product-title">{{ $productHeading }}</h1>
+                        @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
 
                         <div class="et-stock-line">
                             <span @class(['et-stock-dot' => $item->stock->quantity > 0]) aria-hidden="true"></span>
@@ -78,6 +79,7 @@
                     <dl class="et-spec-grid" data-testid="technical-details">
                         <div><dt>{{ __('storefront.item_number') }}</dt><dd>{{ $item->sku }}</dd></div>
                         <div><dt>{{ __('pro.catalog.stock') }}</dt><dd>{{ $item->stock->quantity }}</dd></div>
+                        @if ($item->title !== $productHeading)<div><dt>{{ __('storefront.supplier_description') }}</dt><dd>{{ $item->title }}</dd></div>@endif
                         @if ($item->tire)
                             @if ($dimension)<div><dt>{{ __('storefront.dimension') }}</dt><dd>{{ $dimension }}</dd></div>@endif
                             @if ($season)<div><dt>{{ __('storefront.season_label') }}</dt><dd>{{ $season }}</dd></div>@endif

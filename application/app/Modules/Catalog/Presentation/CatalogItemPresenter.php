@@ -21,9 +21,13 @@ final readonly class CatalogItemPresenter
             $aspect = $this->decimal($this->item->tire['aspect_ratio'] ?? null);
             $rim = $this->decimal($this->item->tire['rim_diameter_in'] ?? null);
 
-            return $width !== null && $aspect !== null && $rim !== null
-                ? "{$width}/{$aspect} R{$rim}"
-                : null;
+            if ($width === null || $rim === null) {
+                return null;
+            }
+
+            return $aspect === null || (float) $aspect <= 0
+                ? "{$width} R{$rim}"
+                : "{$width}/{$aspect} R{$rim}";
         }
 
         $width = $this->decimal($this->item->wheel['width_in'] ?? null);
@@ -48,6 +52,28 @@ final readonly class CatalogItemPresenter
             'All season' => __('storefront.season_all'),
             default => null,
         };
+    }
+
+    public function summary(): string
+    {
+        if ($this->item->productType === ProductType::Tire) {
+            $loadIndex = $this->token($this->item->tire['load_index'] ?? null, '/^\d{2,3}(?:\/\d{2,3})?$/');
+            $speedSymbol = $this->token($this->item->tire['speed_symbol'] ?? null, '/^[A-Z]{1,2}$/i', uppercase: true);
+
+            return implode(' · ', array_filter([
+                $this->dimension(),
+                $loadIndex !== null && $speedSymbol !== null ? $loadIndex.$speedSymbol : null,
+                $this->season(),
+            ]));
+        }
+
+        $offset = $this->decimal($this->item->wheel['offset_et_mm'] ?? null);
+
+        return implode(' · ', array_filter([
+            $this->dimension(),
+            $this->boltCircle(),
+            $offset !== null ? 'ET '.$offset : null,
+        ]));
     }
 
     /** @return list<array{label: string, value: string}> */

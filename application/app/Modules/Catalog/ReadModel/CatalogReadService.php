@@ -243,7 +243,13 @@ final class CatalogReadService
                     'offset_et_mm' => $sku->getAttribute('wheel_offset_et_mm'), 'center_bore_mm' => $sku->getAttribute('wheel_center_bore_mm'),
                     'bolt_hole_boring' => $sku->getAttribute('wheel_bolt_hole_boring'), 'color' => $sku->getAttribute('wheel_color'),
                 ],
-                primaryMedia: $asset === null ? null : ['url' => Storage::disk($asset->disk)->url($asset->path), 'alt_nb' => $asset->alt_nb, 'alt_ru' => $asset->alt_ru],
+                primaryMedia: $asset === null ? null : [
+                    'url' => $asset->disk === 'public'
+                        ? '/storage/'.ltrim($asset->path, '/')
+                        : Storage::disk($asset->disk)->url($asset->path),
+                    'alt_nb' => $asset->alt_nb,
+                    'alt_ru' => $asset->alt_ru,
+                ],
             );
         }, $skus);
     }
