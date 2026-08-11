@@ -30,13 +30,19 @@ final class GoogleMapsEmbedUrl
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         $host = strtolower(rtrim((string) ($parts['host'] ?? ''), '.'));
         $path = (string) ($parts['path'] ?? '');
+        parse_str((string) ($parts['query'] ?? ''), $query);
+        $isEmbedPath = $path === '/maps/embed' || str_starts_with($path, '/maps/embed/');
+        $isLegacyQueryEmbed = $path === '/maps'
+            && ($query['output'] ?? null) === 'embed'
+            && is_string($query['q'] ?? null)
+            && trim($query['q']) !== '';
 
         if ($scheme !== 'https'
             || ! in_array($host, self::ALLOWED_HOSTS, true)
             || isset($parts['user'])
             || isset($parts['pass'])
             || isset($parts['port'])
-            || ($path !== '/maps/embed' && ! str_starts_with($path, '/maps/embed/'))
+            || (! $isEmbedPath && ! $isLegacyQueryEmbed)
         ) {
             return null;
         }

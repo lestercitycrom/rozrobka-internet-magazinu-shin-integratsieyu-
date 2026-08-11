@@ -14,6 +14,15 @@ test('homepage map state is honest in NB and RU', async ({ page }, testInfo) => 
 
     if (await iframe.count()) {
         await expect(iframe).toBeVisible();
+        await iframe.scrollIntoViewIfNeeded();
+        const iframeHandle = await iframe.elementHandle();
+        const mapFrame = iframeHandle ? await iframeHandle.contentFrame() : null;
+        expect(mapFrame, 'Google Maps iframe must expose a real document').not.toBeNull();
+        await expect.poll(() => mapFrame?.url() ?? '').not.toContain('chrome-error://');
+        await expect.poll(async () => {
+            if (!mapFrame) return '';
+            return mapFrame.locator('body').innerText().catch(() => '');
+        }, { timeout: 15_000 }).toMatch(/Google|Map data|Kartdata/i);
         await expect(card.locator(`a[href="${exactMapUrl}"]`)).toBeVisible();
     } else {
         await expect(externalOnly).toBeVisible();
