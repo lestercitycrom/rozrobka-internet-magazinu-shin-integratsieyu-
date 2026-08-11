@@ -72,7 +72,7 @@
                 <a class="et-btn et-btn--primary" href="tel:+4793958270">{{ __('pro.home.call') }} <x-icon name="phone" :size="18" /></a>
             </div>
             <div class="et-v3-services-cta__media">
-                <img src="/brand/workshop-alt.webp" width="1400" height="900" loading="lazy" alt="EasyTire verksted">
+                <img src="/brand/workshop-alt.webp" width="1400" height="900" loading="lazy" alt="{{ __('pro.content.workshop_image_alt') }}">
             </div>
         </div>
     </section>

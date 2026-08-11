@@ -49,3 +49,27 @@ test('production seed data removes rejected wording without changing the technic
         ->not->toContain('É')
         ->not->toContain('é');
 });
+
+test('Russian QA copy is localized and does not expose implementation jargon', function (): void {
+    $flatten = static function (array $values) use (&$flatten): array {
+        return collect($values)
+            ->flatMap(fn (mixed $value): array => is_array($value) ? $flatten($value) : [(string) $value])
+            ->all();
+    };
+    $translations = implode("\n", $flatten(require lang_path('ru/pro.php')));
+
+    expect(mb_strtolower($translations))
+        ->not->toContain('backend')
+        ->not->toContain('frontend');
+
+    config()->set('storefront.ru_preview_enabled', true);
+    $this->seed(DatabaseSeeder::class);
+
+    $this->get('/ru')
+        ->assertOk()
+        ->assertDontSee('EasyTire verksted i Tromsø', false)
+        ->assertDontSee('EasyTire-teamet i Tromsø', false)
+        ->assertDontSee('Dekk lagret hos EasyTire', false)
+        ->assertDontSee('Frontend', false)
+        ->assertDontSee('backend', false);
+});

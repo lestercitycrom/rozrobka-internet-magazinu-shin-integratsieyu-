@@ -242,7 +242,7 @@
     <section class="et-v3-section et-v3-section--white" aria-labelledby="home-store-title" data-testid="catalog-foundation">
         <div class="et-container et-v3-store">
             <div class="et-v3-store__media">
-                <img src="/brand/workshop.webp" width="1500" height="1000" loading="lazy" alt="EasyTire verksted i Tromsø">
+                <img src="/brand/workshop.webp" width="1500" height="1000" loading="lazy" alt="{{ __('pro.content.workshop_image_alt') }}">
                 <div class="et-v3-store__caption">
                     <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.store_kicker') }}</p>
                     <h2 class="et-h2" id="home-store-title">{{ __('pro.home.store_title') }}</h2>
@@ -286,7 +286,7 @@
 
     <section class="et-v3-section et-v3-story" aria-labelledby="home-story-title">
         <div class="et-container et-v3-story__grid">
-            <div class="et-v3-story__media"><img src="/brand/founders.webp" width="1400" height="1050" loading="eager" alt="EasyTire-teamet i Tromsø"><span>EasyTire · Tromsø</span></div>
+            <div class="et-v3-story__media"><img src="/brand/founders.webp" width="1400" height="1050" loading="eager" alt="{{ __('pro.content.about_image_alt') }}"><span>EasyTire · Tromsø</span></div>
             <div class="et-v3-story__content">
                 <p class="et-eyebrow">{{ __('pro.home.story_kicker') }}</p>
                 <h2 class="et-h2" id="home-story-title">{{ __('pro.home.story_title') }}</h2>
@@ -305,7 +305,7 @@
             <div class="et-v3-section-head"><div><p class="et-eyebrow">{{ __('pro.home.hero_proof_hotel') }} · {{ __('pro.home.hero_proof_mobile') }}</p><h2 class="et-h2" id="home-logistics-title">{{ __('pro.home.location_title') }}</h2></div></div>
             <div class="et-v3-editorial-grid">
                 <article class="et-v3-editorial">
-                    <img src="/brand/dekkhotell.webp" width="1000" height="1200" loading="lazy" alt="Dekk lagret hos EasyTire">
+                    <img src="/brand/dekkhotell.webp" width="1000" height="1200" loading="lazy" alt="{{ __('pro.home.hotel_image_alt') }}">
                     <div>
                         <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.hotel_kicker') }}</p>
                         <h3>{{ __('pro.home.hotel_title') }}</h3>

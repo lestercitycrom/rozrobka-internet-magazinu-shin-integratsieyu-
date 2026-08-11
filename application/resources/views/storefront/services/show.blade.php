@@ -1,7 +1,7 @@
 @php
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
     $heroUrl = $service->hero['url'] ?? '/brand/workshop-alt.webp';
-    $heroAlt = $service->hero['alt'] ?? 'EasyTire verksted i Tromsø';
+    $heroAlt = $service->hero['alt'] ?? __('pro.content.workshop_image_alt');
 @endphp
 
 <x-layouts.storefront :title="$service->seoTitle ?? ('EasyTire | '.$service->title)" :description="$service->seoDescription" :canonical="$canonicalUrl ?? null" active-section="services">

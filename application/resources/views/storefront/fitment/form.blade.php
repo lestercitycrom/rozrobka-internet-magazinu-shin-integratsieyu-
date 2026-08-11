@@ -10,7 +10,7 @@
 
 <x-layouts.storefront :title="$pageTitle" :description="$pageDescription" :canonical="$canonical" active-section="store">
     <section class="et-page-hero">
-        <img class="et-page-hero__photo" src="/brand/workshop-alt.webp" width="1400" height="900" alt="EasyTire verksted i Tromsø">
+        <img class="et-page-hero__photo" src="/brand/workshop-alt.webp" width="1400" height="900" alt="{{ __('pro.content.workshop_image_alt') }}">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($routePrefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $pageHeading }}</span></div>
@@ -80,7 +80,7 @@
                 </aside>
             @else
                 <aside class="et-media-card" aria-labelledby="fitment-fallback-title">
-                    <img src="/brand/workshop.webp" width="1500" height="1000" loading="lazy" alt="EasyTire verksted">
+                    <img src="/brand/workshop.webp" width="1500" height="1000" loading="lazy" alt="{{ __('pro.content.workshop_image_alt') }}">
                     <div class="et-media-card__content">
                         <p class="et-eyebrow et-eyebrow--light">{{ __('pro.fitment.manual_kicker') }}</p>
                         <h2 class="et-h2" id="fitment-fallback-title">{{ __('fitment.fallback') }}</h2>
