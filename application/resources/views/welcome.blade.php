@@ -71,84 +71,93 @@
         $homepagePromotions = collect();
         $homepageReviews = collect();
     }
+    $homepagePromotions = $homepagePromotions->filter(
+        fn ($promotion) => filled($promotion->getAttribute('title_'.$homepageLocale))
+            && filled($promotion->getAttribute('body_'.$homepageLocale))
+    );
+    $homepageReviews = $homepageReviews->filter(
+        fn ($review) => filled($review->getAttribute('quote_'.$homepageLocale))
+            && filled($review->source_url)
+    );
+    $serviceUrl = static fn ($service): string => route(
+        $routePrefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'),
+        $service->canonicalPath ?: $service->slug
+    );
+    $serviceImage = static function ($service, int $index): string {
+        $publishedHero = data_get($service, 'hero.url');
+        if (is_string($publishedHero) && $publishedHero !== '') {
+            return $publishedHero;
+        }
+
+        $slug = mb_strtolower((string) data_get($service, 'slug'));
+        return match (true) {
+            str_contains($slug, 'hotell') => '/brand/dekkhotell.webp',
+            str_contains($slug, 'mobil') => '/brand/hero-mobile.webp',
+            str_contains($slug, 'verksted'), str_contains($slug, 'balanser') => '/brand/workshop.webp',
+            str_contains($slug, 'tesla'), str_contains($slug, 'elbil') => '/brand/mobile-service.webp',
+            default => $index % 2 === 0 ? '/brand/workshop-alt.webp' : '/brand/exterior.webp',
+        };
+    };
 @endphp
 
 <x-layouts.storefront :title="__('storefront.site_title')" :description="__('storefront.site_description')">
-    <section class="et-hero">
-        <img class="et-hero__photo" src="/brand/hero-mobile.webp" width="1920" height="1280" alt="{{ __('pro.home.hero_image_alt') }}" fetchpriority="high">
-        <div class="et-container et-hero__inner">
-            <div class="et-hero__content">
+    <section class="et-v3-hero">
+        <img class="et-v3-hero__photo" src="/brand/hero-mobile.webp" width="1920" height="1280" alt="{{ __('pro.home.hero_image_alt') }}" fetchpriority="high">
+        <div class="et-v3-hero__shade" aria-hidden="true"></div>
+        <div class="et-container et-v3-hero__inner">
+            <div class="et-v3-hero__content">
                 <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.hero_kicker') }}</p>
-                <h1 class="et-display">{{ __('pro.home.hero_title') }}</h1>
-                <p class="et-hero__sub">{{ __('pro.home.hero_text') }}</p>
-                <div class="et-hero__actions">
-                    <a class="et-btn et-btn--primary" href="{{ $bookingUrl }}">{{ __('pro.home.hero_primary') }}</a>
-                    <a class="et-btn et-btn--ghost" href="{{ route($routePrefix.'store.index') }}">{{ __('pro.home.hero_secondary') }}</a>
+                <h1 class="et-v3-display">{{ __('pro.home.hero_title') }}</h1>
+                <p class="et-v3-hero__lead">{{ __('pro.home.hero_text') }}</p>
+                <div class="et-v3-actions">
+                    <a class="et-btn et-btn--primary" href="{{ $bookingUrl }}">{{ __('pro.home.hero_primary') }} <x-icon name="arrow" :size="19" /></a>
+                    <a class="et-btn et-btn--glass" href="{{ route($routePrefix.'store.index') }}">{{ __('pro.home.hero_secondary') }}</a>
                 </div>
-                <div class="et-hero__proof" aria-label="{{ __('pro.home.confirmation_note') }}">
-                    <span>{{ __('pro.home.hero_proof_mobile') }}</span>
-                    <span>{{ __('pro.home.hero_proof_workshop') }}</span>
-                    <span>{{ __('pro.home.hero_proof_hotel') }}</span>
-                </div>
+                <ul class="et-v3-hero__proof" aria-label="{{ __('pro.home.confirmation_note') }}">
+                    <li><x-icon name="check" :size="16" />{{ __('pro.home.hero_proof_mobile') }}</li>
+                    <li><x-icon name="check" :size="16" />{{ __('pro.home.hero_proof_workshop') }}</li>
+                    <li><x-icon name="check" :size="16" />{{ __('pro.home.hero_proof_hotel') }}</li>
+                </ul>
             </div>
 
-            <aside class="et-hero-card" aria-labelledby="home-location-title">
-                <div class="et-hero-card__head">
-                    <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.start_here') }}</p>
-                    <h2 class="et-hero-card__title" id="home-location-title">{{ __('pro.home.location_title') }}</h2>
+            <aside class="et-v3-chooser" aria-labelledby="home-location-title">
+                <div class="et-v3-chooser__heading">
+                    <span>{{ __('pro.home.start_here') }}</span>
+                    <h2 id="home-location-title">{{ __('pro.home.location_title') }}</h2>
                 </div>
-                <div class="et-location-choice">
-                    <a class="et-location-option" href="{{ $bookingUrl }}?fulfilment=mobile">
-                        <span class="et-location-option__icon" aria-hidden="true">H</span>
-                        <span><strong>{{ __('pro.home.location_mobile') }}</strong><small>{{ __('pro.home.location_mobile_text') }}</small></span>
-                        <span class="et-location-option__arrow" aria-hidden="true">→</span>
-                    </a>
-                    <a class="et-location-option" href="{{ $bookingUrl }}?fulfilment=workshop">
-                        <span class="et-location-option__icon" aria-hidden="true">V</span>
-                        <span><strong>{{ __('pro.home.location_workshop') }}</strong><small>{{ __('pro.home.location_workshop_text') }}</small></span>
-                        <span class="et-location-option__arrow" aria-hidden="true">→</span>
-                    </a>
-                </div>
-                <div class="et-hero-card__store">
-                    <span>{{ __('pro.home.need_wheels') }}</span>
-                    <a href="{{ route($routePrefix.'store.index') }}">{{ __('pro.home.search_registration') }}</a>
-                </div>
+                <a class="et-v3-choice" href="{{ $bookingUrl }}?fulfilment=mobile">
+                    <span class="et-v3-choice__icon"><x-icon name="mobile-service" :size="25" /></span>
+                    <span><strong>{{ __('pro.home.location_mobile') }}</strong><small>{{ __('pro.home.location_mobile_text') }}</small></span>
+                    <x-icon name="arrow" :size="20" />
+                </a>
+                <a class="et-v3-choice" href="{{ $bookingUrl }}?fulfilment=workshop">
+                    <span class="et-v3-choice__icon"><x-icon name="workshop" :size="25" /></span>
+                    <span><strong>{{ __('pro.home.location_workshop') }}</strong><small>{{ __('pro.home.location_workshop_text') }}</small></span>
+                    <x-icon name="arrow" :size="20" />
+                </a>
+                <a class="et-v3-chooser__store" href="{{ route($routePrefix.'store.index') }}">
+                    <span><small>{{ __('pro.home.need_wheels') }}</small><strong>{{ __('pro.home.search_registration') }}</strong></span>
+                    <x-icon name="tire" :size="25" />
+                </a>
             </aside>
         </div>
-        <div class="et-season-ribbon"><span aria-hidden="true">✓</span>{{ __('pro.home.confirmation_note') }}</div>
     </section>
 
-    <section class="et-choice-band" aria-label="{{ __('pro.home.start_here') }}">
-        <div class="et-container">
-            <div class="et-choice-band__grid">
-                <article class="et-choice-band__item easytire-card easytire-interactive">
-                    <span class="et-choice-band__number">{{ __('pro.home.choice_fast') }}</span>
-                    <h2>{{ __('pro.home.choice_fast_title') }}</h2>
-                    <p>{{ __('pro.home.choice_fast_text') }}</p>
-                    <a href="{{ $bookingUrl }}">{{ __('pro.home.choice_fast_link') }}</a>
-                </article>
-                <article class="et-choice-band__item easytire-card easytire-interactive">
-                    <span class="et-choice-band__number">{{ __('pro.home.choice_store') }}</span>
-                    <h2>{{ __('pro.home.choice_store_title') }}</h2>
-                    <p>{{ __('pro.home.choice_store_text') }}</p>
-                    <a href="{{ route($routePrefix.'store.index') }}">{{ __('pro.home.choice_store_link') }}</a>
-                </article>
-                <article class="et-choice-band__item easytire-card easytire-interactive">
-                    <span class="et-choice-band__number">{{ __('pro.home.choice_help') }}</span>
-                    <h2>{{ __('pro.home.choice_help_title') }}</h2>
-                    <p>{{ __('pro.home.choice_help_text') }}</p>
-                    <a href="{{ $contactUrl }}">{{ __('pro.home.choice_help_link') }}</a>
-                </article>
-            </div>
+    <div class="et-v3-trust" aria-label="{{ __('pro.home.confirmation_note') }}">
+        <div class="et-container et-v3-trust__inner">
+            <span><strong>01</strong>{{ __('pro.home.choice_fast_title') }}</span>
+            <span><strong>02</strong>{{ __('pro.home.choice_store_title') }}</span>
+            <span><strong>03</strong>{{ __('pro.home.choice_help_title') }}</span>
         </div>
-    </section>
+    </div>
 
     @if ($homepagePromotions->isNotEmpty())
-        <section class="et-section et-section--white" aria-labelledby="home-promotions-title" data-testid="homepage-promotions">
+        <section class="et-v3-notices" aria-labelledby="home-promotions-title" data-testid="homepage-promotions">
             <div class="et-container">
-                <p class="et-eyebrow">{{ __('pro.home.promotions_kicker') }}</p>
-                <h2 class="et-h2" id="home-promotions-title">{{ __('pro.home.promotions_title') }}</h2>
-                <div class="et-service-grid" style="margin-top:2rem">
+                <div class="et-v3-section-head et-v3-section-head--compact">
+                    <div><p class="et-eyebrow">{{ __('pro.home.promotions_kicker') }}</p><h2 class="et-h3" id="home-promotions-title">{{ __('pro.home.promotions_title') }}</h2></div>
+                </div>
+                <div class="et-v3-notice-list">
                     @foreach ($homepagePromotions as $promotion)
                         @php
                             $title = $promotion->getAttribute('title_'.$homepageLocale);
@@ -157,13 +166,10 @@
                             $ctaUrl = $promotion->cta_url;
                             $externalPromotion = is_string($ctaUrl) && str_starts_with($ctaUrl, 'http');
                         @endphp
-                        <article class="et-service-card easytire-card" data-testid="homepage-promotion">
-                            <div class="et-service-card__top"><span class="et-service-card__index">{{ str_pad((string) ($loop->iteration), 2, '0', STR_PAD_LEFT) }}</span><span class="et-service-card__icon" aria-hidden="true">+</span></div>
-                            <div class="et-service-card__body">
-                                <h3>{{ $title }}</h3>
-                                @if ($body)<p>{{ $body }}</p>@endif
-                                @if ($ctaUrl)<a href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }}</a>@endif
-                            </div>
+                        <article class="et-v3-notice" data-testid="homepage-promotion">
+                            <span class="et-v3-notice__number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                            <div><h3>{{ $title }}</h3><p>{{ $body }}</p></div>
+                            @if ($ctaUrl)<a href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>@endif
                         </article>
                     @endforeach
                 </div>
@@ -172,28 +178,29 @@
     @endif
 
     @if ($serviceCollection->isNotEmpty())
-    <section class="et-section et-section--white" aria-labelledby="home-services-title" data-testid="services-section">
+    <section class="et-v3-section et-v3-section--white" aria-labelledby="home-services-title" data-testid="services-section">
         <div class="et-container">
-            <div class="et-cluster" style="justify-content:space-between;align-items:end">
+            <div class="et-v3-section-head">
                 <div>
                     <p class="et-eyebrow">{{ __('pro.home.services_kicker') }}</p>
                     <h2 class="et-h2" id="home-services-title">{{ __('pro.home.services_title') }}</h2>
                     <p class="et-lead">{{ __('pro.home.services_text') }}</p>
                 </div>
-                <a class="et-btn et-btn--outline" href="{{ route($routePrefix.'services.index') }}">{{ __('pro.home.services_all') }}</a>
+                <a class="et-v3-text-link" href="{{ route($routePrefix.'services.index') }}">{{ __('pro.home.services_all') }} <x-icon name="arrow" :size="18" /></a>
             </div>
 
-            <div class="et-service-grid">
-                @forelse ($serviceCollection->take(5) as $index => $service)
-                    <article @class(['et-service-card easytire-card easytire-interactive', 'et-service-card--feature' => $index === 0])>
-                        <div class="et-service-card__top">
-                            <span class="et-service-card__index">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                            <span class="et-service-card__icon" aria-hidden="true">{{ $index === 0 ? '↻' : ($index === 1 ? 'V' : ($index === 2 ? 'D' : '+')) }}</span>
-                        </div>
-                        <div class="et-service-card__body">
+            <div class="et-v3-service-grid">
+                @forelse ($serviceCollection->take(6) as $index => $service)
+                    <article @class(['et-v3-service', 'et-v3-service--feature' => $index < 2])>
+                        @if ($index < 2)
+                            <img src="{{ $serviceImage($service, $index) }}" width="1200" height="900" loading="lazy" alt="">
+                            <span class="et-v3-service__shade" aria-hidden="true"></span>
+                        @endif
+                        <div class="et-v3-service__content">
+                            <span class="et-v3-service__number">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <h3>{{ $service->title }}</h3>
                             @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
-                            <a href="{{ route($routePrefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }}</a>
+                            <a href="{{ $serviceUrl($service) }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
                         </div>
                     </article>
                 @empty
@@ -204,38 +211,43 @@
     </section>
     @endif
 
-    <section class="et-section et-section--grid" aria-labelledby="home-process-title">
-        <div class="et-container">
-            <p class="et-eyebrow">{{ __('pro.home.process_kicker') }}</p>
-            <h2 class="et-h2" id="home-process-title">{{ __('pro.home.process_title') }}</h2>
-            <div class="et-process">
+    <section class="et-v3-section et-v3-section--soft" aria-labelledby="home-process-title">
+        <div class="et-container et-v3-process-layout">
+            <div class="et-v3-process-intro">
+                <p class="et-eyebrow">{{ __('pro.home.process_kicker') }}</p>
+                <h2 class="et-h2" id="home-process-title">{{ __('pro.home.process_title') }}</h2>
+                <p>{{ __('pro.home.confirmation_note') }}</p>
+            </div>
+            <div class="et-v3-process">
                 @foreach ([
                     [__('pro.home.process_1_title'), __('pro.home.process_1_text')],
                     [__('pro.home.process_2_title'), __('pro.home.process_2_text')],
                     [__('pro.home.process_3_title'), __('pro.home.process_3_text')],
                     [__('pro.home.process_4_title'), __('pro.home.process_4_text')],
                 ] as $index => [$stepTitle, $stepText])
-                    <article class="et-process__step">
-                        <span class="et-process__number">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                        <h3>{{ $stepTitle }}</h3>
-                        <p>{{ $stepText }}</p>
+                    <article class="et-v3-process__step">
+                        <span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                        <div><h3>{{ $stepTitle }}</h3><p>{{ $stepText }}</p></div>
                     </article>
                 @endforeach
             </div>
         </div>
     </section>
 
-    <section class="et-section et-section--white" aria-labelledby="home-store-title" data-testid="catalog-foundation">
-        <div class="et-container">
-            <div class="et-store-panel">
-                <div class="et-store-panel__intro">
+    <section class="et-v3-section et-v3-section--white" aria-labelledby="home-store-title" data-testid="catalog-foundation">
+        <div class="et-container et-v3-store">
+            <div class="et-v3-store__media">
+                <img src="/brand/workshop.webp" width="1500" height="1000" loading="lazy" alt="EasyTire verksted i Tromsø">
+                <div class="et-v3-store__caption">
                     <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.store_kicker') }}</p>
                     <h2 class="et-h2" id="home-store-title">{{ __('pro.home.store_title') }}</h2>
                     <p>{{ __('pro.home.store_text') }}</p>
-                    <a class="et-btn et-btn--ghost" href="{{ route($routePrefix.'store.index') }}">{{ __('pro.home.store_link') }}</a>
                 </div>
+            </div>
 
-                <div class="et-store-panel__tools" data-tabs>
+            <div class="et-v3-store__tools" data-tabs>
+                <p class="et-eyebrow">{{ __('pro.home.start_here') }}</p>
+                <h3>{{ __('pro.home.search_registration') }}</h3>
                     <div class="et-search-tabs" role="tablist" aria-label="{{ __('pro.home.store_title') }}">
                         <button id="home-tab-registration" type="button" role="tab" aria-selected="true" aria-controls="home-panel-registration">{{ __('pro.home.tab_registration') }}</button>
                         <button id="home-tab-manual" type="button" role="tab" aria-selected="false" aria-controls="home-panel-manual" tabindex="-1">{{ __('pro.home.tab_manual') }}</button>
@@ -249,7 +261,7 @@
                                 <div class="et-reg-input">
                                     <input class="et-input" id="home-registration" name="registration" required maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="{{ __('pro.home.registration_placeholder') }}">
                                 </div>
-                                <button class="et-btn et-btn--primary" type="submit">{{ __('pro.home.registration_submit') }}</button>
+                                <button class="et-btn et-btn--primary" type="submit">{{ __('pro.home.registration_submit') }} <x-icon name="arrow" :size="18" /></button>
                             </div>
                             <p class="et-help">{{ __('pro.home.registration_help') }}</p>
                         </form>
@@ -263,91 +275,68 @@
                             <a class="et-shop-link" href="{{ route($routePrefix.'store.index') }}"><strong>{{ __('fitment.nav') }}</strong><small>{{ __('fitment.notice') }}</small></a>
                         </div>
                     </div>
-                </div>
             </div>
         </div>
     </section>
 
-    <section class="et-section" aria-labelledby="home-story-title">
-        <div class="et-container et-split">
-            <div class="et-photo-pair">
-                <div class="et-photo-pair__main"><img src="/brand/founders.webp" width="1400" height="1050" loading="lazy" alt="EasyTire-teamet i Tromsø"></div>
-                <div class="et-photo-pair__small"><img src="/brand/founders-close.webp" width="1000" height="1000" loading="lazy" alt="EasyTire-teamet på verkstedet"></div>
-            </div>
-            <div>
+    <section class="et-v3-section et-v3-story" aria-labelledby="home-story-title">
+        <div class="et-container et-v3-story__grid">
+            <div class="et-v3-story__media"><img src="/brand/founders.webp" width="1400" height="1050" loading="lazy" alt="EasyTire-teamet i Tromsø"><span>EasyTire · Tromsø</span></div>
+            <div class="et-v3-story__content">
                 <p class="et-eyebrow">{{ __('pro.home.story_kicker') }}</p>
                 <h2 class="et-h2" id="home-story-title">{{ __('pro.home.story_title') }}</h2>
                 <p class="et-lead">{{ __('pro.home.story_text') }}</p>
-                <blockquote class="et-quote">{{ __('pro.home.story_quote') }}</blockquote>
-                <ul class="et-fact-list">
-                    <li><span><strong>{{ __('pro.home.story_fact_1') }}</strong><br><span class="et-caption">{{ __('pro.home.story_fact_1_text') }}</span></span></li>
-                    <li><span><strong>{{ __('pro.home.story_fact_2') }}</strong><br><span class="et-caption">{{ __('pro.home.story_fact_2_text') }}</span></span></li>
-                    <li><span><strong>{{ __('pro.home.story_fact_3') }}</strong><br><span class="et-caption">{{ __('pro.home.story_fact_3_text') }}</span></span></li>
-                </ul>
+                <blockquote>{{ __('pro.home.story_quote') }}</blockquote>
+                <article class="et-v3-business" data-testid="business-contact-card">
+                    <div><span>{{ __('pro.home.business_kicker') }}</span><h3>{{ __('pro.home.business_title') }}</h3><p>{{ __('pro.home.business_text') }}</p></div>
+                    <a href="{{ $contactUrl }}" aria-label="{{ __('pro.home.business_link') }}"><x-icon name="arrow" :size="20" /></a>
+                </article>
             </div>
         </div>
     </section>
 
-    <section class="et-section et-section--white" aria-labelledby="home-logistics-title">
+    <section class="et-v3-section et-v3-section--white" aria-labelledby="home-logistics-title">
         <div class="et-container">
-            <p class="et-eyebrow">{{ __('pro.home.hero_proof_hotel') }} · {{ __('pro.home.hero_proof_mobile') }}</p>
-            <h2 class="et-h2" id="home-logistics-title">{{ __('pro.home.location_title') }}</h2>
-            <div class="et-promo-grid">
-                <article class="et-promo">
+            <div class="et-v3-section-head"><div><p class="et-eyebrow">{{ __('pro.home.hero_proof_hotel') }} · {{ __('pro.home.hero_proof_mobile') }}</p><h2 class="et-h2" id="home-logistics-title">{{ __('pro.home.location_title') }}</h2></div></div>
+            <div class="et-v3-editorial-grid">
+                <article class="et-v3-editorial">
                     <img src="/brand/dekkhotell.webp" width="1000" height="1200" loading="lazy" alt="Dekk lagret hos EasyTire">
-                    <div class="et-promo__content">
+                    <div>
                         <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.hotel_kicker') }}</p>
-                        <h3 class="et-h2">{{ __('pro.home.hotel_title') }}</h3>
+                        <h3>{{ __('pro.home.hotel_title') }}</h3>
                         <p>{{ __('pro.home.hotel_text') }}</p>
-                        <a class="et-btn et-btn--ghost" href="{{ $hotelService ? route($routePrefix.($hotelService->canonicalPath ? 'seo-services.show' : 'services.show'), $hotelService->canonicalPath ?: $hotelService->slug) : route($routePrefix.'services.index') }}">{{ __('pro.home.hotel_link') }}</a>
+                        <a href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}">{{ __('pro.home.hotel_link') }} <x-icon name="arrow" :size="18" /></a>
                     </div>
                 </article>
-                <article class="et-promo et-promo--red">
+                <article class="et-v3-editorial">
                     <img src="/brand/mobile-service.webp" width="1200" height="900" loading="lazy" alt="EasyTire mobil service">
-                    <div class="et-promo__content">
+                    <div>
                         <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.mobile_kicker') }}</p>
-                        <h3 class="et-h2">{{ __('pro.home.mobile_title') }}</h3>
+                        <h3>{{ __('pro.home.mobile_title') }}</h3>
                         <p>{{ __('pro.home.mobile_text') }}</p>
-                        <a class="et-btn et-btn--ghost" href="{{ $bookingUrl }}?fulfilment=mobile">{{ __('pro.home.mobile_link') }}</a>
+                        <a href="{{ $bookingUrl }}?fulfilment=mobile">{{ __('pro.home.mobile_link') }} <x-icon name="arrow" :size="18" /></a>
                     </div>
                 </article>
             </div>
-        </div>
-    </section>
-
-    <section class="et-section et-section--grid" aria-labelledby="home-business-title" data-testid="business-contact-card">
-        <div class="et-container">
-            <article class="et-promo et-promo--red">
-                <img src="/brand/exterior.webp" width="1600" height="1067" loading="lazy" alt="{{ __('pro.home.business_image_alt') }}">
-                <div class="et-promo__content">
-                    <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.business_kicker') }}</p>
-                    <h2 class="et-h2" id="home-business-title">{{ __('pro.home.business_title') }}</h2>
-                    <p>{{ __('pro.home.business_text') }}</p>
-                    <a class="et-btn et-btn--ghost" href="{{ $contactUrl }}">{{ __('pro.home.business_link') }}</a>
-                </div>
-            </article>
         </div>
     </section>
 
     @if ($homepageReviews->isNotEmpty())
-        <section class="et-section et-section--white" aria-labelledby="home-reviews-title" data-testid="homepage-reviews">
+        <section class="et-v3-section et-v3-section--soft" aria-labelledby="home-reviews-title" data-testid="homepage-reviews">
             <div class="et-container">
-                <p class="et-eyebrow">{{ __('pro.home.reviews_kicker') }}</p>
-                <h2 class="et-h2" id="home-reviews-title">{{ __('pro.home.reviews_title') }}</h2>
-                <div class="et-service-grid" style="margin-top:2rem">
+                <div class="et-v3-section-head"><div><p class="et-eyebrow">{{ __('pro.home.reviews_kicker') }}</p><h2 class="et-h2" id="home-reviews-title">{{ __('pro.home.reviews_title') }}</h2></div></div>
+                <div class="et-v3-review-grid">
                     @foreach ($homepageReviews as $review)
                         @php
                             $quote = $review->getAttribute('quote_'.$homepageLocale);
                             $author = $review->getAttribute('author_'.$homepageLocale);
                             $sourceLabel = $review->getAttribute('source_label_'.$homepageLocale) ?: __('pro.home.reviews_link_fallback');
                         @endphp
-                        <article class="et-service-card easytire-card" data-testid="homepage-review">
-                            <div class="et-service-card__top"><span class="et-service-card__index">{{ str_pad((string) ($loop->iteration), 2, '0', STR_PAD_LEFT) }}</span><span class="et-service-card__icon" aria-hidden="true">“</span></div>
-                            <div class="et-service-card__body">
-                                @if ($quote)<blockquote class="et-copy" style="margin:0">“{{ $quote }}”</blockquote>@endif
-                                @if ($author)<p class="et-caption" style="margin-top:1rem">{{ $author }}</p>@endif
-                                <a href="{{ $review->source_url }}" target="_blank" rel="noopener">{{ $sourceLabel }}</a>
-                            </div>
+                        <article class="et-v3-review" data-testid="homepage-review">
+                            <span aria-hidden="true">“</span>
+                            <blockquote>{{ $quote }}</blockquote>
+                            @if ($author)<p>{{ $author }}</p>@endif
+                            <a href="{{ $review->source_url }}" target="_blank" rel="noopener">{{ $sourceLabel }} <x-icon name="arrow" :size="17" /></a>
                         </article>
                     @endforeach
                 </div>
@@ -355,16 +344,15 @@
         </section>
     @endif
 
-    <section class="et-section et-section--ink" aria-labelledby="home-contact-title">
-        <div class="et-container et-split">
-            <div>
+    <section class="et-v3-contact" aria-labelledby="home-contact-title">
+        <div class="et-container et-v3-contact__grid">
+            <div class="et-v3-contact__content">
                 <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.contact_kicker') }}</p>
                 <h2 class="et-h2" id="home-contact-title">{{ __('pro.home.contact_title') }}</h2>
                 <p class="et-lead et-lead--light">{{ __('pro.home.contact_text') }}</p>
-                <div class="et-page-actions" style="margin-top:1.5rem">
-                    <a class="et-btn et-btn--light" href="tel:+4793958270">{{ __('pro.home.call') }}</a>
-                    <a class="et-btn et-btn--ghost" href="mailto:max.easytire@gmail.com">{{ __('pro.home.email') }}</a>
-                </div>
+                <a class="et-v3-contact__line" href="tel:+4793958270"><x-icon name="phone" :size="22" /><span><small>{{ __('pro.content.phone') }}</small><strong>+47 939 58 270</strong></span></a>
+                <a class="et-v3-contact__line" href="mailto:max.easytire@gmail.com"><span class="et-v3-contact__at">@</span><span><small>{{ __('pro.content.email') }}</small><strong>max.easytire@gmail.com</strong></span></a>
+                <a class="et-v3-contact__line" href="{{ $mapUrl }}" target="_blank" rel="noopener"><x-icon name="location" :size="22" /><span><small>{{ __('pro.content.address') }}</small><strong>{{ __('pro.content.map_title') }}</strong></span></a>
             </div>
             <div class="et-map" data-map-card data-testid="map-card" data-map-href="{{ $mapUrl }}" @if($mapEmbedUrl !== null) data-map-embed-url="{{ $mapEmbedUrl }}" @endif data-map-ready-title="{{ __('pro.content.map_ready_title') }}" data-map-ready-text="{{ __('pro.content.map_ready_text') }}" data-map-link-label="{{ __('pro.content.map_link') }}">
                 <div class="et-map__card">

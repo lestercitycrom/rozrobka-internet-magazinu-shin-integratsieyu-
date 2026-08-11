@@ -37,24 +37,27 @@
 @endphp
 
 <x-layouts.storefront :title="__('storefront.catalog_page_title', ['category' => $heading])" :description="$description" active-section="store" :store-route="$baseUrl" :store-label="$heading">
-    <section class="et-page-hero et-page-hero--light">
-        <div class="et-container et-page-hero__inner">
-            <div class="et-page-hero__content">
+    <section class="et-v3-catalog-hero">
+        <div class="et-container et-v3-catalog-hero__inner">
+            <div>
                 <div class="et-breadcrumbs"><span><a href="{{ route($routePrefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $heading }}</span></div>
                 <p class="et-eyebrow">{{ __('pro.catalog.kicker') }}</p>
                 <h1 class="et-h1">{{ $heading }}</h1>
-                <p class="et-lead">{{ $description }}</p>
-                <p class="et-copy">{{ __('pro.catalog.intro') }}</p>
+                <p>{{ $description }}</p>
+            </div>
+            <div class="et-v3-catalog-hero__note">
+                <x-icon name="check" :size="20" />
+                <span>{{ __('pro.catalog.compatibility') }}</span>
             </div>
         </div>
     </section>
 
-    <section class="et-section et-section--compact">
+    <section class="et-v3-catalog-section">
         <div class="et-container et-catalog-layout" data-catalog-live-root aria-busy="false">
             <aside aria-label="{{ __('storefront.filter', ['name' => mb_strtolower($heading)]) }}">
                 <details class="et-production-filter" open data-mobile-filter data-testid="catalog-filter-drawer">
                     <summary data-testid="catalog-filter-toggle">
-                        <span>{{ __('pro.catalog.filters') }}</span>
+                        <span><x-icon name="filter" :size="19" />{{ __('pro.catalog.filters') }}</span>
                         @if ($activeFilters->isNotEmpty())<span class="et-filter-counter">{{ $activeFilters->count() }}</span>@endif
                     </summary>
                     <div class="et-production-filter__panel">
@@ -153,11 +156,6 @@
                             <option value="brand" @selected(($query['sort'] ?? null) === 'brand')>{{ __('storefront.sort_brand') }}</option>
                         </select>
                     </form>
-                </div>
-
-                <div class="et-alert et-alert--info" style="margin-bottom:1rem">
-                    <span class="et-alert__icon" aria-hidden="true">i</span>
-                    <div>{{ __('pro.catalog.compatibility') }}</div>
                 </div>
 
                 @if ($activeFilters->isNotEmpty())

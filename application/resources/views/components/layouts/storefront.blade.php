@@ -142,7 +142,7 @@
             <div class="et-header__actions">
                 <a class="et-btn et-btn--primary min-h-11" href="{{ $bookingUrl }}" data-testid="header-booking">{{ __('pro.nav.booking') }}</a>
                 <a class="et-cart min-h-11" href="{{ route($routePrefix.'cart.index') }}" aria-label="{{ __('pro.nav.cart') }}: {{ $cartCount }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="header-cart">
-                    <span aria-hidden="true">⌑</span>
+                    <x-icon name="cart" :size="22" />
                     <span class="et-cart__count">{{ $cartCount }}</span>
                 </a>
                 <button class="et-menu-button min-h-11" type="button" aria-label="{{ __('pro.menu_open') }}" aria-expanded="false" data-menu-toggle><span></span></button>
@@ -167,7 +167,11 @@
             <div class="et-footer__brand">
                 <img class="et-footer__logo" src="/brand/easytire-logo.png" width="900" height="243" alt="EasyTire">
                 <p>{{ __('pro.footer.text') }}</p>
-                <a class="et-btn et-btn--ghost" href="{{ $bookingUrl }}" data-testid="footer-booking">{{ __('pro.nav.booking') }}</a>
+                <div class="et-footer__contact">
+                    <a href="tel:+4793958270">+47 939 58 270</a>
+                    <a href="mailto:max.easytire@gmail.com">max.easytire@gmail.com</a>
+                </div>
+                <a class="et-btn et-btn--ghost et-btn--small" href="{{ $bookingUrl }}" data-testid="footer-booking">{{ __('pro.nav.booking') }}</a>
             </div>
 
             <div>

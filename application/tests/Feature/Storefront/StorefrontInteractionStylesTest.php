@@ -10,7 +10,8 @@ test('storefront interactive cards stay anchored and remain keyboard accessible'
         ->not->toContain('transform: translateY');
 
     expect($home)
-        ->toContain('easytire-card easytire-interactive')
+        ->toContain('et-v3-service-grid')
+        ->toContain('et-v3-service')
         ->not->toContain('hover:-translate-y');
 });
 

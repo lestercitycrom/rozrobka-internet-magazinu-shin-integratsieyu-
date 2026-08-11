@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './pro-design.css';
+@import './storefront-v3.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../**/*.blade.php';

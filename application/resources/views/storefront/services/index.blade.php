@@ -1,4 +1,21 @@
-@php($prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.')
+@php
+    $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+    $serviceImage = static function ($service, int $index): string {
+        $publishedHero = data_get($service, 'hero.url');
+        if (is_string($publishedHero) && $publishedHero !== '') {
+            return $publishedHero;
+        }
+
+        $slug = mb_strtolower((string) data_get($service, 'slug'));
+        return match (true) {
+            str_contains($slug, 'hotell') => '/brand/dekkhotell.webp',
+            str_contains($slug, 'mobil') => '/brand/hero-mobile.webp',
+            str_contains($slug, 'verksted'), str_contains($slug, 'balanser') => '/brand/workshop.webp',
+            str_contains($slug, 'tesla'), str_contains($slug, 'elbil') => '/brand/mobile-service.webp',
+            default => $index % 2 === 0 ? '/brand/workshop-alt.webp' : '/brand/exterior.webp',
+        };
+    };
+@endphp
 
 <x-layouts.storefront :title="__('storefront.services_title')" active-section="services">
     <section class="et-page-hero">
@@ -13,19 +30,26 @@
         </div>
     </section>
 
-    <section class="et-section et-section--white">
+    <section class="et-v3-section et-v3-section--white">
         <div class="et-container">
-            <div class="et-service-grid" style="margin-top:0">
+            <div class="et-v3-section-head">
+                <div>
+                    <p class="et-eyebrow">{{ __('pro.services.kicker') }}</p>
+                    <h2 class="et-h2">{{ __('pro.home.services_title') }}</h2>
+                    <p class="et-lead">{{ __('pro.home.services_text') }}</p>
+                </div>
+            </div>
+            <div class="et-v3-services-index">
                 @forelse ($services as $index => $service)
-                    <article @class(['et-service-card', 'et-service-card--feature' => $index === 0])>
-                        <div class="et-service-card__top">
-                            <span class="et-service-card__index">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                            <span class="et-service-card__icon" aria-hidden="true">{{ $index === 0 ? '↻' : ($index === 1 ? 'V' : ($index === 2 ? 'D' : '+')) }}</span>
-                        </div>
-                        <div class="et-service-card__body">
+                    <article class="et-v3-service-row">
+                        <a class="et-v3-service-row__media" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}" tabindex="-1" aria-hidden="true">
+                            <img src="{{ $serviceImage($service, $index) }}" width="1000" height="720" loading="lazy" alt="">
+                        </a>
+                        <div class="et-v3-service-row__content">
+                            <span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <h2>{{ $service->title }}</h2>
                             @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
-                            <a href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }}</a>
+                            <a href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
                         </div>
                     </article>
                 @empty
@@ -37,17 +61,16 @@
         </div>
     </section>
 
-    <section class="et-section et-section--grid">
-        <div class="et-container et-split">
-            <div>
+    <section class="et-v3-section et-v3-section--ink">
+        <div class="et-container et-v3-services-cta">
+            <div class="et-v3-services-cta__content">
                 <p class="et-eyebrow">{{ __('pro.services.request_kicker') }}</p>
                 <h2 class="et-h2">{{ __('pro.services.request_title') }}</h2>
                 <p class="et-lead">{{ __('pro.services.request_text') }}</p>
-                <a class="et-btn et-btn--primary" href="tel:+4793958270" style="margin-top:1.4rem">{{ __('pro.home.call') }}</a>
+                <a class="et-btn et-btn--primary" href="tel:+4793958270">{{ __('pro.home.call') }} <x-icon name="phone" :size="18" /></a>
             </div>
-            <div class="et-photo-pair">
-                <div class="et-photo-pair__main"><img src="/brand/workshop-alt.webp" width="1400" height="900" loading="lazy" alt="EasyTire verksted"></div>
-                <div class="et-photo-pair__small"><img src="/brand/exterior.webp" width="1400" height="900" loading="lazy" alt="EasyTire varebil og verksted"></div>
+            <div class="et-v3-services-cta__media">
+                <img src="/brand/workshop-alt.webp" width="1400" height="900" loading="lazy" alt="EasyTire verksted">
             </div>
         </div>
     </section>
