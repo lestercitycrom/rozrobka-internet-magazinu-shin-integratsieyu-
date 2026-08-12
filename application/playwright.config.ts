@@ -35,7 +35,7 @@ export default defineConfig({
         {
             name: 'buyer-mobile-320',
             use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
-            testMatch: /(catalog-mobile-layout|header-navigation|map-overflow|project-content|storefront-style)\.spec\.ts/,
+            testMatch: /(catalog-mobile-layout|header-navigation|map-overflow|product-detail|project-content|storefront-style)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',

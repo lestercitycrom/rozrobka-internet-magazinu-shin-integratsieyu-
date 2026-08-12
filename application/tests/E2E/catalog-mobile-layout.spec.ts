@@ -78,4 +78,27 @@ test('mobile catalog keeps filters, sorting and product actions usable at 390 an
     await expect(page.locator('.et-result-count')).toBeFocused();
     await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
     await expectNoGlobalOverflow(page);
+
+    await page.goto('/felger');
+    const fallback = page.getByTestId('product-visual-fallback').first();
+    await expect(fallback).toBeVisible();
+    await expect(fallback).toHaveAttribute('data-product-fallback-kind', 'wheel');
+    await expect(fallback.getByTestId('product-fallback-blueprint')).toBeVisible();
+    await expect(fallback.locator('.et-fallback-meta__context')).toHaveCSS('display', 'none');
+    const fallbackGeometry = await fallback.evaluate((element) => {
+        const media = element.closest<HTMLElement>('.et-product-card__media');
+        const status = element.querySelector<HTMLElement>('.et-fallback-meta__status');
+        if (!media || !status) throw new Error('Missing fallback geometry');
+        const outer = media.getBoundingClientRect();
+        const inner = status.getBoundingClientRect();
+        return {
+            contained: inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom,
+            mediaWidth: outer.width,
+            statusWidth: inner.width,
+        };
+    });
+    expect(fallbackGeometry.contained).toBe(true);
+    expect(fallbackGeometry.mediaWidth).toBeGreaterThanOrEqual(110);
+    expect(fallbackGeometry.statusWidth).toBeGreaterThan(30);
+    await expectNoGlobalOverflow(page);
 });

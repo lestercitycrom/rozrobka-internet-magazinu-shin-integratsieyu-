@@ -2410,9 +2410,20 @@
         padding-top: .7rem;
     }
 
-    .storefront .et-product-card__media .et-tire-illustration,
-    .storefront .et-product-card__media .et-wheel-illustration {
-        transform: scale(.62);
+    .storefront .et-product-card__media .et-fallback-meta {
+        right: .45rem;
+        bottom: .55rem;
+        left: .85rem;
+    }
+
+    .storefront .et-product-card__media .et-fallback-meta__type {
+        display: none;
+    }
+
+    .storefront .et-product-card__media .et-fallback-meta__status {
+        max-width: 14ch;
+        padding: .25rem .3rem;
+        font-size: .56rem;
     }
 
     .storefront .et-product-card__buy span {

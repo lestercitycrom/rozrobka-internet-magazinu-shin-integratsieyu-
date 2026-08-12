@@ -63,20 +63,15 @@
     box-shadow: 0 4px 0 rgb(11 11 12 / .13);
 }
 
-/* True circular affordances and automotive illustrations stay circular. */
+/* True circular controls keep their functional silhouette. */
 .storefront[data-storefront-style='sharp'] :where(
     input[type='radio'],
     .et-cart__count,
     .et-filter-counter,
     .et-catalog-loading-dot,
     .et-spinner,
-    .et-stock-dot,
-    .et-tire-illustration,
-    .et-wheel-illustration
+    .et-stock-dot
 ),
-.storefront[data-storefront-style='sharp'] .et-tire-illustration::before,
-.storefront[data-storefront-style='sharp'] .et-wheel-illustration::before,
-.storefront[data-storefront-style='sharp'] .et-wheel-illustration::after,
 .storefront[data-storefront-style='sharp'] .et-store-panel__intro::after {
     border-radius: 50% !important;
 }

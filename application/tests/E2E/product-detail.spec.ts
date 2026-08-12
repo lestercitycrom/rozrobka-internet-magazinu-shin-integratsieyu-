@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { isMobileProject, isRussianProject } from './helpers';
+import { expectNoGlobalOverflow, isMobileProject, isRussianProject } from './helpers';
 
 async function expectStoreSection(page: import('@playwright/test').Page, mobile: boolean, label: string) {
     if (mobile) {
@@ -22,11 +22,18 @@ test('tire and wheel details expose the store section and normalized values', as
 
     await page.goto(`${prefix}/produkter/DEMO-WHEEL-18112`);
     await expectStoreSection(page, mobile, russian ? 'Диски' : 'Felger');
+    const wheelFallback = page.getByTestId('product-visual-fallback');
+    await expect(wheelFallback).toBeVisible();
+    await expect(wheelFallback).toHaveAttribute('data-product-fallback-kind', 'wheel');
+    await expect(wheelFallback.getByTestId('product-fallback-blueprint')).toBeVisible();
+    await expect(wheelFallback.locator('.et-fallback-meta__status')).toHaveText(russian ? 'Без фото товара' : 'Uten produktfoto');
+    await expect(wheelFallback.locator('.et-fallback-meta__context')).toHaveCSS('display', 'block');
     await expect(page.locator('.et-product-dimension')).toHaveText('8 × 18');
     await expect(page.getByText('5×112', { exact: true })).toBeVisible();
     await expect(page.getByText('66.6', { exact: true })).toBeVisible();
     await expect(page.locator('body')).not.toContainText('8.00');
     await expect(page.locator('body')).not.toContainText('Silver');
+    await expectNoGlobalOverflow(page);
 });
 
 test('a failed product image is replaced by the honest catalog fallback', async ({ page }, testInfo) => {
@@ -36,6 +43,11 @@ test('a failed product image is replaced by the honest catalog fallback', async 
     await page.goto(`${prefix}/produkter/000205550016`);
 
     await expect(page.getByTestId('product-primary-media')).toBeHidden();
-    await expect(page.getByTestId('product-visual-fallback')).toBeVisible();
+    const fallback = page.getByTestId('product-visual-fallback');
+    await expect(fallback).toBeVisible();
+    await expect(fallback).toHaveAttribute('data-product-fallback-kind', 'tire');
+    await expect(fallback.getByTestId('product-fallback-blueprint')).toBeVisible();
+    await expect(fallback.locator('.et-fallback-meta__status')).toHaveText(/Uten produktfoto|Без фото товара/);
     await expect(page.locator('[data-product-media-note]')).toContainText(/Produktbilde mangler|Фото товара отсутствует/);
+    await expectNoGlobalOverflow(page);
 });

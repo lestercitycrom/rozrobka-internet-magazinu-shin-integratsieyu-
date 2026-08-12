@@ -428,14 +428,18 @@
 .et-price small { display: block; color: var(--et-muted); font-size: .68rem; font-weight: 700; letter-spacing: 0; }
 .et-icon-btn { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--et-red); border-radius: .7rem; background: var(--et-red); color: #fff; font-weight: 900; }
 .et-icon-btn:hover { background: var(--et-red-dark); }
-.et-product-placeholder { position: relative; display: grid; width: 100%; height: 100%; place-items: center; color: #777; }
-.et-tire-illustration { position: relative; width: 118px; height: 148px; border: 14px solid #555; border-radius: 50%; box-shadow: inset 0 0 0 5px #c8c4bd; }
-.et-tire-illustration::before { position: absolute; inset: 19px 12px; border: 3px solid #8a8781; border-radius: 50%; content: ""; }
-.et-tire-illustration::after { position: absolute; top: -7px; right: 19px; bottom: -7px; left: 19px; background: repeating-linear-gradient(180deg, transparent 0 14px, #777 15px 18px); content: ""; opacity: .8; }
-.et-wheel-illustration { position: relative; width: 150px; height: 150px; border: 10px solid #686868; border-radius: 50%; box-shadow: inset 0 0 0 5px #c9c6bf; }
-.et-wheel-illustration::before { position: absolute; inset: 27px; border: 5px solid #8e8b86; border-radius: 50%; content: ""; box-shadow: 0 0 0 15px transparent; }
-.et-wheel-illustration::after { position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; border: 5px solid #777; border-radius: 50%; content: ""; transform: translate(-50%, -50%); }
-.et-placeholder-label { position: absolute; right: .75rem; bottom: .75rem; left: .75rem; color: var(--et-muted); font-size: .68rem; font-weight: 800; text-align: center; }
+.et-product-placeholder { position: relative; display: block; width: 100%; height: 100%; min-width: 0; overflow: hidden; background: #ebe7de; color: #252421; isolation: isolate; }
+.et-product-placeholder::before { position: absolute; z-index: 0; inset: 0; background-image: linear-gradient(rgb(37 36 33 / .045) 1px, transparent 1px), linear-gradient(90deg, rgb(37 36 33 / .045) 1px, transparent 1px); background-size: 24px 24px; content: ""; }
+.et-product-placeholder::after { position: absolute; z-index: 2; top: 0; bottom: 0; left: clamp(.7rem, 5%, 1.4rem); width: 2px; background: rgb(188 20 22 / .72); content: ""; }
+.et-fallback-blueprint { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; color: #34332f; }
+.et-fallback-blueprint__construction { stroke: currentcolor; stroke-width: 2.25; opacity: .54; }
+.et-fallback-blueprint__detail { stroke-width: 5; opacity: .42; }
+.et-fallback-blueprint__measure { stroke-width: 1; opacity: .43; }
+.et-fallback-blueprint__ticks { fill: none; stroke: #b71619; stroke-width: 1; opacity: .48; }
+.et-fallback-meta { position: absolute; z-index: 3; right: .9rem; bottom: .85rem; left: clamp(1.2rem, 8%, 2rem); display: grid; justify-items: start; min-width: 0; }
+.et-fallback-meta__type { margin-bottom: .3rem; color: #a51417; font-size: .62rem; font-weight: 900; letter-spacing: .14em; line-height: 1; text-transform: uppercase; }
+.et-fallback-meta__status { max-width: 100%; padding: .34rem .42rem; background: rgb(245 242 235 / .9); color: #45433e; font-size: .67rem; font-weight: 800; line-height: 1.15; }
+.et-fallback-meta__context { display: none; max-width: min(32ch, 100%); margin-top: .48rem; overflow: hidden; color: #2f2e2a; font-size: .82rem; font-weight: 900; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
 .et-loading-line { display: flex; min-height: 38px; align-items: center; gap: .55rem; color: var(--et-muted); font-size: .8rem; }
 .et-spinner { width: 18px; height: 18px; border: 2px solid var(--et-line-dark); border-top-color: var(--et-red); border-radius: 50%; animation: et-spin .7s linear infinite; }
 @keyframes et-spin { to { transform: rotate(360deg); } }
@@ -446,7 +450,10 @@
 .et-product-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
 .et-product-gallery { border: 1px solid var(--et-line); border-radius: var(--et-radius-xl); background: #fff; }
 .et-product-gallery__main { display: grid; min-height: 550px; place-items: center; padding: 2rem; }
-.et-product-gallery__main .et-tire-illustration { width: 190px; height: 240px; border-width: 20px; }
+.et-product-gallery__main .et-fallback-meta { right: clamp(1rem, 5%, 2.4rem); bottom: clamp(1rem, 5%, 2.4rem); left: clamp(1.5rem, 7%, 3rem); }
+.et-product-gallery__main .et-fallback-meta__type { font-size: .72rem; }
+.et-product-gallery__main .et-fallback-meta__status { font-size: .78rem; }
+.et-product-gallery__main .et-fallback-meta__context { display: block; }
 .et-product-gallery__note { border-top: 1px solid var(--et-line); padding: .9rem 1.2rem; color: var(--et-muted); font-size: .78rem; text-align: center; }
 .et-product-info { position: sticky; top: calc(var(--et-header-h) + 1rem); }
 .et-product-info__top { border: 1px solid var(--et-line); border-radius: var(--et-radius-xl); padding: clamp(1.4rem, 3vw, 2rem); background: #fff; box-shadow: var(--et-shadow-sm); }
@@ -534,7 +541,9 @@
 .et-cart-item__media .et-product-visual,
 .et-cart-item__media [data-testid="product-visual-fallback"] { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
 .et-cart-item__media .et-product-placeholder { min-height: 0; }
-.et-cart-item__media .et-tire-illustration { width: 50px; height: 64px; border-width: 7px; }
+.et-cart-item__media .et-product-placeholder::after { left: 8px; width: 1px; }
+.et-cart-item__media .et-fallback-blueprint { transform: scale(1.25); }
+.et-cart-item__media .et-fallback-meta { display: none; }
 .et-cart-item h2 { margin: 0; font-size: 1rem; font-weight: 900; }
 .et-cart-item p { margin: .35rem 0 0; color: var(--et-muted); font-size: .8rem; }
 .et-cart-item__price { font-weight: 900; text-align: right; }

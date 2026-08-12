@@ -159,8 +159,44 @@ test('primary product media uses lazy card loading, eager detail loading, russia
     $this->get('/produkter/SKU-NO-MEDIA')
         ->assertDontSee('data-testid="product-primary-media"', false)
         ->assertSee('data-testid="product-visual-fallback"', false)
+        ->assertSee('data-product-fallback-kind="tire"', false)
+        ->assertSee('data-testid="product-fallback-blueprint"', false)
+        ->assertSee('aria-hidden="true" focusable="false"', false)
         ->assertSee('role="img"', false)
-        ->assertSee('Produktbilde mangler');
+        ->assertSee('Uten produktfoto');
+});
+
+test('tire and wheel fallback plates expose distinct localized visual contracts', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+    storefrontProduct(ProductType::Tire, 'SKU-FALLBACK-TIRE', [
+        'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
+        'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Winter',
+    ]);
+    storefrontProduct(ProductType::Wheel, 'SKU-FALLBACK-WHEEL', [
+        'width_in' => '8.00', 'diameter_in' => '18.00', 'bolt_holes' => 5,
+        'pcd_mm' => '112.00', 'offset_et_mm' => '45.00', 'center_bore_mm' => '66.60',
+    ]);
+
+    $this->get('/produkter/SKU-FALLBACK-TIRE')
+        ->assertOk()
+        ->assertSee('data-product-fallback-kind="tire"', false)
+        ->assertSee('>Dekk</span>', false)
+        ->assertSee('Uten produktfoto');
+    $this->get('/produkter/SKU-FALLBACK-WHEEL')
+        ->assertOk()
+        ->assertSee('data-product-fallback-kind="wheel"', false)
+        ->assertSee('>Felg</span>', false)
+        ->assertSee('Uten produktfoto');
+    $this->get('/ru/produkter/SKU-FALLBACK-TIRE')
+        ->assertOk()
+        ->assertSee('>Шина</span>', false)
+        ->assertSee('Без фото товара')
+        ->assertDontSee('Uten produktfoto');
+    $this->get('/ru/produkter/SKU-FALLBACK-WHEEL')
+        ->assertOk()
+        ->assertSee('>Диск</span>', false)
+        ->assertSee('Без фото товара')
+        ->assertDontSee('Uten produktfoto');
 });
 
 test('catalog has image filter includes only products with an active primary assignment', function (): void {
