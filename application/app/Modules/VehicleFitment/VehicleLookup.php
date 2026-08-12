@@ -23,10 +23,10 @@ final class VehicleLookup
             return null;
         }
 
-        return Cache::remember(
-            'fitment:'.hash('sha256', $normalizedRegistration),
+        $cached = Cache::remember(
+            'fitment:v2:'.hash('sha256', $normalizedRegistration),
             config('vehicle_fitment.cache_ttl'),
-            function () use ($normalizedRegistration): ?VehicleFitment {
+            function () use ($normalizedRegistration): ?array {
                 try {
                     $response = Http::timeout(config('vehicle_fitment.timeout'))
                         ->withHeaders([
@@ -43,9 +43,26 @@ final class VehicleLookup
                     return null;
                 }
 
-                return $this->mapResponse($response->json());
+                $fitment = $this->mapResponse($response->json());
+
+                return $fitment === null ? null : [
+                    'make' => $fitment->make,
+                    'model' => $fitment->model,
+                    'tyres' => $fitment->tyres,
+                    'wheels' => $fitment->wheels,
+                ];
             },
         );
+
+        if (! is_array($cached)
+            || ! is_string($cached['make'] ?? null)
+            || ! is_string($cached['model'] ?? null)
+            || ! is_array($cached['tyres'] ?? null)
+            || ! is_array($cached['wheels'] ?? null)) {
+            return null;
+        }
+
+        return new VehicleFitment($cached['make'], $cached['model'], $cached['tyres'], $cached['wheels']);
     }
 
     private function mapResponse(mixed $payload): ?VehicleFitment

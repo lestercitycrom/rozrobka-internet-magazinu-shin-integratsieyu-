@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\VehicleFitment\VehicleLookup;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 /** @param list<string> $dimensions */
@@ -112,6 +113,30 @@ test('current Statens response maps unique safe metric sizes across approved axl
             ['dimension' => '6.5Jx16', 'offset' => 'ET45'],
             ['dimension' => '7.5Jx17', 'offset' => 'ET48'],
         ]);
+});
+
+test('normalized fitment cache survives a second request without serializing the DTO', function (): void {
+    config()->set('vehicle_fitment.enabled', true);
+    config()->set('vehicle_fitment.api_key', 'test-key');
+    config()->set('vehicle_fitment.endpoint', 'https://example.test/vehicle');
+    Http::fake(['https://example.test/vehicle*' => Http::response(currentStatensVehiclePayload(), 200)]);
+
+    $lookup = app(VehicleLookup::class);
+    $first = $lookup->lookup('GH12345');
+    $second = $lookup->lookup('GH12345');
+    $cacheKey = 'fitment:v2:'.hash('sha256', 'GH12345');
+
+    expect($first)->not->toBeNull()
+        ->and($second)->not->toBeNull()
+        ->and($second?->tyres)->toBe($first?->tyres)
+        ->and(Cache::get($cacheKey))->toBeArray()
+        ->and(Cache::get($cacheKey))->toMatchArray([
+            'make' => 'Demo',
+            'model' => 'Car',
+            'tyres' => [['width' => '205', 'aspect' => '55', 'rim' => '16']],
+        ]);
+
+    Http::assertSentCount(1);
 });
 
 test('unknown or obsolete response shapes fail closed instead of inventing fitment', function () {
