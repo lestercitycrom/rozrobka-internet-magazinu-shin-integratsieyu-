@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Modules\Content\CustomerSeoWorkbook;
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
@@ -33,7 +34,7 @@ final class SeoServicePageSeeder extends Seeder
     /** @return list<array<string, mixed>> */
     private function pages(): array
     {
-        return [
+        $pages = [
             $this->page(
                 slug: 'mobilt-dekkskift',
                 path: 'dekkskift-tromso',
@@ -117,7 +118,7 @@ MD,
                 seoDescriptionRu: 'Замена колёс у дома, на работе или в мастерской EasyTire в Тромсё.',
             ),
             $this->page(
-                slug: 'dekkhotell', path: 'dekkhotell-tromso', order: 50, flow: ServiceRequestFlow::Generic,
+                slug: 'dekkhotell', path: 'dekkhotell-tromso', order: 50, flow: ServiceRequestFlow::Seasonal,
                 titleNb: 'Dekkhotell i Tromsø',
                 excerptNb: 'Slipp å lagre og transportere hjulene selv. Vi vasker, kontrollerer og oppbevarer hjulsettet trygt frem til neste sesong.',
                 bodyNb: <<<'MD'
@@ -440,6 +441,13 @@ MD,
                 seoTitleRu: 'Замена ламп и щёток в Тромсё | EasyTire', seoDescriptionRu: 'Замена автомобильных ламп и щёток стеклоочистителя в Тромсё.',
             ),
         ];
+
+        $overrides = CustomerSeoWorkbook::overrides();
+
+        return array_map(
+            fn (array $page): array => array_replace($page, $overrides[$page['slug']] ?? []),
+            $pages,
+        );
     }
 
     /** @return array<string, mixed> */

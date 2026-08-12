@@ -25,7 +25,7 @@ test('buyer can use the private Russian storefront, cart and checkout', async ({
     await expect(page.locator('input[name="idempotency_key"]')).toHaveValue(/[0-9a-f-]{36}/);
 
     await page.goto('/ru/tjenester/dekkhotell/foresporsel');
-    await expect(page.getByTestId('generic-service-request')).toBeVisible();
+    await expect(page.getByTestId('seasonal-service-request')).toBeVisible();
     await expect(page.locator('body')).not.toContainText('Norsk innhold');
     await expectNoGlobalOverflow(page);
 });

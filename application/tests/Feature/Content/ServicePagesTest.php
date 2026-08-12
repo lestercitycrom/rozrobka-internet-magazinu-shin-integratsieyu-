@@ -53,7 +53,7 @@ test('service page seeder provides the six editable service foundations without 
         ])
         ->and(ServicePage::query()->where('slug', 'mobilt-dekkskift')->firstOrFail()->request_flow)->toBe(ServiceRequestFlow::Seasonal)
         ->and(ServicePage::query()->where('slug', 'dekkverksted')->firstOrFail()->request_flow)->toBe(ServiceRequestFlow::Seasonal)
-        ->and(ServicePage::query()->where('slug', 'dekkhotell')->firstOrFail()->request_flow)->toBe(ServiceRequestFlow::Generic);
+        ->and(ServicePage::query()->where('slug', 'dekkhotell')->firstOrFail()->request_flow)->toBe(ServiceRequestFlow::Seasonal);
 
     ServicePage::query()->where('slug', 'dekkhotell')->update(['title_nb' => 'Redigert tittel']);
     $this->seed(ServicePageSeeder::class);

@@ -37,6 +37,22 @@ test('service page slugs must be unique', function (): void {
         ->assertSessionHasErrors('slug');
 });
 
+test('service page canonical paths cannot collide with fixed storefront routes', function (): void {
+    $admin = User::factory()->operations()->create();
+
+    $this->actingAs($admin)->post('/admin/services', [
+        'slug' => 'campaign-page',
+        'canonical_path' => 'handlekurv',
+        'sort_order' => 2,
+        'publication_status' => 'draft',
+        'request_flow' => 'generic',
+        'title_nb' => 'Kampanje',
+        'title_ru' => 'Кампания',
+    ])->assertSessionHasErrors('canonical_path');
+
+    $this->assertDatabaseMissing('service_pages', ['slug' => 'campaign-page']);
+});
+
 test('guests and customers cannot manage service pages', function (): void {
     $this->get('/admin/services')->assertRedirect(route('admin.login'));
     $this->actingAs(User::factory()->customer()->create())->get('/admin/services')->assertForbidden();

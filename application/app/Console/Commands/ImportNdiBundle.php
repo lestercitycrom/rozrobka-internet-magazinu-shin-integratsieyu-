@@ -12,6 +12,8 @@ class ImportNdiBundle extends Command
     protected $signature = 'ndi:import
         {files* : Complete XLSX bundle containing tires, wheels, and stock}
         {--trigger=manual : Audit trigger name}
+        {--partial : Accept any validated subset of tires, wheels, and stock}
+        {--allow-stock-drop : Explicitly allow an exceptional stock snapshot below the automatic drop guard}
         {--redacted : Mark artifacts as synthetic or redacted test data}';
 
     protected $description = 'Validate and transactionally publish a complete NDI XLSX bundle.';
@@ -19,10 +21,12 @@ class ImportNdiBundle extends Command
     public function handle(NdiBundleImporter $importer): int
     {
         try {
-            $outcome = $importer->import(
+            $method = $this->option('partial') ? 'importAvailable' : 'import';
+            $outcome = $importer->{$method}(
                 array_values($this->argument('files')),
                 (string) $this->option('trigger'),
                 (bool) $this->option('redacted'),
+                (bool) $this->option('allow-stock-drop'),
             );
         } catch (NdiImportAlreadyRunning $exception) {
             $this->components->error($exception->getMessage());

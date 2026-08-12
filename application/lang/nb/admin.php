@@ -70,4 +70,17 @@ return array_replace_recursive([
         'save' => 'Lagre omtale', 'delete' => 'Slett omtale', 'saved' => 'Omtalen er lagret.', 'deleted' => 'Omtalen er slettet.',
         'empty' => 'Ingen kundeomtaler ennå.', 'source_hint' => 'Ikke opprett eller publiser en omtale uten en ekte, godkjent kilde. Uten publiserte data er omtaleseksjonen skjult offentlig.', 'actions' => 'Handlinger', 'table_label' => 'Kundeomtaler',
     ],
+    'homepage_ratings' => [
+        'title' => 'Omtalesammendrag', 'heading' => 'Omtalesammendrag', 'intro' => 'Administrer dokumenterte totalvurderinger fra eksterne plattformer. Offentlig visning krever kilde og norsk/russisk lenketekst.',
+        'new' => 'Nytt sammendrag', 'edit' => 'Rediger', 'save' => 'Lagre sammendrag', 'delete' => 'Slett sammendrag', 'saved' => 'Omtalesammendraget er lagret.', 'deleted' => 'Omtalesammendraget er slettet.', 'empty' => 'Ingen omtalesammendrag ennå.',
+        'platform' => 'Plattform', 'platform_facebook' => 'Facebook', 'platform_google' => 'Google', 'rating' => 'Vurdering', 'count' => 'Antall omtaler', 'count_value' => 'Numerisk antall (internt)', 'count_label' => 'Synlig antallstekst', 'link_label' => 'Lenketekst', 'source_url' => 'Kildelenke',
+        'order' => 'Rekkefølge', 'status' => 'Status', 'actions' => 'Handlinger', 'locale_nb' => 'Norsk innhold', 'locale_ru' => 'Russisk testoversettelse', 'table_label' => 'Omtalesammendrag',
+        'source_hint' => 'Publiser bare tall som kan dokumenteres. Lenken må gå til den aktuelle http/https-kilden.', 'invalid_url' => 'Kildelenken må være en trygg http/https-adresse uten innloggingsdata.',
+    ],
+    'homepage_partners' => [
+        'title' => 'Bedriftspartnere', 'heading' => 'Bedriftspartnerlogoer', 'intro' => 'Vis godkjente partnerlogoer fra mediebiblioteket. Ingen logo vises uten publisert rad og en aktiv mediefil.',
+        'new' => 'Ny partner', 'edit' => 'Rediger', 'save' => 'Lagre partner', 'delete' => 'Slett partner', 'saved' => 'Partneren er lagret.', 'deleted' => 'Partneren er slettet.', 'empty' => 'Ingen partnerlogoer ennå.',
+        'name' => 'Partnernavn', 'asset' => 'Logo fra mediebiblioteket', 'choose_asset' => 'Velg en aktiv mediefil', 'asset_hint' => 'Last først opp en logo som dere har rett til å bruke. Deaktiverte filer vises aldri offentlig.', 'unavailable_asset' => 'Ingen aktiv logo', 'website_url' => 'Valgfri partnerlenke',
+        'order' => 'Rekkefølge', 'status' => 'Status', 'actions' => 'Handlinger', 'table_label' => 'Bedriftspartnerlogoer', 'rights_hint' => 'Ikke last opp eller publiser tredjepartslogoer uten tillatelse eller dokumentert bruksrett.', 'invalid_url' => 'Partnerlenken må være en trygg http/https-adresse uten innloggingsdata.',
+    ],
 ]);

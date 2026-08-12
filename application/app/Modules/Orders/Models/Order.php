@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable([
     'public_reference', 'idempotency_key', 'locale', 'status', 'payment_status', 'ndi_status',
     'currency', 'subtotal_minor', 'total_minor', 'fulfilment_method', 'customer_name',
-    'customer_email', 'customer_phone', 'vehicle_registration', 'customer_note',
+    'customer_email', 'customer_phone', 'vehicle_registration', 'fitment_snapshot', 'customer_note',
     'terms_accepted_at', 'privacy_accepted_at', 'pricing_snapshot_at', 'submitted_at',
 ])]
 class Order extends Model
@@ -36,6 +36,7 @@ class Order extends Model
             'payment_status' => PaymentStatus::class,
             'ndi_status' => NdiOrderStatus::class,
             'fulfilment_method' => FulfilmentMethod::class,
+            'fitment_snapshot' => 'array',
             'subtotal_minor' => 'integer',
             'total_minor' => 'integer',
             'terms_accepted_at' => 'datetime',

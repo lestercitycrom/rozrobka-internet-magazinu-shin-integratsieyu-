@@ -5,6 +5,7 @@ namespace App\Modules\Payments;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Payments\Contracts\OrderPaymentReadiness;
 use App\Modules\Payments\Contracts\PaymentGateway;
 use App\Modules\Payments\Data\PaymentAuthorizationRequest;
 use App\Modules\Payments\Exceptions\PaymentOperationRejected;
@@ -14,7 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 final class AuthorizePayment
 {
-    public function __construct(private readonly PaymentGateway $gateway) {}
+    public function __construct(
+        private readonly PaymentGateway $gateway,
+        private readonly OrderPaymentReadiness $readiness,
+    ) {}
 
     public function execute(Order $order, string $idempotencyKey, string $returnUrl): PaymentAttempt
     {
@@ -23,6 +27,9 @@ final class AuthorizePayment
         $idempotencyKey = PaymentBoundaryGuard::idempotencyKey($idempotencyKey);
         if (filter_var($returnUrl, FILTER_VALIDATE_URL) === false || ! in_array(parse_url($returnUrl, PHP_URL_SCHEME), ['http', 'https'], true)) {
             throw new PaymentOperationRejected('A valid payment return URL is required.');
+        }
+        if (! PaymentAttempt::query()->where('order_id', $order->getKey())->exists()) {
+            $this->readiness->assertReady($order);
         }
 
         $attempt = DB::transaction(function () use ($order, $provider, $idempotencyKey): PaymentAttempt {

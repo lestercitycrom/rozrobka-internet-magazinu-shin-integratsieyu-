@@ -5,6 +5,8 @@
     'storeRoute' => null,
     'storeLabel' => null,
     'canonical' => null,
+    'image' => null,
+    'structuredData' => [],
 ])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
@@ -12,11 +14,24 @@
     @php
         $preview = app()->getLocale() === 'ru';
         $routePrefix = $preview ? 'storefront.preview.' : 'storefront.';
-        $phoneDisplay = config('storefront.phone_display');
-        $phoneHref = config('storefront.phone_href');
-        $contactEmail = config('storefront.email');
-        $businessAddress = config('storefront.business_address');
-        $mapUrl = config('storefront.map_url');
+        $storefrontSettings = null;
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('storefront_settings')) {
+                $storefrontSettings = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->current();
+            }
+        } catch (\Throwable) {
+            $storefrontSettings = null;
+        }
+        $settingValue = static function (string $field, string $fallback) use ($storefrontSettings): string {
+            $value = $storefrontSettings?->getAttribute($field);
+
+            return filled($value) ? (string) $value : $fallback;
+        };
+        $phoneDisplay = $settingValue('phone_display', (string) config('storefront.phone_display'));
+        $phoneHref = $settingValue('phone_href', (string) config('storefront.phone_href'));
+        $contactEmail = $settingValue('email', (string) config('storefront.email'));
+        $businessAddress = $settingValue('business_address', (string) config('storefront.business_address'));
+        $mapUrl = $settingValue('map_url', (string) config('storefront.map_url'));
         $contentPages = [];
         $headerServices = collect();
 
@@ -86,8 +101,23 @@
         };
         $storeHref = $storeRoute ?: route($routePrefix.'store.index');
         $storeNavigationLabel = $storeLabel ?: __('pro.nav.store');
+        $servicesHref = route($routePrefix.'services.index');
+        $seasonalHref = route($routePrefix.'seo-services.show', 'dekkskift-tromso');
+        $hotelHref = route($routePrefix.'seo-services.show', 'dekkhotell-tromso');
+        $seasonalRequestRoute = $routePrefix.'requests.create';
         $navigationItems = [
-            ['section' => 'services', 'href' => route($routePrefix.'services.index'), 'label' => __('pro.nav.services')],
+            [
+                'section' => 'services',
+                'href' => $servicesHref,
+                'label' => __('pro.nav.services'),
+                'children' => [
+                    ['href' => $seasonalHref, 'label' => __('pro.nav.seasonal')],
+                    ['href' => route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']), 'label' => __('pro.nav.home_service')],
+                    ['href' => route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']), 'label' => __('pro.nav.workshop_service')],
+                    ['href' => $hotelHref, 'label' => __('pro.nav.hotel')],
+                    ['href' => $servicesHref.'#additional-services', 'label' => __('pro.nav.additional_services')],
+                ],
+            ],
             ['section' => 'store', 'href' => $storeHref, 'label' => $storeNavigationLabel],
         ];
         if (isset($contentPages['om-oss'])) {
@@ -97,20 +127,53 @@
             $navigationItems[] = ['section' => 'contact', 'href' => route($routePrefix.'content.show', 'kontakt'), 'label' => __('pro.nav.contact')];
         }
         $canonicalUrl = $canonical ?: ($preview ? preg_replace('#/ru(?=/|$)#', '', url()->current(), 1) : url()->current());
+        $metaTitle = $title ?? __('storefront.site_title');
+        $metaDescription = $description ?? __('storefront.site_description');
+        $socialImage = $image ?: url('/brand/exterior.webp');
+        if (is_string($socialImage) && str_starts_with($socialImage, '/')) $socialImage = url($socialImage);
+        $schemas = [[
+            '@context' => 'https://schema.org',
+            '@type' => 'AutoRepair',
+            '@id' => url('/').'#business',
+            'name' => 'EasyTire',
+            'url' => url('/'),
+            'telephone' => $phoneDisplay,
+            'email' => $contactEmail,
+            'address' => [
+                '@type' => 'PostalAddress',
+                'streetAddress' => $businessAddress,
+                'addressLocality' => 'Tromsø',
+                'postalCode' => '9018',
+                'addressCountry' => 'NO',
+            ],
+            'image' => $socialImage,
+        ], ...array_values(is_array($structuredData) ? $structuredData : [])];
     @endphp
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ $description ?? __('storefront.site_description') }}">
+    <meta name="description" content="{{ $metaDescription }}">
     <meta name="theme-color" content="#101010">
-    <title>{{ $title ?? __('storefront.site_title') }}</title>
+    <title>{{ $metaTitle }}</title>
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="EasyTire">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $socialImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $metaTitle }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
     @if ($preview)
         <meta name="robots" content="noindex,nofollow">
     @endif
     <link rel="canonical" href="{{ $canonicalUrl }}">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="icon" href="/brand/easytire-icon-32.png" sizes="32x32" type="image/png">
-    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+    <link rel="icon" href="/favicon-96x96.png" sizes="96x96" type="image/png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
+    @foreach ($schemas as $schema)
+        <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+    @endforeach
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="storefront" data-storefront-style="sharp">
@@ -141,7 +204,18 @@
 
             <nav class="et-nav" aria-label="{{ __('storefront.main_navigation') }}" data-testid="desktop-navigation">
                 @foreach ($navigationItems as $navigationItem)
-                    <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                    @if (! empty($navigationItem['children']))
+                        <div class="et-nav__item">
+                            <a class="min-h-11" href="{{ $navigationItem['href'] }}" aria-haspopup="true" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                            <div class="et-nav__submenu" aria-label="{{ $navigationItem['label'] }}">
+                                @foreach ($navigationItem['children'] as $child)
+                                    <a class="min-h-11" href="{{ $child['href'] }}">{{ $child['label'] }}</a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                    @endif
                 @endforeach
             </nav>
 
@@ -158,7 +232,19 @@
         <div class="et-mobile-menu" data-mobile-menu>
             <nav class="et-container" aria-label="{{ __('storefront.quick_links') }}" data-testid="mobile-navigation">
                 @foreach ($navigationItems as $navigationItem)
-                    <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                    @if (! empty($navigationItem['children']))
+                        <details class="et-mobile-menu__group">
+                            <summary class="min-h-11" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</summary>
+                            <div class="et-mobile-menu__children">
+                                <a class="min-h-11" href="{{ $navigationItem['href'] }}">{{ __('pro.nav.all_services') }}</a>
+                                @foreach ($navigationItem['children'] as $child)
+                                    <a class="min-h-11" href="{{ $child['href'] }}">{{ $child['label'] }}</a>
+                                @endforeach
+                            </div>
+                        </details>
+                    @else
+                        <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                    @endif
                 @endforeach
                 <a class="min-h-11" href="{{ $bookingUrl }}" data-testid="mobile-booking-link">{{ __('pro.nav.booking') }}</a>
                 <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link">{{ __('pro.nav.cart') }} ({{ $cartCount }})</a>

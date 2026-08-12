@@ -48,7 +48,7 @@ The backup command reads credentials only through Laravel configuration. It invo
 
 The hook records the activated Git hash in `current/REVISION`. After push, the local script reads that marker over SSH and fails explicitly if Git accepted the commit but the post-receive build did not activate it. This distinction matters because Git cannot roll back a received ref when a post-receive hook fails.
 
-Composer and the Laravel test command require `proc_open` in PHP CLI. The bootstrap verifies this and stops with a clear error when a server hardening policy disables it. PHP-FPM remains independent and may keep a stricter `disable_functions` policy.
+Composer and the Laravel test command require `proc_open` in PHP CLI. Laravel's operational database reports also require PHP `intl`, which the bootstrap installs explicitly. The bootstrap verifies `proc_open` and stops with a clear error when a server hardening policy disables it. PHP-FPM remains independent and may keep a stricter `disable_functions` policy.
 
 ## Rollback
 

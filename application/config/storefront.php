@@ -2,6 +2,8 @@
 
 return [
     'ru_preview_enabled' => (bool) env('STOREFRONT_RU_PREVIEW_ENABLED', false),
+    'stock_max_age_minutes' => (int) env('STOREFRONT_STOCK_MAX_AGE_MINUTES', 180),
+    'price_max_age_minutes' => (int) env('STOREFRONT_PRICE_MAX_AGE_MINUTES', 1560),
     'phone_display' => '+47 939 58 270',
     'phone_href' => '+4793958270',
     'email' => 'max.easytire@gmail.com',

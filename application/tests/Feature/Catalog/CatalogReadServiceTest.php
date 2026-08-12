@@ -76,7 +76,7 @@ test('it filters to an active primary product image without duplicating catalog 
 });
 
 test('it paginates and hydrates prices and stock in a bounded number of queries', function (): void {
-    $first = publicCatalogSku('PAGE-01');
+    $first = publicCatalogSku('PAGE-01', withStock: false);
     publicCatalogSku('PAGE-02');
     publicCatalogSku('PAGE-03');
     addPublicPriceAndStock($first);
@@ -95,9 +95,12 @@ test('it paginates and hydrates prices and stock in a bounded number of queries'
         ->and(count($queries))->toBeLessThanOrEqual(5);
 
     $priced = app(CatalogReadService::class)->findPublicSku('PAGE-01');
-    expect($priced?->prices)->toHaveCount(1)
+    expect($priced?->prices)->toHaveCount(2)
         ->and($priced?->prices[0]->currency)->toBe('NOK')
         ->and($priced?->prices[0]->taxMode)->toBe(TaxMode::Gross)
+        ->and($priced?->prices[0]->amount)->toBe('123.4500')
+        ->and($priced?->prices[1]->taxMode)->toBe(TaxMode::Net)
+        ->and($priced?->prices[1]->amount)->toBe('75.0000')
         ->and($priced?->stock->quantity)->toBe(40);
 });
 
@@ -108,6 +111,7 @@ function publicCatalogSku(
     PublicationStatus $publication = PublicationStatus::Published,
     CatalogState $catalogState = CatalogState::Catalog,
     bool $supplierActive = true,
+    bool $withStock = true,
 ): SupplierSku {
     $suffix = Str::lower(Str::random(8));
     $supplier = Supplier::create(['code' => "supplier-{$suffix}", 'name' => 'Catalog test supplier', 'is_active' => $supplierActive]);
@@ -122,7 +126,20 @@ function publicCatalogSku(
         $product->wheelSpec()->create($spec + ['width_in' => '6.50', 'diameter_in' => '16.00', 'bolt_holes' => 5, 'pcd_mm' => '112.00', 'offset_et_mm' => '40.00', 'center_bore_mm' => '57.10']);
     }
 
-    return SupplierSku::create(['supplier_id' => $supplier->id, 'product_id' => $product->id, 'external_sku' => $externalSku, 'catalog_state' => $catalogState]);
+    $sku = SupplierSku::create(['supplier_id' => $supplier->id, 'product_id' => $product->id, 'external_sku' => $externalSku, 'catalog_state' => $catalogState]);
+    if ($withStock) {
+        addPublicStock($sku, 1);
+    }
+
+    return $sku;
+}
+
+function addPublicStock(SupplierSku $sku, int $quantity): void
+{
+    $artifactId = (string) Str::ulid();
+    DB::table('source_artifacts')->insert(['id' => $artifactId, 'supplier_id' => $sku->supplier_id, 'kind' => 'fixture', 'original_filename' => 'stock.xlsx', 'storage_key' => "fixtures/{$artifactId}.xlsx", 'byte_size' => 1, 'sha256' => hash('sha256', $artifactId), 'received_at' => now(), 'is_redacted' => true]);
+    $warehouse = Warehouse::create(['supplier_id' => $sku->supplier_id, 'code' => 'norway', 'name' => 'National availability', 'is_active' => true]);
+    CurrentStock::create(['supplier_sku_id' => $sku->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity, 'observed_at' => now(), 'source_artifact_id' => $artifactId]);
 }
 
 function addPublicPriceAndStock(SupplierSku $sku): void

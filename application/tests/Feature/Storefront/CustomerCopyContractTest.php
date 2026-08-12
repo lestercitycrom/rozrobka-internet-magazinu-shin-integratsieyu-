@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Content\CustomerSeoWorkbook;
 use App\Modules\Content\Models\ContentPage;
 use App\Modules\Content\Models\ServicePage;
 use Database\Seeders\DatabaseSeeder;
@@ -14,9 +15,8 @@ test('public Norwegian copy follows the customer approved home service wording',
             ->all();
     };
     $translations = implode("\n", [
-        ...$flatten(require lang_path('nb/pro.php')),
-        ...$flatten(require lang_path('nb/storefront.php')),
-        ...$flatten(require lang_path('nb/booking.php')),
+        ...collect(glob(lang_path('nb/*.php')) ?: [])->flatMap(fn (string $path): array => $flatten(require $path))->all(),
+        ...$flatten(CustomerSeoWorkbook::overrides()),
     ]);
 
     expect($translations)
@@ -25,7 +25,8 @@ test('public Norwegian copy follows the customer approved home service wording',
         ->not->toContain('Mobil service')
         ->not->toContain('Mobil tjeneste')
         ->not->toContain('É')
-        ->not->toContain('é');
+        ->not->toContain('é')
+        ->not->toContain('én');
 });
 
 test('production seed data removes rejected wording without changing the technical slug', function (): void {
@@ -47,7 +48,8 @@ test('production seed data removes rejected wording without changing the technic
         ->not->toContain('Mobil tjeneste')
         ->not->toContain('mobil tjeneste')
         ->not->toContain('É')
-        ->not->toContain('é');
+        ->not->toContain('é')
+        ->not->toContain('én');
 });
 
 test('Russian QA copy is localized and does not expose implementation jargon', function (): void {

@@ -30,21 +30,47 @@ final class NdiBundleImporter
     /**
      * @param  list<string>  $sourcePaths
      */
-    public function import(array $sourcePaths, string $trigger = 'manual', bool $isRedacted = false): ImportOutcome
+    public function import(array $sourcePaths, string $trigger = 'manual', bool $isRedacted = false, bool $allowStockDrop = false): ImportOutcome
     {
+        return $this->importWithMode($sourcePaths, $trigger, $isRedacted, true, false, $allowStockDrop);
+    }
+
+    /** @param list<string> $sourcePaths */
+    public function importAvailable(
+        array $sourcePaths,
+        string $trigger = 'inbox',
+        bool $isRedacted = false,
+        bool $allowStockDrop = false,
+        bool $refreshDuplicate = false,
+    ): ImportOutcome {
+        return $this->importWithMode($sourcePaths, $trigger, $isRedacted, false, $refreshDuplicate, $allowStockDrop);
+    }
+
+    /** @param list<string> $sourcePaths */
+    private function importWithMode(
+        array $sourcePaths,
+        string $trigger,
+        bool $isRedacted,
+        bool $requireComplete,
+        bool $refreshDuplicate,
+        bool $allowStockDrop,
+    ): ImportOutcome {
         if ($sourcePaths === []) {
             throw new InvalidArgumentException('At least one NDI source artifact is required.');
         }
 
         $supplierCode = (string) config('ndi.supplier_code');
-        $lock = Cache::lock("ndi-import:{$supplierCode}", 300);
+        $lock = Cache::lock(
+            "ndi-import:{$supplierCode}",
+            max(300, (int) config('ndi.import_lock_seconds', 1800)),
+        );
 
         if (! $lock->get()) {
             throw new NdiImportAlreadyRunning('Another NDI import is already running.');
         }
 
         try {
-            return $this->performImport($sourcePaths, $trigger, $isRedacted);
+            return $this->performImport($sourcePaths, $trigger, $isRedacted, $requireComplete, $refreshDuplicate, $allowStockDrop);
         } finally {
             $this->releaseLock($lock);
         }
@@ -53,8 +79,14 @@ final class NdiBundleImporter
     /**
      * @param  list<string>  $sourcePaths
      */
-    private function performImport(array $sourcePaths, string $trigger, bool $isRedacted): ImportOutcome
-    {
+    private function performImport(
+        array $sourcePaths,
+        string $trigger,
+        bool $isRedacted,
+        bool $requireComplete,
+        bool $refreshDuplicate,
+        bool $allowStockDrop,
+    ): ImportOutcome {
         $supplierCode = (string) config('ndi.supplier_code');
         $parserVersion = (string) config('ndi.parser_version');
         $supplier = Supplier::query()->firstOrCreate(
@@ -77,7 +109,7 @@ final class NdiBundleImporter
         DB::table('import_runs')->insert([
             'id' => $runId,
             'supplier_id' => $supplier->id,
-            'run_type' => 'catalog_bundle',
+            'run_type' => $requireComplete ? 'catalog_bundle' : 'partial_feed',
             'status' => 'running',
             'trigger' => Str::limit($trigger, 64, ''),
             'parser_version' => $parserVersion,
@@ -138,7 +170,7 @@ final class NdiBundleImporter
             array_keys($detected),
         ));
 
-        if ($missingRoles !== []) {
+        if ($requireComplete && $missingRoles !== []) {
             $firstArtifact = $stored[0]['artifact'];
             $this->writeRejection(
                 $runId,
@@ -152,7 +184,7 @@ final class NdiBundleImporter
             $bundleErrors++;
         }
 
-        $duplicateOf = $bundleErrors === 0
+        $duplicateOf = $bundleErrors === 0 && ! $refreshDuplicate
             ? $this->duplicateRunId($supplier->id, $parserVersion, $detected)
             : null;
 
@@ -195,8 +227,23 @@ final class NdiBundleImporter
             }
         }
 
+        foreach ($prepared as $dataset) {
+            if ($dataset->workbook->acceptedCount === 0) {
+                $this->writeRejection($runId, $dataset->artifact->id, null, null, null, 'dataset_contains_no_rows', null);
+                $rejectedCount++;
+            }
+        }
+
+        $stock = $prepared[DatasetRole::Stock->value] ?? null;
+        if ($stock !== null
+            && ! $allowStockDrop
+            && $this->isUnsafeStockDrop($supplier->id, $stock->workbook->acceptedCount)) {
+            $this->writeRejection($runId, $stock->artifact->id, null, null, null, 'stock_row_count_drop_requires_manual_override', null);
+            $rejectedCount++;
+        }
+
         try {
-            if ($rejectedCount > 0 || count($prepared) !== count(DatasetRole::cases())) {
+            if ($rejectedCount > 0 || count($prepared) !== count($detected) || $prepared === []) {
                 $this->finishRun(
                     $runId,
                     'failed',
@@ -207,9 +254,10 @@ final class NdiBundleImporter
                 return $this->outcome($runId);
             }
 
+            $hasCatalog = isset($prepared[DatasetRole::Tires->value]) || isset($prepared[DatasetRole::Wheels->value]);
             $currency = mb_strtoupper(trim((string) config('ndi.catalog_currency')));
 
-            if (preg_match('/^[A-Z]{3}$/D', $currency) !== 1) {
+            if ($hasCatalog && preg_match('/^[A-Z]{3}$/D', $currency) !== 1) {
                 $firstArtifact = $stored[0]['artifact'];
                 $this->writeRejection($runId, $firstArtifact->id, null, null, null, 'catalog_currency_not_configured', null);
                 $this->finishRun(
@@ -221,6 +269,7 @@ final class NdiBundleImporter
 
                 return $this->outcome($runId);
             }
+            $currency = preg_match('/^[A-Z]{3}$/D', $currency) === 1 ? $currency : 'NOK';
 
             try {
                 DB::transaction(function () use ($supplier, $runId, $prepared, $currency): void {
@@ -284,6 +333,20 @@ final class NdiBundleImporter
         }
 
         return null;
+    }
+
+    private function isUnsafeStockDrop(int $supplierId, int $incomingCount): bool
+    {
+        $baseline = DB::table('current_stock')
+            ->join('supplier_skus', 'supplier_skus.id', '=', 'current_stock.supplier_sku_id')
+            ->where('supplier_skus.supplier_id', $supplierId)
+            ->distinct()
+            ->count('supplier_skus.id');
+        $minimumBaseline = max(1, (int) config('ndi.stock_drop_guard_min_baseline', 50));
+        $ratio = max(0.1, min(1.0, (float) config('ndi.stock_minimum_previous_ratio', 0.9)));
+
+        return $baseline >= $minimumBaseline
+            && $incomingCount < (int) ceil($baseline * $ratio);
     }
 
     private function linkArtifact(string $runId, string $artifactId, string $datasetRole, string $parserVersion): void

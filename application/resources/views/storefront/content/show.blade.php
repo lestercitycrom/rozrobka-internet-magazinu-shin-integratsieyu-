@@ -7,16 +7,29 @@
     $fallbackHero = $isContact ? '/brand/exterior.webp' : ($isAbout ? '/brand/founders.webp' : '/brand/workshop-alt.webp');
     $heroUrl = $page->hero['url'] ?? $fallbackHero;
     $heroAlt = $page->hero['alt'] ?? ($isContact ? __('pro.content.contact_image_alt') : ($isAbout ? __('pro.content.about_image_alt') : 'EasyTire'));
-    $phoneDisplay = config('storefront.phone_display');
-    $phoneHref = config('storefront.phone_href');
-    $contactEmail = config('storefront.email');
-    $businessAddress = config('storefront.business_address');
-    $mapPinAddress = config('storefront.map_pin_address');
-    $mapUrl = config('storefront.map_url');
+    $storefrontSettings = null;
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('storefront_settings')) {
+            $storefrontSettings = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->current();
+        }
+    } catch (\Throwable) {
+        $storefrontSettings = null;
+    }
+    $settingValue = static function (string $field, string $fallback) use ($storefrontSettings): string {
+        $value = $storefrontSettings?->getAttribute($field);
+
+        return filled($value) ? (string) $value : $fallback;
+    };
+    $phoneDisplay = $settingValue('phone_display', (string) config('storefront.phone_display'));
+    $phoneHref = $settingValue('phone_href', (string) config('storefront.phone_href'));
+    $contactEmail = $settingValue('email', (string) config('storefront.email'));
+    $businessAddress = $settingValue('business_address', (string) config('storefront.business_address'));
+    $mapPinAddress = $settingValue('map_pin_address', (string) config('storefront.map_pin_address'));
+    $mapUrl = $settingValue('map_url', (string) config('storefront.map_url'));
     $mapEmbedUrl = \App\Support\GoogleMapsEmbedUrl::sanitize(
         data_get($page, 'map_embed_url')
         ?? data_get($page, 'metadata.map_embed_url')
-        ?? config('storefront.map_embed_url', '')
+        ?? $settingValue('map_embed_url', (string) config('storefront.map_embed_url', ''))
     );
 @endphp
 
@@ -54,7 +67,7 @@
 
                         <div class="et-map" data-map-card data-testid="map-card">
                             @if ($mapEmbedUrl !== null)
-                                <iframe class="et-map__frame" src="{{ $mapEmbedUrl }}" title="{{ __('pro.content.map_ready_title') }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen data-testid="map-iframe"></iframe>
+                                <iframe class="et-map__frame" src="{{ $mapEmbedUrl }}" title="{{ __('pro.content.map_ready_title') }}" referrerpolicy="no-referrer-when-downgrade" allowfullscreen data-testid="map-iframe"></iframe>
                                 <div class="et-map__loaded">
                                     <h2 class="et-h3">{{ __('pro.content.map_ready_title') }}</h2>
                                     <p>{{ __('pro.content.map_ready_text') }}</p>

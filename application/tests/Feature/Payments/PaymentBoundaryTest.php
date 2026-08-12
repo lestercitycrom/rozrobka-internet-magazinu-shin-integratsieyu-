@@ -10,6 +10,7 @@ use App\Modules\Orders\TransitionOrder;
 use App\Modules\Outbox\Models\OutboxMessage;
 use App\Modules\Payments\AuthorizePayment;
 use App\Modules\Payments\CaptureAuthorizedPayment;
+use App\Modules\Payments\Contracts\OrderPaymentReadiness;
 use App\Modules\Payments\Contracts\PaymentGateway;
 use App\Modules\Payments\DisabledPaymentGateway;
 use App\Modules\Payments\Exceptions\PaymentOperationRejected;
@@ -186,6 +187,10 @@ function bindFakePaymentGateway(): FakePaymentGateway
 {
     $fake = new FakePaymentGateway;
     app()->instance(PaymentGateway::class, $fake);
+    app()->instance(OrderPaymentReadiness::class, new class implements OrderPaymentReadiness
+    {
+        public function assertReady(Order $order): void {}
+    });
 
     return $fake;
 }

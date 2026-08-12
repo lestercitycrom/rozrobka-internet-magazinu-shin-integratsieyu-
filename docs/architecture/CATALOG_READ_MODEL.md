@@ -7,7 +7,7 @@
 - `search(CatalogQuery $query): CatalogPage`
 - `findPublicSku(string $sku): ?CatalogItem`
 
-`CatalogQuery` accepts product type, exact brand, text/SKU search, tire size/season filters, wheel dimensions/fitment filters, and `page`/`perPage` (bounded to 1–100). A `CatalogItem` contains identity/title/specification data, gross source-price records (`amount`, `currency`, `taxMode`, `observedAt`) and current national stock (`quantity`, `observedAt`). Net supplier prices are never exposed by the public read model. It intentionally does not calculate a selling price, infer a currency, or promise availability/delivery.
+`CatalogQuery` accepts product type, exact brand, text/SKU search, tire size/season filters, wheel dimensions/fitment filters, and `page`/`perPage` (bounded to 1–100). A `CatalogItem` contains identity/title/specification data, current Gross and Net source-price records (`amount`, `currency`, `taxMode`, `observedAt`) for server-side pricing, and current national stock (`quantity`, `observedAt`). Supplier source prices are not rendered to customers; only the price derived from an explicit pricing rule is public. The read model intentionally does not calculate a selling price, infer a currency, tax or fee formula, or promise availability/delivery.
 
 Both methods always require a published product, active supplier, and `catalog` SKU state. Draft/hidden products and `stock_only`, `needs_enrichment`, `missing`, and `inactive` SKUs never enter the public read model.
 

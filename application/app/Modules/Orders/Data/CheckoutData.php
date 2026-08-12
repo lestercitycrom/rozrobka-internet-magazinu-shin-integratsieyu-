@@ -15,5 +15,7 @@ final readonly class CheckoutData
         public FulfilmentMethod $fulfilmentMethod,
         public ?string $vehicleRegistration,
         public ?string $customerNote,
+        /** @var array{source:string,width:string,aspect:string,rim:string,confirmed_at:string}|null */
+        public ?array $fitmentSnapshot = null,
     ) {}
 }

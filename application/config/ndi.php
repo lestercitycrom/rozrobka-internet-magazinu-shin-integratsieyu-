@@ -6,6 +6,12 @@ return [
     'raw_disk' => env('NDI_RAW_DISK', 'local'),
     'raw_prefix' => env('NDI_RAW_PREFIX', 'ndi/raw'),
     'catalog_currency' => env('NDI_CATALOG_CURRENCY'),
+    'inbox_path' => env('NDI_INBOX_PATH'),
+    'inbox_stable_seconds' => (int) env('NDI_INBOX_STABLE_SECONDS', 120),
+    'stock_drop_guard_min_baseline' => (int) env('NDI_STOCK_DROP_GUARD_MIN_BASELINE', 50),
+    'inbox_retry_backoff_minutes' => (int) env('NDI_INBOX_RETRY_BACKOFF_MINUTES', 10),
+    'import_lock_seconds' => (int) env('NDI_IMPORT_LOCK_SECONDS', 1800),
+    'stock_minimum_previous_ratio' => (float) env('NDI_STOCK_MINIMUM_PREVIOUS_RATIO', 0.9),
     // Only NDI's documented image handler is admitted; arbitrary feed URLs are never fetched.
     'media_hosts' => array_values(array_filter(explode(',', (string) env('NDI_MEDIA_HOSTS', 'files.ndias.com')))),
     'media_max_bytes' => (int) env('NDI_MEDIA_MAX_BYTES', 5 * 1024 * 1024),

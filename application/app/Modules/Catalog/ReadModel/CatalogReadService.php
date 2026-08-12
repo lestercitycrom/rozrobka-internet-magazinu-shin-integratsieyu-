@@ -19,12 +19,6 @@ final class CatalogReadService
     public function search(CatalogQuery $filters): CatalogPage
     {
         $query = $this->baseQuery($filters);
-        if ($filters->inStockOnly) {
-            $query->whereExists(function ($stock): void {
-                $stock->selectRaw('1')->from('current_stock')->join('warehouses', 'warehouses.id', '=', 'current_stock.warehouse_id')
-                    ->whereColumn('current_stock.supplier_sku_id', 'supplier_skus.id')->where('warehouses.is_active', true)->where('current_stock.quantity', '>', 0);
-            });
-        }
         if ($filters->hasImageOnly) {
             $query->whereExists(function ($media): void {
                 $media->selectRaw('1')
@@ -94,6 +88,16 @@ final class CatalogReadService
         return $row === null ? null : $this->hydrateItems([$row])[0];
     }
 
+    /** @return list<string> */
+    public function publicSkuCodes(): array
+    {
+        return $this->baseQuery()
+            ->orderBy('supplier_skus.id')
+            ->pluck('supplier_skus.external_sku')
+            ->map(fn ($sku): string => (string) $sku)
+            ->all();
+    }
+
     /** @return Builder<SupplierSku> */
     private function baseQuery(?CatalogQuery $filters = null): Builder
     {
@@ -105,8 +109,10 @@ final class CatalogReadService
             ->leftJoin('tire_labels', 'tire_labels.product_id', '=', 'products.id')
             ->leftJoin('wheel_specs', 'wheel_specs.product_id', '=', 'products.id')
             ->where('products.publication_status', PublicationStatus::Published->value)
-            ->where('suppliers.is_active', true)
             ->where('supplier_skus.catalog_state', CatalogState::Catalog->value);
+
+        // Import history retains unavailable rows; every public surface shares this gate.
+        PublicCatalogAvailability::constrain($query);
 
         if ($filters === null) {
             return $query;
@@ -166,7 +172,6 @@ final class CatalogReadService
         $prices = SkuPrice::query()
             ->join('price_lists', 'price_lists.id', '=', 'sku_prices.price_list_id')
             ->whereIn('sku_prices.supplier_sku_id', $ids)
-            ->where('price_lists.tax_mode', TaxMode::Gross->value)
             ->where('price_lists.valid_from', '<=', now())
             ->where(function (Builder $query): void {
                 $query->whereNull('price_lists.valid_to')->orWhere('price_lists.valid_to', '>', now());
@@ -181,10 +186,12 @@ final class CatalogReadService
             ->selectRaw(
                 'current_stock.supplier_sku_id, '
                 ."MAX(CASE WHEN warehouses.code = 'norway' THEN current_stock.quantity END) as national_quantity, "
-                ."SUM(CASE WHEN warehouses.code <> 'norway' THEN current_stock.quantity ELSE 0 END) as location_quantity, "
+                ."SUM(CASE WHEN warehouses.code = 'tromso' THEN current_stock.quantity ELSE 0 END) as local_quantity, "
+                ."SUM(CASE WHEN warehouses.code NOT IN ('norway', 'tromso') THEN current_stock.quantity ELSE 0 END) as remote_location_quantity, "
                 .'MAX(current_stock.observed_at) as observed_at'
             )
             ->groupBy('current_stock.supplier_sku_id')
+            ->tap(fn (Builder $query) => StockFreshnessPolicy::constrain($query, 'current_stock.observed_at'))
             ->get()
             ->keyBy('supplier_sku_id');
         $media = MediaAssignment::query()
@@ -207,9 +214,15 @@ final class CatalogReadService
         return array_map(function (SupplierSku $sku) use ($prices, $stocks, $media, $nullableBool): CatalogItem {
             $stock = $stocks->get($sku->id);
             $asset = $media->get($sku->product_id);
-            $quantity = $stock === null
-                ? 0
-                : (int) ($stock->national_quantity ?? $stock->location_quantity ?? 0);
+            $rawLocalQuantity = (int) ($stock?->local_quantity ?? 0);
+            $remoteLocationQuantity = (int) ($stock?->remote_location_quantity ?? 0);
+            $physicalQuantity = $rawLocalQuantity + $remoteLocationQuantity;
+            // NDI's Norway value is the contracted, capped sellable quantity. Location rows are
+            // warehouse detail and must not be added on top of it.
+            $nationalQuantity = $stock?->national_quantity;
+            $quantity = $nationalQuantity === null ? $physicalQuantity : (int) $nationalQuantity;
+            $localQuantity = min($rawLocalQuantity, $quantity);
+            $remoteQuantity = max(0, $quantity - $localQuantity);
 
             return new CatalogItem(
                 sku: $sku->external_sku,
@@ -218,11 +231,11 @@ final class CatalogReadService
                 modelName: $sku->getAttribute('catalog_model_name'),
                 title: $sku->getAttribute('catalog_title'),
                 prices: $prices->get($sku->id, collect())
-                    ->unique(fn ($price) => $price->code.'|'.$price->currency)
+                    ->unique(fn ($price) => $price->code.'|'.$price->currency.'|'.$price->tax_mode)
                     ->map(fn ($price) => new CatalogPrice($price->amount, $price->currency, TaxMode::from($price->tax_mode), $price->observed_at, $price->code))
                     ->values()
                     ->all(),
-                stock: new CatalogStock($quantity, $stock?->observed_at),
+                stock: new CatalogStock($quantity, $stock?->observed_at, $localQuantity, $remoteQuantity),
                 tire: $sku->getAttribute('tire_rim_diameter_in') === null ? null : [
                     'width_mm' => $sku->getAttribute('tire_width_mm'), 'width_inch' => $sku->getAttribute('tire_width_inch'),
                     'aspect_ratio' => $sku->getAttribute('tire_aspect_ratio'), 'rim_diameter_in' => $sku->getAttribute('tire_rim_diameter_in'),

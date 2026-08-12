@@ -35,12 +35,14 @@ class E2eStorefrontSeeder extends Seeder
 
         $this->call([
             CatalogDemoSeeder::class,
+            ContentPageSeeder::class,
             ServicePageSeeder::class,
             SeoServicePageSeeder::class,
             CustomerWordingCorrectionSeeder::class,
             HomepageContentSeeder::class,
             PublicServicePriceSeeder::class,
             ServiceAddonSeeder::class,
+            E2eBookingCalendarSeeder::class,
         ]);
 
         ServiceAddon::query()->updateOrCreate(['code' => 'e2e-wheel-care'], [
@@ -100,6 +102,7 @@ class E2eStorefrontSeeder extends Seeder
                 'scope' => PricingRuleScope::Global,
                 'scope_key' => null,
                 'source_price_list_code' => 'public',
+                'source_tax_mode' => TaxMode::Gross,
                 'currency' => 'NOK',
                 'markup_basis_points' => 0,
                 'fixed_markup_minor' => 0,

@@ -13,6 +13,8 @@ final class OrderLineFingerprint
             ->map(fn ($line): array => [
                 'sku' => (string) $line->external_sku,
                 'quantity' => (int) $line->quantity,
+                'unit_price_minor' => (int) $line->unit_price_minor,
+                'currency' => (string) $line->currency,
             ])
             ->sortBy([['sku', 'asc'], ['quantity', 'asc']])
             ->values()

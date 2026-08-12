@@ -105,3 +105,37 @@ test('HTTP failures remain retryable through the outbox without exposing remote 
         ->and($message->fresh()->last_error_code)->toBe('delivery_failed')
         ->and($message->fresh()->last_error_code)->not->toContain('remote secret');
 });
+
+test('service request outbox types deliver actionable non PII snapshots to Notion and Telegram', function (): void {
+    configuredNotion();
+    configuredTelegram();
+    Http::fake([
+        'https://api.notion.com/v1/pages' => Http::response(['id' => 'page-id'], 200),
+        'https://api.telegram.org/*' => Http::response(['ok' => true], 200),
+    ]);
+    $payload = [
+        'event' => 'service_request_created', 'reference' => 'SR-TEST-123',
+        'service_slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile',
+        'preferred_date' => '2026-10-10', 'car_count' => 2, 'dekkhotell' => true,
+        'quote_min_minor' => 230000, 'quote_max_minor' => 230000, 'currency' => 'NOK',
+    ];
+    $notion = OutboxMessage::create([
+        'type' => 'notion.service_request_created', 'aggregate_type' => 'service_request', 'aggregate_id' => '1',
+        'idempotency_key' => 'notion:service-request-created:1', 'payload_encrypted' => $payload,
+        'status' => 'pending', 'attempts' => 0, 'available_at' => now(),
+    ]);
+    $telegram = OutboxMessage::create([
+        'type' => 'telegram.service_request_created', 'aggregate_type' => 'service_request', 'aggregate_id' => '1',
+        'idempotency_key' => 'telegram:service-request-created:1', 'payload_encrypted' => $payload,
+        'status' => 'pending', 'attempts' => 0, 'available_at' => now(),
+    ]);
+
+    expect(app(ProcessOutboxMessage::class)->handle($notion->id))->toBeTrue()
+        ->and(app(ProcessOutboxMessage::class)->handle($telegram->id))->toBeTrue();
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.notion.com/v1/pages'
+        && str_contains(json_encode($request->data(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), 'Ny tjenesteforespørsel SR-TEST-123')
+        && str_contains(json_encode($request->data(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), '2300.00 NOK'));
+    Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'api.telegram.org')
+        && str_contains((string) data_get($request->data(), 'text'), 'ny tjenesteforespørsel SR-TEST-123')
+        && str_contains((string) data_get($request->data(), 'text'), 'Biler: 2'));
+});

@@ -69,16 +69,17 @@ final class FrontendV2ContractTest extends TestCase
         self::assertStringNotContainsString("'dekkhotell'", $this->seasonalSlugBlock($view));
     }
 
-    public function test_current_seasonal_contract_keeps_only_backend_supported_vehicle_and_storage_names(): void
+    public function test_current_seasonal_contract_exposes_the_customer_approved_multi_car_and_storage_fields(): void
     {
         $view = file_get_contents(resource_path('views/storefront/requests/create.blade.php'));
 
         self::assertIsString($view);
-        foreach (['vehicle', 'registration_number', 'tire_size', 'dekkhotell', 'fulfilment', 'address', 'preferred_date', 'preferred_window'] as $name) {
+        foreach (['car_count', 'vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan', 'vehicle_2', 'storage_plan_2', 'fulfilment', 'address', 'preferred_date', 'preferred_window'] as $name) {
             self::assertStringContainsString('name="'.$name.'"', $view);
         }
-        self::assertStringNotContainsString('name="vehicles[', $view);
-        self::assertStringNotContainsString('name="storage_mode"', $view);
+        self::assertStringContainsString("['none', 'new', 'renew']", $view);
+        self::assertStringContainsString('data-seasonal-quote', $view);
+        self::assertStringNotContainsString('name="dekkhotell"', $view);
     }
 
     private function seasonalSlugBlock(string $view): string

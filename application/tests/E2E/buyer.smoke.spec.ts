@@ -10,13 +10,18 @@ test('buyer sees the safe vehicle lookup fallback and manual selection link', as
     await expect(page.getByRole('link', { name: 'Velg dekk manuelt', exact: true })).toHaveAttribute('href', /\/dekk$/);
 });
 
-test('seasonal service hero opens its own request flow', async ({ page }) => {
+test('seasonal service hero exposes both requested fulfilment paths', async ({ page }) => {
     await page.goto('/tjenester/mobilt-dekkskift');
-    const requestLink = page.getByTestId('service-hero-request');
-    await expect(requestLink).toHaveAttribute('href', /\/tjenester\/mobilt-dekkskift\/foresporsel$/);
-    await requestLink.click();
-    await expect(page).toHaveURL(/\/tjenester\/mobilt-dekkskift\/foresporsel$/);
+
+    const mobileLink = page.getByTestId('service-hero-mobile');
+    const workshopLink = page.getByTestId('service-hero-workshop');
+    await expect(mobileLink).toHaveAttribute('href', /\/tjenester\/mobilt-dekkskift\/foresporsel\?fulfilment=mobile$/);
+    await expect(workshopLink).toHaveAttribute('href', /\/tjenester\/mobilt-dekkskift\/foresporsel\?fulfilment=workshop$/);
+
+    await mobileLink.click();
+    await expect(page).toHaveURL(/\/tjenester\/mobilt-dekkskift\/foresporsel\?fulfilment=mobile$/);
     await expect(page.getByTestId('seasonal-service-request')).toBeVisible();
+    await expect(page.getByTestId('seasonal-step-location').locator('input[name="fulfilment"][value="mobile"]')).toBeChecked();
 });
 
 test('Norwegian storefront, catalog and product use stable scoped targets', async ({ page }, testInfo) => {

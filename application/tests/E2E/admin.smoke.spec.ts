@@ -18,6 +18,9 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await page.getByRole('navigation').getByRole('link', { name: 'Tjenesteforespørsler', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/service-requests/);
     await expect(page.getByRole('heading', { name: 'Tjenesteforespørsler', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Timeplan', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Timeplan og kapasitet', exact: true })).toBeVisible();
+    await expect(page.getByTestId('booking-interval-row')).toHaveCount(7);
     await page.getByRole('link', { name: 'Oversikt', exact: true }).click();
     await page.getByRole('link', { name: 'Tilleggstjenester', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/service-addons/);

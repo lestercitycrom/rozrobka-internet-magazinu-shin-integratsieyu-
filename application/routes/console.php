@@ -12,6 +12,10 @@ Artisan::command('inspire', function () {
 
 Schedule::command('easytire:outbox --limit=25')->everyMinute()->withoutOverlapping();
 Schedule::command('ndi:media:sync --limit=25')->hourly()->withoutOverlapping();
+Schedule::command('ndi:inbox:sync --limit=20')
+    ->everyTenMinutes()
+    ->when(fn (): bool => filled(config('ndi.inbox_path')))
+    ->withoutOverlapping();
 Schedule::call(fn () => Cache::forever('easytire.health.scheduler_heartbeat_at', now()->toIso8601String()))
     ->name('health:scheduler-heartbeat')
     ->everyMinute()

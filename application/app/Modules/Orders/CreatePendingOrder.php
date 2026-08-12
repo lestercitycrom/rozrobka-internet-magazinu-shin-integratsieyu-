@@ -48,6 +48,7 @@ final class CreatePendingOrder
                 'customer_email' => mb_strtolower($data->customerEmail),
                 'customer_phone' => $data->customerPhone,
                 'vehicle_registration' => $data->vehicleRegistration,
+                'fitment_snapshot' => $data->fitmentSnapshot,
                 'customer_note' => $data->customerNote,
                 'terms_accepted_at' => $now,
                 'privacy_accepted_at' => $now,

@@ -37,6 +37,12 @@ final class CartResolver
                 continue;
             }
 
+            if (! $item->stock->isFresh()) {
+                $issues[] = new CartIssue($sku, $quantity, 'stock_stale');
+
+                continue;
+            }
+
             $price = $this->pricing->forItem($item);
             if ($price === null) {
                 $issues[] = new CartIssue($sku, $quantity, 'price_unavailable');

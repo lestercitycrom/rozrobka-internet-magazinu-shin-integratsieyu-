@@ -36,6 +36,16 @@
                     </div>
                 @endforeach
                 <div>
+                    <label for="source_tax_mode" class="block text-sm font-bold">{{ __('pricing_tax.source_tax_mode') }}</label>
+                    <select id="source_tax_mode" name="source_tax_mode" required class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 text-sm @error('source_tax_mode') border-red-600 @enderror" aria-describedby="source_tax_mode-help source_tax_mode-error">
+                        @foreach ($taxModes as $taxMode)
+                            <option value="{{ $taxMode->value }}" @selected(old('source_tax_mode', $rule->source_tax_mode?->value ?? 'gross') === $taxMode->value)>{{ __('pricing_tax.tax_modes.'.$taxMode->value) }}</option>
+                        @endforeach
+                    </select>
+                    <p id="source_tax_mode-help" class="mt-2 text-sm text-easytire-muted">{{ __('pricing_tax.source_tax_mode_help') }}</p>
+                    @error('source_tax_mode')<p id="source_tax_mode-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
+                </div>
+                <div>
                     <label for="scope" class="block text-sm font-bold">{{ __('pricing.scope') }}</label>
                     <select id="scope" name="scope" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 text-sm @error('scope') border-red-600 @enderror" aria-describedby="scope-error">@foreach ($scopes as $scope)<option value="{{ $scope->value }}" @selected(old('scope', $rule->scope?->value ?? 'global') === $scope->value)>{{ $scope->value }}</option>@endforeach</select>
                     @error('scope')<p id="scope-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror

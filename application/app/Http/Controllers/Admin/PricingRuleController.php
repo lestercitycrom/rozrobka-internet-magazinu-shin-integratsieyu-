@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Modules\Catalog\Enums\TaxMode;
 use App\Modules\Pricing\Enums\PricingRuleScope;
 use App\Modules\Pricing\Models\PricingRule;
 use Illuminate\Http\Request;
@@ -19,7 +20,11 @@ final class PricingRuleController
 
     public function create()
     {
-        return view('admin.pricing-rules.form', ['rule' => new PricingRule, 'scopes' => PricingRuleScope::cases()]);
+        return view('admin.pricing-rules.form', [
+            'rule' => new PricingRule,
+            'scopes' => PricingRuleScope::cases(),
+            'taxModes' => TaxMode::cases(),
+        ]);
     }
 
     public function store(Request $request)
@@ -33,7 +38,11 @@ final class PricingRuleController
 
     public function edit(PricingRule $pricingRule)
     {
-        return view('admin.pricing-rules.form', ['rule' => $pricingRule, 'scopes' => PricingRuleScope::cases()]);
+        return view('admin.pricing-rules.form', [
+            'rule' => $pricingRule,
+            'scopes' => PricingRuleScope::cases(),
+            'taxModes' => TaxMode::cases(),
+        ]);
     }
 
     public function update(Request $request, PricingRule $pricingRule)
@@ -47,7 +56,7 @@ final class PricingRuleController
 
     private function validated(Request $request): array
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'scope' => ['required', Rule::enum(PricingRuleScope::class)], 'scope_key' => ['nullable', 'string', 'max:255'], 'source_price_list_code' => ['required', 'string', 'max:64'], 'currency' => ['required', 'string', 'size:3', 'alpha'], 'markup_percent' => ['required', 'regex:/^\d{1,3}(?:[.,]\d{1,2})?$/'], 'fixed_markup_nok' => ['required', 'regex:/^\d{1,7}(?:[.,]\d{1,2})?$/'], 'rounding_nok' => ['required', 'regex:/^\d{1,5}(?:[.,]\d{1,2})?$/'], 'priority' => ['required', 'integer', 'between:-100000,100000'], 'is_active' => ['nullable', 'boolean'], 'starts_at' => ['nullable', 'date'], 'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'scope' => ['required', Rule::enum(PricingRuleScope::class)], 'scope_key' => ['nullable', 'string', 'max:255'], 'source_price_list_code' => ['required', 'string', 'max:64'], 'source_tax_mode' => ['required', Rule::enum(TaxMode::class)], 'currency' => ['required', 'string', 'size:3', 'alpha'], 'markup_percent' => ['required', 'regex:/^\d{1,3}(?:[.,]\d{1,2})?$/'], 'fixed_markup_nok' => ['required', 'regex:/^\d{1,7}(?:[.,]\d{1,2})?$/'], 'rounding_nok' => ['required', 'regex:/^\d{1,5}(?:[.,]\d{1,2})?$/'], 'priority' => ['required', 'integer', 'between:-100000,100000'], 'is_active' => ['nullable', 'boolean'], 'starts_at' => ['nullable', 'date'], 'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at']]);
         if ($data['scope'] === PricingRuleScope::Global->value) {
             $data['scope_key'] = null;
         } elseif (blank($data['scope_key'] ?? null)) {
@@ -97,6 +106,7 @@ final class PricingRuleController
             ->where('priority', $data['priority'])
             ->where('scope', $data['scope'])
             ->where('source_price_list_code', $data['source_price_list_code'])
+            ->where('source_tax_mode', $data['source_tax_mode'])
             ->where('currency', $data['currency'])
             ->when(
                 $data['scope_key'] === null,

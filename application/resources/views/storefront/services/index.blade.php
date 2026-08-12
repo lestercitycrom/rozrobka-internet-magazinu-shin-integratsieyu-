@@ -1,5 +1,6 @@
 @php
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+    $contact = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->contact();
     $serviceIcon = static function ($service): string {
         $slug = mb_strtolower((string) data_get($service, 'slug'));
 
@@ -24,7 +25,7 @@
         </div>
     </section>
 
-    <section class="et-v3-section et-v3-section--white">
+    <section class="et-v3-section et-v3-section--white" id="additional-services">
         <div class="et-container">
             <div class="et-v3-section-head">
                 <div>
@@ -69,7 +70,7 @@
                 <p class="et-eyebrow">{{ __('pro.services.request_kicker') }}</p>
                 <h2 class="et-h2">{{ __('pro.services.request_title') }}</h2>
                 <p class="et-lead">{{ __('pro.services.request_text') }}</p>
-                <a class="et-btn et-btn--primary" href="tel:+4793958270">{{ __('pro.home.call') }} <x-icon name="phone" :size="18" /></a>
+                <a class="et-btn et-btn--primary" href="tel:{{ $contact['phone_href'] }}">{{ __('services.call_cta') }} {{ $contact['phone_display'] }} <x-icon name="phone" :size="18" /></a>
             </div>
             <div class="et-v3-services-cta__media">
                 <img src="/brand/workshop-alt.webp" width="1400" height="900" loading="lazy" alt="{{ __('pro.content.workshop_image_alt') }}">

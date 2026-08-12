@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Catalog\ReadModel\CatalogReadService;
+use App\Modules\Content\Models\ContentPage;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\MediaAssignment;
 use App\Modules\Orders\Models\Order;
@@ -41,5 +42,6 @@ test('the restricted E2E seed is repeatable and provides a priced buyer and admi
         ->and($dimensions)->not->toBeFalse()
         ->and($dimensions[0])->toBeGreaterThan(0)
         ->and($dimensions[1])->toBeGreaterThan(0)
+        ->and(ContentPage::query()->where('publication_status', 'published')->count())->toBe(4)
         ->and(MediaAssignment::query()->where('media_asset_id', $asset->id)->where('role', 'primary')->exists())->toBeTrue();
 });

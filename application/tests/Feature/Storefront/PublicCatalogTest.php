@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Modules\Cart\CartResolver;
+use App\Modules\Cart\SessionCart;
 use App\Modules\Catalog\Enums\CatalogState;
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\Enums\PublicationStatus;
@@ -15,6 +17,8 @@ use App\Modules\Catalog\Models\SupplierSku;
 use App\Modules\Catalog\Models\Warehouse;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\MediaAssignment;
+use App\Modules\Pricing\Enums\PricingRuleScope;
+use App\Modules\Pricing\Models\PricingRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -207,18 +211,110 @@ test('product detail presents supplier technical data and EU tyre label', functi
         ->assertSee('69 dB');
 });
 
+test('public catalog suppresses zero stock and distinguishes Tromso from remote NDI stock', function (): void {
+    $local = storefrontProduct(ProductType::Tire, 'SKU-LOCAL-STOCK', [
+        'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
+        'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer',
+    ]);
+    $remote = storefrontProduct(ProductType::Tire, 'SKU-REMOTE-STOCK', [
+        'width_mm' => '215.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '17.00',
+        'load_index' => '94', 'speed_symbol' => 'V', 'season' => 'Summer',
+    ]);
+    $hidden = storefrontProduct(ProductType::Tire, 'SKU-ZERO-STOCK', [
+        'width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00',
+        'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter',
+    ]);
+    $inactive = storefrontProduct(ProductType::Tire, 'SKU-INACTIVE-SUPPLIER', [
+        'width_mm' => '225.00', 'aspect_ratio' => '45.00', 'rim_diameter_in' => '18.00',
+        'load_index' => '95', 'speed_symbol' => 'V', 'season' => 'Summer',
+    ], 'storefront-inactive');
+    DB::table('suppliers')->where('id', $inactive->supplier_id)->update(['is_active' => false]);
+
+    CurrentStock::query()->where('supplier_sku_id', $remote->id)->update(['quantity' => 0]);
+    $remoteWarehouse = Warehouse::query()->firstOrCreate(
+        ['supplier_id' => $remote->supplier_id, 'code' => 'trondheim'],
+        ['name' => 'Trondheim', 'is_active' => true],
+    );
+    CurrentStock::create([
+        'supplier_sku_id' => $remote->id,
+        'warehouse_id' => $remoteWarehouse->id,
+        'quantity' => 4,
+        'observed_at' => now(),
+        'source_artifact_id' => storefrontArtifact($remote->supplier_id),
+    ]);
+    CurrentStock::query()->where('supplier_sku_id', $hidden->id)->update(['quantity' => 0]);
+
+    $this->get('/dekk')
+        ->assertOk()
+        ->assertSee('SKU-LOCAL-STOCK')
+        ->assertSee('På lager i Tromsø')
+        ->assertSee('SKU-REMOTE-STOCK')
+        ->assertSee('Tilgjengelig fra annet NDI-lager')
+        ->assertDontSee('SKU-ZERO-STOCK')
+        ->assertDontSee('SKU-INACTIVE-SUPPLIER')
+        ->assertDontSee('value="225"', false);
+
+    $this->get('/produkter/SKU-LOCAL-STOCK')->assertOk()->assertSee('2 på lager i Tromsø');
+    $this->get('/produkter/SKU-REMOTE-STOCK')->assertOk()->assertSee('På annet NDI-lager');
+    $this->get('/produkter/SKU-ZERO-STOCK')->assertNotFound();
+    $this->get('/produkter/SKU-INACTIVE-SUPPLIER')->assertNotFound();
+    $this->getJson('/dekk/suggestions?q=SKU-ZERO')->assertOk()->assertExactJson(['suggestions' => []]);
+    $this->getJson('/dekk/suggestions?q=SKU-INACTIVE')->assertOk()->assertExactJson(['suggestions' => []]);
+    $this->get('/sitemap.xml')->assertDontSee('SKU-ZERO-STOCK')->assertDontSee('SKU-INACTIVE-SUPPLIER')->assertSee('SKU-LOCAL-STOCK');
+});
+
+test('all public catalog surfaces exclude stale stock while fresh stock remains available', function (): void {
+    storefrontProduct(ProductType::Tire, 'SKU-FRESH-STOCK', [
+        'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
+        'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer',
+    ]);
+    $stale = storefrontProduct(ProductType::Tire, 'SKU-STALE-STOCK', [
+        'width_mm' => '305.00', 'aspect_ratio' => '30.00', 'rim_diameter_in' => '21.00',
+        'load_index' => '104', 'speed_symbol' => 'Y', 'season' => 'Summer',
+    ]);
+    $staleBrand = Brand::create(['canonical_name' => 'StaleOnly', 'slug' => 'stale-only']);
+    $stale->product()->update(['brand_id' => $staleBrand->id]);
+    PricingRule::create([
+        'name' => 'Public', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'public',
+        'currency' => 'NOK', 'markup_basis_points' => 0, 'fixed_markup_minor' => 0,
+        'rounding_increment_minor' => 1, 'priority' => 1, 'is_active' => true,
+    ]);
+    config()->set('storefront.stock_max_age_minutes', 180);
+    CurrentStock::query()->where('supplier_sku_id', $stale->id)->update(['observed_at' => now()->subMinutes(181)]);
+
+    $this->get('/dekk')
+        ->assertOk()
+        ->assertSee('SKU-FRESH-STOCK')
+        ->assertDontSee('SKU-STALE-STOCK')
+        ->assertDontSee('StaleOnly')
+        ->assertDontSee('value="305"', false);
+    $this->get('/produkter/SKU-FRESH-STOCK')->assertOk();
+    $this->get('/produkter/SKU-STALE-STOCK')->assertNotFound();
+    $this->getJson('/dekk/suggestions?q=SKU-FRESH')->assertOk()->assertJsonFragment(['sku' => 'SKU-FRESH-STOCK']);
+    $this->getJson('/dekk/suggestions?q=SKU-STALE')->assertOk()->assertExactJson(['suggestions' => []]);
+    $this->get('/sitemap.xml')->assertSee('SKU-FRESH-STOCK')->assertDontSee('SKU-STALE-STOCK');
+
+    app(SessionCart::class)->add('SKU-STALE-STOCK', 1);
+    $cart = app(CartResolver::class)->resolve();
+    expect($cart->lines)->toBe([])
+        ->and($cart->issues)->toHaveCount(1)
+        ->and($cart->issues[0]->reason)->toBe('product_unavailable')
+        ->and($cart->isCheckoutReady())->toBeFalse();
+});
+
 test('product detail normalizes confirmed tire data and hides uncontracted supplier text in NB and RU', function (): void {
     config()->set('storefront.ru_preview_enabled', true);
     storefrontProduct(ProductType::Tire, '063965255551871001', [
         'width_mm' => '255.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '18.00',
         'load_index' => '109', 'speed_symbol' => 'Y', 'season' => 'Summer',
-        'construction' => 'PCR radial tyre > 240 km/h', 'winter_type' => 'Winter tyre type',
+        'construction' => 'PCR radial tyre > 240 km/h', 'winter_type' => 'Winter tyre type', 'production_year' => 'DOT22',
     ]);
 
     $norwegian = $this->get('/produkter/063965255551871001')->assertOk();
     $norwegian
         ->assertSee('255/55 R18')
         ->assertSee('Radialdekk')
+        ->assertSee('2022')
         ->assertDontSee('255.00/55.00 R18.00')
         ->assertDontSee('PCR radial tyre > 240 km/h')
         ->assertDontSee('Winter tyre type')
@@ -229,6 +325,7 @@ test('product detail normalizes confirmed tire data and hides uncontracted suppl
     $russian
         ->assertSee('255/55 R18')
         ->assertSee('Радиальная шина')
+        ->assertSee('2022')
         ->assertDontSee('PCR radial tyre > 240 km/h')
         ->assertDontSee('Winter tyre type')
         ->assertDontSee('Тип зимней шины');
@@ -259,9 +356,9 @@ test('wheel detail normalizes fitment values and marks the wheel navigation in N
     expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.wheels.index'), 'Диски'))->toBe(2);
 });
 
-function storefrontProduct(ProductType $type, string $skuCode, array $spec): SupplierSku
+function storefrontProduct(ProductType $type, string $skuCode, array $spec, string $supplierCode = 'storefront-ndi'): SupplierSku
 {
-    $supplier = Supplier::query()->firstOrCreate(['code' => 'storefront-ndi'], ['name' => 'Storefront NDI', 'is_active' => true]);
+    $supplier = Supplier::query()->firstOrCreate(['code' => $supplierCode], ['name' => 'Storefront NDI', 'is_active' => true]);
     $brand = Brand::query()->firstOrCreate(['canonical_name' => 'Nordlys'], ['slug' => 'nordlys']);
     $product = Product::create([
         'product_type' => $type, 'brand_id' => $brand->id, 'model_name' => 'Arctic', 'title' => 'Nordlys Arctic',

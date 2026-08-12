@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminLocaleController;
+use App\Http\Controllers\Admin\BookingCalendarController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ContentPageController;
+use App\Http\Controllers\Admin\HomepageBusinessPartnerController;
 use App\Http\Controllers\Admin\HomepagePromotionController;
+use App\Http\Controllers\Admin\HomepageRatingSummaryController;
 use App\Http\Controllers\Admin\HomepageReviewController;
 use App\Http\Controllers\Admin\Identity\AdminLoginController;
 use App\Http\Controllers\Admin\Identity\AdminSessionController;
@@ -17,6 +20,7 @@ use App\Http\Controllers\Admin\PublicServicePriceController;
 use App\Http\Controllers\Admin\ServiceAddonController;
 use App\Http\Controllers\Admin\ServicePageController;
 use App\Http\Controllers\Admin\ServiceRequestController;
+use App\Http\Controllers\Admin\StorefrontSettingsController;
 use App\Http\Controllers\Admin\SystemHealthController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,9 +47,24 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests.index');
         Route::get('/service-requests/{request}', [ServiceRequestController::class, 'show'])->name('service-requests.show');
         Route::put('/service-requests/{request}', [ServiceRequestController::class, 'update'])->name('service-requests.update');
+        Route::get('/booking-calendar', [BookingCalendarController::class, 'index'])->name('booking-calendar.index');
+        Route::get('/booking-calendar/intervals/create', [BookingCalendarController::class, 'createInterval'])->name('booking-calendar.intervals.create');
+        Route::post('/booking-calendar/intervals', [BookingCalendarController::class, 'storeInterval'])->name('booking-calendar.intervals.store');
+        Route::get('/booking-calendar/intervals/{interval}/edit', [BookingCalendarController::class, 'editInterval'])->name('booking-calendar.intervals.edit');
+        Route::put('/booking-calendar/intervals/{interval}', [BookingCalendarController::class, 'updateInterval'])->name('booking-calendar.intervals.update');
+        Route::delete('/booking-calendar/intervals/{interval}', [BookingCalendarController::class, 'destroyInterval'])->name('booking-calendar.intervals.destroy');
+        Route::get('/booking-calendar/blackouts/create', [BookingCalendarController::class, 'createBlackout'])->name('booking-calendar.blackouts.create');
+        Route::post('/booking-calendar/blackouts', [BookingCalendarController::class, 'storeBlackout'])->name('booking-calendar.blackouts.store');
+        Route::get('/booking-calendar/blackouts/{blackout}/edit', [BookingCalendarController::class, 'editBlackout'])->name('booking-calendar.blackouts.edit');
+        Route::put('/booking-calendar/blackouts/{blackout}', [BookingCalendarController::class, 'updateBlackout'])->name('booking-calendar.blackouts.update');
+        Route::delete('/booking-calendar/blackouts/{blackout}', [BookingCalendarController::class, 'destroyBlackout'])->name('booking-calendar.blackouts.destroy');
         Route::resource('content-pages', ContentPageController::class)->except('show');
         Route::resource('homepage-promotions', HomepagePromotionController::class)->except('show');
         Route::resource('homepage-reviews', HomepageReviewController::class)->except('show');
+        Route::resource('homepage-rating-summaries', HomepageRatingSummaryController::class)->except('show');
+        Route::resource('homepage-business-partners', HomepageBusinessPartnerController::class)->except('show');
+        Route::get('/storefront-settings', [StorefrontSettingsController::class, 'edit'])->name('storefront-settings.edit');
+        Route::put('/storefront-settings', [StorefrontSettingsController::class, 'update'])->name('storefront-settings.update');
         Route::resource('pricing-rules', PricingRuleController::class)->except('show', 'destroy');
         Route::resource('public-service-prices', PublicServicePriceController::class)->except('show');
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');

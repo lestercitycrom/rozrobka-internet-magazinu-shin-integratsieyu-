@@ -37,7 +37,7 @@ class ServicePageSeeder extends Seeder
             'slug' => $slug,
             'sort_order' => $sortOrder,
             'publication_status' => ServicePagePublicationStatus::Published,
-            'request_flow' => in_array($slug, ['mobilt-dekkskift', 'dekkverksted'], true)
+            'request_flow' => in_array($slug, ['mobilt-dekkskift', 'dekkverksted', 'dekkhotell'], true)
                 ? ServiceRequestFlow::Seasonal
                 : ServiceRequestFlow::Generic,
             'title_nb' => $titleNb, 'excerpt_nb' => $excerptNb, 'body_nb' => $bodyNb, 'seo_title_nb' => $seoTitleNb, 'seo_description_nb' => $seoDescriptionNb,

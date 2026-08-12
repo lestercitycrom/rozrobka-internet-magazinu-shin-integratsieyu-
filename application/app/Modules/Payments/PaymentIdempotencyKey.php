@@ -6,9 +6,24 @@ use App\Modules\Orders\Models\Order;
 
 final class PaymentIdempotencyKey
 {
+    public static function authorizeFor(Order $order): string
+    {
+        return self::for($order, 'authorize');
+    }
+
+    public static function captureFor(Order $order): string
+    {
+        return self::for($order, 'capture');
+    }
+
     public static function voidFor(Order $order): string
     {
-        $hex = substr(hash('sha256', 'easytire:payment:void:'.$order->getKey()), 0, 32);
+        return self::for($order, 'void');
+    }
+
+    private static function for(Order $order, string $operation): string
+    {
+        $hex = substr(hash('sha256', "easytire:payment:{$operation}:".$order->getKey()), 0, 32);
         $hex[12] = '5';
         $hex[16] = dechex((hexdec($hex[16]) & 0x3) | 0x8);
 

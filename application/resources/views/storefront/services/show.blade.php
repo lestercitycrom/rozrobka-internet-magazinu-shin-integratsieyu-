@@ -2,9 +2,29 @@
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
     $heroUrl = $service->hero['url'] ?? '/brand/workshop-alt.webp';
     $heroAlt = $service->hero['alt'] ?? __('pro.content.workshop_image_alt');
+    $contact = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->contact();
+    $phoneHref = $contact['phone_href'];
+    $phoneDisplay = $contact['phone_display'];
+    $isPhoneOnlyService = $service->slug === 'dekkreparasjon';
+    $hasSeasonalIntentChoice = $service->slug === 'mobilt-dekkskift';
+    $requestRouteName = $prefix.'requests.create';
+    $mobileRequestHref = route($requestRouteName, ['slug' => $service->slug, 'fulfilment' => 'mobile']);
+    $workshopRequestHref = route($requestRouteName, ['slug' => $service->slug, 'fulfilment' => 'workshop']);
+    $primaryCtaHref = $isPhoneOnlyService
+        ? 'tel:'.$phoneHref
+        : route($requestRouteName, $service->slug);
+    $primaryCtaLabel = $isPhoneOnlyService ? __('services.call_cta') : __('services.request_cta');
+    $primaryCtaTestId = $isPhoneOnlyService ? 'service-hero-call' : 'service-hero-request';
+    $serviceSchema = [
+        '@context' => 'https://schema.org', '@type' => 'Service',
+        'name' => $service->title, 'description' => $service->seoDescription ?: $service->excerpt,
+        'url' => $canonicalUrl ?? url()->current(),
+        'provider' => ['@id' => url('/').'#business'],
+        'areaServed' => ['@type' => 'City', 'name' => 'Tromsø'],
+    ];
 @endphp
 
-<x-layouts.storefront :title="$service->seoTitle ?? ('EasyTire | '.$service->title)" :description="$service->seoDescription" :canonical="$canonicalUrl ?? null" active-section="services">
+<x-layouts.storefront :title="$service->seoTitle ?? ('EasyTire | '.$service->title)" :description="$service->seoDescription" :canonical="$canonicalUrl ?? null" :image="$heroUrl" :structured-data="[$serviceSchema]" active-section="services">
     <article>
         <section class="et-service-hero">
             <div class="et-service-hero__content">
@@ -13,8 +33,13 @@
                 <h1 class="et-h1">{{ $service->title }}</h1>
                 @if ($service->excerpt)<p class="et-lead et-lead--light">{{ $service->excerpt }}</p>@endif
                 <div class="et-page-actions" style="margin-top:1.5rem">
-                    <a class="et-btn et-btn--primary" href="{{ route($prefix.'requests.create', $service->slug) }}" data-testid="service-hero-request">{{ __('services.request_cta') }}</a>
-                    <a class="et-btn et-btn--ghost" href="tel:+4793958270">{{ __('pro.home.call') }}</a>
+                    @if ($hasSeasonalIntentChoice)
+                        <a class="et-btn et-btn--primary" href="{{ $mobileRequestHref }}" data-testid="service-hero-mobile">{{ __('services.mobile_intent_cta') }}</a>
+                        <a class="et-btn et-btn--ghost" href="{{ $workshopRequestHref }}" data-testid="service-hero-workshop">{{ __('services.workshop_intent_cta') }}</a>
+                    @else
+                        <a class="et-btn et-btn--primary" href="{{ $primaryCtaHref }}" data-testid="{{ $primaryCtaTestId }}">{{ $primaryCtaLabel }}</a>
+                        @unless ($isPhoneOnlyService)<a class="et-btn et-btn--ghost" href="tel:{{ $phoneHref }}">{{ __('services.call_cta') }} {{ $phoneDisplay }}</a>@endunless
+                    @endif
                 </div>
             </div>
             <div class="et-service-hero__media">
@@ -28,7 +53,14 @@
                     <a href="#service-details">{{ __('storefront.product_information') }}</a>
                     <a href="#service-request">{{ __('pro.services.request_kicker') }}</a>
                 </nav>
-                <a class="et-btn et-btn--primary et-btn--small" href="{{ route($prefix.'requests.create', $service->slug) }}" data-testid="service-anchor-request">{{ __('services.request_cta') }}</a>
+                @if ($hasSeasonalIntentChoice)
+                    <div class="et-page-actions">
+                        <a class="et-btn et-btn--primary et-btn--small" href="{{ $mobileRequestHref }}" data-testid="service-anchor-mobile">{{ __('services.mobile_intent_cta') }}</a>
+                        <a class="et-btn et-btn--ghost et-btn--small" href="{{ $workshopRequestHref }}" data-testid="service-anchor-workshop">{{ __('services.workshop_intent_cta') }}</a>
+                    </div>
+                @else
+                    <a class="et-btn et-btn--primary et-btn--small" href="{{ $primaryCtaHref }}" data-testid="{{ $isPhoneOnlyService ? 'service-anchor-call' : 'service-anchor-request' }}">{{ $primaryCtaLabel }}</a>
+                @endif
             </div>
         </div>
 
@@ -42,6 +74,22 @@
                     @elseif ($service->excerpt)
                         <p class="et-lead">{{ $service->excerpt }}</p>
                     @endif
+                    @if (($servicePrices ?? collect())->isNotEmpty())
+                        <section class="et-price-panel" style="margin-top:2rem" aria-labelledby="service-price-heading" data-testid="service-price-list">
+                            <h2 class="et-h3" id="service-price-heading">{{ __('services.current_prices') }}</h2>
+                            @foreach ($servicePrices as $categoryPrices)
+                                @php($category = $categoryPrices->first())
+                                <h3 style="margin:1.2rem 0 .4rem">{{ $category->localized('category_title', app()->getLocale()) }}</h3>
+                                @foreach ($categoryPrices as $price)
+                                    <div class="et-public-price-row">
+                                        <div><strong>{{ $price->localized('title', app()->getLocale()) }}</strong>@if($description = $price->localized('description', app()->getLocale()))<p>{{ $description }}</p>@endif</div>
+                                        <strong class="et-public-price-row__amount">{{ number_format($price->price_minor / 100, 0, ',', ' ') }} {{ $price->currency }}</strong>
+                                    </div>
+                                @endforeach
+                            @endforeach
+                            <a class="et-btn et-btn--link" href="{{ route($prefix.'pricing.index') }}">{{ __('services.all_prices') }}</a>
+                        </section>
+                    @endif
                 </div>
                 <aside class="et-sticky-cta" id="service-request">
                     <p class="et-eyebrow">{{ __('pro.services.request_kicker') }}</p>
@@ -51,7 +99,12 @@
                         <span class="et-alert__icon" aria-hidden="true">i</span>
                         <div>{{ __('booking.intro') }}</div>
                     </div>
-                    <a class="et-btn et-btn--primary et-btn--full" href="{{ route($prefix.'requests.create', $service->slug) }}" data-testid="service-aside-request">{{ __('services.request_cta') }}</a>
+                    @if ($hasSeasonalIntentChoice)
+                        <a class="et-btn et-btn--primary et-btn--full" href="{{ $mobileRequestHref }}" data-testid="service-aside-mobile">{{ __('services.mobile_intent_cta') }}</a>
+                        <a class="et-btn et-btn--ghost et-btn--full" href="{{ $workshopRequestHref }}" data-testid="service-aside-workshop" style="margin-top:.6rem">{{ __('services.workshop_intent_cta') }}</a>
+                    @else
+                        <a class="et-btn et-btn--primary et-btn--full" href="{{ $primaryCtaHref }}" data-testid="{{ $isPhoneOnlyService ? 'service-aside-call' : 'service-aside-request' }}">{{ $primaryCtaLabel }}</a>
+                    @endif
                 </aside>
             </div>
         </section>

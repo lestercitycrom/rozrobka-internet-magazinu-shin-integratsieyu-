@@ -4,6 +4,7 @@ namespace App\Modules\Catalog\Presentation;
 
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\ReadModel\CatalogItem;
+use App\Modules\Catalog\Support\ProductionYearNormalizer;
 
 final readonly class CatalogItemPresenter
 {
@@ -95,7 +96,7 @@ final readonly class CatalogItemPresenter
         $this->appendBoolean($details, 'storefront.run_flat', $this->item->tire['run_flat'] ?? null);
         $this->appendBoolean($details, 'storefront.three_peak_mountain_snowflake', $this->item->tire['three_peak_mountain_snowflake'] ?? null);
         $this->appendBoolean($details, 'storefront.ice_grip', $this->item->tire['ice_grip'] ?? null);
-        $this->append($details, 'storefront.production_year', $this->token($this->item->tire['production_year'] ?? null, '/^(?:19|20)\d{2}$/'));
+        $this->append($details, 'storefront.production_year', ProductionYearNormalizer::normalize($this->item->tire['production_year'] ?? null));
 
         // NDI has not supplied an enum/meaning contract for WINTERTYRE. Until
         // that exists, exposing its free text risks showing a column caption or

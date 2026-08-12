@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'title' => 'Butikkfront', 'heading' => 'Butikkfront',
+    'intro' => 'Rediger de faste tekstblokkene på forsiden og i dekk- og felgbutikken. Tjenester, tilbud, omtaler og vanlige innholdssider har egne områder i menyen.',
+    'hero' => 'Første seksjon på forsiden', 'hero_hint' => 'Tomt felt bruker den nåværende godkjente teksten. Lenker må være en intern sti eller en vanlig http/https-lenke.',
+    'contact' => 'Kontakt og kart', 'contact_hint' => 'Kartets innebyggingsadresse må være en https-adresse. Hvis feltet er tomt, brukes dagens standardkart.',
+    'store' => 'Dekk- og felgbutikken', 'store_hint' => 'Dette gjelder introduksjonen og de tre fordelene under oppslaget. SEO-tittel og SEO-beskrivelse styres fortsatt av den godkjente SEO-planen.',
+    'locale_nb' => 'Norsk innhold', 'locale_ru' => 'Russisk testoversettelse', 'save' => 'Lagre butikkfront', 'saved' => 'Butikkfronten er lagret.',
+    'hero_kicker_nb' => 'Overtekst', 'hero_title_nb' => 'Hovedtittel', 'hero_text_nb' => 'Introduksjon', 'hero_primary_label_nb' => 'Primær knapp', 'hero_secondary_label_nb' => 'Sekundær knapp',
+    'hero_kicker_ru' => 'Overtekst', 'hero_title_ru' => 'Hovedtittel', 'hero_text_ru' => 'Introduksjon', 'hero_primary_label_ru' => 'Primær knapp', 'hero_secondary_label_ru' => 'Sekundær knapp',
+    'hero_primary_url' => 'Lenke for primær knapp', 'hero_secondary_url' => 'Lenke for sekundær knapp', 'internal_url_hint' => 'For eksempel /tjenester eller https://…',
+    'hero_media' => 'Forsidebilde', 'default_hero_media' => 'Bruk dagens forsidebilde', 'hero_media_hint' => 'Last opp bildet i mediebiblioteket først. Bildets norske/russiske alt-tekst brukes automatisk.',
+    'phone_display' => 'Telefon som vises', 'phone_href' => 'Telefonnummer for lenken', 'email' => 'E-post', 'business_address' => 'Besøksadresse', 'map_pin_address' => 'Kartets innkjøringsadresse', 'map_url' => 'Ekstern Google Maps-lenke', 'map_embed_url' => 'Innebygd kartadresse',
+    'store_heading' => 'Butikkens overskrift', 'store_lead' => 'Butikkens introduksjon', 'benefit' => 'Fordel :number', 'benefit_title' => 'Tittel', 'benefit_text' => 'Tekst',
+    'invalid_link' => 'Lenken må være en intern sti eller en gyldig http/https-lenke.',
+    'invalid_map_embed' => 'Kartets innebyggingsadresse må være en gyldig Google Maps-innbygging over https.',
+    'home_editorial' => 'Redaksjonelle seksjoner på forsiden', 'home_editorial_hint' => 'Bare synlig tekst og bilder redigeres her. Nummerering, ikoner og navigasjon beholdes som systemelementer.',
+    'chooser' => 'Valgboksen i første seksjon', 'trust' => 'Tre hurtigpunkter', 'process' => 'Slik fungerer det', 'story' => 'Historien og bedriftskortet', 'logistics' => 'Dekkhotell og hjemme hos deg', 'contact_copy' => 'Kontaktseksjonen', 'section_media' => 'Bilder i seksjonene',
+    'chooser_kicker' => 'Overtekst', 'chooser_title' => 'Overskrift', 'chooser_mobile_title' => 'Hjemme hos deg — tittel', 'chooser_mobile_text' => 'Hjemme hos deg — tekst', 'chooser_workshop_title' => 'Verksted — tittel', 'chooser_workshop_text' => 'Verksted — tekst', 'chooser_store_kicker' => 'Butikk — overtekst', 'chooser_store_title' => 'Butikk — tittel',
+    'trust_1' => 'Punkt 1', 'trust_2' => 'Punkt 2', 'trust_3' => 'Punkt 3',
+    'process_kicker' => 'Overtekst', 'process_title' => 'Overskrift', 'process_lead' => 'Innledning', 'process_step_title' => 'Steg :number — tittel', 'process_step_text' => 'Steg :number — tekst',
+    'story_kicker' => 'Overtekst', 'story_title' => 'Overskrift', 'story_text' => 'Innledning', 'story_quote' => 'Sitat', 'business_kicker' => 'Bedrift — overtekst', 'business_title' => 'Bedrift — tittel', 'business_text' => 'Bedrift — tekst', 'business_proof' => 'Bedrift — dokumentert eksempel',
+    'logistics_kicker' => 'Overtekst', 'logistics_title' => 'Overskrift', 'hotel_kicker' => 'Dekkhotell — overtekst', 'hotel_title' => 'Dekkhotell — tittel', 'hotel_text' => 'Dekkhotell — tekst', 'hotel_cta' => 'Dekkhotell — lenketekst', 'mobile_kicker' => 'Hjemme hos deg — overtekst', 'mobile_title' => 'Hjemme hos deg — tittel', 'mobile_text' => 'Hjemme hos deg — tekst', 'mobile_cta' => 'Hjemme hos deg — lenketekst',
+    'contact_kicker' => 'Overtekst', 'contact_title' => 'Overskrift', 'contact_text' => 'Innledning',
+    'home_store_media' => 'Butikkseksjon — bilde', 'story_media' => 'Historie/bedrift — bilde', 'hotel_media' => 'Dekkhotell — bilde', 'mobile_media' => 'Hjemme hos deg — bilde', 'default_section_media' => 'Bruk dagens seksjonsbilde',
+];

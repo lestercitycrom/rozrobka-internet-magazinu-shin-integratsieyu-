@@ -31,10 +31,9 @@ test('russian preview page is noindex and points at the norwegian canonical url'
 });
 
 test('checkout links only to published privacy and terms CMS pages in each locale', function (): void {
-    contentPage('personvern', ContentPageStatus::Published);
-    contentPage('kjopsvilkar', ContentPageStatus::Draft);
-
     $this->seed(E2eStorefrontSeeder::class);
+    ContentPage::query()->where('slug', 'personvern')->update(['publication_status' => ContentPageStatus::Published]);
+    ContentPage::query()->where('slug', 'kjopsvilkar')->update(['publication_status' => ContentPageStatus::Draft]);
     $this->withSession(['storefront.cart.lines' => ['000205550016' => 1]])
         ->get('/kasse')->assertOk()->assertSee(route('storefront.content.show', 'personvern'), false)->assertDontSee(route('storefront.content.show', 'kjopsvilkar'), false);
 

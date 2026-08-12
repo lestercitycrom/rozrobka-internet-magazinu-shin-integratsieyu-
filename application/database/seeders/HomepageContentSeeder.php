@@ -3,8 +3,11 @@
 namespace Database\Seeders;
 
 use App\Modules\Content\Enums\ContentPageStatus;
+use App\Modules\Content\Enums\ReviewPlatform;
 use App\Modules\Content\Models\HomepagePromotion;
+use App\Modules\Content\Models\HomepageRatingSummary;
 use App\Modules\Content\Models\HomepageReview;
+use App\Support\PublicHttpUrl;
 use Illuminate\Database\Seeder;
 
 class HomepageContentSeeder extends Seeder
@@ -29,6 +32,13 @@ class HomepageContentSeeder extends Seeder
             HomepageReview::query()->firstOrCreate(
                 ['author_nb' => $review['author_nb']],
                 $review,
+            );
+        }
+
+        foreach ($this->ratingSummaries() as $summary) {
+            HomepageRatingSummary::query()->firstOrCreate(
+                ['platform' => $summary['platform']],
+                $summary,
             );
         }
     }
@@ -71,6 +81,40 @@ class HomepageContentSeeder extends Seeder
                 'author_ru' => 'Marit Næsvold',
                 'source_label_ru' => 'Отзывы в Facebook',
                 'source_url' => $sourceUrl,
+            ],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function ratingSummaries(): array
+    {
+        $facebookUrl = PublicHttpUrl::sanitize(config('storefront.facebook_url'));
+        $googleUrl = PublicHttpUrl::sanitize(config('storefront.map_url'));
+
+        return [
+            [
+                'platform' => ReviewPlatform::Facebook,
+                'rating' => '5.0',
+                'review_count' => 30,
+                'count_label_nb' => '30+ omtaler',
+                'count_label_ru' => '30+ отзывов',
+                'link_label_nb' => 'Se alle omtaler på Facebook',
+                'link_label_ru' => 'Все отзывы в Facebook',
+                'source_url' => $facebookUrl,
+                'sort_order' => 10,
+                'publication_status' => $facebookUrl ? ContentPageStatus::Published : ContentPageStatus::Draft,
+            ],
+            [
+                'platform' => ReviewPlatform::Google,
+                'rating' => '5.0',
+                'review_count' => 30,
+                'count_label_nb' => 'Omtrent 30 omtaler',
+                'count_label_ru' => 'Около 30 отзывов',
+                'link_label_nb' => 'Se alle omtaler på Google',
+                'link_label_ru' => 'Все отзывы в Google',
+                'source_url' => $googleUrl,
+                'sort_order' => 20,
+                'publication_status' => $googleUrl ? ContentPageStatus::Published : ContentPageStatus::Draft,
             ],
         ];
     }

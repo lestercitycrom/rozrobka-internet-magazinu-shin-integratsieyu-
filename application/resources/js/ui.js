@@ -112,6 +112,154 @@ const initBookingFlow = () => {
         let index = 0;
         if (hasServerErrors) root.dataset.serverErrors = 'true';
 
+        const availability = one('[data-booking-availability]', root);
+        if (availability) {
+            const slotContainer = one('[data-booking-slots]', availability);
+            const manualContainer = one('[data-booking-manual]', availability);
+            const slotSelect = one('[data-booking-slot-select]', availability);
+            const manualInput = one('[name="preferred_window"]', manualContainer || availability);
+            const dateInput = one('[name="preferred_date"]', root);
+            const status = one('[data-booking-availability-status]', availability);
+            const timePanel = availability.closest('[data-booking-panel]');
+            const timeNext = one('[data-booking-next]', timePanel);
+            let fetchSequence = 0;
+
+            const setMode = (configured) => {
+                if (slotContainer) slotContainer.hidden = !configured;
+                if (manualContainer) manualContainer.hidden = configured;
+                if (slotSelect) {
+                    slotSelect.disabled = !configured;
+                    slotSelect.required = configured;
+                }
+                if (manualInput) {
+                    manualInput.disabled = configured;
+                    manualInput.required = !configured;
+                }
+            };
+            const resetSlots = (message) => {
+                if (!slotSelect) return;
+                slotSelect.replaceChildren(new Option(availability.dataset.placeholder || '', ''));
+                if (status) status.textContent = message;
+            };
+            const loadAvailability = async () => {
+                const date = dateInput?.value;
+                const fulfilment = one('[name="fulfilment"]:checked', root)?.value;
+                if (!date || !fulfilment || !slotSelect) {
+                    resetSlots(availability.dataset.selectDate || '');
+                    return;
+                }
+
+                const sequence = ++fetchSequence;
+                timeNext?.setAttribute('disabled', '');
+                availability.setAttribute('aria-busy', 'true');
+                resetSlots(availability.dataset.loading || '');
+                try {
+                    const url = new URL(availability.dataset.endpoint, window.location.origin);
+                    url.searchParams.set('date', date);
+                    url.searchParams.set('fulfilment', fulfilment);
+                    const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                    if (!response.ok) throw new Error(`Availability ${response.status}`);
+                    const payload = await response.json();
+                    if (sequence !== fetchSequence) return;
+
+                    const configured = payload.configured === true;
+                    setMode(configured);
+                    if (!configured) return;
+
+                    const oldSlot = slotSelect.dataset.oldSlot || slotSelect.value;
+                    resetSlots((payload.slots || []).length ? '' : availability.dataset.empty || '');
+                    (payload.slots || []).forEach((slot) => {
+                        const option = new Option(slot.label, slot.key);
+                        option.selected = oldSlot === slot.key;
+                        slotSelect.add(option);
+                    });
+                    slotSelect.dataset.oldSlot = '';
+                } catch {
+                    if (sequence !== fetchSequence) return;
+                    // Fail closed. If a schedule exists, the server will never
+                    // accept a free-text value in place of a real slot.
+                    setMode(true);
+                    resetSlots(availability.dataset.loadError || '');
+                } finally {
+                    if (sequence === fetchSequence) {
+                        timeNext?.removeAttribute('disabled');
+                        availability.removeAttribute('aria-busy');
+                    }
+                }
+            };
+
+            setMode(availability.dataset.initialConfigured === 'true');
+            dateInput?.addEventListener('change', loadAvailability);
+            all('[name="fulfilment"]', root).forEach((field) => field.addEventListener('change', loadAvailability));
+            if (dateInput?.value) loadAvailability();
+        }
+
+        let seasonalPrices = {};
+        try { seasonalPrices = JSON.parse(root.dataset.seasonalPrices || '{}'); } catch { seasonalPrices = {}; }
+        const secondVehicle = one('[data-seasonal-vehicle="2"]', root);
+        const carCount = one('[data-car-count]', root);
+        const syncVehicleTypeOptions = () => {
+            const workshop = one('[name="fulfilment"]:checked', root)?.value === 'workshop';
+            ['vehicle_type', 'vehicle_type_2'].forEach((name) => {
+                const select = one(`[name="${name}"]`, root);
+                if (!(select instanceof HTMLSelectElement)) return;
+                all('option', select).forEach((option) => {
+                    option.disabled = workshop && option.value !== 'passenger';
+                });
+                if (workshop && select.value !== 'passenger') select.value = 'passenger';
+            });
+        };
+        const toggleSecondVehicle = () => {
+            if (!secondVehicle || !carCount) return;
+            const enabled = carCount.value === '2';
+            secondVehicle.hidden = !enabled;
+            all('input, select, textarea', secondVehicle).forEach((field) => {
+                field.disabled = !enabled;
+                if (field.name === 'vehicle_2') field.required = enabled;
+            });
+        };
+        const priceRange = (suffix = '') => {
+            const value = (name, fallback) => one(`[name="${name}${suffix}"]`, root)?.value || fallback;
+            const fulfilment = one('[name="fulfilment"]:checked', root)?.value || 'workshop';
+            const vehicleType = value('vehicle_type', 'passenger');
+            const rimBand = value('rim_band', 'unknown');
+            const storagePlan = value('storage_plan', 'none');
+            let baseCodes;
+            if (vehicleType !== 'passenger') {
+                if (fulfilment !== 'mobile') return null;
+                baseCodes = [vehicleType === 'large_vehicle' ? 'mobile-large-vehicle' : 'mobile-six-wheels'];
+            } else {
+                const rims = rimBand === 'unknown' ? ['r15', 'r16-r18', 'r19'] : [rimBand];
+                baseCodes = rims.map((rim) => `${fulfilment}-${rim}`);
+            }
+            const storageCodes = storagePlan === 'none'
+                ? []
+                : (rimBand === 'unknown' ? ['r15', 'r16-r18', 'r19'] : [rimBand]).map((rim) => `hotel-${rim}`);
+            const base = baseCodes.map((code) => Number(seasonalPrices[code])).filter(Number.isFinite);
+            const storage = storageCodes.map((code) => Number(seasonalPrices[code])).filter(Number.isFinite);
+            if (base.length !== baseCodes.length || storage.length !== storageCodes.length) return null;
+            return [Math.min(...base) + (storage.length ? Math.min(...storage) : 0), Math.max(...base) + (storage.length ? Math.max(...storage) : 0)];
+        };
+        const updateSeasonalQuote = () => {
+            const quote = one('[data-seasonal-quote]', root);
+            const quoteText = one('[data-seasonal-quote-text]', root);
+            const summary = one('[data-seasonal-summary-price]', root);
+            if (!quote || !quoteText || !summary) return;
+            const ranges = [priceRange('')];
+            if (carCount?.value === '2') ranges.push(priceRange('_2'));
+            let text = quote.dataset.unavailableTemplate || '—';
+            if (ranges.every(Boolean)) {
+                const minimum = ranges.reduce((sum, range) => sum + range[0], 0) / 100;
+                const maximum = ranges.reduce((sum, range) => sum + range[1], 0) / 100;
+                const formattedMin = new Intl.NumberFormat(document.documentElement.lang || 'nb-NO').format(minimum);
+                const formattedMax = new Intl.NumberFormat(document.documentElement.lang || 'nb-NO').format(maximum);
+                const template = minimum === maximum ? quote.dataset.exactTemplate : quote.dataset.rangeTemplate;
+                text = template.replace(':min', formattedMin).replace(':max', formattedMax);
+            }
+            quoteText.textContent = text;
+            summary.textContent = text;
+        };
+
         const updateSummary = () => {
             all('[data-summary-field]', root).forEach((target) => {
                 const name = target.dataset.summaryField;
@@ -130,6 +278,9 @@ const initBookingFlow = () => {
                 }
                 target.textContent = value;
             });
+            toggleSecondVehicle();
+            syncVehicleTypeOptions();
+            updateSeasonalQuote();
         };
         const show = (next, userInitiated = false) => {
             index = Math.max(0, Math.min(panels.length - 1, next));

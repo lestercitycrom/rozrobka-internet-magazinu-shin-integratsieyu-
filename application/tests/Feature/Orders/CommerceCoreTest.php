@@ -42,6 +42,7 @@ test('checkout freezes an immutable snapshot and duplicate idempotency key retur
         ->and($first->order->status)->toBe(OrderStatus::PendingReview)
         ->and($first->order->payment_status)->toBe(PaymentStatus::NotStarted)
         ->and($first->order->ndi_status)->toBe(NdiOrderStatus::NotSubmitted)
+        ->and($first->order->fitment_snapshot)->toMatchArray(['source' => 'statens_vegvesen', 'width' => '205', 'aspect' => '55', 'rim' => '16'])
         ->and($first->order->statusHistory()->count())->toBe(1);
 });
 
@@ -126,6 +127,7 @@ function commerceCheckoutData(): CheckoutData
         fulfilmentMethod: FulfilmentMethod::Pickup,
         vehicleRegistration: 'AB12345',
         customerNote: null,
+        fitmentSnapshot: ['source' => 'statens_vegvesen', 'width' => '205', 'aspect' => '55', 'rim' => '16', 'confirmed_at' => now()->toIso8601String()],
     );
 }
 

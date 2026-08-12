@@ -36,6 +36,22 @@ test('the current Norwegian storefront section is exposed in both navigation var
     expect(substr_count($response->getContent(), 'aria-current="page"'))->toBe(2);
 });
 
+test('services navigation exposes the customer requested direct paths', function (): void {
+    $response = $this->get('/')->assertOk();
+
+    $response
+        ->assertSee('Sesongskift')
+        ->assertSee('Hjemme hos deg')
+        ->assertSee('På vårt verksted')
+        ->assertSee('Dekkhotell')
+        ->assertSee('Andre biltjenester')
+        ->assertSee('href="'.route('storefront.seo-services.show', 'dekkskift-tromso').'"', false)
+        ->assertSee('href="'.e(route('storefront.requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile'])).'"', false)
+        ->assertSee('href="'.e(route('storefront.requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop'])).'"', false)
+        ->assertSee('href="'.route('storefront.seo-services.show', 'dekkhotell-tromso').'"', false)
+        ->assertSee('href="'.route('storefront.services.index').'#additional-services"', false);
+});
+
 test('the current Russian preview section uses the same accessible navigation state', function (): void {
     config()->set('storefront.ru_preview_enabled', true);
 

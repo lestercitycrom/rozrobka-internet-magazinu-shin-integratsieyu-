@@ -29,7 +29,7 @@ class ServiceRequestController extends Controller
 
     public function update(Request $input, ServiceRequest $request)
     {
-        $data = $input->validate(['status' => ['required', 'in:new,contacted,closed'], 'admin_note' => ['nullable', 'string', 'max:4000']]);
+        $data = $input->validate(['status' => ['required', 'in:new,contacted,closed,cancelled'], 'admin_note' => ['nullable', 'string', 'max:4000']]);
         $request->update($data);
 
         return back()->with('status', __('service_requests.saved'));

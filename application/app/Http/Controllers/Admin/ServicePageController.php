@@ -10,6 +10,14 @@ use Illuminate\Validation\Rule;
 
 final class ServicePageController
 {
+    /** Public paths and route namespaces that a CMS landing page must not shadow. */
+    private const RESERVED_CANONICAL_PATHS = [
+        'admin', 'bestilling', 'biloppslag', 'dekk', 'dekk-og-felger', 'felger',
+        'foresporsel', 'handlekurv', 'kasse', 'kjopsvilkar', 'kontakt', 'om-oss',
+        'personvern', 'priser', 'produkter', 'robots', 'ru', 'shop', 'sitemap',
+        'tjenester',
+    ];
+
     public function index()
     {
         $pages = ServicePage::query()->orderBy('sort_order')->orderBy('id')->paginate(20);
@@ -54,7 +62,14 @@ final class ServicePageController
     {
         return $request->validate([
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('service_pages', 'slug')->ignore($page)],
-            'canonical_path' => ['nullable', 'string', 'max:160', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('service_pages', 'canonical_path')->ignore($page)],
+            'canonical_path' => [
+                'nullable',
+                'string',
+                'max:160',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::notIn(self::RESERVED_CANONICAL_PATHS),
+                Rule::unique('service_pages', 'canonical_path')->ignore($page),
+            ],
             'sort_order' => ['required', 'integer', 'min:0', 'max:65535'],
             'publication_status' => ['required', Rule::enum(ServicePagePublicationStatus::class)],
             'request_flow' => ['required', Rule::enum(ServiceRequestFlow::class)],

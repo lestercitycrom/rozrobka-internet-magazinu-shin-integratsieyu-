@@ -8,9 +8,25 @@
     $catalogRoute = $prefix.($isTire ? 'tires.index' : 'wheels.index');
     $catalogLabel = $isTire ? __('storefront.tires') : __('storefront.wheels');
     $productHeading = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
+    $productDescription = trim(implode(' · ', array_filter([$productHeading, $presenter->summary(), $item->sku])));
+    $productSchema = [
+        '@context' => 'https://schema.org', '@type' => 'Product', 'name' => $productHeading,
+        'sku' => $item->sku, 'brand' => ['@type' => 'Brand', 'name' => $item->brand],
+        'description' => $productDescription,
+        'url' => route($prefix.'products.show', ['sku' => $item->sku]),
+    ];
+    if ($item->primaryMedia) $productSchema['image'] = url($item->primaryMedia['url']);
+    if ($sellingPrice && $item->stock->isFresh()) {
+        $productSchema['offers'] = [
+            '@type' => 'Offer', 'priceCurrency' => $sellingPrice->money->currency,
+            'price' => number_format($sellingPrice->money->minor / 100, 2, '.', ''),
+            'availability' => 'https://schema.org/InStock',
+            'url' => route($prefix.'products.show', ['sku' => $item->sku]),
+        ];
+    }
 @endphp
 
-<x-layouts.storefront :title="'EasyTire | '.$productHeading" active-section="store" :store-route="route($catalogRoute)" :store-label="$catalogLabel">
+<x-layouts.storefront :title="'EasyTire | '.$productHeading" :description="$productDescription" :image="$item->primaryMedia['url'] ?? null" :structured-data="[$productSchema]" active-section="store" :store-route="route($catalogRoute)" :store-label="$catalogLabel">
     <section class="et-section et-section--compact">
         <div class="et-container">
             <div class="et-breadcrumbs" style="color:var(--et-muted)">
@@ -46,11 +62,11 @@
                         @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
 
                         <div class="et-stock-line">
-                            <span @class(['et-stock-dot' => $item->stock->quantity > 0]) aria-hidden="true"></span>
-                            <span>{{ $item->stock->quantity > 0 ? __('storefront.registered_stock') : __('storefront.no_stock') }}</span>
+                            <span @class(['et-stock-dot' => $item->stock->quantity > 0 && $item->stock->isFresh()]) aria-hidden="true"></span>
+                            <span>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale_detail') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso_detail', ['count' => $item->stock->localQuantity]) : __('storefront.stock_remote_detail')) }}</span>
                         </div>
 
-                        @if ($sellingPrice && $item->stock->quantity > 0)
+                        @if ($sellingPrice && $item->stock->quantity > 0 && $item->stock->isFresh())
                             <div class="et-product-price">
                                 {{ number_format($sellingPrice->money->minor / 100, 2, ',', ' ') }} {{ $sellingPrice->money->currency }}
                                 <small>{{ __('storefront.selling_price_note') }}</small>
@@ -63,14 +79,17 @@
                                         <label class="et-label" for="product-quantity">{{ __('storefront.quantity') }}</label>
                                         <input class="et-input easytire-input" id="product-quantity" data-testid="product-quantity" type="number" name="quantity" value="1" min="1" max="{{ min(40, $item->stock->quantity) }}" inputmode="numeric">
                                     </div>
-                                    <button class="et-btn et-btn--primary" type="submit" style="align-self:end" data-testid="product-add-to-cart">{{ __('storefront.add_to_cart') }}</button>
+                                    <div style="display:flex;gap:.6rem;align-self:end;flex-wrap:wrap">
+                                        <button class="et-btn et-btn--outline" type="submit" name="intent" value="cart" data-testid="product-add-to-cart">{{ __('storefront.add_to_cart') }}</button>
+                                        <button class="et-btn et-btn--primary" type="submit" name="intent" value="checkout" data-testid="product-buy-now">{{ __('storefront.buy_now') }}</button>
+                                    </div>
                                 </div>
                             </form>
                             <p class="et-help">{{ __('pro.catalog.buy_box_note') }}</p>
                         @else
                             <div class="et-alert et-alert--warning" style="margin-top:1.2rem">
                                 <span class="et-alert__icon" aria-hidden="true">!</span>
-                                <div><strong>{{ $item->stock->quantity > 0 ? __('storefront.price_unavailable') : __('storefront.stock_none') }}</strong><br>{{ __('storefront.unavailable_note') }}</div>
+                                <div><strong>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale') : ($item->stock->quantity > 0 ? __('storefront.price_unavailable') : __('storefront.stock_none')) }}</strong><br>{{ __('storefront.unavailable_note') }}</div>
                             </div>
                         @endif
                     </div>
@@ -78,7 +97,7 @@
                     <h2 class="et-h3" style="margin:1.5rem 0 .8rem">{{ __('storefront.technical_details') }}</h2>
                     <dl class="et-spec-grid" data-testid="technical-details">
                         <div><dt>{{ __('storefront.item_number') }}</dt><dd>{{ $item->sku }}</dd></div>
-                        <div><dt>{{ __('pro.catalog.stock') }}</dt><dd>{{ $item->stock->quantity }}</dd></div>
+                        <div><dt>{{ __('pro.catalog.stock') }}</dt><dd>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale_detail') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso_detail', ['count' => $item->stock->localQuantity]) : __('storefront.stock_remote_detail')) }}</dd></div>
                         @if ($item->title !== $productHeading)<div><dt>{{ __('storefront.supplier_description') }}</dt><dd>{{ $item->title }}</dd></div>@endif
                         @if ($item->tire)
                             @if ($dimension)<div><dt>{{ __('storefront.dimension') }}</dt><dd>{{ $dimension }}</dd></div>@endif

@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#101010">
     <title>{{ $title ?? __('admin.brand') }}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="icon" href="/brand/easytire-icon-32.png" sizes="32x32" type="image/png">
-    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+    <link rel="icon" href="/favicon-96x96.png" sizes="96x96" type="image/png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])

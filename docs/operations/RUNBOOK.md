@@ -29,6 +29,15 @@
 - Run PHPUnit only in a fresh release or temporary workspace, after removing `bootstrap/cache/config.php` from that test copy.
 - Never run PHPUnit from an active cached `current` release: cached configuration can target a production database.
 
+## NDI file inbox
+
+- Point `NDI_INBOX_PATH` at a non-public SFTP drop directory owned by the transfer account and readable by the application worker. Do not place it below `public/` or a release directory.
+- NDI has stated that catalogue/price files are delivered daily and that the stock file can be delivered hourly or every two hours. Confirm the exact filenames and delivery window before enabling the scheduler.
+- Keep `STOREFRONT_STOCK_MAX_AGE_MINUTES=180` only with the hourly/two-hour stock agreement. A stale feed intentionally disables cart mutation and checkout until a successfully validated stock file arrives.
+- The command reads only stable direct `.xlsx` files, rejects empty or unexpectedly truncated snapshots, and never follows symlinks. Monitor non-zero exits and the import health page.
+- Rotate succeeded and terminally rejected files from the inbox to restricted archive/quarantine storage. Without rotation the scheduled command must repeatedly enumerate and hash retained files and the directory grows without bound.
+- Before production enablement, verify on Linux that SFTP upload is atomic (temporary name followed by rename), cron runs every minute, `ndi:inbox:sync` runs every ten minutes, and the queue worker is supervised.
+
 ## Backup checklist
 
 - Verify encrypted database backups and a recent restore test.

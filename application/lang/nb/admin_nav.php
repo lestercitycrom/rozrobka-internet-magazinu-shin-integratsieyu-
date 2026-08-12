@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'booking_calendar' => 'Timeplan',
     'dashboard' => 'Oversikt',
     'catalog' => 'Katalog',
     'imports' => 'Importer',
@@ -11,6 +12,9 @@ return [
     'content' => 'Innholdssider',
     'homepage_promotions' => 'Forsidetilbud',
     'homepage_reviews' => 'Kundeomtaler',
+    'homepage_ratings' => 'Omtalesammendrag',
+    'homepage_partners' => 'Bedriftspartnere',
+    'storefront_settings' => 'Butikkfront',
     'pricing' => 'Prisregler',
     'orders' => 'Bestillinger',
     'media' => 'Mediebibliotek',

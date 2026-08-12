@@ -13,6 +13,20 @@ class ContentPageSeeder extends Seeder
         foreach ($this->pages() as $slug => $attributes) {
             $page = ContentPage::query()->firstOrNew(['slug' => $slug]);
 
+            if ($page->exists && $slug === 'kontakt') {
+                $page->body_nb = str_replace(
+                    'Bruk Google Maps-lenken eller aktiver kartet på siden når du skal besøke verkstedet.',
+                    'Bruk Google Maps-lenken eller kartet som vises direkte på siden når du skal besøke verkstedet.',
+                    (string) $page->body_nb,
+                );
+                $page->body_ru = str_replace(
+                    'При поездке в мастерскую используйте ссылку Google Maps или активируйте карту на странице.',
+                    'При поездке в мастерскую используйте ссылку Google Maps или карту, которая сразу отображается на странице.',
+                    (string) $page->body_ru,
+                );
+                $page->save();
+            }
+
             if ($page->exists && $slug === 'personvern') {
                 $page->body_nb = str_replace(
                     'Google Maps lastes ikke inn før du aktivt velger å åpne kartet. Da gjelder Googles egne personvernvilkår.',
@@ -97,7 +111,7 @@ Org.nr. 934 860 187
 
 Ringvegen 200, 9018 Tromsø
 
-Kartnålen viser riktig innkjøring ved Ringvegen 202. Bruk Google Maps-lenken eller aktiver kartet på siden når du skal besøke verkstedet.
+Kartnålen viser riktig innkjøring ved Ringvegen 202. Bruk Google Maps-lenken eller kartet som vises direkte på siden når du skal besøke verkstedet.
 
 Besøk og arbeid ved verkstedet skjer etter avtale. En innsendt forespørsel er ikke en bekreftet time før EasyTire har svart.
 MD,
@@ -112,7 +126,7 @@ Org.nr. 934 860 187
 
 Ringvegen 200, 9018 Tromsø
 
-Метка на карте показывает правильный въезд возле Ringvegen 202. При поездке в мастерскую используйте ссылку Google Maps или активируйте карту на странице.
+Метка на карте показывает правильный въезд возле Ringvegen 202. При поездке в мастерскую используйте ссылку Google Maps или карту, которая сразу отображается на странице.
 
 Посещение и выполнение работ происходят по предварительной договорённости. Отправленная заявка не является подтверждённой записью, пока EasyTire не ответит.
 MD,

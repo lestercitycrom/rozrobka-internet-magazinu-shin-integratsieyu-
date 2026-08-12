@@ -106,7 +106,7 @@
                                         @endforeach
                                         <span class="et-size-builder__separator" aria-hidden="true">R</span>
                                         <div class="et-field">
-                                            <label class="et-label" for="rim">{{ __('storefront.rim') }}</label>
+                                            <label class="et-label" for="rim">{{ __('storefront.rim_short') }}</label>
                                             <select class="et-select" id="rim" name="rim"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions['rims'] as $value)<option value="{{ $value }}" @selected($matchesValue('rim', $value))>{{ $formatOption($value) }}</option>@endforeach</select>
                                         </div>
                                         </div>

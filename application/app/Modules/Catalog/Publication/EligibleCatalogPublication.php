@@ -4,7 +4,6 @@ namespace App\Modules\Catalog\Publication;
 
 use App\Modules\Catalog\Enums\CatalogState;
 use App\Modules\Catalog\Enums\PublicationStatus;
-use App\Modules\Catalog\Enums\TaxMode;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\ReadModel\CatalogItem;
 use App\Modules\Catalog\ReadModel\CatalogPrice;
@@ -30,10 +29,9 @@ final class EligibleCatalogPublication
                     ->filter(fn ($sku): bool => $sku->catalog_state === CatalogState::Catalog && (bool) $sku->supplier?->is_active)
                     ->map(function ($sku) use ($product): array {
                         $prices = $sku->prices->filter(fn ($price): bool => $price->priceList !== null
-                            && $price->priceList->tax_mode === TaxMode::Gross
                             && $price->priceList->valid_from <= now()
                             && ($price->priceList->valid_to === null || $price->priceList->valid_to > now()))
-                            ->map(fn ($price) => new CatalogPrice($price->amount, $price->priceList->currency, TaxMode::Gross, $price->observed_at, $price->priceList->code))
+                            ->map(fn ($price) => new CatalogPrice($price->amount, $price->priceList->currency, $price->priceList->tax_mode, $price->observed_at, $price->priceList->code))
                             ->values()
                             ->all();
 

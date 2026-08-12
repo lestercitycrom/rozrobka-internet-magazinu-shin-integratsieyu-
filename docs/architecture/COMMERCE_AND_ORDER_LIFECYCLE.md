@@ -21,13 +21,22 @@ cannot be reduced by presentation rounding.
 
 ## Pricing
 
-Selling a product requires one deterministic active pricing rule. Rules are
+Selling a product requires at least one deterministic active pricing rule. Rules are
 ordered by priority and specificity (`sku`, `brand`, `product_type`, `global`).
-The selected rule identifies the supplier price-list code and currency. Missing
-or ambiguous source prices make the item unavailable for cart/checkout.
+Each rule identifies the supplier price-list code, currency and an
+explicit source tax mode (`gross` or `net`). Existing rules migrate as `gross`
+for backward compatibility. The server loads both source columns and applies a
+rule only to its exact selected mode; it never silently treats Gross as Net (or
+vice versa). If that explicit source is absent, the next explicit matching rule
+may act as a fallback. A present but stale/malformed source fails closed instead
+of bypassing a pricing error. At equal priority and specificity Gross is
+checked before Net, which allows an administrator to configure “recommended
+Gross first, marked-up Net only when Gross is unavailable”. If no explicit rule
+has a usable source, the item is unavailable for cart/checkout.
 
 No default production rule is seeded because the commercial meaning of the NDI
-price columns, VAT treatment and markup are not confirmed.
+price columns, VAT treatment and markup are not confirmed. Selecting Net does
+not add VAT, environmental fees or any other inferred formula automatically.
 
 ## Idempotency
 

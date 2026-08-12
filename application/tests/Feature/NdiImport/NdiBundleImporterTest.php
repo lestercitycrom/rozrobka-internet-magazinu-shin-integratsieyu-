@@ -99,6 +99,65 @@ test('an incomplete bundle is quarantined before publication', function (): void
         ->toBe('missing_dataset_roles:stock');
 });
 
+test('validated catalog and stock files can publish independently for their real delivery cadence', function (): void {
+    $importer = app(NdiBundleImporter::class);
+    $catalog = $importer->importAvailable([ndiFixture('tires_valid.xlsx')], 'scheduled-inbox', isRedacted: true);
+
+    expect($catalog->status)->toBe('succeeded')
+        ->and(DB::table('products')->count())->toBeGreaterThan(0)
+        ->and(DB::table('sku_prices')->count())->toBeGreaterThan(0)
+        ->and(DB::table('current_stock')->count())->toBe(0)
+        ->and(DB::table('import_runs')->where('id', $catalog->runId)->value('run_type'))->toBe('partial_feed');
+
+    $stock = $importer->importAvailable([ndiFixture('stock_all_warehouses.xlsx')], 'scheduled-inbox', isRedacted: true);
+    expect($stock->status)->toBe('succeeded')
+        ->and(DB::table('current_stock')->count())->toBeGreaterThan(0)
+        ->and(DB::table('import_run_artifacts')->where('import_run_id', $stock->runId)->value('dataset_role'))->toBe('stock');
+});
+
+test('empty and sharply truncated stock snapshots are quarantined without zeroing the current catalog', function (): void {
+    config()->set('ndi.stock_drop_guard_min_baseline', 1);
+    config()->set('ndi.stock_minimum_previous_ratio', 0.9);
+    $importer = app(NdiBundleImporter::class);
+    $initial = $importer->importAvailable([ndiFixture('stock_all_warehouses.xlsx')], 'scheduled-inbox', isRedacted: true);
+    $before = DB::table('current_stock')
+        ->orderBy('supplier_sku_id')->orderBy('warehouse_id')
+        ->get(['supplier_sku_id', 'warehouse_id', 'quantity', 'observed_at'])
+        ->map(fn (object $row): array => (array) $row)
+        ->all();
+    $empty = ndiStockFixtureWithRows(0);
+    $truncated = ndiStockFixtureWithRows(3);
+
+    try {
+        $emptyOutcome = $importer->importAvailable([$empty], 'scheduled-inbox', isRedacted: true);
+        $truncatedOutcome = $importer->importAvailable([$truncated], 'scheduled-inbox', isRedacted: true);
+
+        expect($initial->status)->toBe('succeeded')
+            ->and($emptyOutcome->status)->toBe('failed')
+            ->and(DB::table('import_rejections')->where('import_run_id', $emptyOutcome->runId)->pluck('reason'))
+            ->toContain('dataset_contains_no_rows')
+            ->and($truncatedOutcome->status)->toBe('failed')
+            ->and(DB::table('import_rejections')->where('import_run_id', $truncatedOutcome->runId)->pluck('reason'))
+            ->toContain('stock_row_count_drop_requires_manual_override')
+            ->and(DB::table('current_stock')
+                ->orderBy('supplier_sku_id')->orderBy('warehouse_id')
+                ->get(['supplier_sku_id', 'warehouse_id', 'quantity', 'observed_at'])
+                ->map(fn (object $row): array => (array) $row)
+                ->all())->toBe($before);
+
+        $approved = $importer->importAvailable(
+            [$truncated],
+            'manual-approved-stock-drop',
+            isRedacted: true,
+            allowStockDrop: true,
+        );
+        expect($approved->status)->toBe('succeeded');
+    } finally {
+        @unlink($empty);
+        @unlink($truncated);
+    }
+});
+
 test('a publisher failure rolls back all domain changes and records a failed run', function (): void {
     $publisher = Mockery::mock(NdiCatalogPublisher::class);
     $publisher->shouldReceive('publish')->once()->andReturnUsing(function (): never {
@@ -140,4 +199,38 @@ function catalogStateCounts(): array
         'current_stock' => DB::table('current_stock')->count(),
         'entity_changes' => DB::table('entity_changes')->count(),
     ];
+}
+
+function ndiStockFixtureWithRows(int $dataRows): string
+{
+    $path = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ndi-stock-'.bin2hex(random_bytes(6)).'.xlsx';
+    if (! copy(ndiFixture('stock_all_warehouses.xlsx'), $path)) {
+        throw new RuntimeException('Unable to create the temporary stock workbook.');
+    }
+
+    $zip = new ZipArchive;
+    if ($zip->open($path) !== true) {
+        throw new RuntimeException('Unable to open the temporary stock workbook.');
+    }
+
+    $entry = 'xl/worksheets/sheet1.xml';
+    $xml = $zip->getFromName($entry);
+    if (! is_string($xml)) {
+        $zip->close();
+        throw new RuntimeException('Unable to read the stock worksheet.');
+    }
+
+    $lastKeptRow = $dataRows + 1;
+    $xml = preg_replace_callback(
+        '/<(?:[A-Za-z0-9_]+:)?row\b[^>]*\br="(\d+)"[^>]*>.*?<\/(?:[A-Za-z0-9_]+:)?row>/s',
+        fn (array $match): string => (int) $match[1] <= $lastKeptRow ? $match[0] : '',
+        $xml,
+    );
+    if (! is_string($xml) || ! $zip->addFromString($entry, $xml)) {
+        $zip->close();
+        throw new RuntimeException('Unable to truncate the stock worksheet.');
+    }
+    $zip->close();
+
+    return $path;
 }

@@ -5,30 +5,28 @@ const exactMapUrl = 'https://maps.app.goo.gl/cWq1CsBFJXH9mykF8?g_st=ic';
 
 test('homepage map state is honest in NB and RU', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
+    let embeddedMapRequests = 0;
+    await page.route(/^https:\/\/www\.google\.com\/maps(?:\?|$)/, async (route) => {
+        embeddedMapRequests += 1;
+        await route.fulfill({
+            contentType: 'text/html; charset=utf-8',
+            body: '<!doctype html><html><body>Google Maps test fixture</body></html>',
+        });
+    });
     await page.goto(prefix || '/');
 
     const card = page.getByTestId('map-card');
     await expect(card).toBeVisible();
     const iframe = page.getByTestId('map-iframe');
-    const externalOnly = page.getByTestId('map-external-only');
-
-    if (await iframe.count()) {
-        await expect(iframe).toBeVisible();
-        await iframe.scrollIntoViewIfNeeded();
-        const iframeHandle = await iframe.elementHandle();
-        const mapFrame = iframeHandle ? await iframeHandle.contentFrame() : null;
-        expect(mapFrame, 'Google Maps iframe must expose a real document').not.toBeNull();
-        await expect.poll(() => mapFrame?.url() ?? '').not.toContain('chrome-error://');
-        await expect.poll(async () => {
-            if (!mapFrame) return '';
-            return mapFrame.locator('body').innerText().catch(() => '');
-        }, { timeout: 15_000 }).toMatch(/Google|Map data|Kartdata/i);
-        await expect(card.locator(`a[href="${exactMapUrl}"]`)).toBeVisible();
-    } else {
-        await expect(externalOnly).toBeVisible();
-        await expect(externalOnly).toHaveAttribute('href', exactMapUrl);
-        await expect(card.locator('iframe')).toHaveCount(0);
-    }
+    await expect(iframe).toBeVisible();
+    await expect(iframe).not.toHaveAttribute('loading', 'lazy');
+    await expect(iframe).toHaveAttribute('src', /google\.com\/maps\?.*output=embed/);
+    await expect.poll(() => embeddedMapRequests, { message: 'the embedded map must be requested without scrolling' }).toBeGreaterThan(0);
+    const iframeHandle = await iframe.elementHandle();
+    const mapFrame = iframeHandle ? await iframeHandle.contentFrame() : null;
+    expect(mapFrame, 'the embedded map must expose its requested document').not.toBeNull();
+    await expect(mapFrame!.locator('body')).toContainText('Google Maps test fixture');
+    await expect(card.locator(`a[href="${exactMapUrl}"]`)).toBeVisible();
 
     await expectNoGlobalOverflow(page);
 });

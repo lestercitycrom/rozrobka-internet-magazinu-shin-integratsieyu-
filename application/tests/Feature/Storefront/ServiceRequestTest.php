@@ -42,15 +42,15 @@ test('mounting request requires and stores service variant and wheel count', fun
     $payload = ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1'];
     $this->post('/tjenester/omlegging-balansering/foresporsel', $payload)
         ->assertSessionHasErrors(['service_variant', 'wheel_count']);
-    $this->post('/tjenester/omlegging-balansering/foresporsel', [...$payload, 'service_variant' => 'balancing_only', 'wheel_count' => '2'])
+    $this->post('/tjenester/omlegging-balansering/foresporsel', [...$payload, 'service_variant' => 'balancing_only', 'wheel_count' => '2', 'tire_size' => '205/55 R16', 'preferred_date' => now()->addDay()->format('Y-m-d')])
         ->assertRedirect();
 
     $stored = ServiceRequest::query()->latest('id')->firstOrFail();
     expect($stored->service_variant)->toBe('balancing_only')->and($stored->wheel_count)->toBe(2);
 });
 
-test('oil request stores selected additional services and diagnostic request requires a problem description', function (): void {
-    foreach (['oljeskift', 'bildiagnose'] as $slug) {
+test('supported additional service requests store customer selected add-ons and diagnostic requests require a problem description', function (): void {
+    foreach (['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad', 'tpms-sensor'] as $slug) {
         ServicePage::create(['slug' => $slug, 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => $slug, 'title_ru' => $slug]);
     }
 
@@ -58,6 +58,45 @@ test('oil request stores selected additional services and diagnostic request req
     $this->post('/tjenester/oljeskift/foresporsel', [...$payload, 'additional_services' => ['air_filter', 'cabin_filter']])->assertRedirect();
     expect(ServiceRequest::query()->latest('id')->firstOrFail()->additional_services)->toBe(['air_filter', 'cabin_filter']);
 
+    foreach (['bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'] as $slug) {
+        $response = $this->get("/tjenester/{$slug}/foresporsel")
+            ->assertOk();
+
+        foreach (['air_filter', 'cabin_filter', 'wiper_blades'] as $addon) {
+            $response->assertSee('value="'.$addon.'"', false);
+        }
+    }
+
+    $this->post('/tjenester/tpms-sensor/foresporsel', [
+        ...$payload,
+        'fulfilment' => 'workshop',
+        'note' => 'Sensorfeil',
+        'additional_services' => ['air_filter'],
+    ])->assertSessionHasErrors('additional_services');
+
     $this->post('/tjenester/bildiagnose/foresporsel', $payload)->assertSessionHasErrors('note');
     $this->post('/tjenester/bildiagnose/foresporsel', [...$payload, 'note' => 'Motorlampen lyser'])->assertRedirect();
+});
+
+test('workbook service constraints are reflected in both UI and validation', function (): void {
+    foreach (['tpms-sensor', 'bilbatteri', 'bildiagnose'] as $slug) {
+        ServicePage::create(['slug' => $slug, 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => $slug, 'title_ru' => $slug]);
+    }
+
+    $this->get('/tjenester/tpms-sensor/foresporsel')
+        ->assertOk()
+        ->assertDontSee('<option value="mobile"', false);
+    $this->post('/tjenester/tpms-sensor/foresporsel', [
+        'fulfilment' => 'mobile', 'name' => 'Buyer', 'email' => 'buyer@example.test',
+        'phone' => '1', 'note' => 'Sensorfeil', 'address' => 'Test 1', 'consent' => '1',
+    ])->assertSessionHasErrors('fulfilment');
+
+    foreach (['bilbatteri', 'bildiagnose'] as $slug) {
+        $this->get("/tjenester/{$slug}/foresporsel")
+            ->assertOk()
+            ->assertSee('name="additional_services[]"', false)
+            ->assertSee('value="air_filter"', false)
+            ->assertSee('value="cabin_filter"', false)
+            ->assertSee('value="wiper_blades"', false);
+    }
 });

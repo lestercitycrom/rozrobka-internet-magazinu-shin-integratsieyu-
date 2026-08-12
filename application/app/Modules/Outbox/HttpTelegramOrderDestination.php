@@ -17,11 +17,25 @@ final class HttpTelegramOrderDestination implements TelegramOrderDestination
             throw new \LogicException('Telegram destination is not fully configured.');
         }
 
-        $reference = trim((string) ($payload['reference'] ?? 'paid-order')) ?: 'paid-order';
-        $amount = is_int($payload['amount_minor'] ?? null) ? $payload['amount_minor'] : 0;
-        $currency = preg_match('/^[A-Z]{3}$/', (string) ($payload['currency'] ?? '')) === 1 ? $payload['currency'] : '';
-        [$productLines, $serviceLines, $lineCount] = self::lineCounts($payload);
-        $text = sprintf("EasyTire: betalt ordre %s\nTotal: %s %s\nVarelinjer: %d\nTjenestelinjer: %d\nLinjer totalt: %d\nLeveringsnøkkel: %s", $reference, number_format($amount / 100, 2, '.', ''), $currency, $productLines, $serviceLines, $lineCount, $idempotencyKey);
+        $isServiceRequest = ($payload['event'] ?? null) === 'service_request_created';
+        $fallback = $isServiceRequest ? 'service-request' : 'paid-order';
+        $reference = trim((string) ($payload['reference'] ?? $fallback)) ?: $fallback;
+        if ($isServiceRequest) {
+            $service = trim((string) ($payload['service_slug'] ?? 'ukjent tjeneste')) ?: 'ukjent tjeneste';
+            $fulfilment = ($payload['fulfilment'] ?? null) === 'mobile' ? 'hjemme hos kunden' : 'verksted';
+            $date = trim((string) ($payload['preferred_date'] ?? 'ikke valgt')) ?: 'ikke valgt';
+            $cars = max(1, min(2, (int) ($payload['car_count'] ?? 1)));
+            $storage = ($payload['dekkhotell'] ?? false) === true ? 'ja' : 'nei';
+            $minimum = is_int($payload['quote_min_minor'] ?? null) ? $payload['quote_min_minor'] : null;
+            $maximum = is_int($payload['quote_max_minor'] ?? null) ? $payload['quote_max_minor'] : $minimum;
+            $quote = $minimum === null ? 'ikke beregnet' : ($minimum === $maximum ? number_format($minimum / 100, 2, '.', '') : number_format($minimum / 100, 2, '.', '').'–'.number_format($maximum / 100, 2, '.', '')).' NOK';
+            $text = sprintf("EasyTire: ny tjenesteforespørsel %s\nTjeneste: %s\nSted: %s\nØnsket dato: %s\nBiler: %d\nDekkhotell: %s\nBeregnet pris: %s\nLeveringsnøkkel: %s", $reference, $service, $fulfilment, $date, $cars, $storage, $quote, $idempotencyKey);
+        } else {
+            $amount = is_int($payload['amount_minor'] ?? null) ? $payload['amount_minor'] : 0;
+            $currency = preg_match('/^[A-Z]{3}$/', (string) ($payload['currency'] ?? '')) === 1 ? $payload['currency'] : '';
+            [$productLines, $serviceLines, $lineCount] = self::lineCounts($payload);
+            $text = sprintf("EasyTire: betalt ordre %s\nTotal: %s %s\nVarelinjer: %d\nTjenestelinjer: %d\nLinjer totalt: %d\nLeveringsnøkkel: %s", $reference, number_format($amount / 100, 2, '.', ''), $currency, $productLines, $serviceLines, $lineCount, $idempotencyKey);
+        }
 
         $response = $this->http->acceptJson()
             ->connectTimeout((int) config('outbox.timeout', 5))

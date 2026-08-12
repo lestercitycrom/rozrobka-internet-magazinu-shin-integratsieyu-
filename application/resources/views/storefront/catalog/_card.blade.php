@@ -12,7 +12,7 @@
         </div>
         <div class="et-product-card__badges">
             @if ($item->tire && $season)<span class="et-badge et-badge--red">{{ $season }}</span>@else<span></span>@endif
-            <span @class(['et-badge', 'et-badge--success' => $item->stock->quantity > 0])>{{ $item->stock->quantity > 0 ? __('storefront.registered_stock') : __('storefront.no_stock') }}</span>
+            <span @class(['et-badge', 'et-badge--success' => $item->stock->isFresh()])>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso') : __('storefront.stock_remote')) }}</span>
         </div>
     </a>
     <div class="et-product-card__body">
@@ -27,7 +27,7 @@
                     <p class="et-caption"><strong>{{ __('storefront.price_unavailable') }}</strong></p>
                 @endif
             </div>
-            @if ($sellingPrice && $item->stock->quantity > 0)
+            @if ($sellingPrice && $item->stock->quantity > 0 && $item->stock->isFresh())
                 <form method="post" action="{{ route($prefix.'cart.add') }}">
                     @csrf
                     <input type="hidden" name="sku" value="{{ $item->sku }}">

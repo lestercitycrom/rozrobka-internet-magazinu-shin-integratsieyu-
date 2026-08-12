@@ -36,6 +36,9 @@
                 </div>
 
                 <div class="et-booking-card__body">
+                    @if (is_array($confirmedFitment ?? null))
+                        <div class="et-alert et-alert--info" data-testid="checkout-confirmed-fitment" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('commerce.confirmed_fitment', ['size' => $confirmedFitment['width'].'/'.$confirmedFitment['aspect'].' R'.$confirmedFitment['rim']]) }}</div></div>
+                    @endif
                     @if($errors->any())
                         <div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
                     @endif
@@ -60,7 +63,7 @@
                             </div>
                             <div class="et-field">
                                 <label class="et-label" for="checkout-registration">{{ __('commerce.registration') }}</label>
-                                <input class="et-input easytire-input" id="checkout-registration" name="registration" type="text" autocomplete="off" value="{{ old('registration') }}" aria-describedby="checkout-registration-error" aria-invalid="{{ $errors->has('registration') ? 'true' : 'false' }}">
+                                <input class="et-input easytire-input" id="checkout-registration" name="registration" type="text" autocomplete="off" value="{{ old('registration', is_array($confirmedFitment ?? null) ? $confirmedFitment['registration'] : '') }}" aria-describedby="checkout-registration-error" aria-invalid="{{ $errors->has('registration') ? 'true' : 'false' }}">
                                 @error('registration')<p class="et-form-error" id="checkout-registration-error">{{ $message }}</p>@enderror
                             </div>
                             <div class="et-field et-field--full">

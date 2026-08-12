@@ -2,6 +2,7 @@
 
 namespace App\Modules\Pricing\Models;
 
+use App\Modules\Catalog\Enums\TaxMode;
 use App\Modules\Pricing\Enums\PricingRuleScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
     'scope',
     'scope_key',
     'source_price_list_code',
+    'source_tax_mode',
     'currency',
     'markup_basis_points',
     'fixed_markup_minor',
@@ -26,6 +28,7 @@ class PricingRule extends Model
     {
         return [
             'scope' => PricingRuleScope::class,
+            'source_tax_mode' => TaxMode::class,
             'markup_basis_points' => 'integer',
             'fixed_markup_minor' => 'integer',
             'rounding_increment_minor' => 'integer',

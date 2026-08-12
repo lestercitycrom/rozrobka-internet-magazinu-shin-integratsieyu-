@@ -47,7 +47,10 @@ final class ProcessOutboxMessage
                 return null;
             }
 
-            if (! in_array($message->type, ['notion.order_paid', 'telegram.order_paid'], true)) {
+            if (! in_array($message->type, [
+                'notion.order_paid', 'telegram.order_paid',
+                'notion.service_request_created', 'telegram.service_request_created',
+            ], true)) {
                 $message->update(['status' => OutboxStatus::Failed, 'locked_at' => null, 'last_error_code' => 'unknown_type']);
 
                 return null;

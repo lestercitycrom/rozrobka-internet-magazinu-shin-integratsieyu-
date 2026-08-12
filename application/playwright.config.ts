@@ -1,9 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8000';
+const serverPort = new URL(baseURL).port || '8000';
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.test';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
 const e2eDatabase = process.env.E2E_DB_DATABASE ?? `${process.cwd()}/database/e2e.sqlite`;
+const e2eDatabaseForPhp = e2eDatabase.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
 
@@ -29,6 +31,11 @@ export default defineConfig({
             name: 'buyer-mobile',
             use: { ...devices['iPhone 13'], browserName: 'chromium' },
             testMatch: buyerSpecs,
+        },
+        {
+            name: 'buyer-mobile-320',
+            use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
+            testMatch: /(header-navigation|map-overflow|project-content|storefront-style)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',
@@ -64,7 +71,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: `"${phpBinary}" -r "file_exists('database/e2e.sqlite') || touch('database/e2e.sqlite');" && "${phpBinary}" artisan migrate:fresh --force && "${phpBinary}" artisan e2e:seed-admin && "${phpBinary}" artisan db:seed --class=E2eStorefrontSeeder && "${phpBinary}" artisan storage:link && "${phpBinary}" artisan serve --host=127.0.0.1 --port=8000`,
+        command: `"${phpBinary}" -r "file_exists('${e2eDatabaseForPhp}') || touch('${e2eDatabaseForPhp}');" && "${phpBinary}" artisan migrate:fresh --force && "${phpBinary}" artisan e2e:seed-admin && "${phpBinary}" artisan db:seed --class=E2eStorefrontSeeder && "${phpBinary}" artisan storage:link && "${phpBinary}" artisan serve --host=127.0.0.1 --port=${serverPort}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

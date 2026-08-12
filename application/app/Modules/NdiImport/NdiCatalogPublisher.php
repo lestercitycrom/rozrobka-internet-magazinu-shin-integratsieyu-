@@ -44,6 +44,9 @@ class NdiCatalogPublisher
         $observedAt = now();
 
         foreach ([DatasetRole::Tires, DatasetRole::Wheels] as $role) {
+            if (! isset($datasets[$role->value])) {
+                continue;
+            }
             $dataset = $datasets[$role->value];
 
             foreach ($dataset->workbook->rows() as $row) {
@@ -59,15 +62,19 @@ class NdiCatalogPublisher
             }
         }
 
-        $this->mediaInheritance->reconcile($supplier);
+        if (isset($datasets[DatasetRole::Tires->value]) || isset($datasets[DatasetRole::Wheels->value])) {
+            $this->mediaInheritance->reconcile($supplier);
+        }
 
-        $this->publishStock(
-            $supplier,
-            $runId,
-            $datasets[DatasetRole::Stock->value],
-            $observedAt,
-            $summary,
-        );
+        if (isset($datasets[DatasetRole::Stock->value])) {
+            $this->publishStock(
+                $supplier,
+                $runId,
+                $datasets[DatasetRole::Stock->value],
+                $observedAt,
+                $summary,
+            );
+        }
 
         return $summary;
     }

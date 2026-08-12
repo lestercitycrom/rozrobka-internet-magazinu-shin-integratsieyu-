@@ -19,6 +19,12 @@ class CartController extends Controller
     {
         $cart->add($r->string('sku')->toString(), $r->integer('quantity'));
 
+        if ($r->string('intent')->toString() === 'checkout') {
+            $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+
+            return redirect()->route($prefix.'checkout.create');
+        }
+
         return back();
     }
 

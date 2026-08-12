@@ -2,6 +2,7 @@
 
 namespace App\Modules\NdiImport;
 
+use App\Modules\Catalog\Support\ProductionYearNormalizer;
 use App\Modules\NdiImport\Data\ValidatedWorkbook;
 use App\Modules\NdiImport\Data\WorkbookRejection;
 use App\Modules\NdiImport\Data\WorkbookRow;
@@ -130,7 +131,7 @@ final class NdiWorkbookValidator
                 'three_peak_mountain_snowflake' => $this->text($values['3PMSF']),
                 'ice_grip' => $this->text($values['Ice_grip']),
                 'run_flat' => $this->text($values['Run_flat']),
-                'production_year' => $this->text($values['Production_year']),
+                'production_year' => ProductionYearNormalizer::normalize($values['Production_year']),
             ],
             'label' => [
                 'rolling_resistance' => $this->text($values['Rolling_resistance']),
