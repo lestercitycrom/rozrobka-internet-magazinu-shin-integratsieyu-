@@ -44,3 +44,109 @@ test('the Russian QA route remains private and uses the approved style', async (
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,nofollow');
     await expectNoGlobalOverflow(page);
 });
+
+test('mobile footer links remain comfortable touch targets', async ({ page }, testInfo) => {
+    test.skip(!isMobileProject(testInfo.project.name), 'Mobile touch-target contract');
+
+    await page.goto('/dekk');
+    const footerLinkHeights = await page.locator('.et-footer li > a').evaluateAll((links) =>
+        links.map((link) => Math.round(link.getBoundingClientRect().height))
+    );
+
+    expect(footerLinkHeights.length).toBeGreaterThan(0);
+    expect(Math.min(...footerLinkHeights)).toBeGreaterThanOrEqual(44);
+    await expectNoGlobalOverflow(page);
+});
+
+test('desktop catalog uses the available canvas without compressing filters or products', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'Desktop geometry contract');
+
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('/dekk');
+
+    const geometry = await page.evaluate(() => {
+        const layout = document.querySelector<HTMLElement>('.et-catalog-layout');
+        const sidebar = document.querySelector<HTMLElement>('.et-catalog-layout > aside');
+        const results = document.querySelector<HTMLElement>('.et-catalog-results');
+        const search = document.querySelector<HTMLElement>('.et-filter-search');
+        const grid = document.querySelector<HTMLElement>('.et-product-grid');
+        const firstCard = document.querySelector<HTMLElement>('.et-product-card');
+
+        if (!layout || !sidebar || !results || !search || !grid || !firstCard) {
+            throw new Error('Catalog geometry targets are missing');
+        }
+
+        const layoutRect = layout.getBoundingClientRect();
+
+        return {
+            viewportWidth: window.innerWidth,
+            layoutWidth: layoutRect.width,
+            sideGutter: layoutRect.left,
+            sidebarWidth: sidebar.getBoundingClientRect().width,
+            resultsWidth: results.getBoundingClientRect().width,
+            searchWidth: search.getBoundingClientRect().width,
+            firstCardWidth: firstCard.getBoundingClientRect().width,
+            cardColumns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+        };
+    });
+
+    expect(geometry.layoutWidth / geometry.viewportWidth).toBeGreaterThanOrEqual(.88);
+    expect(geometry.sideGutter).toBeLessThanOrEqual(100);
+    expect(geometry.sidebarWidth).toBeGreaterThanOrEqual(320);
+    expect(geometry.resultsWidth).toBeGreaterThanOrEqual(1300);
+    expect(geometry.searchWidth).toBeGreaterThanOrEqual(270);
+    expect(geometry.firstCardWidth).toBeGreaterThanOrEqual(320);
+    expect(geometry.cardColumns).toBe(4);
+    await expectNoGlobalOverflow(page);
+
+    for (const viewport of [
+        { width: 1366, columns: 3 },
+        { width: 1280, columns: 3 },
+    ]) {
+        await page.setViewportSize({ width: viewport.width, height: 900 });
+        const responsiveGeometry = await page.evaluate(() => {
+            const layout = document.querySelector<HTMLElement>('.et-catalog-layout')!;
+            const sidebar = document.querySelector<HTMLElement>('.et-catalog-layout > aside')!;
+            const grid = document.querySelector<HTMLElement>('.et-product-grid')!;
+            const card = document.querySelector<HTMLElement>('.et-product-card')!;
+
+            return {
+                layoutWidth: layout.getBoundingClientRect().width,
+                sidebarWidth: sidebar.getBoundingClientRect().width,
+                cardWidth: card.getBoundingClientRect().width,
+                columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+            };
+        });
+
+        expect(responsiveGeometry.layoutWidth / viewport.width, `catalog utilization at ${viewport.width}px`).toBeGreaterThanOrEqual(.9);
+        expect(responsiveGeometry.sidebarWidth, `filter width at ${viewport.width}px`).toBeGreaterThanOrEqual(260);
+        expect(responsiveGeometry.cardWidth, `card width at ${viewport.width}px`).toBeGreaterThanOrEqual(280);
+        expect(responsiveGeometry.columns, `column count at ${viewport.width}px`).toBe(viewport.columns);
+        await expectNoGlobalOverflow(page);
+    }
+
+    await page.setViewportSize({ width: 1024, height: 900 });
+    const tabletGeometry = await page.evaluate(() => {
+        const layout = document.querySelector<HTMLElement>('.et-catalog-layout')!;
+        const results = document.querySelector<HTMLElement>('.et-catalog-results')!;
+        const grid = document.querySelector<HTMLElement>('.et-product-grid')!;
+        const card = document.querySelector<HTMLElement>('.et-product-card')!;
+        const toggle = document.querySelector<HTMLElement>('[data-testid="catalog-filter-toggle"]')!;
+
+        return {
+            layoutWidth: layout.getBoundingClientRect().width,
+            resultsWidth: results.getBoundingClientRect().width,
+            cardWidth: card.getBoundingClientRect().width,
+            columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+            toggleDisplay: getComputedStyle(toggle).display,
+        };
+    });
+
+    expect(tabletGeometry.layoutWidth / 1024).toBeGreaterThanOrEqual(.9);
+    expect(tabletGeometry.resultsWidth / tabletGeometry.layoutWidth).toBeGreaterThanOrEqual(.99);
+    expect(tabletGeometry.cardWidth).toBeGreaterThanOrEqual(400);
+    expect(tabletGeometry.columns).toBe(2);
+    expect(tabletGeometry.toggleDisplay).toBe('flex');
+    await expect(page.getByTestId('catalog-filter-drawer')).not.toHaveAttribute('open', '');
+    await expectNoGlobalOverflow(page);
+});

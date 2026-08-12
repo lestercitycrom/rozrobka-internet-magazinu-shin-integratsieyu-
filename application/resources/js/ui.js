@@ -29,7 +29,7 @@ const initMobileMenu = () => {
 };
 
 const initProductionFilters = () => {
-    const desktop = window.matchMedia('(min-width: 981px)');
+    const desktop = window.matchMedia('(min-width: 1101px)');
 
     const sync = () => {
         all('[data-mobile-filter]').forEach((details) => {

@@ -61,7 +61,7 @@ const bindCatalog = (root, preserveMobileOpen = null) => {
         filters.dataset.catalogLiveBound = 'true';
         filters.addEventListener('submit', (event) => {
             event.preventDefault();
-            void loadCatalog(formUrl(filters), 'push');
+            void loadCatalog(formUrl(filters), 'push', { closeMobileFilters: true });
         });
 
         filters.addEventListener('change', (event) => {
@@ -95,7 +95,7 @@ const bindCatalog = (root, preserveMobileOpen = null) => {
     root.dataset.catalogLiveReady = 'true';
 };
 
-const loadCatalog = async (target, historyMode) => {
+const loadCatalog = async (target, historyMode, { closeMobileFilters = false } = {}) => {
     const root = currentRoot();
     if (!root) {
         window.location.assign(target.href);
@@ -131,7 +131,18 @@ const loadCatalog = async (target, historyMode) => {
         document.title = page.title || document.title;
         if (historyMode === 'push') history.pushState({ catalog: true }, '', response.url);
         setBusy(root, false);
-        bindCatalog(root, mobileWasOpen);
+
+        const closeMobileSheet = closeMobileFilters && window.matchMedia('(max-width: 1100px)').matches;
+        bindCatalog(root, closeMobileSheet ? false : mobileWasOpen);
+
+        if (closeMobileSheet) {
+            document.body.style.overflow = '';
+            const resultCount = results.querySelector('.et-result-count');
+            if (resultCount instanceof HTMLElement) {
+                resultCount.tabIndex = -1;
+                resultCount.focus({ preventScroll: true });
+            }
+        }
     } catch (error) {
         if (error.name === 'AbortError') return;
         if (requestController === controller) {

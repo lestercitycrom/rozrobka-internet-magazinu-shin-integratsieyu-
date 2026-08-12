@@ -38,7 +38,7 @@
 
 <x-layouts.storefront :title="__('storefront.catalog_page_title', ['category' => $heading])" :description="$description" active-section="store" :store-route="$baseUrl" :store-label="$heading">
     <section class="et-v3-catalog-hero">
-        <div class="et-container et-v3-catalog-hero__inner">
+        <div class="et-container et-catalog-shell et-v3-catalog-hero__inner">
             <div>
                 <div class="et-breadcrumbs"><span><a href="{{ route($routePrefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $heading }}</span></div>
                 <p class="et-eyebrow">{{ __('pro.catalog.kicker') }}</p>
@@ -53,7 +53,7 @@
     </section>
 
     <section class="et-v3-catalog-section">
-        <div class="et-container et-catalog-layout" data-catalog-live-root aria-busy="false">
+        <div class="et-container et-catalog-shell et-catalog-layout" data-catalog-live-root aria-busy="false">
             <aside aria-label="{{ __('storefront.filter', ['name' => mb_strtolower($heading)]) }}">
                 <details class="et-production-filter" open data-mobile-filter data-testid="catalog-filter-drawer">
                     <summary data-testid="catalog-filter-toggle">
@@ -155,16 +155,16 @@
                 </details>
             </aside>
 
-            <section aria-live="polite" data-catalog-live-results>
+            <section class="et-catalog-results" aria-live="polite" data-catalog-live-results>
                 <div class="et-toolbar">
                     <div class="et-toolbar__group">
                         <p class="et-result-count">{{ trans_choice('storefront.found', $items->total, ['count' => $items->total]) }}</p>
                         <span class="et-loading-line" data-catalog-loading role="status" aria-live="polite" aria-hidden="true"><span class="et-catalog-loading-dot" aria-hidden="true"></span>{{ __('storefront.loading_results') }}</span>
                     </div>
-                    <form method="GET" action="{{ $baseUrl }}" class="et-toolbar__group" data-catalog-live-sort>
+                    <form method="GET" action="{{ $baseUrl }}" class="et-toolbar__group et-catalog-sort" data-catalog-live-sort>
                         @foreach ($query as $key => $value)@if ($key !== 'sort' && $key !== 'page')<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif @endforeach
                         <label class="et-label" for="sort" style="margin:0">{{ __('storefront.sort') }}</label>
-                        <select class="et-select" id="sort" name="sort" style="width:auto;min-width:180px">
+                        <select class="et-select" id="sort" name="sort">
                             <option value="">{{ __('storefront.sort_recommended') }}</option>
                             <option value="title" @selected(($query['sort'] ?? null) === 'title')>{{ __('storefront.sort_title') }}</option>
                             <option value="brand" @selected(($query['sort'] ?? null) === 'brand')>{{ __('storefront.sort_brand') }}</option>
@@ -173,7 +173,7 @@
                 </div>
 
                 @if ($activeFilters->isNotEmpty())
-                    <div class="et-toolbar__group" style="margin-bottom:1rem" data-testid="active-filters">
+                    <div class="et-toolbar__group et-active-filters" data-testid="active-filters">
                         <span class="et-caption"><strong>{{ __('storefront.active_filters') }}</strong></span>
                         @foreach ($activeFilters as $key => $value)
                             @php
