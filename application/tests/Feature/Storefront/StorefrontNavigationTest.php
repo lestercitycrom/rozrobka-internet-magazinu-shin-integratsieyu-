@@ -30,10 +30,11 @@ test('the current Norwegian storefront section is exposed in both navigation var
         ->assertOk()
         ->assertSee('data-testid="desktop-navigation"', false)
         ->assertSee('data-testid="mobile-navigation"', false)
+        ->assertSee('data-testid="catalog-category-wheels"', false)
         ->assertSee('min-h-11', false)
         ->assertSee('aria-current="page"', false);
 
-    expect(substr_count($response->getContent(), 'aria-current="page"'))->toBe(2);
+    expect(substr_count($response->getContent(), 'aria-current="page"'))->toBe(3);
 });
 
 test('services navigation exposes the customer requested direct paths', function (): void {

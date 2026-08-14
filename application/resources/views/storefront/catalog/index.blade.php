@@ -6,6 +6,44 @@
     $routeName = $routePrefix.($isTire ? 'tires.index' : 'wheels.index');
     $suggestionsRoute = $routePrefix.($isTire ? 'tires.suggestions' : 'wheels.suggestions');
     $baseUrl = route($routeName);
+    $categoryItems = [
+        [
+            'key' => 'tires',
+            'icon' => 'tire',
+            'href' => route($routePrefix.'tires.index'),
+            'title' => __('catalog_correction.tires_title'),
+            'text' => __('catalog_correction.tires_text'),
+            'active' => $isTire,
+            'request' => false,
+        ],
+        [
+            'key' => 'wheels',
+            'icon' => 'wheel',
+            'href' => route($routePrefix.'wheels.index'),
+            'title' => __('catalog_correction.wheels_title'),
+            'text' => __('catalog_correction.wheels_text'),
+            'active' => ! $isTire,
+            'request' => false,
+        ],
+        [
+            'key' => 'packages',
+            'icon' => 'package',
+            'href' => route($routePrefix.'requests.create', ['slug' => 'dekk-felg-og-hjulpakker']),
+            'title' => __('catalog_correction.packages_title'),
+            'text' => __('catalog_correction.packages_text'),
+            'active' => false,
+            'request' => true,
+        ],
+        [
+            'key' => 'tpms',
+            'icon' => 'sensor',
+            'href' => route($routePrefix.'requests.create', ['slug' => 'tpms-sensor']),
+            'title' => __('catalog_correction.tpms_title'),
+            'text' => __('catalog_correction.tpms_text'),
+            'active' => false,
+            'request' => true,
+        ],
+    ];
     $query = $filters;
     $filterLabels = [
         'q' => __('storefront.search'),
@@ -53,6 +91,42 @@
     </section>
 
     <section class="et-v3-catalog-section">
+        <nav class="et-container et-catalog-shell et-catalog-categories" aria-label="{{ __('catalog_correction.categories_label') }}" data-testid="catalog-category-rail">
+            <p class="sr-only">{{ __('catalog_correction.categories_help') }}</p>
+            <div class="et-catalog-categories__rail">
+                @foreach ($categoryItems as $category)
+                    <a
+                        class="et-catalog-category {{ $category['active'] ? 'is-active' : '' }} {{ $category['request'] ? 'is-request' : '' }}"
+                        href="{{ $category['href'] }}"
+                        @if ($category['active']) aria-current="page" @endif
+                        data-testid="catalog-category-{{ $category['key'] }}"
+                    >
+                        <span class="et-catalog-category__icon"><x-icon :name="$category['icon']" :size="22" /></span>
+                        <span class="et-catalog-category__copy">
+                            <strong>{{ $category['title'] }}</strong>
+                            <small>{{ $category['text'] }}</small>
+                        </span>
+                        @if ($category['request'])
+                            <span class="et-catalog-category__badge">{{ __('catalog_correction.request_badge') }}</span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+            <p class="et-catalog-categories__note"><x-icon name="check" :size="16" />{{ __('catalog_correction.request_note') }}</p>
+        </nav>
+
+        @php
+            $fitmentContext = session('vehicle_fitment.context');
+        @endphp
+        @if (! $isTire && is_array($fitmentContext) && ($fitmentContext['intent'] ?? null) === 'wheels')
+            <div class="et-container et-catalog-shell">
+                <div class="et-alert et-alert--info et-fitment-context-notice" data-testid="fitment-context-notice">
+                    <span class="et-alert__icon" aria-hidden="true">i</span>
+                    <div>{{ __('fitment.wheels_manual_notice', ['vehicle' => $fitmentContext['vehicle'] ?: $fitmentContext['registration'], 'size' => $fitmentContext['size']]) }}</div>
+                </div>
+            </div>
+        @endif
+
         <div class="et-container et-catalog-shell et-catalog-layout" data-catalog-live-root aria-busy="false">
             <aside aria-label="{{ __('storefront.filter', ['name' => mb_strtolower($heading)]) }}">
                 <details class="et-production-filter" open data-mobile-filter data-testid="catalog-filter-drawer">
@@ -72,7 +146,9 @@
                         <form method="GET" action="{{ $baseUrl }}" data-testid="catalog-filters" data-catalog-live-form>
                             @if (isset($query['sort']))<input type="hidden" name="sort" value="{{ $query['sort'] }}">@endif
                             <div class="et-production-filter__body">
-                                <div class="et-filter-section et-filter-section--search">
+                                <details class="et-filter-section et-filter-group et-filter-section--search" open data-testid="catalog-filter-group-search">
+                                    <summary class="et-filter-group__summary"><span><b>00</b>{{ __('catalog_correction.search_group') }}</span></summary>
+                                    <div class="et-filter-group__body">
                                     <div class="et-field">
                                         <label class="et-label" for="q">{{ __('storefront.search') }}</label>
                                         <div class="et-filter-search"><x-icon name="search" :size="18" /><input class="et-input" id="q" name="q" type="search" value="{{ $query['q'] ?? '' }}" placeholder="{{ __('storefront.search_placeholder') }}" list="catalog-suggestions" autocomplete="off" aria-controls="catalog-suggestions" data-catalog-autocomplete="{{ route($suggestionsRoute) }}"></div>
@@ -88,11 +164,13 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
+                                    </div>
+                                </details>
 
                                 @if ($isTire)
-                                    <fieldset class="et-filter-section et-filter-fieldset">
-                                        <legend><span>01</span>{{ __('pro.catalog.dimensions') }}</legend>
+                                    <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-dimensions">
+                                        <summary class="et-filter-group__summary"><span><b>01</b>{{ __('pro.catalog.dimensions') }}</span></summary>
+                                        <div class="et-filter-group__body">
                                         <div class="et-size-builder et-size-builder--tire">
                                         @foreach (['width' => 'widths', 'aspect' => 'aspects'] as $field => $optionKey)
                                             <div class="et-field">
@@ -114,18 +192,22 @@
                                             <label class="et-label" for="season">{{ __('storefront.season') }}</label>
                                             <select class="et-select" id="season" name="season"><option value="">{{ __('storefront.all_seasons') }}</option>@foreach ($filterOptions['seasons'] as $value)<option value="{{ $value }}" @selected(($query['season'] ?? null) === $value)>{{ $seasonLabel($value) }}</option>@endforeach</select>
                                         </div>
-                                    </fieldset>
+                                        </div>
+                                    </details>
                                 @else
-                                    <fieldset class="et-filter-section et-filter-fieldset">
-                                        <legend><span>01</span>{{ __('pro.catalog.wheel_size') }}</legend>
+                                    <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-wheel-size">
+                                        <summary class="et-filter-group__summary"><span><b>01</b>{{ __('pro.catalog.wheel_size') }}</span></summary>
+                                        <div class="et-filter-group__body">
                                         <div class="et-form-grid">
                                         @foreach (['width' => 'widths', 'diameter' => 'diameters'] as $field => $optionKey)
                                             <div class="et-field"><label class="et-label" for="{{ $field }}">{{ $filterLabels[$field] }}</label><select class="et-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions[$optionKey] as $value)<option value="{{ $value }}" @selected($matchesValue($field, $value))>{{ $formatOption($value) }}</option>@endforeach</select></div>
                                         @endforeach
                                         </div>
-                                    </fieldset>
-                                    <fieldset class="et-filter-section et-filter-fieldset">
-                                        <legend><span>02</span>{{ __('pro.catalog.fitment') }}</legend>
+                                        </div>
+                                    </details>
+                                    <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-fitment">
+                                        <summary class="et-filter-group__summary"><span><b>02</b>{{ __('pro.catalog.fitment') }}</span></summary>
+                                        <div class="et-filter-group__body">
                                         <div class="et-form-grid">
                                         @foreach (['bolt_holes' => 'bolt_holes', 'pcd' => 'pcds'] as $field => $optionKey)
                                             <div class="et-field"><label class="et-label" for="{{ $field }}">{{ $filterLabels[$field] }}</label><select class="et-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions[$optionKey] as $value)<option value="{{ $value }}" @selected($matchesValue($field, $value))>{{ $formatOption($value) }}</option>@endforeach</select></div>
@@ -136,14 +218,17 @@
                                             <div class="et-field"><label class="et-label" for="{{ $field }}">{{ $filterLabels[$field] }}</label><select class="et-select" id="{{ $field }}" name="{{ $field }}"><option value="">{{ __('storefront.any') }}</option>@foreach ($filterOptions[$optionKey] as $value)<option value="{{ $value }}" @selected($matchesValue($field, $value))>{{ $formatOption($value) }}</option>@endforeach</select></div>
                                         @endforeach
                                         </div>
-                                    </fieldset>
+                                        </div>
+                                    </details>
                                 @endif
 
-                                <fieldset class="et-filter-section et-filter-fieldset et-filter-availability">
-                                    <legend><span>{{ $isTire ? '02' : '03' }}</span>{{ __('pro.catalog.availability') }}</legend>
-                                    <label class="et-check et-filter-toggle"><input type="checkbox" name="in_stock" value="1" @checked(($query['in_stock'] ?? null) === '1')><span>{{ __('storefront.in_stock') }}</span></label>
-                                    <label class="et-check et-filter-toggle"><input type="checkbox" name="has_image" value="1" @checked(($query['has_image'] ?? null) === '1')><span>{{ __('storefront.has_image') }}</span></label>
-                                </fieldset>
+                                <details class="et-filter-section et-filter-group et-filter-availability" open data-testid="catalog-filter-group-availability">
+                                    <summary class="et-filter-group__summary"><span><b>{{ $isTire ? '02' : '03' }}</b>{{ __('pro.catalog.availability') }}</span></summary>
+                                    <div class="et-filter-group__body">
+                                        <label class="et-check et-filter-toggle"><input type="checkbox" name="in_stock" value="1" @checked(($query['in_stock'] ?? null) === '1')><span>{{ __('storefront.in_stock') }}</span></label>
+                                        <label class="et-check et-filter-toggle"><input type="checkbox" name="has_image" value="1" @checked(($query['has_image'] ?? null) === '1')><span>{{ __('storefront.has_image') }}</span></label>
+                                    </div>
+                                </details>
                             </div>
 
                             <div class="et-production-filter__footer">

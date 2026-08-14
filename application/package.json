@@ -10,6 +10,8 @@
         "test:preview": "playwright test --config=playwright.preview.config.ts"
     },
     "devDependencies": {
+        "@fontsource/barlow": "^5.2.8",
+        "@fontsource/barlow-condensed": "^5.2.8",
         "@fontsource/ubuntu": "^5.2.8",
         "@playwright/test": "^1.62.1",
         "@tailwindcss/vite": "^4.0.0",

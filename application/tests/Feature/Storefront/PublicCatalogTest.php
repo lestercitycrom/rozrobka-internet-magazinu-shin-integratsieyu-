@@ -81,6 +81,14 @@ test('catalog exposes faceted controls, active filters, stock filter and safe su
 
     $this->get('/dekk?width=205&in_stock=1&sort=title')
         ->assertOk()
+        ->assertSee('data-testid="catalog-category-rail"', false)
+        ->assertSee('data-testid="catalog-category-tires"', false)
+        ->assertSee('data-testid="catalog-category-wheels"', false)
+        ->assertSee('data-testid="catalog-category-packages"', false)
+        ->assertSee('data-testid="catalog-category-tpms"', false)
+        ->assertSee('data-testid="catalog-filter-group-search"', false)
+        ->assertSee('data-testid="catalog-filter-group-dimensions"', false)
+        ->assertSee('data-testid="catalog-filter-group-availability"', false)
         ->assertSee('data-catalog-autocomplete="'.route('storefront.tires.suggestions').'"', false)
         ->assertSee('list="catalog-suggestions"', false)
         ->assertSee('name="in_stock" value="1" checked', false)
@@ -132,6 +140,8 @@ test('wheel listing exposes a clear empty state and preserves filter query', fun
 
     $this->get('/felger?diameter=19&bolt_holes=5')
         ->assertOk()
+        ->assertSee('data-testid="catalog-filter-group-wheel-size"', false)
+        ->assertSee('data-testid="catalog-filter-group-fitment"', false)
         ->assertSee('Ingen produkter passer filtrene')
         ->assertSee('value="19"', false)
         ->assertDontSee('SKU-WHEEL-18');

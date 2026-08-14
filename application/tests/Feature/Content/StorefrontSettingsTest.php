@@ -84,7 +84,11 @@ test('a subsequently deactivated hero media asset falls back safely', function (
     StorefrontSettings::query()->create(['id' => 1, 'hero_media_asset_id' => $asset->id]);
     $asset->update(['is_active' => false]);
 
-    $this->get('/')->assertOk()->assertDontSee('deactivated-hero.webp')->assertSee('/brand/hero-mobile.webp', false);
+    $this->get('/')
+        ->assertOk()
+        ->assertDontSee('deactivated-hero.webp')
+        ->assertSee('/brand/hero-service-mobile.webp', false)
+        ->assertSee('/brand/hero-service-desktop.webp', false);
 });
 
 test('storefront settings reject unsafe CTA links and inactive media', function (): void {

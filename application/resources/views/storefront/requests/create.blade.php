@@ -26,6 +26,14 @@
     $requiresProblem = in_array($serviceSlug, ['tpms-sensor', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
     $selectedAdditionalServices = old('additional_services', []);
     $selectedAdditionalServices = is_array($selectedAdditionalServices) ? $selectedAdditionalServices : [];
+    $fitmentContext = session('vehicle_fitment.context');
+    $contextIntent = is_array($fitmentContext) ? ($fitmentContext['intent'] ?? null) : null;
+    $acceptsFitmentContext = ($contextIntent === 'packages' && $serviceSlug === 'dekk-felg-og-hjulpakker')
+        || ($contextIntent === 'tpms' && $serviceSlug === 'tpms-sensor');
+    $fitmentContext = $acceptsFitmentContext ? $fitmentContext : null;
+    $prefillVehicle = is_array($fitmentContext) ? (string) ($fitmentContext['vehicle'] ?? '') : '';
+    $prefillRegistration = is_array($fitmentContext) ? (string) ($fitmentContext['registration'] ?? '') : '';
+    $prefillTireSize = is_array($fitmentContext) ? (string) ($fitmentContext['size'] ?? '') : '';
 @endphp
 
 <x-layouts.storefront :title="__('booking.title')" active-section="services">
@@ -42,6 +50,12 @@
 
     <section class="et-section et-section--compact">
         <div class="et-container">
+            @if (is_array($fitmentContext))
+                <div class="et-alert et-alert--info et-fitment-request-context" data-testid="fitment-request-context">
+                    <span class="et-alert__icon" aria-hidden="true">i</span>
+                    <div>{{ __('fitment.request_context_notice', ['vehicle' => $prefillVehicle ?: $prefillRegistration, 'size' => $prefillTireSize]) }}</div>
+                </div>
+            @endif
             @if ($isSeasonal)
                 <form method="post" action="{{ route($prefix.'requests.store', $service->slug) }}" class="et-booking-flow" data-production-booking data-seasonal-prices='@json($seasonalPrices ?? [])' data-enhanced="false" data-testid="seasonal-service-request">
                     @csrf
@@ -313,17 +327,17 @@
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-vehicle">{{ __('service_requests.form.vehicle') }}</label>
-                                    <input class="et-input easytire-input" id="booking-vehicle" name="vehicle" value="{{ old('vehicle') }}" autocomplete="off" aria-invalid="{{ $errors->has('vehicle') ? 'true' : 'false' }}">
+                                    <input class="et-input easytire-input" id="booking-vehicle" name="vehicle" value="{{ old('vehicle', $prefillVehicle) }}" autocomplete="off" aria-invalid="{{ $errors->has('vehicle') ? 'true' : 'false' }}">
                                     @error('vehicle')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-registration-number">{{ __('service_requests.form.registration_number') }}</label>
-                                    <input class="et-input easytire-input" id="booking-registration-number" name="registration_number" value="{{ old('registration_number') }}" autocomplete="off" autocapitalize="characters" aria-invalid="{{ $errors->has('registration_number') ? 'true' : 'false' }}">
+                                    <input class="et-input easytire-input" id="booking-registration-number" name="registration_number" value="{{ old('registration_number', $prefillRegistration) }}" autocomplete="off" autocapitalize="characters" aria-invalid="{{ $errors->has('registration_number') ? 'true' : 'false' }}">
                                     @error('registration_number')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-tire-size">{{ __('service_requests.form.tire_size') }}</label>
-                                    <input class="et-input easytire-input" id="booking-tire-size" name="tire_size" value="{{ old('tire_size') }}" autocomplete="off" @required($isMountingService) aria-invalid="{{ $errors->has('tire_size') ? 'true' : 'false' }}">
+                                    <input class="et-input easytire-input" id="booking-tire-size" name="tire_size" value="{{ old('tire_size', $prefillTireSize) }}" autocomplete="off" @required($isMountingService) aria-invalid="{{ $errors->has('tire_size') ? 'true' : 'false' }}">
                                     @error('tire_size')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">

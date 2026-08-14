@@ -1,4 +1,12 @@
 @import 'tailwindcss';
+@import '@fontsource/barlow/latin-400.css';
+@import '@fontsource/barlow/latin-500.css';
+@import '@fontsource/barlow/latin-600.css';
+@import '@fontsource/barlow/latin-700.css';
+@import '@fontsource/barlow-condensed/latin-600.css';
+@import '@fontsource/barlow-condensed/latin-700.css';
+@import '@fontsource/barlow-condensed/latin-800.css';
+@import '@fontsource/barlow-condensed/latin-900.css';
 @import './pro-design.css';
 @import './storefront-v3.css';
 @import './storefront-shapes.css';
@@ -107,7 +115,7 @@
 }
 
 @theme {
-    --font-sans: 'Ubuntu', Arial, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Barlow', 'Ubuntu', Arial, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
     --color-easytire-ink: var(--easytire-ink);
     --color-easytire-brand: var(--easytire-brand);

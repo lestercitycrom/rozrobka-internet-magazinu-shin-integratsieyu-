@@ -80,7 +80,8 @@
     $heroSecondaryUrl = $storefrontValue('hero_secondary_url', route($routePrefix.'store.index'));
     $heroImage = $storefrontSettings?->heroMedia
         ? \Illuminate\Support\Facades\Storage::disk($storefrontSettings->heroMedia->disk)->url($storefrontSettings->heroMedia->path)
-        : '/brand/hero-mobile.webp';
+        : '/brand/hero-service-desktop.webp';
+    $heroMobileImage = $storefrontSettings?->heroMedia ? $heroImage : '/brand/hero-service-mobile.webp';
     $heroImageAlt = $storefrontSettings?->heroMedia?->getAttribute('alt_'.$homepageLocale) ?: __('pro.home.hero_image_alt');
     $sectionImage = static function (string $relation, string $fallback, string $fallbackAlt) use ($storefrontSettings, $homepageLocale): array {
         $asset = $storefrontSettings?->{$relation};
@@ -97,6 +98,7 @@
     $homepageReviews = collect();
     $homepageRatingSummaries = collect();
     $homepageBusinessPartners = collect();
+    $homepagePriceGroups = collect();
     try {
         if (\Illuminate\Support\Facades\Schema::hasTable('homepage_promotions')) {
             $homepagePromotions = \App\Modules\Content\Models\HomepagePromotion::query()->published()->orderBy('sort_order')->orderBy('id')->get();
@@ -116,11 +118,21 @@
                 ->orderBy('id')
                 ->get();
         }
+        if (\Illuminate\Support\Facades\Schema::hasTable('public_service_prices')) {
+            $homepagePriceGroups = \App\Modules\Commerce\Models\PublicServicePrice::query()
+                ->published()
+                ->orderBy('sort_order')
+                ->get()
+                ->groupBy('category_code')
+                ->map(fn ($prices) => $prices->sortBy('price_minor')->first())
+                ->take(3);
+        }
     } catch (\Throwable) {
         $homepagePromotions = collect();
         $homepageReviews = collect();
         $homepageRatingSummaries = collect();
         $homepageBusinessPartners = collect();
+        $homepagePriceGroups = collect();
     }
     $homepagePromotions = $homepagePromotions->filter(
         fn ($promotion) => filled($promotion->getAttribute('title_'.$homepageLocale))
@@ -158,7 +170,10 @@
 
 <x-layouts.storefront :title="__('storefront.site_title')" :description="__('storefront.site_description')">
     <section class="et-v3-hero">
-        <img class="et-v3-hero__photo" src="{{ $heroImage }}" width="1920" height="1280" alt="{{ $heroImageAlt }}" fetchpriority="high">
+        <picture>
+            <source media="(max-width: 640px)" srcset="{{ $heroMobileImage }}">
+            <img class="et-v3-hero__photo" src="{{ $heroImage }}" width="1920" height="1080" alt="{{ $heroImageAlt }}" fetchpriority="high">
+        </picture>
         <div class="et-v3-hero__shade" aria-hidden="true"></div>
         <div class="et-container et-v3-hero__inner">
             <div class="et-v3-hero__content">
@@ -176,25 +191,8 @@
                 </ul>
             </div>
 
-            <aside class="et-v3-chooser" aria-labelledby="home-location-title">
-                <div class="et-v3-chooser__heading">
-                    <span>{{ $storefrontValue('chooser_kicker_'.$homepageLocale, __('pro.home.start_here')) }}</span>
-                    <h2 id="home-location-title">{{ $storefrontValue('chooser_title_'.$homepageLocale, __('pro.home.location_title')) }}</h2>
-                </div>
-                <a class="et-v3-choice" href="{{ $bookingUrl }}?fulfilment=mobile">
-                    <span class="et-v3-choice__icon"><x-icon name="mobile-service" :size="25" /></span>
-                    <span><strong>{{ $storefrontValue('chooser_mobile_title_'.$homepageLocale, __('pro.home.location_mobile')) }}</strong><small>{{ $storefrontValue('chooser_mobile_text_'.$homepageLocale, __('pro.home.location_mobile_text')) }}</small></span>
-                    <x-icon name="arrow" :size="20" />
-                </a>
-                <a class="et-v3-choice" href="{{ $bookingUrl }}?fulfilment=workshop">
-                    <span class="et-v3-choice__icon"><x-icon name="workshop" :size="25" /></span>
-                    <span><strong>{{ $storefrontValue('chooser_workshop_title_'.$homepageLocale, __('pro.home.location_workshop')) }}</strong><small>{{ $storefrontValue('chooser_workshop_text_'.$homepageLocale, __('pro.home.location_workshop_text')) }}</small></span>
-                    <x-icon name="arrow" :size="20" />
-                </a>
-                <a class="et-v3-chooser__store" href="{{ route($routePrefix.'store.index') }}">
-                    <span><small>{{ $storefrontValue('chooser_store_kicker_'.$homepageLocale, __('pro.home.need_wheels')) }}</small><strong>{{ $storefrontValue('chooser_store_title_'.$homepageLocale, __('pro.home.search_registration')) }}</strong></span>
-                    <x-icon name="tire" :size="25" />
-                </a>
+            <aside aria-label="{{ __('pro.home.finder_title') }}">
+                @include('storefront._quick-finder', ['idPrefix' => 'home-finder'])
             </aside>
         </div>
     </section>
@@ -206,6 +204,27 @@
             <span><strong>03</strong>{{ $storefrontValue('trust_3_'.$homepageLocale, __('pro.home.choice_help_title')) }}</span>
         </div>
     </div>
+
+    <section class="et-home-prices" aria-labelledby="home-prices-title" data-testid="home-prices">
+        <div class="et-container et-home-prices__inner">
+            <header>
+                <p class="et-eyebrow">{{ __('pro.home.price_kicker') }}</p>
+                <h2 id="home-prices-title">{{ __('pro.home.price_title') }}</h2>
+            </header>
+            <div class="et-home-prices__list">
+                @forelse ($homepagePriceGroups as $price)
+                    <a href="{{ route($routePrefix.'pricing.index') }}">
+                        <span>{{ $price->localized('category_title', $homepageLocale) }}</span>
+                        <strong><small>{{ __('pro.home.price_from') }}</small> {{ number_format($price->price_minor / 100, 0, ',', ' ') }} {{ $price->currency }}</strong>
+                        <x-icon name="arrow" :size="18" />
+                    </a>
+                @empty
+                    <a href="{{ route($routePrefix.'pricing.index') }}"><span>{{ __('pro.home.price_pending') }}</span><strong>{{ __('pro.home.price_all') }}</strong><x-icon name="arrow" :size="18" /></a>
+                @endforelse
+            </div>
+            <a class="et-home-prices__all" href="{{ route($routePrefix.'pricing.index') }}">{{ __('pro.home.price_all') }} <x-icon name="arrow" :size="17" /></a>
+        </div>
+    </section>
 
     @if ($homepagePromotions->isNotEmpty())
         <section class="et-v3-notices" aria-labelledby="home-promotions-title" data-testid="homepage-promotions">
@@ -234,7 +253,7 @@
     @endif
 
     @if ($serviceCollection->isNotEmpty())
-    <section class="et-v3-section et-v3-section--white" aria-labelledby="home-services-title" data-testid="services-section">
+    <section class="et-v3-section et-v3-section--services" aria-labelledby="home-services-title" data-testid="services-section">
         <div class="et-container">
             <div class="et-v3-section-head">
                 <div>
@@ -276,13 +295,14 @@
             </div>
             <div class="et-v3-process">
                 @foreach ([
-                    [$storefrontValue('process_1_title_'.$homepageLocale, __('project.home.process_1_title')), $storefrontValue('process_1_text_'.$homepageLocale, __('project.home.process_1_text'))],
-                    [$storefrontValue('process_2_title_'.$homepageLocale, __('project.home.process_2_title')), $storefrontValue('process_2_text_'.$homepageLocale, __('project.home.process_2_text'))],
-                    [$storefrontValue('process_3_title_'.$homepageLocale, __('project.home.process_3_title')), $storefrontValue('process_3_text_'.$homepageLocale, __('project.home.process_3_text'))],
-                    [$storefrontValue('process_4_title_'.$homepageLocale, __('project.home.process_4_title')), $storefrontValue('process_4_text_'.$homepageLocale, __('project.home.process_4_text'))],
-                ] as $index => [$stepTitle, $stepText])
+                    ['search', $storefrontValue('process_1_title_'.$homepageLocale, __('project.home.process_1_title')), $storefrontValue('process_1_text_'.$homepageLocale, __('project.home.process_1_text'))],
+                    ['car', $storefrontValue('process_2_title_'.$homepageLocale, __('project.home.process_2_title')), $storefrontValue('process_2_text_'.$homepageLocale, __('project.home.process_2_text'))],
+                    ['calendar', $storefrontValue('process_3_title_'.$homepageLocale, __('project.home.process_3_title')), $storefrontValue('process_3_text_'.$homepageLocale, __('project.home.process_3_text'))],
+                    ['check', $storefrontValue('process_4_title_'.$homepageLocale, __('project.home.process_4_title')), $storefrontValue('process_4_text_'.$homepageLocale, __('project.home.process_4_text'))],
+                ] as $index => [$stepIcon, $stepTitle, $stepText])
                     <article class="et-v3-process__step">
-                        <span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                        <span class="et-v3-process__icon"><x-icon :name="$stepIcon" :size="24" /></span>
+                        <small>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</small>
                         <div><h3>{{ $stepTitle }}</h3><p>{{ $stepText }}</p></div>
                     </article>
                 @endforeach

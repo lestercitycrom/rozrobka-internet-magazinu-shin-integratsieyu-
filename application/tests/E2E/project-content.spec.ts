@@ -44,7 +44,9 @@ test('legacy shop route resolves to the populated store landing in both QA local
     await expect(page).toHaveURL(new RegExp(`${prefix.replace('/', '\\/')}\\/dekk-og-felger$`));
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByLabel(/registreringsnummer|регистрационн/i)).toBeVisible();
+    await expect(page.getByTestId('quick-finder')).toBeVisible();
+    await expect(page.getByTestId('quick-finder').locator('input[name="registration"]')).toBeVisible();
+    await expect(page.getByTestId('quick-finder').getByRole('tab')).toHaveCount(2);
     await expect(page.locator('a[href$="/dekk"]')).not.toHaveCount(0);
     await expect(page.locator('a[href$="/felger"]')).not.toHaveCount(0);
     await expectNoGlobalOverflow(page);

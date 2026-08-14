@@ -25,7 +25,12 @@ final class VehicleFitmentController extends Controller
         if ($fitment !== null && $registration !== null) {
             $r->session()->put('vehicle_fitment.pending', [
                 'registration' => $registration,
+                'vehicle' => [
+                    'make' => $fitment->make,
+                    'model' => $fitment->model,
+                ],
                 'tyres' => $fitment->tyres,
+                'wheels' => $fitment->wheels,
                 'source' => 'statens_vegvesen',
                 'looked_up_at' => now()->toIso8601String(),
             ]);
@@ -39,29 +44,56 @@ final class VehicleFitmentController extends Controller
     public function confirm(Request $request)
     {
         $values = $request->validate([
-            'width' => ['required', 'string', 'regex:/^\d{3}$/'],
-            'aspect' => ['required', 'string', 'regex:/^\d{2,3}$/'],
-            'rim' => ['required', 'string', 'regex:/^\d{2}$/'],
+            'intent' => ['required', 'string', 'in:tires,wheels,packages,tpms'],
+            'size' => ['required', 'string', 'regex:/^\d{3}\|\d{2,3}\|\d{2}$/'],
         ]);
+        [$width, $aspect, $rim] = explode('|', $values['size']);
         $pending = $request->session()->get('vehicle_fitment.pending');
         abort_unless(is_array($pending) && isset($pending['registration'], $pending['tyres']), 422);
         $confirmed = collect($pending['tyres'])->contains(fn (mixed $tyre): bool => is_array($tyre)
-            && ($tyre['width'] ?? null) === $values['width']
-            && ($tyre['aspect'] ?? null) === $values['aspect']
-            && ($tyre['rim'] ?? null) === $values['rim']);
+            && ($tyre['width'] ?? null) === $width
+            && ($tyre['aspect'] ?? null) === $aspect
+            && ($tyre['rim'] ?? null) === $rim);
         abort_unless($confirmed, 422);
 
-        $request->session()->put('vehicle_fitment.confirmed', [
+        $vehicle = collect([
+            data_get($pending, 'vehicle.make'),
+            data_get($pending, 'vehicle.model'),
+        ])->filter(fn (mixed $part): bool => is_string($part) && filled($part))->implode(' ');
+        $context = [
+            'intent' => $values['intent'],
             'registration' => $pending['registration'],
-            'source' => 'statens_vegvesen',
-            'width' => $values['width'],
-            'aspect' => $values['aspect'],
-            'rim' => $values['rim'],
+            'vehicle' => $vehicle,
+            'size' => $width.'/'.$aspect.' R'.$rim,
+            'width' => $width,
+            'aspect' => $aspect,
+            'rim' => $rim,
+            'wheels' => is_array($pending['wheels'] ?? null) ? $pending['wheels'] : [],
+            'source' => $pending['source'] ?? 'statens_vegvesen',
+            'compatibility_status' => $values['intent'] === 'tires'
+                ? 'confirmed_tyre_size'
+                : 'manual_confirmation_required',
             'confirmed_at' => now()->toIso8601String(),
-        ]);
+        ];
         $request->session()->forget('vehicle_fitment.pending');
 
-        return redirect()->route($this->routePrefix().'tires.index', $values);
+        if ($values['intent'] === 'tires') {
+            $request->session()->put('vehicle_fitment.confirmed', $context);
+            $request->session()->forget('vehicle_fitment.context');
+
+            return redirect()->route($this->routePrefix().'tires.index', compact('width', 'aspect', 'rim'));
+        }
+
+        $request->session()->forget('vehicle_fitment.confirmed');
+        $request->session()->put('vehicle_fitment.context', $context);
+
+        if ($values['intent'] === 'wheels') {
+            return redirect()->route($this->routePrefix().'wheels.index');
+        }
+
+        $slug = $values['intent'] === 'packages' ? 'dekk-felg-og-hjulpakker' : 'tpms-sensor';
+
+        return redirect()->route($this->routePrefix().'requests.create', ['slug' => $slug]);
     }
 
     /** @return list<string> */

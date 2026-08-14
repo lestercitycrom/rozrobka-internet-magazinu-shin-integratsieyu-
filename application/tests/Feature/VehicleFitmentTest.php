@@ -1,8 +1,11 @@
 <?php
 
 use App\Modules\VehicleFitment\VehicleLookup;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+
+uses(RefreshDatabase::class);
 
 /** @param list<string> $dimensions */
 function currentStatensVehiclePayload(array $dimensions = ['205/55 R16']): array
@@ -79,9 +82,22 @@ test('enabled fake lookup maps approved dimensions without retaining the registr
     config()->set('vehicle_fitment.endpoint', 'https://example.test/vehicle');
     Http::fake(['https://example.test/vehicle*' => Http::response(currentStatensVehiclePayload(), 200)]);
     $response = $this->post('/biloppslag', ['registration' => 'AB 12345']);
-    $response->assertOk()->assertSee('Demo Car')->assertSee('205/55 R16')->assertSee(__('fitment.confirm_size', [], 'nb'))->assertSee('data-testid="fitment-confirm-size"', false)->assertSee('name="width" value="205"', false)->assertSee('6.5Jx16')->assertSee('ET45')->assertSee('data-testid="fitment-wheel-sizes"', false)->assertDontSee('AB 12345');
+    $response->assertOk()
+        ->assertSee('Demo Car')
+        ->assertSee('205/55 R16')
+        ->assertSee(__('fitment.intent_legend', [], 'nb'))
+        ->assertSee('name="intent" value="tires"', false)
+        ->assertSee('name="intent" value="wheels"', false)
+        ->assertSee('name="intent" value="packages"', false)
+        ->assertSee('name="intent" value="tpms"', false)
+        ->assertSee('name="size" value="205|55|16"', false)
+        ->assertSee('data-testid="fitment-confirm-size"', false)
+        ->assertSee('6.5Jx16')
+        ->assertSee('ET45')
+        ->assertSee('data-testid="fitment-wheel-sizes"', false)
+        ->assertDontSee('AB 12345');
     $response->assertSessionHas('vehicle_fitment.pending');
-    $this->post('/biloppslag/bekreft', ['width' => '205', 'aspect' => '55', 'rim' => '16'])
+    $this->post('/biloppslag/bekreft', ['intent' => 'tires', 'size' => '205|55|16'])
         ->assertRedirect('/dekk?width=205&aspect=55&rim=16')
         ->assertSessionHas('vehicle_fitment.confirmed', fn (array $fitment): bool => $fitment['registration'] === 'AB12345' && $fitment['source'] === 'statens_vegvesen');
     Http::assertSent(fn ($request) => $request->hasHeader(config('vehicle_fitment.header'), 'Apikey test-key')
@@ -160,10 +176,69 @@ test('a size that was not returned by Statens cannot be confirmed', function ():
         'tyres' => [['width' => '205', 'aspect' => '55', 'rim' => '16']],
     ]]);
 
-    $this->post('/biloppslag/bekreft', ['width' => '225', 'aspect' => '45', 'rim' => '18'])
+    $this->post('/biloppslag/bekreft', ['intent' => 'tires', 'size' => '225|45|18'])
         ->assertStatus(422)
         ->assertSessionMissing('vehicle_fitment.confirmed');
 });
+
+test('fitment confirmation validates the requested product path', function (): void {
+    session(['vehicle_fitment.pending' => [
+        'registration' => 'AB12345',
+        'source' => 'statens_vegvesen',
+        'vehicle' => ['make' => 'Demo', 'model' => 'Car'],
+        'tyres' => [['width' => '205', 'aspect' => '55', 'rim' => '16']],
+        'wheels' => [['dimension' => '6.5Jx16', 'offset' => 'ET45']],
+    ]]);
+
+    $this->post('/biloppslag/bekreft', ['intent' => 'engine', 'size' => '205|55|16'])
+        ->assertSessionHasErrors(['intent']);
+    $this->post('/biloppslag/bekreft', ['intent' => 'wheels', 'size' => '205|55|99'])
+        ->assertStatus(422);
+});
+
+test('wheel path preserves vehicle context but never claims automatic compatibility', function (): void {
+    session(['vehicle_fitment.pending' => [
+        'registration' => 'AB12345',
+        'source' => 'statens_vegvesen',
+        'vehicle' => ['make' => 'Demo', 'model' => 'Car'],
+        'tyres' => [['width' => '205', 'aspect' => '55', 'rim' => '16']],
+        'wheels' => [['dimension' => '6.5Jx16', 'offset' => 'ET45']],
+    ]]);
+
+    $this->post('/biloppslag/bekreft', ['intent' => 'wheels', 'size' => '205|55|16'])
+        ->assertRedirect('/felger')
+        ->assertSessionMissing('vehicle_fitment.confirmed')
+        ->assertSessionHas('vehicle_fitment.context', fn (array $context): bool => $context['intent'] === 'wheels'
+            && $context['vehicle'] === 'Demo Car'
+            && $context['compatibility_status'] === 'manual_confirmation_required'
+        );
+
+    $this->get('/felger')
+        ->assertOk()
+        ->assertSee('data-testid="fitment-context-notice"', false)
+        ->assertSee(__('fitment.wheels_manual_notice', ['vehicle' => 'Demo Car', 'size' => '205/55 R16'], 'nb'));
+});
+
+test('complete wheel and TPMS paths route to an enquiry with trusted vehicle context', function (string $intent, string $path): void {
+    session(['vehicle_fitment.pending' => [
+        'registration' => 'AB12345',
+        'source' => 'statens_vegvesen',
+        'vehicle' => ['make' => 'Demo', 'model' => 'Car'],
+        'tyres' => [['width' => '205', 'aspect' => '55', 'rim' => '16']],
+        'wheels' => [['dimension' => '6.5Jx16', 'offset' => 'ET45']],
+    ]]);
+
+    $this->post('/biloppslag/bekreft', ['intent' => $intent, 'size' => '205|55|16'])
+        ->assertRedirect($path)
+        ->assertSessionMissing('vehicle_fitment.confirmed')
+        ->assertSessionHas('vehicle_fitment.context', fn (array $context): bool => $context['intent'] === $intent
+            && $context['registration'] === 'AB12345'
+            && $context['size'] === '205/55 R16'
+        );
+})->with([
+    'complete wheels' => ['packages', '/tjenester/dekk-felg-og-hjulpakker/foresporsel'],
+    'TPMS' => ['tpms', '/tjenester/tpms-sensor/foresporsel'],
+]);
 
 test('russian fitment results keep buyers inside the private preview', function (): void {
     config()->set('storefront.ru_preview_enabled', true);
@@ -177,6 +252,6 @@ test('russian fitment results keep buyers inside the private preview', function 
         ->assertSee('Demo Car')
         ->assertSee('/ru/biloppslag/bekreft', false)
         ->assertSee('noindex,nofollow', false);
-    $this->post('/ru/biloppslag/bekreft', ['width' => '205', 'aspect' => '55', 'rim' => '16'])
+    $this->post('/ru/biloppslag/bekreft', ['intent' => 'tires', 'size' => '205|55|16'])
         ->assertRedirect('/ru/dekk?width=205&aspect=55&rim=16');
 });

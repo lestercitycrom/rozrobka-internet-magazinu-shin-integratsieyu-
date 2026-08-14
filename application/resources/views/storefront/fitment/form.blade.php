@@ -8,6 +8,7 @@
         return filled($value) ? (string) $value : $fallback;
     };
     $isStoreLanding = request()->routeIs($routePrefix.'store.*');
+    $hasFitment = isset($fitment) && $fitment;
     $pageTitle = $isStoreLanding ? __('seo_store.title') : __('fitment.title');
     $pageDescription = $isStoreLanding ? __('seo_store.description') : null;
     $pageHeading = $isStoreLanding ? $storefrontValue('store_heading_'.$storefrontLocale, __('seo_store.heading')) : __('fitment.title');
@@ -16,7 +17,7 @@
 @endphp
 
 <x-layouts.storefront :title="$pageTitle" :description="$pageDescription" :canonical="$canonical" active-section="store">
-    <section class="et-page-hero">
+    <section class="et-page-hero {{ $isStoreLanding ? 'et-page-hero--store' : '' }}">
         <img class="et-page-hero__photo" src="/brand/workshop-alt.webp" width="1400" height="900" alt="{{ __('pro.content.workshop_image_alt') }}">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
@@ -28,8 +29,17 @@
         </div>
     </section>
 
-    <section class="et-section et-section--compact">
-        <div class="et-container et-split">
+    <section class="et-section et-section--compact {{ $isStoreLanding && ! $hasFitment ? 'et-store-finder-section' : '' }}">
+        <div class="et-container {{ $isStoreLanding && ! $hasFitment ? 'et-store-finder-wrap' : 'et-split' }}">
+            @if ($isStoreLanding && ! $hasFitment)
+                @if (request()->isMethod('post'))
+                    <div class="et-alert et-alert--info et-store-lookup-feedback" role="status">
+                        <span class="et-alert__icon" aria-hidden="true">i</span>
+                        <div>{{ __('fitment.lookup_not_found') }}</div>
+                    </div>
+                @endif
+                @include('storefront._quick-finder', ['idPrefix' => 'store-finder', 'showStoreLink' => false])
+            @else
             <div class="et-card">
                 <div class="et-card__body">
                     <p class="et-eyebrow">{{ __('pro.fitment.panel_title') }}</p>
@@ -74,21 +84,30 @@
                         <h2 class="et-h2" id="fitment-result-title">{{ $fitment->make }} {{ $fitment->model }}</h2>
                         <p class="et-copy">{{ __('fitment.results_notice') }}</p>
                         <h3 class="et-h3" style="margin-top:1.5rem">{{ __('pro.fitment.result_title') }}</h3>
-                        <div class="et-stack" style="margin-top:1rem">
-                            @foreach ($fitment->tyres as $tyre)
-                                <form method="post" action="{{ route($routePrefix.'fitment.confirm') }}">
-                                    @csrf
-                                    <input type="hidden" name="width" value="{{ $tyre['width'] }}">
-                                    <input type="hidden" name="aspect" value="{{ $tyre['aspect'] }}">
-                                    <input type="hidden" name="rim" value="{{ $tyre['rim'] }}">
-                                    <button class="et-card et-card--interactive" data-testid="fitment-confirm-size" type="submit" style="width:100%;text-align:left">
-                                    <span class="et-card__body" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
-                                        <span><strong>{{ $tyre['width'] }}/{{ $tyre['aspect'] }} R{{ $tyre['rim'] }}</strong><small style="display:block;margin-top:.25rem">{{ __('fitment.confirm_size') }}</small></span><span aria-hidden="true">→</span>
-                                    </span>
+                        <form method="post" action="{{ route($routePrefix.'fitment.confirm') }}" class="et-fitment-choice" style="margin-top:1rem">
+                            @csrf
+                            <fieldset class="et-fieldset">
+                                <legend class="et-label">{{ __('fitment.intent_legend') }}</legend>
+                                <div class="et-radio-grid et-fitment-intents">
+                                    @foreach (['tires', 'wheels', 'packages', 'tpms'] as $intent)
+                                        <label class="et-radio-card">
+                                            <input name="intent" value="{{ $intent }}" type="radio" required @checked(old('intent', 'tires') === $intent)>
+                                            <span><strong>{{ __('fitment.intent_'.$intent) }}</strong><small>{{ __('fitment.intent_'.$intent.'_help') }}</small></span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                            <p class="et-caption" style="margin-top:1.25rem">{{ __('fitment.choose_size') }}</p>
+                            <div class="et-stack" style="margin-top:.65rem">
+                                @foreach ($fitment->tyres as $tyre)
+                                    <button class="et-card et-card--interactive" data-testid="fitment-confirm-size" name="size" value="{{ $tyre['width'] }}|{{ $tyre['aspect'] }}|{{ $tyre['rim'] }}" type="submit" style="width:100%;text-align:left">
+                                        <span class="et-card__body" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+                                            <span><strong>{{ $tyre['width'] }}/{{ $tyre['aspect'] }} R{{ $tyre['rim'] }}</strong><small style="display:block;margin-top:.25rem">{{ __('fitment.confirm_size') }}</small></span><span aria-hidden="true">→</span>
+                                        </span>
                                     </button>
-                                </form>
-                            @endforeach
-                        </div>
+                                @endforeach
+                            </div>
+                        </form>
                         @if ($fitment->wheels !== [])
                             <h3 class="et-h3" style="margin-top:1.5rem">{{ __('fitment.original_wheels') }}</h3>
                             <p class="et-copy">{{ __('fitment.wheel_notice') }}</p>
@@ -110,6 +129,7 @@
                         <a class="et-btn et-btn--ghost" href="{{ route($routePrefix.'tires.index') }}">{{ __('fitment.manual') }}</a>
                     </div>
                 </aside>
+            @endif
             @endif
         </div>
     </section>
