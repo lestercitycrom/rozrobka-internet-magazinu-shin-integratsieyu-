@@ -8,29 +8,49 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('homepage_promotions', function (Blueprint $table): void {
-            $table->foreignUlid('media_asset_id')
-                ->nullable()
-                ->after('cta_url')
-                ->constrained('media_assets')
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('homepage_promotions', 'media_asset_id')) {
+            Schema::table('homepage_promotions', function (Blueprint $table): void {
+                $table->foreignUlid('media_asset_id')
+                    ->nullable()
+                    ->after('cta_url')
+                    ->constrained('media_assets')
+                    ->nullOnDelete();
+            });
+        }
 
-        Schema::table('storefront_settings', function (Blueprint $table): void {
-            $table->string('instagram_url', 2048)->nullable()->after('map_embed_url');
-            $table->string('snapchat_url', 2048)->nullable()->after('instagram_url');
-            $table->string('facebook_url', 2048)->nullable()->after('snapchat_url');
-        });
+        foreach ([
+            'instagram_url' => 'map_embed_url',
+            'snapchat_url' => 'instagram_url',
+            'facebook_url' => 'snapchat_url',
+        ] as $column => $after) {
+            if (Schema::hasColumn('storefront_settings', $column)) {
+                continue;
+            }
+
+            Schema::table('storefront_settings', function (Blueprint $table) use ($column, $after): void {
+                // This settings table already contains extensive localized copy.
+                // TEXT keeps public URLs out of InnoDB's 65 KB inline-row limit.
+                $table->text($column)->nullable()->after($after);
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('homepage_promotions', function (Blueprint $table): void {
-            $table->dropConstrainedForeignId('media_asset_id');
-        });
+        if (Schema::hasColumn('homepage_promotions', 'media_asset_id')) {
+            Schema::table('homepage_promotions', function (Blueprint $table): void {
+                $table->dropConstrainedForeignId('media_asset_id');
+            });
+        }
 
-        Schema::table('storefront_settings', function (Blueprint $table): void {
-            $table->dropColumn(['instagram_url', 'snapchat_url', 'facebook_url']);
-        });
+        foreach (['facebook_url', 'snapchat_url', 'instagram_url'] as $column) {
+            if (! Schema::hasColumn('storefront_settings', $column)) {
+                continue;
+            }
+
+            Schema::table('storefront_settings', function (Blueprint $table) use ($column): void {
+                $table->dropColumn($column);
+            });
+        }
     }
 };

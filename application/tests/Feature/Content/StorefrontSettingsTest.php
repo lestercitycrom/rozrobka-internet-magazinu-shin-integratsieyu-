@@ -6,10 +6,30 @@ use App\Modules\Content\Models\ServicePage;
 use App\Modules\Content\Models\StorefrontSettings;
 use App\Modules\Content\ReadModel\StorefrontSettingsReadService;
 use Database\Seeders\DatabaseSeeder;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
+
+test('social settings migration safely resumes after a partial deployment', function (): void {
+    foreach (['facebook_url', 'snapchat_url', 'instagram_url'] as $column) {
+        Schema::table('storefront_settings', function (Blueprint $table) use ($column): void {
+            $table->dropColumn($column);
+        });
+    }
+
+    expect(Schema::hasColumn('homepage_promotions', 'media_asset_id'))->toBeTrue();
+
+    $migration = require database_path('migrations/2026_08_15_090000_add_promotion_media_and_social_links_to_storefront_settings.php');
+    $migration->up();
+
+    foreach (['instagram_url', 'snapchat_url', 'facebook_url'] as $column) {
+        expect(Schema::hasColumn('storefront_settings', $column))->toBeTrue()
+            ->and(Schema::getColumnType('storefront_settings', $column))->toBe('text');
+    }
+});
 
 test('empty storefront settings preserve the existing public defaults', function (): void {
     $this->get('/')
