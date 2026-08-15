@@ -44,7 +44,8 @@ final class StorefrontSettingsReadService
         $settings = $this->current();
 
         return [
-            'instagram_url' => PublicHttpUrl::sanitize($settings?->instagram_url),
+            'instagram_url' => PublicHttpUrl::sanitize($settings?->instagram_url)
+                ?? PublicHttpUrl::sanitize(config('storefront.instagram_url')),
             'snapchat_url' => PublicHttpUrl::sanitize($settings?->snapchat_url),
             'facebook_url' => PublicHttpUrl::sanitize($settings?->facebook_url)
                 ?? PublicHttpUrl::sanitize(config('storefront.facebook_url')),

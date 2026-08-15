@@ -963,6 +963,11 @@
     filter: saturate(.9) contrast(1.03);
 }
 
+.et-v3-promotion:focus-visible {
+    outline: 3px solid var(--et-color-brand-accent);
+    outline-offset: 4px;
+}
+
 .et-v3-promotion__shade {
     background: var(--et-surface-overlay-dark);
 }
@@ -1005,6 +1010,33 @@
     color: rgb(255 255 255 / .76);
     font-size: .9rem;
     line-height: 1.55;
+}
+
+.et-v3-promotion__details {
+    min-height: 5.9rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--et-motion-standard), transform var(--et-motion-standard);
+    transform: translateY(.45rem);
+    visibility: hidden;
+}
+
+.et-v3-promotion:hover .et-v3-promotion__details,
+.et-v3-promotion:focus-within .et-v3-promotion__details,
+.et-v3-promotion:focus .et-v3-promotion__details {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+@media (hover: none), (max-width: 767px) {
+    .et-v3-promotion__details {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        visibility: visible;
+    }
 }
 
 .et-v3-promotion a,

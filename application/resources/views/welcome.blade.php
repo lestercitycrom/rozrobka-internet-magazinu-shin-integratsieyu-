@@ -291,14 +291,16 @@
                                 : $promotionFallbackImages[$loop->index % count($promotionFallbackImages)];
                             $promotionAlt = $promotionAsset?->getAttribute('alt_'.$homepageLocale) ?: '';
                         @endphp
-                        <article class="et-v3-promotion" data-testid="homepage-promotion">
+                        <article class="et-v3-promotion" data-testid="homepage-promotion" tabindex="0">
                             <img src="{{ $promotionImage }}" width="1200" height="900" loading="lazy" alt="{{ $promotionAlt }}">
                             <span class="et-v3-promotion__shade" aria-hidden="true"></span>
                             <div class="et-v3-promotion__content">
                                 <span class="et-v3-promotion__number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                                 <h3>{{ $title }}</h3>
-                                <p>{{ $body }}</p>
-                                @if ($ctaUrl)<a href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>@endif
+                                <div class="et-v3-promotion__details">
+                                    <p>{{ $body }}</p>
+                                    @if ($ctaUrl)<a href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>@endif
+                                </div>
                             </div>
                         </article>
                     @endforeach

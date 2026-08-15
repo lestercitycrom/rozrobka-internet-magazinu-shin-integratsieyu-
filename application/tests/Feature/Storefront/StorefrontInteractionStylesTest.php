@@ -50,10 +50,18 @@ test('storefront and admin consume one shared design foundation', function (): v
 
     $storefront = file_get_contents(resource_path('css/storefront-v3.css'));
     $shapes = file_get_contents(resource_path('css/storefront-shapes.css'));
+    $home = file_get_contents(resource_path('views/welcome.blade.php'));
 
     expect(substr_count($storefront, '.et-v3-process-strip {'))->toBe(1)
         ->and($storefront)->toContain('.et-v3-promotion-grid:has(> .et-v3-promotion:nth-child(2):last-child)')
         ->and($storefront)->not->toContain('var(--et-color-brand-rgb)')
+        ->and($storefront)
+        ->toContain('.et-v3-promotion:hover .et-v3-promotion__details')
+        ->toContain('.et-v3-promotion:focus-within .et-v3-promotion__details')
+        ->toContain('@media (hover: none), (max-width: 767px)')
+        ->and($home)
+        ->toContain('class="et-v3-promotion__details"')
+        ->toContain('tabindex="0"')
         ->and($shapes)->toContain('.et-admin-body')
         ->and($shapes)->toContain('--radius-2xl: var(--et-radius-sharp);');
 });

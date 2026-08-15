@@ -126,7 +126,7 @@ test('storefront settings reject unsafe CTA links and inactive media', function 
     ])->assertSessionHasErrors(['hero_primary_url', 'hero_media_asset_id', 'map_embed_url']);
 });
 
-test('administrator can save only safe public social links and the read model has a Facebook fallback', function (): void {
+test('administrator can save only safe public social links and the read model has confirmed social fallbacks', function (): void {
     $admin = User::factory()->operations()->create();
 
     $this->actingAs($admin)
@@ -152,9 +152,11 @@ test('administrator can save only safe public social links and the read model ha
         ->put('/admin/storefront-settings', ['instagram_url' => 'javascript:alert(1)', 'snapchat_url' => 'https://user:pass@example.test/'])
         ->assertSessionHasErrors(['instagram_url', 'snapchat_url']);
 
-    StorefrontSettings::query()->updateOrCreate(['id' => 1], ['facebook_url' => null]);
-    expect(app(StorefrontSettingsReadService::class)->socialLinks()['facebook_url'])
-        ->toBe(config('storefront.facebook_url'));
+    StorefrontSettings::query()->updateOrCreate(['id' => 1], ['instagram_url' => null, 'facebook_url' => null]);
+    expect(app(StorefrontSettingsReadService::class)->socialLinks())->toMatchArray([
+        'instagram_url' => config('storefront.instagram_url'),
+        'facebook_url' => config('storefront.facebook_url'),
+    ]);
 });
 
 function storefrontSettingsPayload(MediaAsset $asset): array

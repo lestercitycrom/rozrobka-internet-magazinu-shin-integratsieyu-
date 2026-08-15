@@ -33,6 +33,23 @@ test('approved homepage composition stays coherent at the priority desktop and m
         await expect(page.locator('.et-v3-trust, .et-v3-story')).toHaveCount(0);
         await expectNoGlobalOverflow(page);
 
+        const firstPromotion = page.getByTestId('homepage-promotion').first();
+        const promotionDetails = firstPromotion.locator('.et-v3-promotion__details');
+        await expect(firstPromotion).toBeVisible();
+
+        if (viewport.width > 767) {
+            await page.mouse.move(0, 0);
+            await firstPromotion.blur();
+            await expect(promotionDetails).not.toBeVisible();
+            await firstPromotion.hover();
+            await expect(promotionDetails).toBeVisible();
+            await page.mouse.move(0, 0);
+            await firstPromotion.focus();
+            await expect(promotionDetails).toBeVisible();
+        } else {
+            await expect(promotionDetails).toBeVisible();
+        }
+
         const ordering = await page.evaluate(() => {
             const y = (selector: string) => document.querySelector<HTMLElement>(selector)?.getBoundingClientRect().top
                 ?? Number.POSITIVE_INFINITY;

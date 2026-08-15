@@ -15,4 +15,5 @@ return [
     'map_embed_url' => env('STOREFRONT_MAP_EMBED_URL')
         ?: 'https://www.google.com/maps?q=EasyTire%20Dekkskift%20Troms%C3%B8%2C%20Ringvegen%20202%2C%209018%20Troms%C3%B8&output=embed',
     'facebook_url' => 'https://www.facebook.com/share/1Bgf5oF3bL/?mibextid=wwXIfr',
+    'instagram_url' => 'https://www.instagram.com/easytire_tromso/',
 ];
