@@ -7,7 +7,7 @@ const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
 const e2eDatabase = process.env.E2E_DB_DATABASE ?? `${process.cwd()}/database/e2e.sqlite`;
 const e2eDatabaseForPhp = e2eDatabase.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
-const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|catalog-mobile-layout|header-navigation|product-detail|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
+const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|catalog-mobile-layout|header-navigation|homepage-feedback|product-detail|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
 
 export default defineConfig({
     testDir: './tests/E2E',

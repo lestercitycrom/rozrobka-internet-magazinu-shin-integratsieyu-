@@ -77,7 +77,6 @@
     $mapUrl = $storefrontValue('map_url', (string) $mapUrl);
     $mapEmbedUrl = \App\Support\GoogleMapsEmbedUrl::sanitize($storefrontValue('map_embed_url', (string) config('storefront.map_embed_url')));
     $heroPrimaryUrl = $storefrontValue('hero_primary_url', $bookingUrl);
-    $heroSecondaryUrl = $storefrontValue('hero_secondary_url', route($routePrefix.'store.index'));
     $heroImage = $storefrontSettings?->heroMedia
         ? \Illuminate\Support\Facades\Storage::disk($storefrontSettings->heroMedia->disk)->url($storefrontSettings->heroMedia->path)
         : '/brand/hero-service-desktop.webp';
@@ -91,9 +90,15 @@
             : [$fallback, $fallbackAlt];
     };
     [$homeStoreImage, $homeStoreImageAlt] = $sectionImage('homeStoreMedia', '/brand/workshop.webp', __('pro.content.workshop_image_alt'));
-    [$storyImage, $storyImageAlt] = $sectionImage('storyMedia', '/brand/founders.webp', __('pro.content.about_image_alt'));
     [$hotelImage, $hotelImageAlt] = $sectionImage('hotelMedia', '/brand/dekkhotell.webp', __('pro.home.hotel_image_alt'));
     [$mobileImage, $mobileImageAlt] = $sectionImage('mobileMedia', '/brand/mobile-service.webp', __('pro.home.hero_image_alt'));
+    $promotionFallbackImages = [$homeStoreImage, $hotelImage, $mobileImage];
+    $storedSocialLinks = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->socialLinks();
+    $socialLinks = collect([
+        ['label' => __('pro.home.social_facebook'), 'url' => $storedSocialLinks['facebook_url']],
+        ['label' => __('pro.home.social_instagram'), 'url' => $storedSocialLinks['instagram_url']],
+        ['label' => __('pro.home.social_snapchat'), 'url' => $storedSocialLinks['snapchat_url']],
+    ])->filter(fn (array $social): bool => $social['url'] !== null);
     $homepagePromotions = collect();
     $homepageReviews = collect();
     $homepageRatingSummaries = collect();
@@ -101,7 +106,7 @@
     $homepagePriceGroups = collect();
     try {
         if (\Illuminate\Support\Facades\Schema::hasTable('homepage_promotions')) {
-            $homepagePromotions = \App\Modules\Content\Models\HomepagePromotion::query()->published()->orderBy('sort_order')->orderBy('id')->get();
+            $homepagePromotions = \App\Modules\Content\Models\HomepagePromotion::query()->published()->with('mediaAsset')->orderBy('sort_order')->orderBy('id')->get();
         }
         if (\Illuminate\Support\Facades\Schema::hasTable('homepage_reviews')) {
             $homepageReviews = \App\Modules\Content\Models\HomepageReview::query()->published()->orderBy('sort_order')->orderBy('id')->get();
@@ -181,8 +186,7 @@
                 <h1 class="et-v3-display">{{ $storefrontValue('hero_title_'.$homepageLocale, __('pro.home.hero_title')) }}</h1>
                 <p class="et-v3-hero__lead">{{ $storefrontValue('hero_text_'.$homepageLocale, __('pro.home.hero_text')) }}</p>
                 <div class="et-v3-actions">
-                    <a class="et-btn et-btn--primary" href="{{ $heroPrimaryUrl }}">{{ $storefrontValue('hero_primary_label_'.$homepageLocale, __('pro.home.hero_primary')) }} <x-icon name="arrow" :size="19" /></a>
-                    <a class="et-btn et-btn--glass" href="{{ $heroSecondaryUrl }}">{{ $storefrontValue('hero_secondary_label_'.$homepageLocale, __('pro.home.hero_secondary')) }}</a>
+                    <a class="et-btn et-btn--primary et-v3-hero__primary-action" href="{{ $heroPrimaryUrl }}">{{ $storefrontValue('hero_primary_label_'.$homepageLocale, __('pro.home.hero_primary')) }} <x-icon name="arrow" :size="20" /></a>
                 </div>
                 <ul class="et-v3-hero__proof" aria-label="{{ __('pro.home.confirmation_note') }}">
                     <li><x-icon name="check" :size="16" />{{ __('pro.home.hero_proof_mobile') }}</li>
@@ -197,13 +201,54 @@
         </div>
     </section>
 
-    <div class="et-v3-trust" aria-label="{{ __('pro.home.confirmation_note') }}">
-        <div class="et-container et-v3-trust__inner">
-            <span><strong>01</strong>{{ $storefrontValue('trust_1_'.$homepageLocale, __('pro.home.choice_fast_title')) }}</span>
-            <span><strong>02</strong>{{ $storefrontValue('trust_2_'.$homepageLocale, __('pro.home.choice_store_title')) }}</span>
-            <span><strong>03</strong>{{ $storefrontValue('trust_3_'.$homepageLocale, __('pro.home.choice_help_title')) }}</span>
+    <section class="et-v3-section et-v3-section--white et-v3-logistics" aria-labelledby="home-logistics-title" data-testid="home-dekkhotell">
+        <div class="et-container">
+            <div class="et-v3-section-head et-v3-section-head--compact"><div><p class="et-eyebrow">{{ $storefrontValue('logistics_kicker_'.$homepageLocale, __('pro.home.hero_proof_hotel').' · '.__('pro.home.hero_proof_mobile')) }}</p><h2 class="et-h2" id="home-logistics-title">{{ $storefrontValue('logistics_title_'.$homepageLocale, __('pro.home.dekkhotell_section_title')) }}</h2></div></div>
+            <div class="et-v3-editorial-grid">
+                <article class="et-v3-editorial">
+                    <img src="{{ $hotelImage }}" width="1000" height="1200" loading="eager" alt="{{ $hotelImageAlt }}">
+                    <div>
+                        <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('hotel_kicker_'.$homepageLocale, __('pro.home.hotel_kicker')) }}</p>
+                        <h3>{{ $storefrontValue('hotel_title_'.$homepageLocale, __('pro.home.hotel_title')) }}</h3>
+                        <p>{{ $storefrontValue('hotel_text_'.$homepageLocale, __('pro.home.hotel_text')) }}</p>
+                        <a href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}">{{ $storefrontValue('hotel_cta_'.$homepageLocale, __('pro.home.hotel_link')) }} <x-icon name="arrow" :size="18" /></a>
+                    </div>
+                </article>
+                <article class="et-v3-editorial">
+                    <img src="{{ $mobileImage }}" width="1200" height="900" loading="eager" alt="{{ $mobileImageAlt }}">
+                    <div>
+                        <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('mobile_kicker_'.$homepageLocale, __('pro.home.mobile_kicker')) }}</p>
+                        <h3>{{ $storefrontValue('mobile_title_'.$homepageLocale, __('pro.home.mobile_title')) }}</h3>
+                        <p>{{ $storefrontValue('mobile_text_'.$homepageLocale, __('pro.home.mobile_text')) }}</p>
+                        <a href="{{ $bookingUrl }}?fulfilment=mobile">{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }} <x-icon name="arrow" :size="18" /></a>
+                    </div>
+                </article>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <section class="et-v3-process-strip" aria-labelledby="home-process-title" data-testid="home-process">
+        <div class="et-container et-v3-process-strip__inner">
+            <div class="et-v3-process-strip__head">
+                <p class="et-eyebrow">{{ $storefrontValue('process_kicker_'.$homepageLocale, __('pro.home.process_kicker')) }}</p>
+                <h2 class="sr-only" id="home-process-title">{{ $storefrontValue('process_title_'.$homepageLocale, __('project.home.process_title')) }}</h2>
+            </div>
+            <div class="et-v3-process">
+                @foreach ([
+                    ['search', $storefrontValue('process_1_title_'.$homepageLocale, __('project.home.process_1_title')), $storefrontValue('process_1_text_'.$homepageLocale, __('project.home.process_1_text'))],
+                    ['calendar', $storefrontValue('process_2_title_'.$homepageLocale, __('project.home.process_2_title')), $storefrontValue('process_2_text_'.$homepageLocale, __('project.home.process_2_text'))],
+                    ['tire', $storefrontValue('process_3_title_'.$homepageLocale, __('project.home.process_3_title')), $storefrontValue('process_3_text_'.$homepageLocale, __('project.home.process_3_text'))],
+                    ['check', $storefrontValue('process_4_title_'.$homepageLocale, __('project.home.process_4_title')), $storefrontValue('process_4_text_'.$homepageLocale, __('project.home.process_4_text'))],
+                ] as $index => [$stepIcon, $stepTitle, $stepText])
+                    <article class="et-v3-process__step">
+                        <span class="et-v3-process__icon"><x-icon :name="$stepIcon" :size="24" /></span>
+                        <small>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</small>
+                        <div><h3>{{ $stepTitle }}</h3><p>{{ $stepText }}</p></div>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
 
     <section class="et-home-prices" aria-labelledby="home-prices-title" data-testid="home-prices">
         <div class="et-container et-home-prices__inner">
@@ -232,7 +277,7 @@
                 <div class="et-v3-section-head et-v3-section-head--compact">
                     <div><p class="et-eyebrow">{{ __('pro.home.promotions_kicker') }}</p><h2 class="et-h3" id="home-promotions-title">{{ __('pro.home.promotions_title') }}</h2></div>
                 </div>
-                <div class="et-v3-notice-list">
+                <div class="et-v3-promotion-grid">
                     @foreach ($homepagePromotions as $promotion)
                         @php
                             $title = $promotion->getAttribute('title_'.$homepageLocale);
@@ -240,11 +285,21 @@
                             $ctaLabel = $promotion->getAttribute('cta_label_'.$homepageLocale) ?: __('pro.home.promotion_link_fallback');
                             $ctaUrl = $promotion->cta_url;
                             $externalPromotion = is_string($ctaUrl) && str_starts_with($ctaUrl, 'http');
+                            $promotionAsset = $promotion->mediaAsset;
+                            $promotionImage = $promotionAsset
+                                ? \Illuminate\Support\Facades\Storage::disk($promotionAsset->disk)->url($promotionAsset->path)
+                                : $promotionFallbackImages[$loop->index % count($promotionFallbackImages)];
+                            $promotionAlt = $promotionAsset?->getAttribute('alt_'.$homepageLocale) ?: '';
                         @endphp
-                        <article class="et-v3-notice" data-testid="homepage-promotion">
-                            <span class="et-v3-notice__number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                            <div><h3>{{ $title }}</h3><p>{{ $body }}</p></div>
-                            @if ($ctaUrl)<a href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>@endif
+                        <article class="et-v3-promotion" data-testid="homepage-promotion">
+                            <img src="{{ $promotionImage }}" width="1200" height="900" loading="lazy" alt="{{ $promotionAlt }}">
+                            <span class="et-v3-promotion__shade" aria-hidden="true"></span>
+                            <div class="et-v3-promotion__content">
+                                <span class="et-v3-promotion__number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                                <h3>{{ $title }}</h3>
+                                <p>{{ $body }}</p>
+                                @if ($ctaUrl)<a href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>@endif
+                            </div>
                         </article>
                     @endforeach
                 </div>
@@ -285,30 +340,6 @@
         </div>
     </section>
     @endif
-
-    <section class="et-v3-section et-v3-section--soft" aria-labelledby="home-process-title">
-        <div class="et-container et-v3-process-layout">
-            <div class="et-v3-process-intro">
-                <p class="et-eyebrow">{{ $storefrontValue('process_kicker_'.$homepageLocale, __('pro.home.process_kicker')) }}</p>
-                <h2 class="et-h2" id="home-process-title">{{ $storefrontValue('process_title_'.$homepageLocale, __('project.home.process_title')) }}</h2>
-                <p>{{ $storefrontValue('process_lead_'.$homepageLocale, __('project.home.process_note')) }}</p>
-            </div>
-            <div class="et-v3-process">
-                @foreach ([
-                    ['search', $storefrontValue('process_1_title_'.$homepageLocale, __('project.home.process_1_title')), $storefrontValue('process_1_text_'.$homepageLocale, __('project.home.process_1_text'))],
-                    ['car', $storefrontValue('process_2_title_'.$homepageLocale, __('project.home.process_2_title')), $storefrontValue('process_2_text_'.$homepageLocale, __('project.home.process_2_text'))],
-                    ['calendar', $storefrontValue('process_3_title_'.$homepageLocale, __('project.home.process_3_title')), $storefrontValue('process_3_text_'.$homepageLocale, __('project.home.process_3_text'))],
-                    ['check', $storefrontValue('process_4_title_'.$homepageLocale, __('project.home.process_4_title')), $storefrontValue('process_4_text_'.$homepageLocale, __('project.home.process_4_text'))],
-                ] as $index => [$stepIcon, $stepTitle, $stepText])
-                    <article class="et-v3-process__step">
-                        <span class="et-v3-process__icon"><x-icon :name="$stepIcon" :size="24" /></span>
-                        <small>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</small>
-                        <div><h3>{{ $stepTitle }}</h3><p>{{ $stepText }}</p></div>
-                    </article>
-                @endforeach
-            </div>
-        </div>
-    </section>
 
     <section class="et-v3-section et-v3-section--white" aria-labelledby="home-store-title" data-testid="catalog-foundation">
         <div class="et-container et-v3-store">
@@ -351,68 +382,6 @@
                             <a class="et-shop-link" href="{{ route($routePrefix.'store.index') }}"><strong>{{ __('fitment.nav') }}</strong><small>{{ __('fitment.notice') }}</small></a>
                         </div>
                     </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="et-v3-section et-v3-story" aria-labelledby="home-story-title">
-        <div class="et-container et-v3-story__grid">
-            <div class="et-v3-story__media"><img src="{{ $storyImage }}" width="1400" height="1050" loading="eager" alt="{{ $storyImageAlt }}"><span>EasyTire · Tromsø</span></div>
-            <div class="et-v3-story__content">
-                <p class="et-eyebrow">{{ $storefrontValue('story_kicker_'.$homepageLocale, __('pro.home.story_kicker')) }}</p>
-                <h2 class="et-h2" id="home-story-title">{{ $storefrontValue('story_title_'.$homepageLocale, __('pro.home.story_title')) }}</h2>
-                <p class="et-lead">{{ $storefrontValue('story_text_'.$homepageLocale, __('pro.home.story_text')) }}</p>
-                <blockquote>{{ $storefrontValue('story_quote_'.$homepageLocale, __('pro.home.story_quote')) }}</blockquote>
-                <article class="et-v3-business" data-testid="business-contact-card">
-                    <div><span>{{ $storefrontValue('business_kicker_'.$homepageLocale, __('pro.home.business_kicker')) }}</span><h3>{{ $storefrontValue('business_title_'.$homepageLocale, __('project.home.business_title')) }}</h3><p>{{ $storefrontValue('business_text_'.$homepageLocale, __('project.home.business_text')) }}</p><strong class="et-v3-business__proof">{{ $storefrontValue('business_proof_'.$homepageLocale, __('project.home.business_proof')) }}</strong></div>
-                    <a href="{{ $contactUrl }}" aria-label="{{ __('project.home.business_link') }}"><x-icon name="arrow" :size="20" /></a>
-                </article>
-                @if ($homepageBusinessPartners->isNotEmpty())
-                    <div class="et-v3-partners" data-testid="homepage-business-partners">
-                        <p>{{ __('pro.home.partners_label') }}</p>
-                        <div>
-                            @foreach ($homepageBusinessPartners as $partner)
-                                @php
-                                    $partnerAsset = $partner->mediaAsset;
-                                    $partnerUrl = $partner->publicWebsiteUrl();
-                                    $partnerLogoUrl = \Illuminate\Support\Facades\Storage::disk($partnerAsset->disk)->url($partnerAsset->path);
-                                    $partnerAlt = $partnerAsset->getAttribute('alt_'.$homepageLocale) ?: $partner->name;
-                                @endphp
-                                @if ($partnerUrl)
-                                    <a href="{{ $partnerUrl }}" target="_blank" rel="noopener" aria-label="{{ $partner->name }}"><img src="{{ $partnerLogoUrl }}" width="180" height="72" loading="lazy" alt="{{ $partnerAlt }}"></a>
-                                @else
-                                    <span aria-label="{{ $partner->name }}"><img src="{{ $partnerLogoUrl }}" width="180" height="72" loading="lazy" alt="{{ $partnerAlt }}"></span>
-                                @endif
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </section>
-
-    <section class="et-v3-section et-v3-section--white" aria-labelledby="home-logistics-title">
-        <div class="et-container">
-            <div class="et-v3-section-head"><div><p class="et-eyebrow">{{ $storefrontValue('logistics_kicker_'.$homepageLocale, __('pro.home.hero_proof_hotel').' · '.__('pro.home.hero_proof_mobile')) }}</p><h2 class="et-h2" id="home-logistics-title">{{ $storefrontValue('logistics_title_'.$homepageLocale, __('pro.home.location_title')) }}</h2></div></div>
-            <div class="et-v3-editorial-grid">
-                <article class="et-v3-editorial">
-                    <img src="{{ $hotelImage }}" width="1000" height="1200" loading="lazy" alt="{{ $hotelImageAlt }}">
-                    <div>
-                        <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('hotel_kicker_'.$homepageLocale, __('pro.home.hotel_kicker')) }}</p>
-                        <h3>{{ $storefrontValue('hotel_title_'.$homepageLocale, __('pro.home.hotel_title')) }}</h3>
-                        <p>{{ $storefrontValue('hotel_text_'.$homepageLocale, __('pro.home.hotel_text')) }}</p>
-                        <a href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}">{{ $storefrontValue('hotel_cta_'.$homepageLocale, __('pro.home.hotel_link')) }} <x-icon name="arrow" :size="18" /></a>
-                    </div>
-                </article>
-                <article class="et-v3-editorial">
-                    <img src="{{ $mobileImage }}" width="1200" height="900" loading="lazy" alt="{{ $mobileImageAlt }}">
-                    <div>
-                        <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('mobile_kicker_'.$homepageLocale, __('pro.home.mobile_kicker')) }}</p>
-                        <h3>{{ $storefrontValue('mobile_title_'.$homepageLocale, __('pro.home.mobile_title')) }}</h3>
-                        <p>{{ $storefrontValue('mobile_text_'.$homepageLocale, __('pro.home.mobile_text')) }}</p>
-                        <a href="{{ $bookingUrl }}?fulfilment=mobile">{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }} <x-icon name="arrow" :size="18" /></a>
-                    </div>
-                </article>
             </div>
         </div>
     </section>
@@ -468,6 +437,37 @@
                 <a class="et-v3-contact__line" href="tel:{{ $phoneHref }}"><x-icon name="phone" :size="22" /><span><small>{{ __('pro.content.phone') }}</small><strong>{{ $phoneDisplay }}</strong></span></a>
                 <a class="et-v3-contact__line" href="mailto:{{ $contactEmail }}"><span class="et-v3-contact__at">@</span><span><small>{{ __('pro.content.email') }}</small><strong>{{ $contactEmail }}</strong></span></a>
                 <a class="et-v3-contact__line" href="{{ $mapUrl }}" target="_blank" rel="noopener"><x-icon name="location" :size="22" /><span><small>{{ __('pro.content.address') }}</small><strong>{{ $businessAddress }}</strong><em>{{ __('project.contact.map_pin_note', ['address' => $mapPinAddress]) }}</em></span></a>
+                @if ($socialLinks->isNotEmpty())
+                    <nav class="et-v3-socials" aria-label="{{ __('pro.home.social_label') }}" data-testid="homepage-social-links">
+                        @foreach ($socialLinks as $social)
+                            <a href="{{ $social['url'] }}" target="_blank" rel="noopener">{{ $social['label'] }} <x-icon name="arrow" :size="15" /></a>
+                        @endforeach
+                    </nav>
+                @endif
+                <article class="et-v3-contact__business" data-testid="business-contact-card">
+                    <div><small>{{ $storefrontValue('business_kicker_'.$homepageLocale, __('pro.home.business_kicker')) }}</small><strong>{{ $storefrontValue('business_title_'.$homepageLocale, __('project.home.business_title')) }}</strong><p>{{ $storefrontValue('business_text_'.$homepageLocale, __('project.home.business_text')) }}</p></div>
+                    <a href="{{ $contactUrl }}">{{ __('project.home.business_link') }} <x-icon name="arrow" :size="16" /></a>
+                </article>
+                @if ($homepageBusinessPartners->isNotEmpty())
+                    <div class="et-v3-partners et-v3-partners--contact" data-testid="homepage-business-partners">
+                        <p>{{ __('pro.home.partners_label') }}</p>
+                        <div>
+                            @foreach ($homepageBusinessPartners as $partner)
+                                @php
+                                    $partnerAsset = $partner->mediaAsset;
+                                    $partnerUrl = $partner->publicWebsiteUrl();
+                                    $partnerLogoUrl = \Illuminate\Support\Facades\Storage::disk($partnerAsset->disk)->url($partnerAsset->path);
+                                    $partnerAlt = $partnerAsset->getAttribute('alt_'.$homepageLocale) ?: $partner->name;
+                                @endphp
+                                @if ($partnerUrl)
+                                    <a href="{{ $partnerUrl }}" target="_blank" rel="noopener" aria-label="{{ $partner->name }}"><img src="{{ $partnerLogoUrl }}" width="180" height="72" loading="lazy" alt="{{ $partnerAlt }}"></a>
+                                @else
+                                    <span aria-label="{{ $partner->name }}"><img src="{{ $partnerLogoUrl }}" width="180" height="72" loading="lazy" alt="{{ $partnerAlt }}"></span>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
             <div class="et-map" data-map-card data-testid="map-card">
                 @if ($mapEmbedUrl !== null)

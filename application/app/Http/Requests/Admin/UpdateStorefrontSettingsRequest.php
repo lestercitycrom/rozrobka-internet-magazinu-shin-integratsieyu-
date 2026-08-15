@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Support\GoogleMapsEmbedUrl;
+use App\Support\PublicHttpUrl;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,6 +43,9 @@ final class UpdateStorefrontSettingsRequest extends FormRequest
                     $fail(__('storefront_settings.invalid_map_embed'));
                 }
             }],
+            'instagram_url' => ['nullable', 'string', 'max:2048', $this->publicHttpUrl()],
+            'snapchat_url' => ['nullable', 'string', 'max:2048', $this->publicHttpUrl()],
+            'facebook_url' => ['nullable', 'string', 'max:2048', $this->publicHttpUrl()],
             ...$this->storeCopyRules('nb', $localizedShort, $localizedLong),
             ...$this->storeCopyRules('ru', $localizedShort, $localizedLong),
             ...$this->homeContentRules('nb', $localizedShort, $localizedLong),
@@ -62,6 +66,19 @@ final class UpdateStorefrontSettingsRequest extends FormRequest
 
             if (! $isInternal && ! $isExternal) {
                 $fail(__('storefront_settings.invalid_link'));
+            }
+        };
+    }
+
+    private function publicHttpUrl(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if (blank($value)) {
+                return;
+            }
+
+            if (! PublicHttpUrl::isValid($value)) {
+                $fail(__('storefront_settings.invalid_public_url'));
             }
         };
     }

@@ -33,6 +33,7 @@ return [
         'hero_proof_hotel' => 'Dekkhotell',
         'start_here' => 'Start her',
         'location_title' => 'Hvor passer det best?',
+        'dekkhotell_section_title' => 'Dekkhotell',
         'location_mobile' => 'Dekkskift hjemme hos deg',
         'location_mobile_text' => 'Vi kommer til bilen etter avtale.',
         'location_workshop' => 'På verksted',
@@ -139,6 +140,10 @@ return [
         'call' => 'Ring oss',
         'email' => 'Send e-post',
         'map' => 'Åpne Google Maps',
+        'social_label' => 'EasyTire i sosiale medier',
+        'social_facebook' => 'Facebook',
+        'social_instagram' => 'Instagram',
+        'social_snapchat' => 'Snapchat',
     ],
     'catalog' => [
         'kicker' => 'Nettbutikk',

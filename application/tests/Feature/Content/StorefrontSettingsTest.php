@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\ServicePage;
 use App\Modules\Content\Models\StorefrontSettings;
+use App\Modules\Content\ReadModel\StorefrontSettingsReadService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -39,7 +40,8 @@ test('administrator can edit typed localized storefront settings and public page
     $this->get('/')
         ->assertOk()
         ->assertSee('Hjulhjelp i Troms')
-        ->assertSee('Vårt lokale hjulteam')
+        ->assertSee('For bilparken')
+        ->assertDontSee('Vårt lokale hjulteam')
         ->assertSee('Dekkhotellet er klart')
         ->assertSee('Tilpasset heltebilde')
         ->assertSee('custom-hero.webp')
@@ -69,7 +71,7 @@ test('administrator can edit typed localized storefront settings and public page
         ->assertSee('data-testid="map-iframe"', false);
 
     config()->set('storefront.ru_preview_enabled', true);
-    $this->get('/ru')->assertOk()->assertSee('Наша команда');
+    $this->get('/ru')->assertOk()->assertSee('Хранение готово')->assertDontSee('Наша команда');
     $this->get('/ru')->assertOk()->assertSee('Шины и диски в Тромсё')->assertSee('Настроенное главное изображение');
     $this->get('/ru/dekk-og-felger')->assertOk()->assertSee('Подберите подходящие колёса')->assertSee('Проверенные варианты');
 });
@@ -102,6 +104,37 @@ test('storefront settings reject unsafe CTA links and inactive media', function 
     $this->actingAs($admin)->put('/admin/storefront-settings', [
         'hero_primary_url' => 'javascript:alert(1)', 'hero_media_asset_id' => $inactiveAsset->id, 'map_embed_url' => 'https://example.test/not-a-map',
     ])->assertSessionHasErrors(['hero_primary_url', 'hero_media_asset_id', 'map_embed_url']);
+});
+
+test('administrator can save only safe public social links and the read model has a Facebook fallback', function (): void {
+    $admin = User::factory()->operations()->create();
+
+    $this->actingAs($admin)
+        ->put('/admin/storefront-settings', [
+            'instagram_url' => 'https://www.instagram.com/easytire/',
+            'snapchat_url' => 'https://www.snapchat.com/add/easytire',
+            'facebook_url' => 'https://www.facebook.com/easytire/',
+        ])
+        ->assertRedirect('/admin/storefront-settings');
+
+    expect(StorefrontSettings::query()->findOrFail(1)->only(['instagram_url', 'snapchat_url', 'facebook_url']))->toBe([
+        'instagram_url' => 'https://www.instagram.com/easytire/',
+        'snapchat_url' => 'https://www.snapchat.com/add/easytire',
+        'facebook_url' => 'https://www.facebook.com/easytire/',
+    ]);
+    expect(app(StorefrontSettingsReadService::class)->socialLinks())->toBe([
+        'instagram_url' => 'https://www.instagram.com/easytire/',
+        'snapchat_url' => 'https://www.snapchat.com/add/easytire',
+        'facebook_url' => 'https://www.facebook.com/easytire/',
+    ]);
+
+    $this->actingAs($admin)
+        ->put('/admin/storefront-settings', ['instagram_url' => 'javascript:alert(1)', 'snapchat_url' => 'https://user:pass@example.test/'])
+        ->assertSessionHasErrors(['instagram_url', 'snapchat_url']);
+
+    StorefrontSettings::query()->updateOrCreate(['id' => 1], ['facebook_url' => null]);
+    expect(app(StorefrontSettingsReadService::class)->socialLinks()['facebook_url'])
+        ->toBe(config('storefront.facebook_url'));
 });
 
 function storefrontSettingsPayload(MediaAsset $asset): array

@@ -4,16 +4,13 @@
         $localeFields = static function (string $locale): array {
             return [
                 "hero_kicker_{$locale}", "hero_title_{$locale}", "hero_text_{$locale}",
-                "hero_primary_label_{$locale}", "hero_secondary_label_{$locale}",
+                "hero_primary_label_{$locale}",
             ];
         };
         $editorialSections = [
-            'chooser' => ['chooser_kicker', 'chooser_title', 'chooser_mobile_title', 'chooser_mobile_text', 'chooser_workshop_title', 'chooser_workshop_text', 'chooser_store_kicker', 'chooser_store_title'],
-            'trust' => ['trust_1', 'trust_2', 'trust_3'],
-            'process' => ['process_kicker', 'process_title', 'process_lead', 'process_1_title', 'process_1_text', 'process_2_title', 'process_2_text', 'process_3_title', 'process_3_text', 'process_4_title', 'process_4_text'],
-            'story' => ['story_kicker', 'story_title', 'story_text', 'story_quote', 'business_kicker', 'business_title', 'business_text', 'business_proof'],
+            'process' => ['process_kicker', 'process_title', 'process_1_title', 'process_1_text', 'process_2_title', 'process_2_text', 'process_3_title', 'process_3_text', 'process_4_title', 'process_4_text'],
             'logistics' => ['logistics_kicker', 'logistics_title', 'hotel_kicker', 'hotel_title', 'hotel_text', 'hotel_cta', 'mobile_kicker', 'mobile_title', 'mobile_text', 'mobile_cta'],
-            'contact_copy' => ['contact_kicker', 'contact_title', 'contact_text'],
+            'contact_copy' => ['contact_kicker', 'contact_title', 'contact_text', 'business_kicker', 'business_title', 'business_text'],
         ];
         $editorialLabel = static function (string $field): string {
             if (preg_match('/^process_([1-4])_(title|text)$/', $field, $matches) === 1) {
@@ -63,7 +60,7 @@
                     @endforeach
                 </div>
                 <div class="grid gap-5 sm:grid-cols-2">
-                    @foreach (['hero_primary_url', 'hero_secondary_url'] as $field)
+                    @foreach (['hero_primary_url'] as $field)
                         <label class="block text-sm font-bold" for="{{ $field }}">{{ __('storefront_settings.'.$field) }}
                             <input id="{{ $field }}" name="{{ $field }}" value="{{ $value($field) }}" placeholder="{{ __('storefront_settings.internal_url_hint') }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 @error($field) border-red-600 @enderror">
                         </label>
@@ -83,7 +80,7 @@
             <section class="easytire-card space-y-6 rounded-2xl p-5 sm:p-8" aria-labelledby="storefront-contact-heading">
                 <div><h2 id="storefront-contact-heading" class="text-xl font-black">{{ __('storefront_settings.contact') }}</h2><p class="mt-1 text-sm text-easytire-muted">{{ __('storefront_settings.contact_hint') }}</p></div>
                 <div class="grid gap-5 sm:grid-cols-2">
-                    @foreach (['phone_display', 'phone_href', 'email', 'business_address', 'map_pin_address', 'map_url', 'map_embed_url'] as $field)
+                    @foreach (['phone_display', 'phone_href', 'email', 'business_address', 'map_pin_address', 'map_url', 'map_embed_url', 'instagram_url', 'snapchat_url', 'facebook_url'] as $field)
                         <label class="block text-sm font-bold" for="{{ $field }}">{{ __('storefront_settings.'.$field) }}
                             <input id="{{ $field }}" name="{{ $field }}" value="{{ $value($field) }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3 @error($field) border-red-600 @enderror">
                         </label>
@@ -153,7 +150,7 @@
                 <div class="rounded-xl border border-easytire-border p-4 sm:p-5">
                     <h3 class="text-base font-black">{{ __('storefront_settings.section_media') }}</h3>
                     <div class="mt-4 grid gap-5 sm:grid-cols-2">
-                        @foreach (['home_store_media_asset_id', 'story_media_asset_id', 'hotel_media_asset_id', 'mobile_media_asset_id'] as $field)
+                        @foreach (['home_store_media_asset_id', 'hotel_media_asset_id', 'mobile_media_asset_id'] as $field)
                             <label class="block text-sm font-bold" for="{{ $field }}">{{ __('storefront_settings.'.str_replace('_asset_id', '', $field)) }}
                                 <select id="{{ $field }}" name="{{ $field }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
                                     <option value="">{{ __('storefront_settings.default_section_media') }}</option>

@@ -3,10 +3,13 @@
 @import '@fontsource/barlow/latin-500.css';
 @import '@fontsource/barlow/latin-600.css';
 @import '@fontsource/barlow/latin-700.css';
+@import '@fontsource/barlow/latin-800.css';
+@import '@fontsource/barlow/latin-900.css';
 @import '@fontsource/barlow-condensed/latin-600.css';
 @import '@fontsource/barlow-condensed/latin-700.css';
 @import '@fontsource/barlow-condensed/latin-800.css';
 @import '@fontsource/barlow-condensed/latin-900.css';
+@import './design-tokens.css';
 @import './pro-design.css';
 @import './storefront-v3.css';
 @import './storefront-shapes.css';
@@ -14,21 +17,6 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
-
-/* Shared EasyTire design tokens. Both storefront and admin consume this single palette. */
-
-:root {
-    --easytire-ink: var(--et-ink);
-    --easytire-brand: #c90000;
-    --easytire-brand-strong: #920000;
-    --easytire-brand-soft: var(--et-red-soft);
-    --easytire-surface: var(--et-warm);
-    --easytire-panel: var(--et-white);
-    --easytire-border: var(--et-line);
-    --easytire-muted: var(--et-muted);
-    --easytire-shadow: var(--et-shadow-sm);
-    --easytire-shadow-hover: var(--et-shadow);
-}
 
 /* Self-host only the Latin/Norwegian and Russian Cyrillic subsets that this project uses. */
 @font-face {
@@ -104,10 +92,10 @@
     box-shadow: var(--easytire-shadow-hover);
 }
 .easytire-input { border: 1px solid var(--easytire-border); background: #fff; transition: border-color 160ms ease, box-shadow 160ms ease; }
-.easytire-input:focus { border-color: var(--easytire-brand); box-shadow: 0 0 0 4px rgb(201 0 0 / 0.14); outline: none; }
+.easytire-input:focus { border-color: var(--easytire-brand); box-shadow: var(--et-focus-ring); outline: none; }
 [data-catalog-loading] { visibility: hidden; opacity: 0; }
 [data-catalog-live-root][aria-busy='true'] [data-catalog-loading] { visibility: visible; opacity: 1; }
-.admin-shell, .et-admin-body { background: radial-gradient(circle at 100% 0, rgb(201 0 0 / 0.07), transparent 28rem), var(--easytire-surface); }
+.admin-shell, .et-admin-body { background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--et-color-brand) 7%, transparent), transparent 28rem), var(--easytire-surface); }
 ::selection { background: var(--easytire-brand); color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -125,4 +113,9 @@
     --color-easytire-panel: var(--easytire-panel);
     --color-easytire-border: var(--easytire-border);
     --color-easytire-muted: var(--easytire-muted);
+    --radius-easytire-surface: var(--et-radius-surface);
+    --radius-easytire-control: var(--et-radius-control);
+    --radius-easytire-pill: var(--et-radius-pill);
+    --shadow-easytire-surface: var(--et-shadow-surface);
+    --shadow-easytire-elevated: var(--et-shadow-elevated);
 }

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'hero_kicker_ru', 'hero_title_ru', 'hero_text_ru', 'hero_primary_label_ru', 'hero_secondary_label_ru',
     'hero_primary_url', 'hero_secondary_url', 'hero_media_asset_id',
     'phone_display', 'phone_href', 'email', 'business_address', 'map_pin_address', 'map_url', 'map_embed_url',
+    'instagram_url', 'snapchat_url', 'facebook_url',
     'store_heading_nb', 'store_lead_nb', 'store_heading_ru', 'store_lead_ru',
     'store_benefit_1_title_nb', 'store_benefit_1_text_nb', 'store_benefit_2_title_nb', 'store_benefit_2_text_nb', 'store_benefit_3_title_nb', 'store_benefit_3_text_nb',
     'store_benefit_1_title_ru', 'store_benefit_1_text_ru', 'store_benefit_2_title_ru', 'store_benefit_2_text_ru', 'store_benefit_3_title_ru', 'store_benefit_3_text_ru',

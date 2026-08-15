@@ -59,9 +59,10 @@ return array_replace_recursive([
         'title' => 'Forsidetilbud', 'heading' => 'Forsidetilbud', 'intro' => 'Vis bare publiserte tilbud med godkjent innhold. Tomme lister vises ikke offentlig.',
         'new' => 'Nytt tilbud', 'edit' => 'Rediger', 'order' => 'Rekkefølge', 'status' => 'Status', 'title_nb' => 'Norsk tittel',
         'cta_url' => 'Lenke for handling', 'cta_url_hint' => 'Bruk en intern sti som /dekk eller en fullstendig https-lenke.',
+        'media' => 'Bakgrunnsbilde', 'no_media' => 'Ingen bakgrunnsbilde', 'media_hint' => 'Valgfritt. Velg kun et aktivt bilde fra mediebiblioteket som dere har rett til å bruke.', 'media_selected' => 'Bakgrunnsbilde valgt', 'unavailable_media' => 'Bildet er ikke lenger aktivt',
         'field_title' => 'Tittel', 'body' => 'Beskrivelse', 'cta_label' => 'Knappetekst', 'locale_nb' => 'Norsk innhold', 'locale_ru' => 'Russisk testoversettelse',
         'save' => 'Lagre tilbud', 'delete' => 'Slett tilbud', 'saved' => 'Tilbudet er lagret.', 'deleted' => 'Tilbudet er slettet.',
-        'empty' => 'Ingen forsidetilbud ennå.', 'empty_hint' => 'Et tilbud blir synlig på forsiden først når det er publisert.', 'actions' => 'Handlinger', 'table_label' => 'Forsidetilbud', 'invalid_url' => 'Lenken må være en intern sti eller en gyldig http/https-lenke.',
+        'empty' => 'Ingen forsidetilbud ennå.', 'empty_hint' => 'Et tilbud blir synlig på forsiden først når det er publisert.', 'actions' => 'Handlinger', 'table_label' => 'Forsidetilbud', 'invalid_url' => 'Lenken må være en intern sti eller en gyldig http/https-lenke.', 'invalid_media' => 'Velg et aktivt bildefil fra mediebiblioteket.',
     ],
     'homepage_reviews' => [
         'title' => 'Kundeomtaler', 'heading' => 'Kundeomtaler', 'intro' => 'Publiser bare omtaler og lenker som kunden har godkjent for offentlig bruk.',

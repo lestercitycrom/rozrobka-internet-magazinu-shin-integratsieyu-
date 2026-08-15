@@ -196,7 +196,7 @@
         </div>
     </div>
 
-    <header class="et-header">
+    <header class="et-header" data-site-header>
         <div class="et-container et-header__inner">
             <a class="et-logo min-h-11" href="{{ route($routePrefix.'home') }}" aria-label="{{ __('storefront.home_aria') }}" @if(request()->routeIs($routePrefix.'home')) aria-current="page" @endif>
                 <img src="/brand/easytire-logo.png" width="900" height="243" alt="EasyTire">
@@ -257,7 +257,10 @@
     <footer class="et-footer">
         <div class="et-container et-footer__main">
             <div class="et-footer__brand">
-                <img class="et-footer__logo" src="/brand/easytire-logo.png" width="900" height="243" alt="EasyTire">
+                <div class="et-footer__logo-lockup">
+                    <img class="et-footer__logo" src="/brand/easytire-logo.png" width="900" height="243" alt="EasyTire">
+                    <span>EasyTire · Tromsø</span>
+                </div>
                 <p>{{ __('pro.footer.text') }}</p>
                 <div class="et-footer__contact">
                     <a href="tel:{{ $phoneHref }}">{{ $phoneDisplay }}</a>
@@ -267,7 +270,7 @@
                 <a class="et-btn et-btn--ghost et-btn--small" href="{{ $bookingUrl }}" data-testid="footer-booking">{{ __('pro.nav.booking') }}</a>
             </div>
 
-            <div>
+            <div class="et-footer__nav">
                 <h2>{{ __('pro.footer.services') }}</h2>
                 <ul>
                     @foreach ($headerServices->take(3) as $service)
@@ -278,7 +281,7 @@
                 </ul>
             </div>
 
-            <div>
+            <div class="et-footer__nav">
                 <h2>{{ __('pro.footer.store') }}</h2>
                 <ul>
                     <li><a href="{{ route($routePrefix.'store.index') }}">{{ __('pro.footer.find_car') }}</a></li>
@@ -288,7 +291,7 @@
                 </ul>
             </div>
 
-            <div>
+            <div class="et-footer__nav et-footer__nav--company">
                 <h2>{{ __('pro.footer.company') }}</h2>
                 <ul>
                     @foreach (['om-oss' => 'about', 'kontakt' => 'contact', 'personvern' => 'privacy', 'kjopsvilkar' => 'terms'] as $slug => $label)

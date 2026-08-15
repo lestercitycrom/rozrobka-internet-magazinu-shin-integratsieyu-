@@ -6,16 +6,24 @@
  */
 
 .storefront[data-storefront-style='sharp'] {
-    --et-radius-xs: 2px;
-    --et-radius-sm: 2px;
-    --et-radius: 2px;
-    --et-radius-lg: 2px;
-    --et-radius-xl: 2px;
-    --v3-radius: 2px;
-    --v3-radius-lg: 2px;
+    --et-radius-xs: var(--et-radius-sharp);
+    --et-radius-sm: var(--et-radius-sharp);
+    --et-radius: var(--et-radius-sharp);
+    --et-radius-lg: var(--et-radius-sharp);
+    --et-radius-xl: var(--et-radius-sharp);
+    --v3-radius: var(--et-radius-sharp);
+    --v3-radius-lg: var(--et-radius-sharp);
     --et-shadow-sm: 0 1px 0 rgb(11 11 12 / .12);
     --et-shadow: 0 10px 24px rgb(11 11 12 / .1);
     --et-shadow-dark: 0 14px 36px rgb(0 0 0 / .24);
+}
+
+/* The custom admin consumes the same geometry tokens as the storefront. */
+.et-admin-body {
+    --radius-lg: var(--et-radius-sharp);
+    --radius-xl: var(--et-radius-sharp);
+    --radius-2xl: var(--et-radius-sharp);
+    --radius-3xl: var(--et-radius-sharp);
 }
 
 /*
@@ -25,7 +33,7 @@
 .storefront[data-storefront-style='sharp'] *,
 .storefront[data-storefront-style='sharp'] *::before,
 .storefront[data-storefront-style='sharp'] *::after {
-    border-radius: 2px !important;
+    border-radius: var(--et-radius-sharp) !important;
 }
 
 .storefront[data-storefront-style='sharp'] :where(
@@ -52,7 +60,7 @@
     .et-map,
     .et-map__loaded
 ) {
-    box-shadow: 0 1px 0 rgb(11 11 12 / .11), 0 8px 20px rgb(11 11 12 / .055);
+    box-shadow: var(--et-shadow-sharp);
 }
 
 .storefront[data-storefront-style='sharp'] :where(.et-product-card, .et-production-filter__panel) {
@@ -60,7 +68,7 @@
 }
 
 .storefront[data-storefront-style='sharp'] :where(.et-btn, .et-product-card__buy, .et-product-card__more):hover {
-    box-shadow: 0 4px 0 rgb(11 11 12 / .13);
+    box-shadow: var(--et-shadow-sharp-hover);
 }
 
 /* True circular controls keep their functional silhouette. */
@@ -77,7 +85,7 @@
 }
 
 .storefront[data-storefront-style='sharp'] .et-map__pin {
-    border-radius: 999px 999px 999px 2px !important;
+    border-radius: 999px 999px 999px var(--et-radius-sharp) !important;
 }
 
 @media (max-width: 860px) {
@@ -85,6 +93,6 @@
         .et-filter-drawer__panel,
         .et-production-filter[open] .et-production-filter__panel
     ) {
-        border-radius: 2px 2px 0 0 !important;
+        border-radius: var(--et-radius-sharp) var(--et-radius-sharp) 0 0 !important;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Modules\Content\ReadModel;
 
 use App\Modules\Content\Models\StorefrontSettings;
+use App\Support\PublicHttpUrl;
 use Illuminate\Support\Facades\Schema;
 
 final class StorefrontSettingsReadService
@@ -34,6 +35,19 @@ final class StorefrontSettingsReadService
             'phone_display' => $value('phone_display', (string) config('storefront.phone_display')),
             'phone_href' => $value('phone_href', (string) config('storefront.phone_href')),
             'email' => $value('email', (string) config('storefront.email')),
+        ];
+    }
+
+    /** @return array{instagram_url: ?string, snapchat_url: ?string, facebook_url: ?string} */
+    public function socialLinks(): array
+    {
+        $settings = $this->current();
+
+        return [
+            'instagram_url' => PublicHttpUrl::sanitize($settings?->instagram_url),
+            'snapchat_url' => PublicHttpUrl::sanitize($settings?->snapchat_url),
+            'facebook_url' => PublicHttpUrl::sanitize($settings?->facebook_url)
+                ?? PublicHttpUrl::sanitize(config('storefront.facebook_url')),
         ];
     }
 }

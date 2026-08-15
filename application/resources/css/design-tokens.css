@@ -1,0 +1,162 @@
+/*
+ * EasyTire design foundation.
+ *
+ * Keep visual decisions here.  The compatibility aliases at the bottom let
+ * the older storefront and admin component layers consume the same system
+ * while they are migrated incrementally.
+ */
+:root {
+    /* Brand and ink */
+    --et-color-brand: #d20a0a;
+    --et-color-brand-strong: #9f0000;
+    --et-color-brand-ink: #7a0000;
+    --et-color-brand-soft: #fff0ee;
+    --et-color-brand-accent: #ff5555;
+    --et-color-brand-accent-soft: #ff7772;
+    --et-color-ink: #101010;
+    --et-color-charcoal: #171719;
+
+    /* Surfaces, borders and text */
+    --et-color-surface: #f5f2ed;
+    --et-color-surface-raised: #ede9e2;
+    --et-color-surface-subtle: #ebe8e1;
+    --et-color-panel: #ffffff;
+    --et-color-border: #dcd8d1;
+    --et-color-border-strong: #cbc5bc;
+    --et-color-text: #252525;
+    --et-color-text-secondary: #4d5156;
+    --et-color-text-muted: #686a6d;
+    --et-color-text-on-dark: #ffffff;
+    --et-color-text-on-dark-secondary: rgb(255 255 255 / .74);
+    --et-color-text-on-dark-muted: rgb(255 255 255 / .62);
+
+    /* Status */
+    --et-color-success: #166534;
+    --et-color-success-soft: #eaf7ee;
+    --et-color-warning: #8a4b00;
+    --et-color-warning-soft: #fff5df;
+    --et-color-error: #b42318;
+    --et-color-error-soft: #fff0ef;
+    --et-color-info: #175cd3;
+    --et-color-info-soft: #eef4ff;
+
+    /* Shape */
+    --et-radius-surface: 1rem;
+    --et-radius-surface-small: .4rem;
+    --et-radius-control: .65rem;
+    --et-radius-surface-large: 1.45rem;
+    --et-radius-hero: 2rem;
+    --et-radius-pill: 999px;
+    --et-radius-circle: 50%;
+    --et-radius-public: 18px;
+    --et-radius-public-large: 28px;
+    --et-radius-sharp: 2px;
+
+    /* Spacing and fixed dimensions */
+    --et-space-1: .25rem;
+    --et-space-2: .5rem;
+    --et-space-3: .75rem;
+    --et-space-4: 1rem;
+    --et-space-5: 1.25rem;
+    --et-space-6: 1.5rem;
+    --et-space-8: 2rem;
+    --et-space-10: 2.5rem;
+    --et-space-12: 3rem;
+    --et-space-16: 4rem;
+    --et-section-space: clamp(4.5rem, 8vw, 7.5rem);
+    --et-section-space-generous: clamp(5rem, 9vw, 8.5rem);
+    --et-section-space-hero: clamp(4.5rem, 9vw, 8rem);
+    --et-section-space-compact: clamp(2.5rem, 5vw, 4.25rem);
+    --et-layout-gap: clamp(1.25rem, 3vw, 2.5rem);
+    --et-control-height: 44px;
+    --et-control-height-compact: 36px;
+    --et-header-height: 82px;
+    --et-header-height-mobile: 70px;
+    --et-sticky-offset: calc(var(--et-header-height) + var(--et-space-4));
+    --et-container-width: 1280px;
+    --et-container-gutter: 3rem;
+    --et-container-gutter-mobile: 1.5rem;
+
+    /* Elevation and motion */
+    --et-shadow-surface: 0 1px 2px rgb(16 16 16 / .05), 0 8px 24px rgb(16 16 16 / .06);
+    --et-shadow-elevated: 0 18px 60px rgb(16 16 16 / .11);
+    --et-shadow-inverse: 0 24px 80px rgb(0 0 0 / .24);
+    --et-shadow-sharp: 0 1px 0 rgb(11 11 12 / .12), 0 8px 20px rgb(11 11 12 / .055);
+    --et-shadow-sharp-hover: 0 4px 0 rgb(11 11 12 / .13);
+    --et-motion-fast: 160ms ease;
+    --et-motion-standard: 180ms ease;
+    --et-surface-overlay-dark: linear-gradient(0deg, rgb(6 6 7 / .94), rgb(6 6 7 / .12) 72%);
+    --et-header-background: rgb(255 255 255 / .96);
+    --et-header-background-scrolled: rgb(255 255 255 / .9);
+    --et-focus-ring: 0 0 0 4px color-mix(in srgb, var(--et-color-brand) 14%, transparent);
+
+    /* Typography */
+    --et-font-body-system: Barlow, Ubuntu, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --et-font-display-system: "Barlow Condensed", "Arial Narrow", Ubuntu, ui-sans-serif, system-ui, sans-serif;
+    --et-font-weight-regular: 400;
+    --et-font-weight-medium: 500;
+    --et-font-weight-semibold: 600;
+    --et-font-weight-bold: 700;
+    --et-font-weight-extrabold: 800;
+    --et-font-weight-black: 900;
+    --et-font-size-body-small: .9375rem;
+    --et-font-size-caption: .8125rem;
+
+    /* Compatibility aliases: do not introduce one-off palette roots. */
+    --et-red: var(--et-color-brand);
+    --et-red-dark: var(--et-color-brand-strong);
+    --et-red-ink: var(--et-color-brand-ink);
+    --et-red-soft: var(--et-color-brand-soft);
+    --et-ink: var(--et-color-ink);
+    --et-graphite: var(--et-color-text);
+    --et-steel: var(--et-color-text-secondary);
+    --et-muted: var(--et-color-text-muted);
+    --et-warm: var(--et-color-surface);
+    --et-warm-2: var(--et-color-surface-raised);
+    --et-white: var(--et-color-panel);
+    --et-line: var(--et-color-border);
+    --et-line-dark: var(--et-color-border-strong);
+    --et-success: var(--et-color-success);
+    --et-success-soft: var(--et-color-success-soft);
+    --et-warning: var(--et-color-warning);
+    --et-warning-soft: var(--et-color-warning-soft);
+    --et-error: var(--et-color-error);
+    --et-error-soft: var(--et-color-error-soft);
+    --et-info: var(--et-color-info);
+    --et-info-soft: var(--et-color-info-soft);
+    --et-radius-xs: var(--et-radius-surface-small);
+    --et-radius-sm: var(--et-radius-control);
+    --et-radius: var(--et-radius-surface);
+    --et-radius-lg: var(--et-radius-surface-large);
+    --et-radius-xl: var(--et-radius-hero);
+    --et-shadow-sm: var(--et-shadow-surface);
+    --et-shadow: var(--et-shadow-elevated);
+    --et-shadow-dark: var(--et-shadow-inverse);
+    --et-container: var(--et-container-width);
+    --et-header-h: var(--et-header-height);
+    --et-ease: var(--et-motion-fast);
+    --et-font-body: var(--et-font-body-system);
+    --et-font-display: var(--et-font-display-system);
+
+    --v3-red: var(--et-color-brand);
+    --v3-red-dark: var(--et-color-brand-strong);
+    --v3-ink: var(--et-color-ink);
+    --v3-charcoal: var(--et-color-charcoal);
+    --v3-paper: var(--et-color-surface);
+    --v3-soft: var(--et-color-surface-subtle);
+    --v3-line: var(--et-color-border);
+    --v3-muted: var(--et-color-text-muted);
+    --v3-radius: var(--et-radius-public);
+    --v3-radius-lg: var(--et-radius-public-large);
+
+    --easytire-ink: var(--et-ink);
+    --easytire-brand: var(--et-color-brand);
+    --easytire-brand-strong: var(--et-color-brand-strong);
+    --easytire-brand-soft: var(--et-red-soft);
+    --easytire-surface: var(--et-warm);
+    --easytire-panel: var(--et-white);
+    --easytire-border: var(--et-line);
+    --easytire-muted: var(--et-muted);
+    --easytire-shadow: var(--et-shadow-sm);
+    --easytire-shadow-hover: var(--et-shadow);
+}

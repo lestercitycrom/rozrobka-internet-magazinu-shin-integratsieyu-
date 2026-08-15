@@ -4,8 +4,10 @@ use App\Models\User;
 use App\Modules\Content\Enums\ContentPageStatus;
 use App\Modules\Content\Models\HomepagePromotion;
 use App\Modules\Content\Models\HomepageReview;
+use App\Modules\Content\Models\MediaAsset;
 use Database\Seeders\HomepageContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -19,7 +21,23 @@ test('homepage seed publishes the current offer and source-backed customer revie
         ->assertOk()
         ->assertSee('Dekkskift på verksted fra 550 kr')
         ->assertSee('Solveig Lundin')
-        ->assertSee('Avis · service for en bilpark på mer enn 300 biler');
+        ->assertSee('data-testid="business-contact-card"', false);
+});
+
+test('homepage follows the approved compact conversion order without duplicate story or trust blocks', function (): void {
+    $response = $this->get('/')->assertOk();
+
+    $response
+        ->assertSeeInOrder([
+            'class="et-v3-hero"',
+            'data-testid="home-dekkhotell"',
+            'data-testid="home-process"',
+            'data-testid="home-prices"',
+        ], false)
+        ->assertDontSee('class="et-v3-trust', false)
+        ->assertDontSee('class="et-v3-story', false);
+
+    expect(substr_count($response->getContent(), 'et-v3-hero__primary-action'))->toBe(1);
 });
 
 test('homepage keeps draft promotions and all empty reviews out of public output while retaining the honest B2B contact CTA', function (): void {
@@ -69,6 +87,53 @@ test('administrator can manage promotions and cannot publish a review without an
     $review = HomepageReview::query()->firstOrFail();
     $this->actingAs($admin)->delete('/admin/homepage-reviews/'.$review->id)->assertRedirect();
 });
+
+test('promotions accept only active image assets and safely lose their media when it is deactivated', function (): void {
+    $admin = User::factory()->operations()->create();
+    $image = homepagePromotionMedia($admin, 'promotion-image.webp', 'image/webp', true);
+    $document = homepagePromotionMedia($admin, 'promotion-document.pdf', 'application/pdf', true);
+    $payload = homepagePromotionPayload([
+        'media_asset_id' => $image->id,
+        'publication_status' => ContentPageStatus::Published->value,
+    ]);
+
+    $this->actingAs($admin)
+        ->get('/admin/homepage-promotions/create')
+        ->assertOk()
+        ->assertSee('promotion-media', false)
+        ->assertSee('promotion-image.webp');
+
+    $this->actingAs($admin)
+        ->post('/admin/homepage-promotions', $payload)
+        ->assertRedirect();
+
+    $promotion = HomepagePromotion::query()->firstOrFail();
+    expect($promotion->media_asset_id)->toBe($image->id);
+
+    $this->actingAs($admin)
+        ->put('/admin/homepage-promotions/'.$promotion->id, [...$payload, 'media_asset_id' => $document->id])
+        ->assertSessionHasErrors('media_asset_id');
+
+    $image->update(['is_active' => false]);
+    expect($promotion->fresh()->load('mediaAsset')->mediaAsset)->toBeNull();
+});
+
+function homepagePromotionMedia(User $admin, string $name, string $mime, bool $active): MediaAsset
+{
+    return MediaAsset::query()->create([
+        'id' => (string) Str::ulid(),
+        'disk' => 'public',
+        'path' => 'content/'.$name,
+        'original_name' => $name,
+        'mime' => $mime,
+        'byte_size' => 1,
+        'width' => 1600,
+        'height' => 900,
+        'sha256' => hash('sha256', $name),
+        'uploader_id' => $admin->id,
+        'is_active' => $active,
+    ]);
+}
 
 function homepagePromotionPayload(array $overrides = []): array
 {

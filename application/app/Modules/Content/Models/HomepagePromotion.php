@@ -6,6 +6,7 @@ use App\Modules\Content\Enums\ContentPageStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'sort_order',
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
     'body_ru',
     'cta_label_ru',
     'cta_url',
+    'media_asset_id',
 ])]
 final class HomepagePromotion extends Model
 {
@@ -31,5 +33,14 @@ final class HomepagePromotion extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('publication_status', ContentPageStatus::Published->value);
+    }
+
+    /**
+     * A deactivated asset must never remain publicly usable just because a
+     * promotion still references it.
+     */
+    public function mediaAsset(): BelongsTo
+    {
+        return $this->belongsTo(MediaAsset::class)->where('is_active', true);
     }
 }

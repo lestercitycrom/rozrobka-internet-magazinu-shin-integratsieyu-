@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Modules\Content\Enums\ContentPageStatus;
 use App\Modules\Content\Models\HomepagePromotion;
+use App\Modules\Content\Models\MediaAsset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,14 +13,14 @@ final class HomepagePromotionController
 {
     public function index()
     {
-        $promotions = HomepagePromotion::query()->orderBy('sort_order')->orderBy('id')->paginate(20);
+        $promotions = HomepagePromotion::query()->with('mediaAsset')->orderBy('sort_order')->orderBy('id')->paginate(20);
 
         return view('admin.homepage-promotions.index', compact('promotions'));
     }
 
     public function create()
     {
-        return view('admin.homepage-promotions.form', ['promotion' => new HomepagePromotion, 'statuses' => ContentPageStatus::cases()]);
+        return $this->form(new HomepagePromotion);
     }
 
     public function store(Request $request): RedirectResponse
@@ -31,7 +32,7 @@ final class HomepagePromotionController
 
     public function edit(HomepagePromotion $homepagePromotion)
     {
-        return view('admin.homepage-promotions.form', ['promotion' => $homepagePromotion, 'statuses' => ContentPageStatus::cases()]);
+        return $this->form($homepagePromotion);
     }
 
     public function update(Request $request, HomepagePromotion $homepagePromotion): RedirectResponse
@@ -73,6 +74,34 @@ final class HomepagePromotionController
                     $fail(__('admin.homepage_promotions.invalid_url'));
                 }
             }],
+            'media_asset_id' => ['nullable', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (blank($value)) {
+                    return;
+                }
+
+                $isActiveImage = MediaAsset::query()
+                    ->whereKey($value)
+                    ->where('is_active', true)
+                    ->where('mime', 'like', 'image/%')
+                    ->exists();
+
+                if (! $isActiveImage) {
+                    $fail(__('admin.homepage_promotions.invalid_media'));
+                }
+            }],
+        ]);
+    }
+
+    private function form(HomepagePromotion $promotion)
+    {
+        return view('admin.homepage-promotions.form', [
+            'promotion' => $promotion,
+            'statuses' => ContentPageStatus::cases(),
+            'assets' => MediaAsset::query()
+                ->where('is_active', true)
+                ->where('mime', 'like', 'image/%')
+                ->orderBy('original_name')
+                ->get(),
         ]);
     }
 }

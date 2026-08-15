@@ -8,10 +8,19 @@
         <form method="POST" action="{{ $promotion->exists ? route('admin.homepage-promotions.update', $promotion) : route('admin.homepage-promotions.store') }}" class="space-y-6" data-dirty-form>
             @csrf
             @if ($promotion->exists) @method('PUT') @endif
-            <section class="easytire-card grid gap-5 rounded-2xl p-5 md:grid-cols-3">
+            <section class="easytire-card grid gap-5 rounded-2xl p-5 md:grid-cols-2">
                 <label class="block text-sm font-bold" for="promotion-order">{{ __('admin.homepage_promotions.order') }}<input id="promotion-order" required type="number" min="0" name="sort_order" value="{{ old('sort_order', $promotion->sort_order ?? 0) }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3"></label>
                 <label class="block text-sm font-bold" for="promotion-status">{{ __('admin.homepage_promotions.status') }}<select id="promotion-status" name="publication_status" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">@foreach ($statuses as $status)<option value="{{ $status->value }}" @selected(old('publication_status', $promotion->publication_status?->value ?? 'draft') === $status->value)>{{ __('content_ui.status_'.$status->value) }}</option>@endforeach</select></label>
                 <label class="block text-sm font-bold" for="promotion-url">{{ __('admin.homepage_promotions.cta_url') }}<input id="promotion-url" name="cta_url" value="{{ old('cta_url', $promotion->cta_url) }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" aria-describedby="promotion-url-help"><span id="promotion-url-help" class="mt-2 block text-xs font-normal text-easytire-muted">{{ __('admin.homepage_promotions.cta_url_hint') }}</span></label>
+                <label class="block text-sm font-bold" for="promotion-media">{{ __('admin.homepage_promotions.media') }}
+                    <select id="promotion-media" name="media_asset_id" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
+                        <option value="">{{ __('admin.homepage_promotions.no_media') }}</option>
+                        @foreach ($assets as $asset)
+                            <option value="{{ $asset->id }}" @selected(old('media_asset_id', $promotion->media_asset_id) === $asset->id)>{{ $asset->original_name }}{{ $asset->alt_nb ? ' — '.$asset->alt_nb : '' }}</option>
+                        @endforeach
+                    </select>
+                    <span class="mt-2 block text-xs font-normal text-easytire-muted">{{ __('admin.homepage_promotions.media_hint') }}</span>
+                </label>
             </section>
             @foreach (['nb' => __('admin.homepage_promotions.locale_nb'), 'ru' => __('admin.homepage_promotions.locale_ru')] as $locale => $localeLabel)
                 <section class="easytire-card space-y-5 rounded-2xl p-5 sm:p-6"><h2 class="text-lg font-black">{{ $localeLabel }}</h2>

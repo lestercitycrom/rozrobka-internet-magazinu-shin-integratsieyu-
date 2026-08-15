@@ -28,6 +28,24 @@ const initMobileMenu = () => {
     });
 };
 
+const initStickyHeader = () => {
+    const header = one('[data-site-header]');
+    if (!header) return;
+
+    let scheduled = false;
+    const update = () => {
+        header.classList.toggle('is-scrolled', window.scrollY > 12);
+        scheduled = false;
+    };
+
+    window.addEventListener('scroll', () => {
+        if (scheduled) return;
+        scheduled = true;
+        window.requestAnimationFrame(update);
+    }, { passive: true });
+    update();
+};
+
 const initProductionFilters = () => {
     const desktop = window.matchMedia('(min-width: 1101px)');
 
@@ -365,6 +383,7 @@ const initAdminSidebar = () => {
 };
 
 initMobileMenu();
+initStickyHeader();
 initProductionFilters();
 initTabs();
 initBookingFlow();

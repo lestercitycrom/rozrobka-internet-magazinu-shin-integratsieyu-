@@ -33,6 +33,7 @@ return [
         'hero_proof_hotel' => 'Хранение колёс',
         'start_here' => 'Начните здесь',
         'location_title' => 'Где удобнее?',
+        'dekkhotell_section_title' => 'Хранение колёс',
         'location_mobile' => 'Дома или на работе',
         'location_mobile_text' => 'Мы приедем к автомобилю по согласованию.',
         'location_workshop' => 'В мастерской',
@@ -139,6 +140,10 @@ return [
         'call' => 'Позвонить нам',
         'email' => 'Написать на почту',
         'map' => 'Открыть Google Maps',
+        'social_label' => 'EasyTire в социальных сетях',
+        'social_facebook' => 'Facebook',
+        'social_instagram' => 'Instagram',
+        'social_snapchat' => 'Snapchat',
     ],
     'catalog' => [
         'kicker' => 'Интернет-магазин',

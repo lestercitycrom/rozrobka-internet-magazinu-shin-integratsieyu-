@@ -1,14 +1,24 @@
 import { expect, test } from '@playwright/test';
 import { expectNoGlobalOverflow, isRussianProject, localePrefix } from './helpers';
 
-test('project content, current prices and business proof render in both QA locales', async ({ page }, testInfo) => {
+test('approved homepage structure, current prices and compact business contact render in both QA locales', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     const russian = isRussianProject(testInfo.project.name);
 
     await page.goto(prefix || '/');
     await expect(page.getByTestId('homepage-promotions')).toBeVisible();
     await expect(page.getByTestId('homepage-reviews')).toBeVisible();
-    await expect(page.getByTestId('business-contact-card')).toContainText(russian ? '300 автомобилей' : '300 biler');
+    await expect(page.getByTestId('business-contact-card')).toBeVisible();
+    await expect(page.getByTestId('home-dekkhotell')).toBeVisible();
+    await expect(page.getByTestId('home-process')).toBeVisible();
+    await expect(page.locator('.et-v3-hero__primary-action')).toHaveCount(1);
+    await expect(page.locator('.et-v3-trust, .et-v3-story')).toHaveCount(0);
+
+    const dekkhotellBox = await page.getByTestId('home-dekkhotell').boundingBox();
+    const processBox = await page.getByTestId('home-process').boundingBox();
+    const pricesBox = await page.getByTestId('home-prices').boundingBox();
+    expect(dekkhotellBox?.y).toBeLessThan(processBox?.y ?? 0);
+    expect(processBox?.y).toBeLessThan(pricesBox?.y ?? 0);
     await expectNoGlobalOverflow(page);
 
     await page.goto(`${prefix}/priser`);
