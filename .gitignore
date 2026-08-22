@@ -1,10 +1,14 @@
 /.idea/
 /.vscode/
+/.agents/
+/.codex/
+/.pnpm-store/
 /.env
 /.env.*
 !/.env.example
 /tmp/
 /output/
+/application/tmp/
 /docs/primary/*.png
 /docs/access.md
 /docs/private/

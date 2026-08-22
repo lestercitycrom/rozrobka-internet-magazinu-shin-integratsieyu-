@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: EasyTire current context
+    url: https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/blob/main/project-control/CONTEXT.md
+    about: Read the current status, decisions and workflow before creating a task.
