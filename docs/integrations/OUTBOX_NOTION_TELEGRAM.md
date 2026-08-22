@@ -1,6 +1,6 @@
 # Notion and Telegram order notifications
 
-Both integrations are disabled by default. They are invoked only by the existing outbox after an order has reached the paid state. No checkout request makes an external call directly.
+Both integrations are disabled by default. A paid-order message is created only after authoritative Dintero capture/`paid`; authorization/reservation and NDI acceptance do not create it. No checkout request makes a Notion or Telegram call directly.
 
 ## What is needed from the customer
 
@@ -35,6 +35,6 @@ Leaving any required value blank keeps that destination bound to its disabled ad
 
 ## Data and delivery behaviour
 
-The outgoing snapshot deliberately excludes the customer’s name, email, phone, address and free-text note. It contains only the public order reference, paid total/currency, number of item rows and the stable outbox delivery key.
+The local outbox payload is encrypted and currently contains customer contact fields and product lines so an approved operational mapping can be added without changing the payment lifecycle. The current HTTP destinations deliberately send only the public reference, paid total/currency, line counts and stable delivery key; customer PII and free-text notes are not sent to Notion/Telegram until the owner approves the exact database schema and PII policy.
 
 The outbox claim prevents concurrent workers. Delivery is recorded locally only after the remote provider acknowledges the request; HTTP failures are retried with backoff. This is intentionally **at-least-once** delivery: a process crash after remote success but before the local commit can create a duplicate. The stable delivery key is included in both destinations for manual reconciliation, but Telegram `sendMessage` has no idempotency key and the current Notion adapter does not yet upsert by a unique database property. Do not enable either destination with a “no duplicates” acceptance promise until the Notion schema and an explicit Telegram duplicate policy have been approved and tested.

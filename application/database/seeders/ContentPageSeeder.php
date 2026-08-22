@@ -41,6 +41,28 @@ class ContentPageSeeder extends Seeder
                 $page->save();
             }
 
+            if ($page->exists && $slug === 'kjopsvilkar' && ! str_contains((string) $page->body_nb, '## Betaling med Dintero')) {
+                $page->body_nb = rtrim((string) $page->body_nb).<<<'MD'
+
+
+## Betaling med Dintero
+
+Ved varebestilling autoriserer Dintero beløpet og reserverer det på kundens betalingsmiddel. Beløpet trekkes ikke ved innsending av bestillingen. Etter bekreftet autorisasjon kontrollerer EasyTire pris og tilgjengelighet på nytt før vareordren sendes til NDI.
+
+EasyTire gjennomfører belastningen først når varene er mottatt hos EasyTire og er kontrollert som klare for avtalt montering eller henting. Dersom NDI avviser ordren, eller pris eller tilgjengelighet ikke kan bekreftes før leverandørbestillingen, frigis reservasjonen uten belastning. Betalingsmiddelets egne vilkår kan begrense hvor lenge en reservasjon varer; hvis leveringstiden overskrider denne perioden, kontakter EasyTire kunden før en ny betalingshandling.
+MD;
+                $page->body_ru = rtrim((string) $page->body_ru).<<<'MD'
+
+
+## Оплата через Dintero
+
+При товарном заказе Dintero авторизует сумму и резервирует её на платёжном средстве клиента. При отправке заказа деньги не списываются. После подтверждения резерва EasyTire повторно проверяет цену и наличие до отправки товарного заказа в NDI.
+
+EasyTire выполняет списание только после получения товара в EasyTire и его проверки как готового к согласованной установке или выдаче. Если NDI отклоняет заказ либо цену или наличие нельзя подтвердить до заказа у поставщика, резерв снимается без списания. Срок резерва зависит от выбранного способа оплаты; если доставка длится дольше, EasyTire связывается с клиентом до нового платёжного действия.
+MD;
+                $page->save();
+            }
+
             if ($page->exists
                 && ($page->publication_status !== ContentPageStatus::Draft
                     || mb_strlen(trim((string) $page->body_nb)) >= 200)
@@ -223,6 +245,12 @@ En tjenesteforespørsel er ikke en bekreftet time. Avtalen inngås først når E
 
 Prisene vises i norske kroner. Den samlede prisen som godkjennes i bestillingen gjelder. Tjenester med variabelt omfang bekreftes før arbeidet starter. Betalingsmåte og tidspunkt vises i bestillingen eller avtales med EasyTire.
 
+## Betaling med Dintero
+
+Ved varebestilling autoriserer Dintero beløpet og reserverer det på kundens betalingsmiddel. Beløpet trekkes ikke ved innsending av bestillingen. Etter bekreftet autorisasjon kontrollerer EasyTire pris og tilgjengelighet på nytt før vareordren sendes til NDI.
+
+EasyTire gjennomfører belastningen først når varene er mottatt hos EasyTire og er kontrollert som klare for avtalt montering eller henting. Dersom NDI avviser ordren, eller pris eller tilgjengelighet ikke kan bekreftes før leverandørbestillingen, frigis reservasjonen uten belastning. Betalingsmiddelets egne vilkår kan begrense hvor lenge en reservasjon varer; hvis leveringstiden overskrider denne perioden, kontakter EasyTire kunden før en ny betalingshandling.
+
 ## Produkter, passform og tilgjengelighet
 
 Kunden må kontrollere bil, registreringsnummer og faktisk hjuldimensjon. Katalogfiltre og kjøretøyoppslag er veiledende. EasyTire kan hjelpe med kontroll før kjøp. Lager og levering kontrolleres mot leverandør før en vareordre sendes endelig.
@@ -261,6 +289,12 @@ EasyTask AS (EasyTire), org.nr. 934 860 187, Ringvegen 200, 9018 Tromsø. Тел
 ## Цена и оплата
 
 Цены указываются в норвежских кронах. Действует итоговая сумма, подтверждённая в заказе. Стоимость работ с переменным объёмом согласуется до начала. Способ и момент оплаты указываются при заказе или согласуются с EasyTire.
+
+## Оплата через Dintero
+
+При товарном заказе Dintero авторизует сумму и резервирует её на платёжном средстве клиента. При отправке заказа деньги не списываются. После подтверждения резерва EasyTire повторно проверяет цену и наличие до отправки товарного заказа в NDI.
+
+EasyTire выполняет списание только после получения товара в EasyTire и его проверки как готового к согласованной установке или выдаче. Если NDI отклоняет заказ либо цену или наличие нельзя подтвердить до заказа у поставщика, резерв снимается без списания. Срок резерва зависит от выбранного способа оплаты; если доставка длится дольше, EasyTire связывается с клиентом до нового платёжного действия.
 
 ## Товары и совместимость
 

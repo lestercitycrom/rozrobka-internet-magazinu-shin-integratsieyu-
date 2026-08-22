@@ -7,6 +7,8 @@ use App\Modules\Payments\Data\PaymentAuthorizationRequest;
 use App\Modules\Payments\Data\PaymentAuthorizationResult;
 use App\Modules\Payments\Data\PaymentOperationRequest;
 use App\Modules\Payments\Data\PaymentOperationResult;
+use App\Modules\Payments\Data\PaymentTransactionResult;
+use App\Modules\Payments\Enums\ProviderPaymentState;
 use App\Modules\Payments\Exceptions\PaymentProviderRejected;
 use RuntimeException;
 
@@ -32,6 +34,9 @@ final class FakePaymentGateway implements PaymentGateway
     /** @var array<string, PaymentAuthorizationResult> */
     private array $authorizations = [];
 
+    /** @var array<string, PaymentTransactionResult> */
+    public array $transactions = [];
+
     public function provider(): string
     {
         return 'fake';
@@ -49,10 +54,21 @@ final class FakePaymentGateway implements PaymentGateway
             throw new PaymentProviderRejected('Synthetic definitive authorization rejection.');
         }
 
-        return $this->authorizations[$request->idempotencyKey] ??= new PaymentAuthorizationResult(
+        $result = $this->authorizations[$request->idempotencyKey] ??= new PaymentAuthorizationResult(
             providerReference: 'fake-'.substr(hash('sha256', $request->idempotencyKey), 0, 24),
             redirectUrl: 'https://payments.example.test/authorize/'.$request->idempotencyKey,
         );
+        $this->transactions[$result->providerReference] = new PaymentTransactionResult(
+            providerReference: $result->providerReference,
+            providerSessionReference: $result->providerSessionReference ?? $result->providerReference,
+            merchantReference: $request->orderReference,
+            state: ProviderPaymentState::Authorized,
+            amountMinor: $request->amountMinor,
+            currency: $request->currency,
+            externalStatus: 'AUTHORIZED',
+        );
+
+        return $result;
     }
 
     public function capture(PaymentOperationRequest $request): PaymentOperationResult
@@ -75,5 +91,10 @@ final class FakePaymentGateway implements PaymentGateway
         }
 
         return new PaymentOperationResult($request->providerReference);
+    }
+
+    public function transaction(string $providerReference): PaymentTransactionResult
+    {
+        return $this->transactions[$providerReference] ?? throw new RuntimeException('Synthetic transaction was not found.');
     }
 }

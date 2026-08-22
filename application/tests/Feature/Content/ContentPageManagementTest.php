@@ -43,6 +43,19 @@ test('checkout links only to published privacy and terms CMS pages in each local
         ->get('/ru/kasse')->assertOk()->assertSee(route('storefront.preview.content.show', 'personvern'), false)->assertSee(route('storefront.preview.content.show', 'kjopsvilkar'), false);
 });
 
+test('purchase terms explain Dintero authorization and delayed capture in both locales', function (): void {
+    $this->seed(ContentPageSeeder::class);
+
+    $this->get('/kjopsvilkar')->assertOk()
+        ->assertSee('Betaling med Dintero')
+        ->assertSee('Beløpet trekkes ikke ved innsending av bestillingen');
+
+    config()->set('storefront.ru_preview_enabled', true);
+    $this->get('/ru/kjopsvilkar')->assertOk()
+        ->assertSee('Оплата через Dintero')
+        ->assertSee('При отправке заказа деньги не списываются');
+});
+
 test('an administrator can create update and delete localized content pages', function (): void {
     $admin = User::factory()->operations()->create();
     $payload = contentPayload('kjopsvilkar');

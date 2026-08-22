@@ -7,6 +7,7 @@ use App\Modules\Payments\Data\PaymentAuthorizationRequest;
 use App\Modules\Payments\Data\PaymentAuthorizationResult;
 use App\Modules\Payments\Data\PaymentOperationRequest;
 use App\Modules\Payments\Data\PaymentOperationResult;
+use App\Modules\Payments\Data\PaymentTransactionResult;
 use App\Modules\Payments\Exceptions\PaymentsDisabled;
 
 final class DisabledPaymentGateway implements PaymentGateway
@@ -29,5 +30,10 @@ final class DisabledPaymentGateway implements PaymentGateway
     public function void(PaymentOperationRequest $request): PaymentOperationResult
     {
         throw new PaymentsDisabled('Payment void is disabled until a provider contract is configured.');
+    }
+
+    public function transaction(string $providerReference): PaymentTransactionResult
+    {
+        throw new PaymentsDisabled('Payment lookup is disabled until a provider contract is configured.');
     }
 }

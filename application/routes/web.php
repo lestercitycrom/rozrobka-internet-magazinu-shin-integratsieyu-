@@ -5,6 +5,7 @@ use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CatalogController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\ContentPageController;
+use App\Http\Controllers\Storefront\DinteroPaymentController;
 use App\Http\Controllers\Storefront\PricingPageController;
 use App\Http\Controllers\Storefront\SeoServicePageController;
 use App\Http\Controllers\Storefront\ServiceController;
@@ -27,6 +28,10 @@ Route::get('/robots.txt', function () {
 
     return response("User-agent: *\nDisallow: /admin\nDisallow: /ru\nSitemap: ".url('/sitemap.xml')."\n", 200, ['Content-Type' => 'text/plain']);
 });
+
+Route::get('/betaling/dintero/callback', [DinteroPaymentController::class, 'callback'])
+    ->middleware('throttle:60,1')
+    ->name('payments.dintero.callback');
 
 Route::get('/sitemap.xml', function (CatalogReadService $catalog) {
     $urls = [url('/'), url('/dekk-og-felger'), url('/dekk'), url('/felger'), url('/tjenester'), url('/priser')];
@@ -72,6 +77,7 @@ Route::middleware('public.locale')->group(function (): void {
     Route::get('/kasse', [CheckoutController::class, 'create'])->name('storefront.checkout.create');
     Route::post('/kasse', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('storefront.checkout.store');
     Route::get('/bestilling/{reference}', [CheckoutController::class, 'thanks'])->name('storefront.orders.thanks');
+    Route::get('/betaling/dintero/retur/{reference}', [DinteroPaymentController::class, 'return'])->name('storefront.payments.dintero.return');
     // Keep this dynamic CMS route last so fixed storefront paths always win.
     Route::get('/{canonicalPath}', SeoServicePageController::class)
         ->where('canonicalPath', '(?!admin$)(?!ru$)[a-z0-9]+(?:-[a-z0-9]+)*')
@@ -108,6 +114,7 @@ Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')-
     Route::get('/kasse', [CheckoutController::class, 'create'])->name('checkout.create');
     Route::post('/kasse', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
     Route::get('/bestilling/{reference}', [CheckoutController::class, 'thanks'])->name('orders.thanks');
+    Route::get('/betaling/dintero/retur/{reference}', [DinteroPaymentController::class, 'return'])->name('payments.dintero.return');
     Route::get('/{canonicalPath}', SeoServicePageController::class)
         ->where('canonicalPath', '(?!admin$)[a-z0-9]+(?:-[a-z0-9]+)*')
         ->name('seo-services.show');

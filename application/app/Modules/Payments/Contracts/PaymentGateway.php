@@ -6,6 +6,7 @@ use App\Modules\Payments\Data\PaymentAuthorizationRequest;
 use App\Modules\Payments\Data\PaymentAuthorizationResult;
 use App\Modules\Payments\Data\PaymentOperationRequest;
 use App\Modules\Payments\Data\PaymentOperationResult;
+use App\Modules\Payments\Data\PaymentTransactionResult;
 
 interface PaymentGateway
 {
@@ -19,4 +20,7 @@ interface PaymentGateway
 
     /** The adapter must not void twice when the same idempotency key is retried. */
     public function void(PaymentOperationRequest $request): PaymentOperationResult;
+
+    /** Fetches authoritative server-side state; callback query data is never trusted. */
+    public function transaction(string $providerReference): PaymentTransactionResult;
 }

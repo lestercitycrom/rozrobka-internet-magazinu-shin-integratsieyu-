@@ -1,4 +1,6 @@
-# Аудит полноты требований EasyTire — 12.08.2026
+# Аудит полноты требований EasyTire — исходный срез 12.08, обновлён 22.08.2026
+
+> Актуальная объединённая версия требований находится в [CURRENT_TZ_2026-08-22.md](../CURRENT_TZ_2026-08-22.md). Числа тестов и staging-факты в нижней исторической части этого отчёта относятся к срезу 12.08 и не являются текущим release evidence.
 
 ## Итоговый вердикт
 
@@ -15,7 +17,7 @@
 ## Проверенные источники
 
 - первичное ТЗ: `docs/primary/ТЗ.txt`;
-- обновлённый экспорт переписки и `AI_CONTEXT.md` из `tmp/customer-archive-20260812`;
+- обновлённые экспорты переписки и `AI_CONTEXT.md`, включая Telegram `ChatExport_2026-08-20`, сообщения о Dintero и голосовое о двух выездных машинах;
 - SEO-таблица заказчика: `docs/files/SEO EasyTire.no.xlsx`, лист `Лист1`, диапазон `A1:N13`;
 - клиентские материалы из `docs/files`, включая изображения и видео;
 - ответы и технические материалы NDI, примеры A2/C1/Status/DesAdv, товарные и складские XLSX;
@@ -39,7 +41,9 @@
 | Создание локального заказа | LOCAL READY | Checkout создаёт честную неоплаченную заявку, фиксирует строки, цены, услуги и подтверждённый контекст автомобиля; он не имитирует оплату и отправку в NDI. |
 | Payment readiness | LOCAL READY | Перед первой авторизацией повторно проверяются публичность и свежий остаток, текущая цена каждого товара и услуги, валюта, snapshot и итог заказа. Расхождение блокирует операцию до обращения к платёжному провайдеру. |
 | `PrepareOrderPayment` | LOCAL READY | Реализована цепочка: readiness → актуальный A2 Inquiry → перевод заказа в ожидание оплаты → authorize. Ключ авторизации детерминирован; неоднозначная уже начатая попытка не запускается повторно как новая. |
-| `FinalizeOrderPayment` | LOCAL READY | После authorization выполняются readiness и повторный A2, затем C1. Accepted приводит к capture, Rejected — к void, Unknown/Submitted — к удержанию без опасного автоматического retry и требует ручной сверки. Capture/void имеют детерминированные idempotency keys. |
+| `FinalizeOrderPayment` | LOCAL READY | После authorization выполняются readiness и повторный A2, затем единственный C1. Accepted сохраняет резерв без списания; Rejected приводит к void; Unknown/Submitted удерживает безопасное состояние без blind retry. Capture отделён и возможен только после ручного подтверждения, что товар физически получен EasyTire и готов. |
+| Dintero Checkout | LOCAL READY / SANDBOX VERIFYING | Выбран Dintero, реализованы OAuth, manual-capture session (`auto_capture=false`), redirect, подписанный callback, server-side transaction lookup, reconciliation, void и capture из state-aware admin. Test account/client получены; production switch является конфигурацией, а не отдельным кодом. |
+| Paid outbox / Notion | LOCAL READY как boundary | События `notion.order_paid` и `telegram.order_paid` не создаются при reserve/authorization или NDI acceptance; они публикуются только после фактического capture/paid. Фактическая Notion-доставка ждёт schema/token/PII/deduplication contract. |
 | Fingerprint заказа NDI | LOCAL READY | Fingerprint включает SKU, количество, цену единицы и валюту, поэтому изменение коммерчески значимой строки не маскируется под прежний запрос. |
 | A2 Inquiry | LOCAL READY как модуль | XML-кодек, HTTP-клиент, fail-closed, idempotency и аудит реализованы и подключены в `PrepareOrderPayment`/`FinalizeOrderPayment`. Публичное включение зависит от внешних коммерческих пунктов. |
 | C1 Order / Status / DesAdv | LOCAL READY как модуль | Отправка, разбор ответа, статусы, повторная сверка и аудит реализованы. Production-вызов намеренно не активируется без прав NDI и acceptance-test. |
@@ -60,7 +64,8 @@
 
 | Область | Статус | Что именно требуется |
 |---|---|---|
-| Платёжный провайдер | EXTERNAL / COMMERCIAL BLOCKED | Выбрать provider/merchant account и получить credentials, webhook, return/cancel и capture/void contract. До этого публичный маршрут оплаты не подключается к локальному coordinator. |
+| Dintero production | EXTERNAL / COMMERCIAL BLOCKED | Провайдер и sandbox credentials уже выбраны/получены. До реальных денег нужны production/KYC approval, production client/profile/signature, сроки авторизации для каждого метода и утверждённые cancellation/partial/refund/no-show rules. |
+| Две выездные машины | EXTERNAL DECISION / LOCAL NEXT | Голосовое 20.08 подтверждает две машины, но оставляет выбор: районы либо заполнение первой и затем второй. Текущий календарь безопасно управляет общей capacity; нужны зоны, смены, travel time и правило назначения ресурса. |
 | Формула конечной цены | EXTERNAL / COMMERCIAL BLOCKED | Заказчик должен письменно утвердить VAT, environmental fee, markup, порядок применения и округление. Админка умеет Gross/Net и наценки, но production-формула не должна выводиться из предположений. |
 | NDI production | EXTERNAL / COMMERCIAL BLOCKED | Нужны production PartyID/credentials, подтверждение разрешения на C1, безопасный acceptance-order и согласованный сценарий Status/DesAdv. |
 | Регулярность NDI feed | EXTERNAL / COMMERCIAL BLOCKED | NDI должен начать фактически отправлять полные товарные/складские файлы с согласованной cadence и атомарной публикацией во входящую папку. Локальный inbox к этому готов. |
@@ -83,9 +88,10 @@
 - NB-интерфейс и скрытый RU QA-маршрут;
 - собственную админку, контент, контакты, SEO, отзывы/ratings, календарь и наценки;
 - NDI import/inbox, защиту от плохих snapshot и отображение официальных изображений;
-- изолированные A2/C1/payment coordinator сценарии на тестовых doubles.
+- Dintero sandbox checkout/callback/admin capture после включения server env;
+- изолированные A2/C1/payment coordinator сценарии и контрактные Dintero HTTP-тесты.
 
-Нельзя включать реальный capture или отправлять коммерческий C1 только потому, что staging визуально готов. Публичная цепочка должна открыться после одновременного закрытия платёжного провайдера, формулы цены и production-приёмки NDI.
+Нельзя включать production capture или отправлять коммерческий C1 только потому, что Dintero sandbox и staging визуально готовы. Публичная боевая цепочка открывается после Dintero production approval, утверждения сроков резерва/cancellation/refund, формулы цены и production-приёмки NDI.
 
 ## Условия финальной технической приёмки текущего релиза
 

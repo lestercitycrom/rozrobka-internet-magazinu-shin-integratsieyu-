@@ -26,7 +26,7 @@ final class OrderController
 
     public function show(Order $order, TransitionOrder $t)
     {
-        $order->load(['items', 'serviceItems', 'statusHistory.actor', 'ndiOrderAttempt']);
+        $order->load(['items', 'serviceItems', 'statusHistory.actor', 'ndiOrderAttempt', 'paymentAttempt']);
 
         return view('admin.orders.show', ['order' => $order, 'allowed' => $t->allowedFor($order)]);
     }

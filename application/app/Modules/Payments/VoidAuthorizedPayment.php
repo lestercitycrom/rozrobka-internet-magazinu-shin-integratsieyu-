@@ -57,6 +57,7 @@ final class VoidAuthorizedPayment
                 amountMinor: $attempt->amount_minor,
                 currency: $attempt->currency,
                 idempotencyKey: $attempt->void_idempotency_key,
+                operationReference: $order->public_reference,
             ));
         } catch (PaymentProviderRejected $exception) {
             $this->resetDefinitiveRejection($attempt);
@@ -96,10 +97,17 @@ final class VoidAuthorizedPayment
 
     private function resetDefinitiveRejection(PaymentAttempt $attempt): void
     {
-        PaymentAttempt::query()->whereKey($attempt->id)->where('status', PaymentStatus::Voiding->value)->update([
-            'status' => PaymentStatus::Authorized,
-            'void_idempotency_key' => null,
-            'metadata_encrypted' => ['last_error_code' => 'void_rejected'],
-        ]);
+        DB::transaction(function () use ($attempt): void {
+            /** @var PaymentAttempt|null $lockedAttempt */
+            $lockedAttempt = PaymentAttempt::query()->whereKey($attempt->id)->lockForUpdate()->first();
+            if ($lockedAttempt === null || $lockedAttempt->status !== PaymentStatus::Voiding) {
+                return;
+            }
+            $lockedAttempt->update([
+                'status' => PaymentStatus::Authorized,
+                'void_idempotency_key' => null,
+                'metadata_encrypted' => ['last_error_code' => 'void_rejected'],
+            ]);
+        }, 3);
     }
 }

@@ -42,6 +42,7 @@
                     @if($errors->any())
                         <div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
                     @endif
+                    @error('payment')<div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $message }}</div></div>@enderror
 
                     <fieldset class="et-fieldset">
                         <legend class="sr-only">{{ __('commerce.checkout') }}</legend>
@@ -99,7 +100,10 @@
                         </div>
                     </fieldset>
 
-                    <button class="et-btn et-btn--primary" type="submit" style="margin-top:1.5rem" data-testid="checkout-submit">{{ __('commerce.submit') }}</button>
+                    @if(config('payments.enabled'))
+                        <div class="et-alert et-alert--info" style="margin-top:1.5rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('commerce.payment_authorization_notice') }}</div></div>
+                    @endif
+                    <button class="et-btn et-btn--primary" type="submit" style="margin-top:1.5rem" data-testid="checkout-submit">{{ config('payments.enabled') ? __('commerce.continue_to_payment') : __('commerce.submit') }}</button>
                 </div>
             </form>
 
@@ -121,7 +125,7 @@
                     @if ($cart->servicesTotal()->minor > 0)<div class="et-order-summary__row"><dt>{{ __('commerce.services_total') }}</dt><dd><strong>{{ number_format($cart->servicesTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->servicesTotal()->currency }}</strong></dd></div>@endif
                 </dl>
                 <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span>{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</span></div>
-                <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('commerce.pending') }}</div></div>
+                <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ config('payments.enabled') ? __('commerce.payment_summary_notice') : __('commerce.pending') }}</div></div>
             </aside>
         </div>
     </section>

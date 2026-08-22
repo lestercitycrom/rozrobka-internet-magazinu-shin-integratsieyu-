@@ -39,7 +39,7 @@ test('authorization and capture are idempotent and capture publishes paid order 
         ->and($order->refresh()->payment_status)->toBe(PaymentStatus::Authorized)
         ->and(PaymentAttempt::query()->count())->toBe(1);
 
-    $order->update(['ndi_status' => NdiOrderStatus::Accepted]);
+    $order->update(['ndi_status' => NdiOrderStatus::Accepted, 'goods_ready_at' => now()]);
     $captureKey = (string) Str::uuid();
     $captured = app(CaptureAuthorizedPayment::class)->execute($order->refresh(), $captureKey);
     $sameCapture = app(CaptureAuthorizedPayment::class)->execute($order->refresh(), $captureKey);
@@ -86,11 +86,9 @@ test('ambiguous authorization retries reuse the durable key while a different ke
         ->and(fn () => $authorize->execute($order->refresh(), (string) Str::uuid(), 'https://shop.example.test/payment/return'))
         ->toThrow(PaymentOperationRejected::class, 'lifecycle');
 
-    $attempt = $authorize->execute($order->refresh(), $key, 'https://shop.example.test/payment/return');
-    $authorize->execute($order->refresh(), $key, 'https://shop.example.test/payment/return');
-
-    expect($attempt->status)->toBe(PaymentStatus::Authorized)
-        ->and($fake->authorizationCalls)->toHaveCount(2)
+    expect(fn () => $authorize->execute($order->refresh(), $key, 'https://shop.example.test/payment/return'))
+        ->toThrow(PaymentOperationRejected::class, 'reconciliation')
+        ->and($fake->authorizationCalls)->toHaveCount(1)
         ->and(PaymentAttempt::query()->count())->toBe(1);
 });
 
@@ -98,7 +96,7 @@ test('ambiguous capture can only retry the same operation and blocks a competing
     $fake = bindFakePaymentGateway();
     $order = paymentBoundaryOrder();
     app(AuthorizePayment::class)->execute($order, (string) Str::uuid(), 'https://shop.example.test/payment/return');
-    $order->update(['ndi_status' => NdiOrderStatus::Accepted]);
+    $order->update(['ndi_status' => NdiOrderStatus::Accepted, 'goods_ready_at' => now()]);
     $fake->failNextCaptureTransport = true;
     $captureKey = (string) Str::uuid();
 

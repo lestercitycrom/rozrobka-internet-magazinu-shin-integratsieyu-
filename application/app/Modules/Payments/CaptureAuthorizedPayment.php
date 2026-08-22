@@ -9,6 +9,7 @@ use App\Modules\Orders\Models\Order;
 use App\Modules\Outbox\OutboxPublisher;
 use App\Modules\Payments\Contracts\PaymentGateway;
 use App\Modules\Payments\Data\PaymentOperationRequest;
+use App\Modules\Payments\Dintero\DinteroOrderPayload;
 use App\Modules\Payments\Exceptions\PaymentOperationRejected;
 use App\Modules\Payments\Exceptions\PaymentProviderRejected;
 use App\Modules\Payments\Models\PaymentAttempt;
@@ -20,6 +21,7 @@ final class CaptureAuthorizedPayment
         private readonly PaymentGateway $gateway,
         private readonly OutboxPublisher $outbox,
         private readonly PaidOrderPayload $paidOrderPayload,
+        private readonly DinteroOrderPayload $payload,
     ) {}
 
     public function execute(Order $order, string $idempotencyKey): PaymentAttempt
@@ -43,8 +45,9 @@ final class CaptureAuthorizedPayment
             }
             if ($lockedOrder->status !== OrderStatus::AwaitingPayment
                 || $lockedOrder->ndi_status !== NdiOrderStatus::Accepted
-                || $lockedOrder->payment_status !== PaymentStatus::Authorized) {
-                throw new PaymentOperationRejected('Capture requires an authorized payment and an accepted NDI order.');
+                || $lockedOrder->payment_status !== PaymentStatus::Authorized
+                || $lockedOrder->goods_ready_at === null) {
+                throw new PaymentOperationRejected('Capture requires an authorized payment, an accepted NDI order and explicit goods-ready confirmation.');
             }
             if (! in_array($attempt->status, [PaymentStatus::Authorized, PaymentStatus::Capturing], true)) {
                 throw new PaymentOperationRejected('The payment is not available for capture.');
@@ -62,12 +65,15 @@ final class CaptureAuthorizedPayment
             return $attempt;
         }
 
+        $paymentOrder = Order::query()->with(['items', 'serviceItems'])->findOrFail($attempt->order_id);
         try {
             $result = $this->gateway->capture(new PaymentOperationRequest(
                 providerReference: PaymentBoundaryGuard::providerReference((string) $attempt->provider_reference),
                 amountMinor: $attempt->amount_minor,
                 currency: $attempt->currency,
                 idempotencyKey: $attempt->capture_idempotency_key,
+                operationReference: $paymentOrder->public_reference,
+                items: $this->payload->operationItems($paymentOrder),
             ));
         } catch (PaymentProviderRejected $exception) {
             $this->resetDefinitiveRejection($attempt);
@@ -88,6 +94,7 @@ final class CaptureAuthorizedPayment
             if ($lockedAttempt->status !== PaymentStatus::Capturing
                 || $lockedOrder->payment_status !== PaymentStatus::Authorized
                 || $lockedOrder->ndi_status !== NdiOrderStatus::Accepted
+                || $lockedOrder->goods_ready_at === null
                 || ! hash_equals((string) $lockedAttempt->provider_reference, $reference)) {
                 throw new PaymentOperationRejected('Capture confirmation does not match the locked payment lifecycle.');
             }
@@ -118,10 +125,17 @@ final class CaptureAuthorizedPayment
 
     private function resetDefinitiveRejection(PaymentAttempt $attempt): void
     {
-        PaymentAttempt::query()->whereKey($attempt->id)->where('status', PaymentStatus::Capturing->value)->update([
-            'status' => PaymentStatus::Authorized,
-            'capture_idempotency_key' => null,
-            'metadata_encrypted' => ['last_error_code' => 'capture_rejected'],
-        ]);
+        DB::transaction(function () use ($attempt): void {
+            /** @var PaymentAttempt|null $lockedAttempt */
+            $lockedAttempt = PaymentAttempt::query()->whereKey($attempt->id)->lockForUpdate()->first();
+            if ($lockedAttempt === null || $lockedAttempt->status !== PaymentStatus::Capturing) {
+                return;
+            }
+            $lockedAttempt->update([
+                'status' => PaymentStatus::Authorized,
+                'capture_idempotency_key' => null,
+                'metadata_encrypted' => ['last_error_code' => 'capture_rejected'],
+            ]);
+        }, 3);
     }
 }

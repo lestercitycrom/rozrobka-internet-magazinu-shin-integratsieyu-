@@ -9,8 +9,11 @@ use App\Modules\Cart\SessionCart;
 use App\Modules\Orders\CreatePendingOrder;
 use App\Modules\Orders\Data\CheckoutData;
 use App\Modules\Orders\Enums\FulfilmentMethod;
+use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Exceptions\CartNotReady;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Payments\FinalizeOrderPayment;
+use App\Modules\Payments\PrepareOrderPayment;
 use App\Modules\VehicleFitment\VehicleLookup;
 use Illuminate\Support\Str;
 
@@ -37,8 +40,15 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function store(CheckoutRequest $request, CartResolver $cart, CreatePendingOrder $orders, SessionCart $session, VehicleLookup $lookup)
-    {
+    public function store(
+        CheckoutRequest $request,
+        CartResolver $cart,
+        CreatePendingOrder $orders,
+        SessionCart $session,
+        VehicleLookup $lookup,
+        PrepareOrderPayment $prepare,
+        FinalizeOrderPayment $finalize,
+    ) {
         $key = (string) session('checkout.key', '');
         abort_unless($key !== '' && hash_equals($key, (string) $request->input('idempotency_key')), 419);
         try {
@@ -54,7 +64,35 @@ class CheckoutController extends Controller
             return redirect()->route($this->routePrefix().'cart.index')
                 ->with('cart_error', __('commerce.checkout_not_ready'));
         }
-        if ($result->created) {
+        if (! config('payments.enabled')) {
+            if ($result->created) {
+                $session->clear();
+                $request->session()->forget('vehicle_fitment.confirmed');
+            }
+
+            return redirect()->route($this->routePrefix().'orders.thanks', $result->order->public_reference);
+        }
+
+        try {
+            $attempt = $prepare->execute(
+                $result->order,
+                route($this->routePrefix().'payments.dintero.return', $result->order->public_reference),
+                route('payments.dintero.callback'),
+                route($this->routePrefix().'content.show', 'kjopsvilkar'),
+            );
+            if ($attempt->status === PaymentStatus::Authorized) {
+                $finalize->execute($result->order->refresh());
+            }
+        } catch (\Throwable) {
+            return back()->withInput()->withErrors(['payment' => __('commerce.payment_start_failed')]);
+        }
+
+        $redirectUrl = $attempt->metadata_encrypted['redirect_url'] ?? null;
+        if (is_string($redirectUrl) && str_starts_with($redirectUrl, 'https://')) {
+            return redirect()->away($redirectUrl);
+        }
+
+        if ($attempt->status === PaymentStatus::Authorized) {
             $session->clear();
             $request->session()->forget('vehicle_fitment.confirmed');
         }
@@ -64,9 +102,9 @@ class CheckoutController extends Controller
 
     public function thanks(string $reference)
     {
-        abort_unless(Order::query()->where('public_reference', $reference)->exists(), 404);
+        $order = Order::query()->where('public_reference', $reference)->firstOrFail();
 
-        return view('storefront.checkout.thanks', compact('reference'));
+        return view('storefront.checkout.thanks', compact('reference', 'order'));
     }
 
     private function routePrefix(): string

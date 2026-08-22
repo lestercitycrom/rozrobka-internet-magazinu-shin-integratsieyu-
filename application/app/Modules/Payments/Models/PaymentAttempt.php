@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'order_id', 'provider', 'idempotency_key', 'provider_reference', 'status',
+    'order_id', 'provider', 'idempotency_key', 'provider_reference', 'provider_session_reference', 'status',
     'capture_idempotency_key', 'void_idempotency_key', 'amount_minor', 'currency',
     'metadata_encrypted', 'started_at', 'authorized_at', 'captured_at', 'voided_at',
     'completed_at',

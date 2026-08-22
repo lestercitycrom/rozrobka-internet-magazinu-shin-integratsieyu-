@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ImportRunController;
 use App\Http\Controllers\Admin\MediaAssetController;
 use App\Http\Controllers\Admin\MediaHeroAssignmentController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderPaymentController;
 use App\Http\Controllers\Admin\PricingRuleController;
 use App\Http\Controllers\Admin\PublicServicePriceController;
 use App\Http\Controllers\Admin\ServiceAddonController;
@@ -70,6 +71,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/transition', [OrderController::class, 'transition'])->name('orders.transition');
+        Route::post('/orders/{order}/payment/capture', [OrderPaymentController::class, 'capture'])->name('orders.payment.capture');
+        Route::post('/orders/{order}/payment/reconcile', [OrderPaymentController::class, 'reconcile'])->name('orders.payment.reconcile');
+        Route::post('/orders/{order}/payment/void', [OrderPaymentController::class, 'void'])->name('orders.payment.void');
         Route::get('/media', [MediaAssetController::class, 'index'])->name('media.index');
         Route::post('/media', [MediaAssetController::class, 'store'])->name('media.store');
         Route::put('/media/{mediaAsset}', [MediaAssetController::class, 'update'])->name('media.update');

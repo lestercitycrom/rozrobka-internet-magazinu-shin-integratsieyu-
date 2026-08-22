@@ -14,9 +14,11 @@ use App\Modules\Orders\Enums\NdiOrderStatus;
 use App\Modules\Orders\Enums\OrderStatus;
 use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Payments\CaptureAuthorizedPayment;
 use App\Modules\Payments\Contracts\PaymentGateway;
 use App\Modules\Payments\Exceptions\PaymentOperationRejected;
 use App\Modules\Payments\FinalizeOrderPayment;
+use App\Modules\Payments\PaymentIdempotencyKey;
 use App\Modules\Payments\PrepareOrderPayment;
 use Database\Seeders\E2eStorefrontSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,11 +35,22 @@ test('coordinator enforces reprice then Inquiry then authorization C1 and captur
     $order = Order::query()->where('public_reference', 'ET-E2E-ORDER')->firstOrFail();
 
     $authorized = app(PrepareOrderPayment::class)->execute($order, 'https://shop.example.test/payment/return');
-    $paid = app(FinalizeOrderPayment::class)->execute($order->refresh());
-    $samePaid = app(FinalizeOrderPayment::class)->execute($order->refresh());
+    $accepted = app(FinalizeOrderPayment::class)->execute($order->refresh());
+    $sameAccepted = app(FinalizeOrderPayment::class)->execute($order->refresh());
 
     expect($authorized->status)->toBe(PaymentStatus::Authorized)
-        ->and($paid->status)->toBe(PaymentStatus::Paid)
+        ->and($accepted->status)->toBe(PaymentStatus::Authorized)
+        ->and($sameAccepted->id)->toBe($accepted->id)
+        ->and($order->refresh()->status)->toBe(OrderStatus::AwaitingPayment)
+        ->and($order->payment_status)->toBe(PaymentStatus::Authorized)
+        ->and($order->ndi_status)->toBe(NdiOrderStatus::Accepted)
+        ->and($gateway->captureCalls)->toBeEmpty();
+
+    $order->update(['goods_ready_at' => now(), 'goods_ready_note' => 'Received at EasyTire']);
+    $paid = app(CaptureAuthorizedPayment::class)->execute($order->refresh(), PaymentIdempotencyKey::captureFor($order));
+    $samePaid = app(CaptureAuthorizedPayment::class)->execute($order->refresh(), PaymentIdempotencyKey::captureFor($order));
+
+    expect($paid->status)->toBe(PaymentStatus::Paid)
         ->and($samePaid->id)->toBe($paid->id)
         ->and($order->refresh()->status)->toBe(OrderStatus::Paid)
         ->and($order->payment_status)->toBe(PaymentStatus::Paid)

@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'currency', 'subtotal_minor', 'total_minor', 'fulfilment_method', 'customer_name',
     'customer_email', 'customer_phone', 'vehicle_registration', 'fitment_snapshot', 'customer_note',
     'terms_accepted_at', 'privacy_accepted_at', 'pricing_snapshot_at', 'submitted_at',
+    'goods_ready_at', 'goods_ready_by_user_id', 'goods_ready_note',
 ])]
 class Order extends Model
 {
@@ -43,6 +44,7 @@ class Order extends Model
             'privacy_accepted_at' => 'datetime',
             'pricing_snapshot_at' => 'datetime',
             'submitted_at' => 'datetime',
+            'goods_ready_at' => 'datetime',
         ];
     }
 

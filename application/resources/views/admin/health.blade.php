@@ -20,6 +20,20 @@
                 </article>
             @endforeach
             <article class="easytire-card rounded-2xl p-5"><p class="text-sm font-bold text-easytire-muted">{{ __('health.disk_free_bytes') }}</p><p @class(['mt-3 text-xl font-black', 'text-green-700' => $health['disk_ok'], 'text-red-700' => ! $health['disk_ok']])>{{ $health['disk_free_bytes'] === null ? __('health.none') : number_format($health['disk_free_bytes'] / 1073741824, 1, ',', ' ') . ' GB' }}</p></article>
+            <article class="easytire-card rounded-2xl p-5" data-testid="payment-health">
+                <p class="text-sm font-bold text-easytire-muted">{{ __('integration_health.payment') }}</p>
+                <p @class(['mt-3 text-xl font-black', 'text-green-700' => $health['payment_enabled'] && $health['payment_configured'] && $health['payment_callback_protected'], 'text-red-700' => $health['payment_enabled'] && (! $health['payment_configured'] || ! $health['payment_callback_protected'])])>
+                    {{ $health['payment_enabled'] ? ($health['payment_configured'] && $health['payment_callback_protected'] ? __('integration_health.ready') : __('integration_health.incomplete')) : __('integration_health.disabled') }}
+                </p>
+                <p class="mt-1 text-sm text-easytire-muted">{{ strtoupper($health['payment_provider'] ?: '—') }} · {{ __('integration_health.'.$health['payment_environment']) }}</p>
+            </article>
+            <article class="easytire-card rounded-2xl p-5" data-testid="notion-health">
+                <p class="text-sm font-bold text-easytire-muted">{{ __('integration_health.notion') }}</p>
+                <p @class(['mt-3 text-xl font-black', 'text-green-700' => $health['notion_enabled'] && $health['notion_configured'], 'text-red-700' => $health['notion_enabled'] && ! $health['notion_configured']])>
+                    {{ $health['notion_enabled'] ? ($health['notion_configured'] ? __('integration_health.ready') : __('integration_health.incomplete')) : __('integration_health.disabled') }}
+                </p>
+                <p class="mt-1 text-sm text-easytire-muted">{{ __('integration_health.notion_after_capture') }}</p>
+            </article>
         </section>
     </div>
 </x-layouts.admin>

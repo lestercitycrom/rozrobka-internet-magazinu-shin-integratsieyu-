@@ -18,7 +18,31 @@ uses(RefreshDatabase::class);
 
 test('health is visible to administrators and hides sensitive storage details', function (): void {
     $this->actingAs(User::factory()->operations()->create())->get('/admin/health')
-        ->assertOk()->assertSee('Systemhelse')->assertSee('Database')->assertSee('Køforbindelse')->assertDontSee(base_path());
+        ->assertOk()->assertSee('Systemhelse')->assertSee('Database')->assertSee('Køforbindelse')->assertSee('Dintero-betaling')->assertSee('Notion')->assertDontSee(base_path());
+});
+
+test('enabled Dintero is healthy only with environment credentials and protected callbacks', function (): void {
+    config()->set([
+        'payments.enabled' => true,
+        'payments.provider' => 'dintero',
+        'payments.dintero.environment' => 'test',
+        'payments.dintero.test_account_id' => 'T12345678',
+        'payments.dintero.client_id' => 'client',
+        'payments.dintero.client_secret' => 'secret',
+        'payments.dintero.require_callback_signature' => false,
+        'payments.dintero.callback_secret' => null,
+    ]);
+
+    expect(app(SystemHealth::class)->report()['payment_configured'])->toBeTrue()
+        ->and(app(SystemHealth::class)->report()['payment_callback_protected'])->toBeFalse()
+        ->and(app(SystemHealth::class)->healthy())->toBeFalse();
+
+    config()->set([
+        'payments.dintero.require_callback_signature' => true,
+        'payments.dintero.callback_secret' => 'callback-secret',
+    ]);
+
+    expect(app(SystemHealth::class)->report()['payment_callback_protected'])->toBeTrue();
 });
 
 test('guests and customers cannot read system health', function (): void {

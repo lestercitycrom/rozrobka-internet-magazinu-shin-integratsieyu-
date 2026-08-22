@@ -22,15 +22,14 @@ final class FinalizeOrderPayment
         private readonly OrderPaymentReadiness $readiness,
         private readonly ConfirmNdiAvailability $availability,
         private readonly SubmitNdiOrder $submit,
-        private readonly CaptureAuthorizedPayment $capture,
         private readonly VoidAuthorizedPayment $void,
     ) {}
 
     public function execute(Order $order): PaymentAttempt
     {
         $order = Order::query()->findOrFail($order->getKey());
-        if ($order->payment_status === PaymentStatus::Paid && $order->ndi_status === NdiOrderStatus::Accepted) {
-            return $this->capture->execute($order, PaymentIdempotencyKey::captureFor($order));
+        if ($order->payment_status === PaymentStatus::Paid) {
+            return PaymentAttempt::query()->where('order_id', $order->id)->firstOrFail();
         }
         if ($order->payment_status !== PaymentStatus::Authorized) {
             throw new PaymentOperationRejected('An authorized payment is required before supplier submission.');
@@ -43,7 +42,7 @@ final class FinalizeOrderPayment
             throw new NdiOrderNotReady('NDI rejected the order; the payment authorization was voided.');
         }
         if ($order->ndi_status === NdiOrderStatus::Accepted) {
-            return $this->capture->execute($order, PaymentIdempotencyKey::captureFor($order));
+            return PaymentAttempt::query()->where('order_id', $order->id)->firstOrFail();
         }
 
         try {
@@ -63,7 +62,7 @@ final class FinalizeOrderPayment
         }
 
         if ($submission->status === NdiSubmissionStatus::Accepted) {
-            return $this->capture->execute($order->refresh(), PaymentIdempotencyKey::captureFor($order));
+            return PaymentAttempt::query()->where('order_id', $order->id)->firstOrFail();
         }
         if ($submission->status === NdiSubmissionStatus::Rejected) {
             $this->void->execute($order->refresh(), PaymentIdempotencyKey::voidFor($order));

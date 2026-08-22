@@ -22,11 +22,11 @@ final class PrepareOrderPayment
         private readonly AuthorizePayment $authorize,
     ) {}
 
-    public function execute(Order $order, string $returnUrl): PaymentAttempt
+    public function execute(Order $order, string $returnUrl, ?string $callbackUrl = null, ?string $termsUrl = null): PaymentAttempt
     {
         $order = Order::query()->findOrFail($order->getKey());
         if (in_array($order->payment_status, [PaymentStatus::Pending, PaymentStatus::Authorized], true)) {
-            return $this->authorize->execute($order, PaymentIdempotencyKey::authorizeFor($order), $returnUrl);
+            return $this->authorize->execute($order, PaymentIdempotencyKey::authorizeFor($order), $returnUrl, $callbackUrl, $termsUrl);
         }
         if ($order->payment_status !== PaymentStatus::NotStarted
             || ! in_array($order->status, [OrderStatus::PendingReview, OrderStatus::AwaitingPayment], true)) {
@@ -43,6 +43,6 @@ final class PrepareOrderPayment
             $order = $this->transition->execute($order, OrderStatus::AwaitingPayment);
         }
 
-        return $this->authorize->execute($order, PaymentIdempotencyKey::authorizeFor($order), $returnUrl);
+        return $this->authorize->execute($order, PaymentIdempotencyKey::authorizeFor($order), $returnUrl, $callbackUrl, $termsUrl);
     }
 }

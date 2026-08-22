@@ -43,7 +43,8 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await page.getByRole('button', { name: /filtrer/i }).click();
     await page.getByText('ET-E2E-ORDER').click();
     await expect(page.getByText(/Uforanderlig varelinje-/i)).toBeVisible();
-    await expect(page.getByText(/NDI-reservering/i)).toBeVisible();
+    await expect(page.getByText(/Betaling og NDI håndteres bare gjennom de sikre handlingene/i)).toBeVisible();
+    await expect(page.getByTestId('admin-order-payment')).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Submit NDI|Reserve|Cancel API/i })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Submit NDI|Reserve|Cancel API/i })).toHaveCount(0);
 

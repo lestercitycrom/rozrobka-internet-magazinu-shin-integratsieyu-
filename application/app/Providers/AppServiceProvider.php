@@ -19,6 +19,7 @@ use App\Modules\Outbox\HttpTelegramOrderDestination;
 use App\Modules\Payments\ConfirmCurrentOrderPaymentReadiness;
 use App\Modules\Payments\Contracts\OrderPaymentReadiness;
 use App\Modules\Payments\Contracts\PaymentGateway;
+use App\Modules\Payments\Dintero\DinteroPaymentGateway;
 use App\Modules\Payments\DisabledPaymentGateway;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -36,7 +37,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(NdiOrderClient::class, HttpNdiOrderClient::class);
         $this->app->bind(NdiOrderStatusClient::class, HttpNdiOrderStatusClient::class);
         $this->app->bind(NdiDespatchClient::class, HttpNdiDespatchClient::class);
-        $this->app->bind(PaymentGateway::class, DisabledPaymentGateway::class);
+        $this->app->bind(PaymentGateway::class, function ($app): PaymentGateway {
+            if (config('payments.enabled') && config('payments.provider') === 'dintero') {
+                return $app->make(DinteroPaymentGateway::class);
+            }
+
+            return $app->make(DisabledPaymentGateway::class);
+        });
         $this->app->bind(OrderPaymentReadiness::class, ConfirmCurrentOrderPaymentReadiness::class);
         $this->app->bind(NotionOrderDestination::class, function ($app): NotionOrderDestination {
             if (config('outbox.notion_enabled') && config('outbox.notion.token') && config('outbox.notion.database_id')) {

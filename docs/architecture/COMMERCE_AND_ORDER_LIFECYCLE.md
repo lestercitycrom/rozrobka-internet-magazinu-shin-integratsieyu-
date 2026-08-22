@@ -54,7 +54,6 @@ may not blindly retry an uncertain external result.
 
 ## External adapters
 
-NDI PlaceOrder, payment, Notion and Telegram adapters are not part of the local
-transaction. They will consume committed outbox events only after their
-contracts and credentials are confirmed. Until then they remain disabled and
-the admin UI must show the order as requiring review.
+External HTTP calls never run inside the transaction that creates an order. The selected payment provider is Dintero Checkout. `PrepareOrderPayment` performs readiness and a fresh NDI A2 before creating a manual-capture Dintero session. A verified authorization is followed by readiness, another current A2 and one guarded NDI C1 submission. NDI acceptance keeps the authorization open; it does not capture. An operations user records that the goods are physically received and ready before `CaptureAuthorizedPayment` may perform a final capture. Rejection voids the authorization; an uncertain C1 or payment result is persisted for reconciliation and is never blindly retried.
+
+Notion and Telegram consume committed paid-order outbox messages only after actual capture. Their credentials remain disabled by default and are independent from the customer checkout transaction. See `DINTERO_PAYMENT_LIFECYCLE.md`.

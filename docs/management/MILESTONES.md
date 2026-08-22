@@ -25,11 +25,12 @@
 - Statens-адаптер существует, но фактический запрос не включается без ключа и одобрения;
 - сервисные цены, правила доступности, реальные слоты и публичный legal/contact copy не утверждены.
 
-## M3 — корзина, заказ, оплата и допуслуги: в работе, не завершён
+## M3 — корзина, заказ, оплата и допуслуги: Dintero sandbox в интеграции
 
-- реализованы локальная корзина, checkout guard, заказ, идемпотентные границы payment/webhook и outbox;
-- NDI A2/C1 жизненный цикл и Notion/Telegram HTTP-адаптеры существуют только как disabled-by-default integration boundaries;
-- payment provider, NDI credentials/разрешение C1, коммерческие правила и финальная модель допуслуг ещё не приняты.
+- реализованы локальная корзина, checkout guard, заказ, Dintero manual-capture session/callback/reconcile/capture/void, идемпотентные payment boundaries и outbox;
+- NDI A2/C1 включён в безопасную последовательность authorization → repeated readiness/A2 → C1 → operator goods-ready → capture;
+- Notion/Telegram paid-order events создаются только после capture и остаются disabled-by-default до получения схемы/доступов;
+- test credentials Dintero получены; production KYC, сроки резервов, cancellation/refund rules, NDI production acceptance и коммерческие правила ещё не закрыты.
 
 Ни оплату, ни допуслуги нельзя считать завершёнными или включать в production до отдельных acceptance-проверок.
 
