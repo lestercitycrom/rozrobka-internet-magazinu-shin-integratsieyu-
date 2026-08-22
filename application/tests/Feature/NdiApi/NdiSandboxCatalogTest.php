@@ -67,6 +67,11 @@ test('the sandbox fixture is a searchable priced catalog product and refresh is 
         ->assertSee('NDI-TEST-4765205551649102')
         ->assertSee(__('storefront.integration_test_product'))
         ->assertSee('name="quantity" value="2"', false);
+
+    $this->get(route('storefront.products.show', ['sku' => 'NDI-TEST-4765205551649102']))
+        ->assertOk()
+        ->assertSee('data-testid="integration-test-quantity-note"', false)
+        ->assertSee(__('storefront.integration_test_quantity_note', ['quantity' => 2]));
 });
 
 test('the fixture can be disabled without deleting its audit records', function (): void {

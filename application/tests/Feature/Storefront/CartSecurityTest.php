@@ -30,7 +30,7 @@ test('empty checkout returns safely to the cart for both get and post', function
             'idempotency_key' => $key,
             'name' => 'Test',
             'email' => 'a@example.test',
-            'phone' => '1',
+            'phone' => '90000000',
             'consent' => 1,
             'terms' => 1,
         ])
@@ -46,13 +46,16 @@ test('checkout exposes the styled accessible controls for a ready cart', functio
         ->assertOk()
         ->assertSee('for="checkout-name"', false)
         ->assertSee('id="checkout-email"', false)
+        ->assertSee('id="checkout-phone"', false)
+        ->assertSee('pattern="\+?[0-9][0-9 ()-]{7,23}"', false)
+        ->assertSee(__('phone_validation.hint'))
         ->assertSee('type="checkbox"', false)
         ->assertSee('easytire-input', false);
 });
 
 test('checkout rejects an idempotency key that does not match the session', function (): void {
     $this->withSession(['checkout.key' => '11111111-1111-4111-8111-111111111111'])
-        ->post('/kasse', ['idempotency_key' => '22222222-2222-4222-8222-222222222222', 'name' => 'Test', 'email' => 'a@example.test', 'phone' => '1', 'consent' => 1, 'terms' => 1])
+        ->post('/kasse', ['idempotency_key' => '22222222-2222-4222-8222-222222222222', 'name' => 'Test', 'email' => 'a@example.test', 'phone' => '90000000', 'consent' => 1, 'terms' => 1])
         ->assertStatus(419);
 });
 

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Storefront;
 
 use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
+use App\Rules\CustomerPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -49,7 +50,7 @@ class StoreServiceRequest extends FormRequest
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:64'],
+            'phone' => ['required', 'string', 'max:24', new CustomerPhone],
             'address' => ['nullable', 'required_if:fulfilment,mobile', 'string', 'max:255'],
             'note' => [$requiresProblem ? 'required' : 'nullable', 'string', 'max:2000'],
             'consent' => ['accepted'],

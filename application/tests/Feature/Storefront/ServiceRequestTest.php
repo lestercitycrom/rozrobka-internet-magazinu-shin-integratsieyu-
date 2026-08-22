@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 test('buyer submits a non-binding service request with a public reference', function () {
     ServicePage::create(['slug' => 'test', 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => 'Test', 'title_ru' => 'Тест']);
-    $this->post('/tjenester/test/foresporsel', ['fulfilment' => 'workshop', 'vehicle' => 'Tesla Model Y', 'registration_number' => 'AB12345', 'tire_size' => '205/55 R16', 'dekkhotell' => '1', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1'])->assertRedirect();
+    $this->post('/tjenester/test/foresporsel', ['fulfilment' => 'workshop', 'vehicle' => 'Tesla Model Y', 'registration_number' => 'AB12345', 'tire_size' => '205/55 R16', 'dekkhotell' => '1', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '90000000', 'consent' => '1'])->assertRedirect();
     expect(ServiceRequest::query()->first()->reference)->toStartWith('SR-');
     expect(ServiceRequest::query()->first()->vehicle)->toBe('Tesla Model Y')->and(ServiceRequest::query()->first()->dekkhotell)->toBeTrue();
 });
@@ -39,7 +39,7 @@ test('mounting request requires and stores service variant and wheel count', fun
         ->assertSee('id="booking-service-variant"', false)
         ->assertSee('id="booking-wheel-count"', false);
 
-    $payload = ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1'];
+    $payload = ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '90000000', 'consent' => '1'];
     $this->post('/tjenester/omlegging-balansering/foresporsel', $payload)
         ->assertSessionHasErrors(['service_variant', 'wheel_count']);
     $this->post('/tjenester/omlegging-balansering/foresporsel', [...$payload, 'service_variant' => 'balancing_only', 'wheel_count' => '2', 'tire_size' => '205/55 R16', 'preferred_date' => now()->addDay()->format('Y-m-d')])
@@ -54,7 +54,7 @@ test('supported additional service requests store customer selected add-ons and 
         ServicePage::create(['slug' => $slug, 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => $slug, 'title_ru' => $slug]);
     }
 
-    $payload = ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '1', 'consent' => '1'];
+    $payload = ['fulfilment' => 'workshop', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '90000000', 'consent' => '1'];
     $this->post('/tjenester/oljeskift/foresporsel', [...$payload, 'additional_services' => ['air_filter', 'cabin_filter']])->assertRedirect();
     expect(ServiceRequest::query()->latest('id')->firstOrFail()->additional_services)->toBe(['air_filter', 'cabin_filter']);
 

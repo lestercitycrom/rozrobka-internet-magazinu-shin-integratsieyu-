@@ -80,6 +80,7 @@
                                         <label class="et-label" for="product-quantity">{{ __('storefront.quantity') }}</label>
                                         @php $requiredTestQuantity = (int) config('ndi_api.sandbox.quantity', 2); @endphp
                                         <input class="et-input easytire-input" id="product-quantity" data-testid="product-quantity" type="number" name="quantity" value="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" min="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $item->isIntegrationTest ? $requiredTestQuantity : min(40, $item->stock->quantity) }}" inputmode="numeric" {{ $item->isIntegrationTest ? 'readonly' : '' }}>
+                                        @if ($item->isIntegrationTest)<small class="et-help" data-testid="integration-test-quantity-note">{{ __('storefront.integration_test_quantity_note', ['quantity' => $requiredTestQuantity]) }}</small>@endif
                                     </div>
                                     <div style="display:flex;gap:.6rem;align-self:end;flex-wrap:wrap">
                                         <button class="et-btn et-btn--outline" type="submit" name="intent" value="cart" data-testid="product-add-to-cart">{{ __('storefront.add_to_cart') }}</button>

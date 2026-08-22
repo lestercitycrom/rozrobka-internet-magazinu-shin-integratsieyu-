@@ -59,7 +59,8 @@
                             </div>
                             <div class="et-field">
                                 <label class="et-label" for="checkout-phone">{{ __('commerce.phone') }} <span class="et-required">*</span></label>
-                                <input class="et-input easytire-input" id="checkout-phone" data-testid="checkout-phone" name="phone" type="tel" autocomplete="tel" required value="{{ old('phone') }}" aria-describedby="checkout-phone-error" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}">
+                                <input class="et-input easytire-input" id="checkout-phone" data-testid="checkout-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" pattern="\+?[0-9][0-9 ()-]{7,23}" required value="{{ old('phone') }}" aria-describedby="checkout-phone-hint @error('phone') checkout-phone-error @enderror" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}">
+                                <p class="et-help" id="checkout-phone-hint">{{ __('phone_validation.hint') }}</p>
                                 @error('phone')<p class="et-form-error" id="checkout-phone-error">{{ $message }}</p>@enderror
                             </div>
                             <div class="et-field">

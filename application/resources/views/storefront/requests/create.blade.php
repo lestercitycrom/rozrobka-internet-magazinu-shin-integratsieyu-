@@ -237,8 +237,9 @@
                                         </div>
                                         <div class="et-field">
                                             <label class="et-label" for="booking-phone">{{ __('booking.phone') }} <span class="et-required">*</span></label>
-                                            <input class="et-input easytire-input" id="booking-phone" name="phone" type="tel" value="{{ old('phone') }}" required autocomplete="tel" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}">
-                                            @error('phone')<p class="et-form-error">{{ $message }}</p>@enderror
+                                            <input class="et-input easytire-input" id="booking-phone" name="phone" type="tel" value="{{ old('phone') }}" required autocomplete="tel" inputmode="tel" maxlength="24" pattern="\+?[0-9][0-9 ()-]{7,23}" aria-describedby="booking-phone-hint @error('phone') booking-phone-error @enderror" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}">
+                                            <p class="et-help" id="booking-phone-hint">{{ __('phone_validation.hint') }}</p>
+                                            @error('phone')<p class="et-form-error" id="booking-phone-error">{{ $message }}</p>@enderror
                                         </div>
                                         <div class="et-field et-field--full">
                                             <label class="et-label" for="booking-note">{{ __('booking.note') }}</label>
@@ -362,8 +363,9 @@
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-phone">{{ __('booking.phone') }} <span class="et-required">*</span></label>
-                                    <input class="et-input easytire-input" id="booking-phone" name="phone" type="tel" value="{{ old('phone') }}" required autocomplete="tel" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}">
-                                    @error('phone')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    <input class="et-input easytire-input" id="booking-phone" name="phone" type="tel" value="{{ old('phone') }}" required autocomplete="tel" inputmode="tel" maxlength="24" pattern="\+?[0-9][0-9 ()-]{7,23}" aria-describedby="booking-phone-hint @error('phone') booking-phone-error @enderror" aria-invalid="{{ $errors->has('phone') ? 'true' : 'false' }}">
+                                    <p class="et-help" id="booking-phone-hint">{{ __('phone_validation.hint') }}</p>
+                                    @error('phone')<p class="et-form-error" id="booking-phone-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field et-field--full">
                                     <label class="et-label" for="booking-note">{{ __('project.request.problem') }} @if($requiresProblem)<span class="et-required">*</span>@endif</label>
