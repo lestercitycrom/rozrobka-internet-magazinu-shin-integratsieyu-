@@ -18,7 +18,7 @@ return [
     'issue_stock_stale' => 'Lagerstatusen for :sku er ikke fersk nok til bestilling. Prøv igjen etter neste NDI-oppdatering.',
     'issue_currency_mismatch' => 'Varen :sku kan ikke kombineres med resten av handlekurven på grunn av valuta. Fjern den for å fortsette.',
     'issue_sandbox_quantity_required' => 'NDI-testvaren må bestilles i det godkjente testantallet :available. Oppdater antallet for å fortsette.',
-    'issue_mixed_integration_profiles' => 'Testvarer og ordinære varer kan ikke bestilles sammen. Fjern denne varen og fullfør én type ordre om gangen.',
+    'issue_mixed_integration_profiles' => 'Testvarer og ordinære varer kan ikke bestilles sammen. Fjern denne varen og fullfør en type ordre om gangen.',
     'additional_services' => 'Tilleggstjenester',
     'additional_services_intro' => 'Velg bare tjenestene du trenger. Antall og sum oppdateres med varene i handlekurven.',
     'add_service' => 'Legg til',
