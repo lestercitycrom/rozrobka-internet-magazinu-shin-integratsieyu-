@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['code', 'name', 'is_active'])]
+#[Fillable(['code', 'name', 'integration_profile', 'is_test_fixture', 'is_active'])]
 class Supplier extends Model
 {
     protected function casts(): array
     {
         return [
+            'is_test_fixture' => 'boolean',
             'is_active' => 'boolean',
         ];
     }

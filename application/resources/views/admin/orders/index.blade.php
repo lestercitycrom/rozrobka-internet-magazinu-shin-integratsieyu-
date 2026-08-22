@@ -75,7 +75,7 @@
                     <tbody>
                         @foreach ($orders as $order)
                             <tr class="border-t border-easytire-border">
-                                <td class="p-4 font-bold"><a class="underline underline-offset-4" href="{{ route('admin.orders.show', $order) }}">{{ $order->public_reference }}</a></td>
+                                <td class="p-4 font-bold"><a class="underline underline-offset-4" href="{{ route('admin.orders.show', $order) }}">{{ $order->public_reference }}</a>@if ($order->is_integration_test)<span class="ml-2 text-xs uppercase text-amber-700">{{ __('order_ui.integration_test_short') }}</span>@endif</td>
                                 <td class="p-4">{{ __('order_statuses.'.$order->status->value) }}</td>
                                 <td class="p-4">{{ __('payment_statuses.'.$order->payment_status->value) }}</td>
                                 <td class="p-4">{{ __('ndi_statuses.'.$order->ndi_status->value) }}</td>

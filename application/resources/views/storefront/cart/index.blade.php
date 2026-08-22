@@ -48,6 +48,7 @@
                                 </div>
                                 <div>
                                     <h2>{{ $lineTitle }}</h2>
+                                    @if ($line->item->isIntegrationTest)<span class="et-badge et-badge--red">{{ __('storefront.integration_test_product') }}</span>@endif
                                     <p>{{ $linePresenter->dimension() }} · {{ __('commerce.sku') }}: {{ $line->item->sku }}</p>
                                     <div class="et-cart-item__controls">
                                         <form class="et-cluster" method="post" action="{{ route($prefix.'cart.update') }}">
@@ -55,7 +56,8 @@
                                             <input type="hidden" name="sku" value="{{ $line->item->sku }}">
                                             <div>
                                                 <label class="et-label" for="{{ $quantityId }}">{{ __('commerce.quantity') }}</label>
-                                                <input class="et-input easytire-input" id="{{ $quantityId }}" name="quantity" data-testid="cart-line-quantity" type="number" min="1" max="{{ min(40, $line->item->stock->quantity) }}" value="{{ $line->quantity }}" inputmode="numeric" style="width:88px;min-height:40px">
+                                                @php $requiredTestQuantity = (int) config('ndi_api.sandbox.quantity', 2); @endphp
+                                                <input class="et-input easytire-input" id="{{ $quantityId }}" name="quantity" data-testid="cart-line-quantity" type="number" min="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : min(40, $line->item->stock->quantity) }}" value="{{ $line->quantity }}" inputmode="numeric" style="width:88px;min-height:40px" {{ $line->item->isIntegrationTest ? 'readonly' : '' }}>
                                             </div>
                                             <button class="et-btn et-btn--dark et-btn--small" type="submit" style="align-self:end" data-testid="cart-line-update">{{ __('commerce.update') }}</button>
                                         </form>
@@ -82,11 +84,11 @@
                                     <h2 class="et-h3">{{ __('commerce.issue_title') }}</h2>
                                     <p>{{ __('commerce.issue_'.$issue->reason, ['sku' => $issue->sku, 'quantity' => $issue->quantity, 'available' => $issue->availableQuantity ?? 0]) }}</p>
                                     <div class="et-cluster" style="margin-top:.8rem">
-                                        @if ($issue->reason === 'stock_changed' && $issue->availableQuantity > 0)
+                                        @if (in_array($issue->reason, ['stock_changed', 'sandbox_quantity_required'], true) && $issue->availableQuantity > 0)
                                             <form class="et-cluster" method="post" action="{{ route($prefix.'cart.update') }}">
                                                 @csrf @method('PATCH')
                                                 <input type="hidden" name="sku" value="{{ $issue->sku }}">
-                                                <div><label class="et-label" for="{{ $issueQuantityId }}">{{ __('commerce.quantity') }}</label><input class="et-input" id="{{ $issueQuantityId }}" name="quantity" type="number" min="1" max="{{ min(40, $issue->availableQuantity) }}" value="{{ min($issue->quantity, $issue->availableQuantity) }}" inputmode="numeric" style="width:88px"></div>
+                                                <div><label class="et-label" for="{{ $issueQuantityId }}">{{ __('commerce.quantity') }}</label><input class="et-input" id="{{ $issueQuantityId }}" name="quantity" type="number" min="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : 1 }}" max="{{ min(40, $issue->availableQuantity) }}" value="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : min($issue->quantity, $issue->availableQuantity) }}" inputmode="numeric" style="width:88px" {{ $issue->reason === 'sandbox_quantity_required' ? 'readonly' : '' }}></div>
                                                 <button class="et-btn et-btn--dark et-btn--small" type="submit">{{ __('commerce.update') }}</button>
                                             </form>
                                         @endif

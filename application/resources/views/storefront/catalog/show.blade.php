@@ -57,6 +57,7 @@
                 <div class="et-product-info">
                     <div class="et-product-info__top">
                         <p class="et-eyebrow">{{ __('pro.catalog.product_kicker') }}</p>
+                        @if ($item->isIntegrationTest)<span class="et-badge et-badge--red" data-testid="integration-test-product">{{ __('storefront.integration_test_product') }}</span>@endif
                         <span class="et-product-card__brand">{{ $item->brand }}</span>
                         <h1 class="et-product-title">{{ $productHeading }}</h1>
                         @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
@@ -77,7 +78,8 @@
                                 <div class="et-quantity-row">
                                     <div>
                                         <label class="et-label" for="product-quantity">{{ __('storefront.quantity') }}</label>
-                                        <input class="et-input easytire-input" id="product-quantity" data-testid="product-quantity" type="number" name="quantity" value="1" min="1" max="{{ min(40, $item->stock->quantity) }}" inputmode="numeric">
+                                        @php $requiredTestQuantity = (int) config('ndi_api.sandbox.quantity', 2); @endphp
+                                        <input class="et-input easytire-input" id="product-quantity" data-testid="product-quantity" type="number" name="quantity" value="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" min="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $item->isIntegrationTest ? $requiredTestQuantity : min(40, $item->stock->quantity) }}" inputmode="numeric" {{ $item->isIntegrationTest ? 'readonly' : '' }}>
                                     </div>
                                     <div style="display:flex;gap:.6rem;align-self:end;flex-wrap:wrap">
                                         <button class="et-btn et-btn--outline" type="submit" name="intent" value="cart" data-testid="product-add-to-cart">{{ __('storefront.add_to_cart') }}</button>

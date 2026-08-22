@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'integration_test_order' => 'Integrasjonstest – ingen ordinær kundeordre',
+    'integration_test_short' => 'Test',
     'products' => 'Produkter', 'services' => 'Tilleggstjenester', 'quantity' => 'Antall', 'unit_price' => 'Pris per enhet',
     'line_total' => 'Linjesum', 'product_total' => 'Produktsum', 'service_total' => 'Tjenestesum', 'order_total' => 'Ordretotal',
     'no_services' => 'Ingen tilleggstjenester er bestilt.',

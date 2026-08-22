@@ -5,6 +5,9 @@
         <header>
             <a class="inline-flex min-h-11 items-center underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.orders.index') }}">{{ __('orders.title') }}</a>
             <h1 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{{ $order->public_reference }}</h1>
+            @if ($order->is_integration_test)
+                <p class="mt-3 inline-flex border border-amber-400 bg-amber-50 px-3 py-2 text-sm font-black text-amber-950" data-testid="admin-integration-test-order">{{ __('order_ui.integration_test_order') }}</p>
+            @endif
             <p class="mt-3 text-easytire-muted">{{ __('order_ui.order_workflow_warning') }}</p>
         </header>
 
@@ -94,7 +97,7 @@
                 <thead class="bg-easytire-surface text-easytire-muted"><tr><th class="p-4">{{ __('order_ui.products') }}</th><th class="p-4">{{ __('order_ui.quantity') }}</th><th class="p-4">{{ __('order_ui.unit_price') }}</th><th class="p-4">{{ __('order_ui.line_total') }}</th></tr></thead>
                 <tbody class="divide-y divide-easytire-border">
                     @foreach ($order->items as $item)
-                        <tr><td class="p-4 font-bold">{{ $item->product_title }}</td><td class="p-4">{{ $item->quantity }}</td><td class="p-4">{{ $money($item->unit_price_minor) }}</td><td class="p-4 font-bold">{{ $money($item->line_total_minor) }}</td></tr>
+                        <tr><td class="p-4 font-bold">{{ $item->product_title }}@if (($item->product_snapshot['is_integration_test'] ?? false) === true)<span class="ml-2 text-xs uppercase text-amber-700">{{ __('order_ui.integration_test_short') }}</span>@endif</td><td class="p-4">{{ $item->quantity }}</td><td class="p-4">{{ $money($item->unit_price_minor) }}</td><td class="p-4 font-bold">{{ $money($item->line_total_minor) }}</td></tr>
                     @endforeach
                 </tbody>
             </table>

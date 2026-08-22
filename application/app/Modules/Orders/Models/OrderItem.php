@@ -35,4 +35,12 @@ class OrderItem extends Model
     {
         return $this->belongsTo(SupplierSku::class);
     }
+
+    public function supplierArticleId(): string
+    {
+        $snapshot = is_array($this->product_snapshot) ? $this->product_snapshot : [];
+        $articleId = trim((string) ($snapshot['supplier_article_id'] ?? ''));
+
+        return $articleId !== '' ? $articleId : (string) $this->external_sku;
+    }
 }

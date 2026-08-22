@@ -29,6 +29,21 @@ immutable order snapshot
 
 The browser return URL is informational. Dintero callback plus a server-side `GET transaction` is authoritative. Callback requests are HMAC-validated when `DINTERO_REQUIRE_CALLBACK_SIGNATURE=true`. A paid/voided terminal local state cannot be downgraded by an older callback.
 
+## Staging full-cycle fixture
+
+The staging catalog contains one explicitly labelled NDI Sandbox product. It is a normal normalized catalog product owned by a separate `ndi-sandbox` supplier, so it exercises search, filters, PDP, cart, checkout, Dintero and admin without entering the supplier-file ownership boundary.
+
+Its immutable order profile routes A2/C1 through `ndi_sandbox`. The C1 client rejects traffic before the network unless all of these are exact:
+
+- non-production application environment;
+- sandbox catalog, Inquiry and order flags enabled;
+- `NDI_C1_TEST_MODE=true`;
+- PartyID `1220000`;
+- supplier article `4765205551649102`;
+- one order line with quantity `2`.
+
+Normal `ndi_live` C1 remains controlled independently by `NDI_ORDER_ENABLED`; enabling the sandbox never enables commercial C1. Mixed live/sandbox carts fail closed. The hourly idempotent `ndi:sandbox-catalog` command refreshes only the synthetic test price/stock timestamps and never changes NDI-imported records.
+
 ## Admin boundary
 
 The order page can expose only state-compatible operations:

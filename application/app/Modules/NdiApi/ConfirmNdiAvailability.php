@@ -53,7 +53,7 @@ final class ConfirmNdiAvailability
 
         $requested = $order->items->values()->map(fn ($item, int $index): NdiInquiryLine => new NdiInquiryLine(
             lineId: (string) ($index + 1),
-            sku: (string) $item->external_sku,
+            sku: $item->supplierArticleId(),
             quantity: (int) $item->quantity,
         ));
 
@@ -62,6 +62,7 @@ final class ConfirmNdiAvailability
                 documentId: 'A2',
                 customerReference: $order->public_reference,
                 lines: $requested->all(),
+                integrationProfile: filled($order->integration_profile) ? (string) $order->integration_profile : NdiIntegrationProfile::LIVE,
             ));
         } catch (Throwable $exception) {
             $check->update([

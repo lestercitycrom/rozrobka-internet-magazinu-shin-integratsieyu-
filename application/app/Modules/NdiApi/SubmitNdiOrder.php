@@ -74,9 +74,10 @@ final class SubmitNdiOrder
             customerReference: $order->public_reference,
             lines: $order->items->values()->map(fn ($item, int $index): NdiC1OrderLine => new NdiC1OrderLine(
                 lineId: (string) ($index + 1),
-                buyersArticleId: (string) $item->external_sku,
+                buyersArticleId: $item->supplierArticleId(),
                 quantity: (int) $item->quantity,
             ))->all(),
+            integrationProfile: filled($order->integration_profile) ? (string) $order->integration_profile : NdiIntegrationProfile::LIVE,
         );
 
         try {

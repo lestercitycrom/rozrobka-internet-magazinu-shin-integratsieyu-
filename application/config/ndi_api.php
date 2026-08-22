@@ -15,4 +15,18 @@ return [
     'connect_timeout_seconds' => (int) env('NDI_API_CONNECT_TIMEOUT', 3),
     'timeout_seconds' => (int) env('NDI_API_TIMEOUT', 8),
     'inquiry_ttl_seconds' => (int) env('NDI_INQUIRY_TTL_SECONDS', 300),
+    'sandbox' => [
+        // A public, but unmistakably labelled, integration fixture for staging.
+        // It uses the normal catalog/cart/order tables and a separately guarded NDI profile.
+        'enabled' => (bool) env('NDI_SANDBOX_CATALOG_ENABLED', false),
+        'inquiry_enabled' => (bool) env('NDI_SANDBOX_INQUIRY_ENABLED', false),
+        'order_enabled' => (bool) env('NDI_SANDBOX_ORDER_ENABLED', false),
+        'supplier_code' => 'ndi-sandbox',
+        'catalog_sku' => 'NDI-TEST-4765205551649102',
+        'party_id' => env('NDI_SANDBOX_PARTY_ID', '1220000'),
+        'article_id' => env('NDI_SANDBOX_ARTICLE_ID', '4765205551649102'),
+        'quantity' => (int) env('NDI_SANDBOX_ORDER_QUANTITY', 2),
+        'stock_quantity' => (int) env('NDI_SANDBOX_STOCK_QUANTITY', 2),
+        'price_minor' => (int) env('NDI_SANDBOX_PRICE_MINOR', 1000),
+    ],
 ];

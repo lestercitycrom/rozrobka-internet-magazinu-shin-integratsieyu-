@@ -25,8 +25,12 @@ final class CreatePendingOrder
         if (! $cart->isCheckoutReady()) {
             throw new CartNotReady('The cart must be resolved without issues before checkout.');
         }
+        $profiles = collect($cart->lines)->pluck('item.integrationProfile')->unique()->values();
+        if ($profiles->count() !== 1) {
+            throw new CartNotReady('An order must use exactly one supplier integration profile.');
+        }
 
-        return DB::transaction(function () use ($data, $cart): CreateOrderResult {
+        return DB::transaction(function () use ($data, $cart, $profiles): CreateOrderResult {
             $existing = Order::query()->where('idempotency_key', $data->idempotencyKey)->first();
             if ($existing !== null) {
                 return new CreateOrderResult($existing, false);
@@ -40,6 +44,8 @@ final class CreatePendingOrder
                 'status' => OrderStatus::PendingReview,
                 'payment_status' => PaymentStatus::NotStarted,
                 'ndi_status' => NdiOrderStatus::NotSubmitted,
+                'integration_profile' => (string) $profiles->first(),
+                'is_integration_test' => collect($cart->lines)->every(fn ($line): bool => $line->item->isIntegrationTest),
                 'currency' => $cart->total->currency,
                 'subtotal_minor' => $cart->total->minor,
                 'total_minor' => $cart->total->minor,
@@ -73,6 +79,10 @@ final class CreatePendingOrder
                         'product_type' => $line->item->productType->value,
                         'brand' => $line->item->brand,
                         'model_name' => $line->item->modelName,
+                        'supplier_code' => $line->item->supplierCode,
+                        'integration_profile' => $line->item->integrationProfile,
+                        'is_integration_test' => $line->item->isIntegrationTest,
+                        'supplier_article_id' => $line->item->supplierArticleId,
                         'tire' => $line->item->tire,
                         'wheel' => $line->item->wheel,
                     ],
@@ -116,7 +126,11 @@ final class CreatePendingOrder
                 'from_status' => null,
                 'to_status' => OrderStatus::PendingReview,
                 'note' => null,
-                'metadata' => ['source' => 'storefront_checkout'],
+                'metadata' => [
+                    'source' => 'storefront_checkout',
+                    'integration_profile' => (string) $profiles->first(),
+                    'is_integration_test' => collect($cart->lines)->every(fn ($line): bool => $line->item->isIntegrationTest),
+                ],
                 'occurred_at' => $now,
             ]);
 

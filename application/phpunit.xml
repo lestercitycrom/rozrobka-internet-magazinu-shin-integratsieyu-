@@ -42,6 +42,9 @@
         <env name="NDI_INQUIRY_ENABLED" value="false"/>
         <env name="NDI_ORDER_ENABLED" value="false"/>
         <env name="NDI_C1_TEST_MODE" value="false"/>
+        <env name="NDI_SANDBOX_CATALOG_ENABLED" value="false"/>
+        <env name="NDI_SANDBOX_INQUIRY_ENABLED" value="false"/>
+        <env name="NDI_SANDBOX_ORDER_ENABLED" value="false"/>
         <env name="NDI_FULFILMENT_READ_ENABLED" value="false"/>
         <env name="NDI_MEDIA_HOSTS" value="example.invalid"/>
         <env name="PAYMENTS_ENABLED" value="false"/>

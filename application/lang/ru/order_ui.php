@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'integration_test_order' => 'Интеграционный тест — не обычный заказ клиента',
+    'integration_test_short' => 'Тест',
     'products' => 'Товары', 'services' => 'Дополнительные услуги', 'quantity' => 'Количество', 'unit_price' => 'Цена за единицу',
     'line_total' => 'Сумма строки', 'product_total' => 'Товары', 'service_total' => 'Услуги', 'order_total' => 'Итого заказа',
     'no_services' => 'Дополнительные услуги не заказаны.',

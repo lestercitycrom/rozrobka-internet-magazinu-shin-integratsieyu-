@@ -56,6 +56,12 @@ final class CartResolver
                 continue;
             }
 
+            if ($item->isIntegrationTest && $quantity !== (int) config('ndi_api.sandbox.quantity', 2)) {
+                $issues[] = new CartIssue($sku, $quantity, 'sandbox_quantity_required', (int) config('ndi_api.sandbox.quantity', 2));
+
+                continue;
+            }
+
             if ($lines !== [] && $price->money->currency !== $currency) {
                 $issues[] = new CartIssue($sku, $quantity, 'currency_mismatch');
 
@@ -66,6 +72,13 @@ final class CartResolver
             $line = new CartLine($item, $price, $quantity);
             $lines[] = $line;
             $total += $line->total()->minor;
+        }
+
+        $profiles = collect($lines)->pluck('item.integrationProfile')->unique()->values();
+        if ($profiles->count() > 1) {
+            foreach ($lines as $line) {
+                $issues[] = new CartIssue($line->item->sku, $line->quantity, 'mixed_integration_profiles');
+            }
         }
 
         $selectedCodes = $this->cart->serviceAddons();

@@ -2,6 +2,7 @@
 
 namespace App\Modules\NdiApi\Data;
 
+use App\Modules\NdiApi\NdiIntegrationProfile;
 use InvalidArgumentException;
 
 final readonly class NdiInquiryRequest
@@ -12,6 +13,7 @@ final readonly class NdiInquiryRequest
         public string $customerReference,
         public array $lines,
         public string $variant = '5',
+        public string $integrationProfile = NdiIntegrationProfile::LIVE,
     ) {
         if ($this->documentId !== 'A2') {
             throw new InvalidArgumentException('NDI A2 inquiry document ID must be A2.');
@@ -27,6 +29,10 @@ final readonly class NdiInquiryRequest
 
         if ($this->variant === '' || mb_strlen($this->variant) > 10) {
             throw new InvalidArgumentException('NDI inquiry variant must contain 1 to 10 characters.');
+        }
+
+        if (! NdiIntegrationProfile::isKnown($this->integrationProfile)) {
+            throw new InvalidArgumentException('Unknown NDI inquiry integration profile.');
         }
 
         foreach ($this->lines as $line) {

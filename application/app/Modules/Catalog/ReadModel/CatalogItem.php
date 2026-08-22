@@ -18,5 +18,9 @@ final readonly class CatalogItem
         public ?array $tire,
         public ?array $wheel,
         public ?array $primaryMedia = null,
+        public string $supplierCode = 'ndi',
+        public string $integrationProfile = 'ndi_live',
+        public bool $isIntegrationTest = false,
+        public ?string $supplierArticleId = null,
     ) {}
 }

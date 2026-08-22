@@ -11,7 +11,7 @@
             @include('storefront.catalog._product-visual', ['item' => $item, 'attributes' => new \Illuminate\View\ComponentAttributeBag(['loading' => 'lazy', 'class' => 'size-full object-contain'])])
         </div>
         <div class="et-product-card__badges">
-            @if ($item->tire && $season)<span class="et-badge et-badge--red">{{ $season }}</span>@else<span></span>@endif
+            @if ($item->isIntegrationTest)<span class="et-badge et-badge--red">{{ __('storefront.integration_test_product') }}</span>@elseif ($item->tire && $season)<span class="et-badge et-badge--red">{{ $season }}</span>@else<span></span>@endif
             <span @class(['et-badge', 'et-badge--success' => $item->stock->isFresh()])>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso') : __('storefront.stock_remote')) }}</span>
         </div>
     </a>
@@ -31,7 +31,7 @@
                 <form method="post" action="{{ route($prefix.'cart.add') }}">
                     @csrf
                     <input type="hidden" name="sku" value="{{ $item->sku }}">
-                    <input type="hidden" name="quantity" value="1">
+                    <input type="hidden" name="quantity" value="{{ $item->isIntegrationTest ? (int) config('ndi_api.sandbox.quantity', 2) : 1 }}">
                     <button class="et-product-card__buy" type="submit" aria-label="{{ __('storefront.add_to_cart') }}: {{ $item->title }}" data-testid="catalog-add-to-cart"><x-icon name="cart" :size="19" /><span>{{ __('storefront.add_to_cart') }}</span></button>
                 </form>
             @else

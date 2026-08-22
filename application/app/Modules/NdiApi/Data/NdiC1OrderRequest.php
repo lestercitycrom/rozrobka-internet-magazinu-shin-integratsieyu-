@@ -2,6 +2,7 @@
 
 namespace App\Modules\NdiApi\Data;
 
+use App\Modules\NdiApi\NdiIntegrationProfile;
 use InvalidArgumentException;
 
 final readonly class NdiC1OrderRequest
@@ -12,6 +13,7 @@ final readonly class NdiC1OrderRequest
         public array $lines,
         public string $transportPriority = 'REPL',
         public ?string $deliveryRemarks = null,
+        public string $integrationProfile = NdiIntegrationProfile::LIVE,
     ) {
         if ($this->customerReference === '' || mb_strlen($this->customerReference) > 50) {
             throw new InvalidArgumentException('NDI C1 customer reference must contain 1 to 50 characters.');
@@ -27,6 +29,10 @@ final readonly class NdiC1OrderRequest
 
         if ($this->lines === []) {
             throw new InvalidArgumentException('NDI C1 order must contain at least one line.');
+        }
+
+        if (! NdiIntegrationProfile::isKnown($this->integrationProfile)) {
+            throw new InvalidArgumentException('Unknown NDI C1 integration profile.');
         }
 
         foreach ($this->lines as $line) {

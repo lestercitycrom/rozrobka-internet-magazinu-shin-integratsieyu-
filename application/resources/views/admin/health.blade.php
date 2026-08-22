@@ -34,6 +34,13 @@
                 </p>
                 <p class="mt-1 text-sm text-easytire-muted">{{ __('integration_health.notion_after_capture') }}</p>
             </article>
+            <article class="easytire-card rounded-2xl p-5" data-testid="ndi-sandbox-health">
+                <p class="text-sm font-bold text-easytire-muted">{{ __('integration_health.ndi_sandbox') }}</p>
+                <p @class(['mt-3 text-xl font-black', 'text-green-700' => $health['ndi_sandbox_ready'], 'text-red-700' => $health['ndi_sandbox_enabled'] && ! $health['ndi_sandbox_ready']])>
+                    {{ $health['ndi_sandbox_enabled'] ? ($health['ndi_sandbox_ready'] ? __('integration_health.ready') : __('integration_health.incomplete')) : __('integration_health.disabled') }}
+                </p>
+                <p class="mt-1 text-sm text-easytire-muted">{{ $health['ndi_sandbox_fixture_active'] ? __('integration_health.ndi_sandbox_fixture_active') : __('integration_health.ndi_sandbox_fixture_missing') }}</p>
+            </article>
         </section>
     </div>
 </x-layouts.admin>

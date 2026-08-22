@@ -18,6 +18,8 @@ final class PaidOrderPayload
             'reference' => $order->public_reference,
             'amount_minor' => $order->total_minor,
             'currency' => $order->currency,
+            'integration_profile' => $order->integration_profile,
+            'is_integration_test' => (bool) $order->is_integration_test,
             'product_item_count' => (int) $order->items->sum('quantity'),
             'service_item_count' => (int) $order->serviceItems->sum('quantity'),
             'product_line_count' => $productLineCount,

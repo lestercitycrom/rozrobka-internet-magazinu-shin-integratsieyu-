@@ -12,20 +12,35 @@ final class HttpNdiOrderClient implements NdiOrderClient
     public function __construct(
         private readonly NdiC1XmlCodec $codec,
         private readonly NdiHttpTransport $transport,
+        private readonly NdiIntegrationProfileResolver $profiles,
     ) {}
 
     public function place(NdiC1OrderRequest $request): NdiC1OrderResult
     {
-        if (! config('ndi_api.order_enabled', false)) {
-            throw new NdiApiDisabled('NDI C1 order submission is disabled.');
+        $settings = $this->profiles->forOrder($request->integrationProfile);
+        if ($request->integrationProfile === NdiIntegrationProfile::SANDBOX) {
+            $this->assertSandboxLines($request);
         }
 
         $xml = $this->codec->buildOrder(
             $request,
-            (string) config('ndi_api.party_id'),
-            (string) config('ndi_api.agency_code'),
+            $settings->partyId,
+            $settings->agencyCode,
         );
 
-        return $this->codec->parseOrderResponse($this->transport->post($xml, 'C1'));
+        return $this->codec->parseOrderResponse($this->transport->post($xml, 'C1', $settings));
+    }
+
+    private function assertSandboxLines(NdiC1OrderRequest $request): void
+    {
+        $article = (string) config('ndi_api.sandbox.article_id');
+        $quantity = (int) config('ndi_api.sandbox.quantity', 2);
+        if (count($request->lines) !== 1
+            || $request->lines[0]->buyersArticleId !== $article
+            || $request->lines[0]->quantity !== $quantity
+            || $article !== '4765205551649102'
+            || $quantity !== 2) {
+            throw new NdiApiDisabled('NDI sandbox C1 rejected a non-approved article or quantity.');
+        }
     }
 }

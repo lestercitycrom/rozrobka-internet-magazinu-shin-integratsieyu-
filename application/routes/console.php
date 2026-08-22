@@ -16,6 +16,10 @@ Schedule::command('ndi:inbox:sync --limit=20')
     ->everyTenMinutes()
     ->when(fn (): bool => filled(config('ndi.inbox_path')))
     ->withoutOverlapping();
+Schedule::command('ndi:sandbox-catalog')
+    ->hourly()
+    ->when(fn (): bool => ! app()->environment('production') && (bool) config('ndi_api.sandbox.enabled'))
+    ->withoutOverlapping();
 Schedule::call(fn () => Cache::forever('easytire.health.scheduler_heartbeat_at', now()->toIso8601String()))
     ->name('health:scheduler-heartbeat')
     ->everyMinute()

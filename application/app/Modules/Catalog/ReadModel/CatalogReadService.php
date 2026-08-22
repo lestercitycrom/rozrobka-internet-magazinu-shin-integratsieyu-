@@ -72,7 +72,7 @@ final class CatalogReadService
 
         return $this->baseQuery(new CatalogQuery(productType: $productType))
             ->where(function (Builder $query) use ($term): void {
-                $query->where('supplier_skus.external_sku', 'like', $term.'%')->orWhere('products.title', 'like', '%'.$term.'%')->orWhere('products.model_name', 'like', '%'.$term.'%')->orWhere('brands.canonical_name', 'like', '%'.$term.'%');
+                $query->where('supplier_skus.external_sku', 'like', $term.'%')->orWhere('supplier_skus.supplier_item_id', 'like', $term.'%')->orWhere('products.title', 'like', '%'.$term.'%')->orWhere('products.model_name', 'like', '%'.$term.'%')->orWhere('brands.canonical_name', 'like', '%'.$term.'%');
             })->orderByRaw('CASE WHEN supplier_skus.external_sku = ? THEN 0 ELSE 1 END', [$term])->orderBy('products.title')->limit(8)
             ->get(['supplier_skus.external_sku as sku', 'products.title as title', 'brands.canonical_name as brand'])
             ->map(fn ($row): array => ['sku' => $row->sku, 'title' => $row->title, 'brand' => $row->brand])->all();
@@ -92,6 +92,7 @@ final class CatalogReadService
     public function publicSkuCodes(): array
     {
         return $this->baseQuery()
+            ->where('suppliers.is_test_fixture', false)
             ->orderBy('supplier_skus.id')
             ->pluck('supplier_skus.external_sku')
             ->map(fn ($sku): string => (string) $sku)
@@ -108,6 +109,7 @@ final class CatalogReadService
             ->leftJoin('tire_specs', 'tire_specs.product_id', '=', 'products.id')
             ->leftJoin('tire_labels', 'tire_labels.product_id', '=', 'products.id')
             ->leftJoin('wheel_specs', 'wheel_specs.product_id', '=', 'products.id')
+            ->where('suppliers.is_active', true)
             ->where('products.publication_status', PublicationStatus::Published->value)
             ->where('supplier_skus.catalog_state', CatalogState::Catalog->value);
 
@@ -123,6 +125,7 @@ final class CatalogReadService
             ->when($filters->search, function (Builder $q, string $search): void {
                 $q->where(function (Builder $nested) use ($search): void {
                     $nested->where('supplier_skus.external_sku', $search)
+                        ->orWhere('supplier_skus.supplier_item_id', $search)
                         ->orWhere('products.title', 'like', "%{$search}%")
                         ->orWhere('products.model_name', 'like', "%{$search}%")
                         ->orWhere('brands.canonical_name', 'like', "%{$search}%");
@@ -147,6 +150,7 @@ final class CatalogReadService
     {
         return [
             'supplier_skus.*',
+            'suppliers.code as catalog_supplier_code', 'suppliers.integration_profile as catalog_integration_profile', 'suppliers.is_test_fixture as catalog_is_test_fixture',
             'products.product_type as catalog_product_type', 'products.model_name as catalog_model_name', 'products.title as catalog_title',
             'brands.canonical_name as catalog_brand',
             'tire_specs.width_mm as tire_width_mm', 'tire_specs.width_inch as tire_width_inch', 'tire_specs.aspect_ratio as tire_aspect_ratio', 'tire_specs.rim_diameter_in as tire_rim_diameter_in',
@@ -263,6 +267,10 @@ final class CatalogReadService
                     'alt_nb' => $asset->alt_nb,
                     'alt_ru' => $asset->alt_ru,
                 ],
+                supplierCode: (string) $sku->getAttribute('catalog_supplier_code'),
+                integrationProfile: (string) $sku->getAttribute('catalog_integration_profile'),
+                isIntegrationTest: (bool) $sku->getAttribute('catalog_is_test_fixture'),
+                supplierArticleId: filled($sku->supplier_item_id) ? (string) $sku->supplier_item_id : null,
             );
         }, $skus);
     }
