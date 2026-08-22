@@ -48,6 +48,20 @@ EasyTire — современный локальный магазин и сер�
 
 Подробный технический контракт: [Dintero payment lifecycle](../architecture/DINTERO_PAYMENT_LIFECYCLE.md).
 
+### Фактический статус Dintero на staging
+
+На 22.08.2026 интеграция развернута коммитом `572e4b2` на `https://staging-easytire.bethub.fun`:
+
+- Dintero test environment включён через защищённый server `.env`; ключи отсутствуют в Git;
+- OAuth тестового аккаунта, создание sandbox-сессии и HTTPS checkout проверены реальным API-запросом;
+- сессия создаётся только с `auto_capture=false`;
+- callback-signature зарегистрирована в Dintero, обязательна на сервере; неподписанный callback возвращает HTTP 401;
+- админка показывает готовность Dintero и предоставляет только допустимые по статусам действия reconcile / void / goods-ready + capture;
+- production переключается переменными окружения и production-реквизитами без отдельной ветки кода;
+- полный локальный Laravel regression: 378 passed / 2942 assertions / 1 Windows-only skip; release-hook на Linux: 379 passed / 2945 assertions; целевой Playwright checkout/admin: 6 passed последовательно на desktop, 390 px, 320 px и RU preview.
+
+Полный sandbox buyer-flow с фактической авторизацией тестовой карты пока намеренно не отправляет коммерческий C1: `NDI_ORDER_ENABLED=false`. Без одобренного NDI test PartyID/товара авторизация должна безопасно сниматься, а capture остаётся заблокированным. Для проверки цепочки до ручного capture нужен согласованный NDI тестовый заказ либо отдельное письменное разрешение NDI на указанный тестовый артикул.
+
 ## Notion
 
 Notion является операционной копией, а не источником истины. Локальная БД хранит заказ, платёж и NDI-статусы. Для оплаченного товарного заказа Notion запускается только после Dintero capture. Для заявок на услуги действует отдельное событие.
@@ -74,11 +88,13 @@ Notion является операционной копией, а не исто�
 
 ## Оставшиеся внешние и коммерческие блокеры
 
-### Перед тестовой оплатой на staging
+### Оставшиеся acceptance-сценарии тестовой оплаты
 
-- зарегистрировать callback signature для фактического staging URL;
-- включить Dintero test env и выполнить тестовые сценарии: successful authorization, declined payment, cancel/return, callback retry, NDI reject → void, admin ready → capture;
-- тестовый Dintero сценарий не должен случайно отправить коммерческий C1. Для end-to-end C1 используется только одобренный NDI test PartyID/артикул и отдельный guard.
+- вручную пройти Dintero sandbox: successful authorization, declined payment и cancel/return;
+- подтвердить в Dintero Backoffice успешную доставку подписанного callback и повторную доставку одного события;
+- проверить NDI reject → Dintero void на согласованном NDI test PartyID/артикуле;
+- проверить admin goods-ready → capture только после тестового `NDI accepted`;
+- тестовый сценарий не должен отправлять коммерческий C1. Для end-to-end C1 используется только одобренный NDI test PartyID/артикул и существующий guard.
 
 ### Перед реальной оплатой
 
