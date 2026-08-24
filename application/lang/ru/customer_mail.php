@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'local_team' => 'Локальный шинный сервис в Тромсё',
+    'subject_order_accepted' => 'Подтверждение заказа :reference',
+    'subject_payment_captured' => 'Оплата списана — :reference',
+    'subject_payment_partially_captured' => 'Частичная оплата списана — :reference',
+    'subject_payment_voided' => 'Резерв оплаты снят — :reference',
+    'subject_payment_refunded' => 'Оплата возвращена — :reference',
+    'subject_payment_partially_refunded' => 'Частичный возврат — :reference',
+    'heading_order_accepted' => 'Мы получили ваш заказ',
+    'heading_payment_captured' => 'Оплата списана',
+    'heading_payment_partially_captured' => 'Согласованная часть оплаты списана',
+    'heading_payment_voided' => 'Резерв оплаты снят',
+    'heading_payment_refunded' => 'Оплата возвращена',
+    'heading_payment_partially_refunded' => 'Часть оплаты возвращена',
+    'intro_order_accepted' => 'Заказ NDI подтверждён. Сумма зарезервирована, но будет списана только после получения и проверки товара и его готовности к установке или выдаче.',
+    'intro_payment_captured' => 'Товар подтверждён как готовый, и согласованная сумма списана через Dintero.',
+    'intro_payment_partially_captured' => 'Списана только часть, согласованная с EasyTire. Остаток резерва освобождается.',
+    'intro_payment_voided' => 'Этот платёж не будет использован для заказа, резерв снят без списания.',
+    'intro_payment_refunded' => 'Списанная сумма возвращена исходным способом оплаты.',
+    'intro_payment_partially_refunded' => 'Согласованная часть суммы возвращена исходным способом оплаты.',
+    'order_summary' => 'Состав заказа', 'total_including_vat' => 'Итого с НДС', 'vat_included' => 'В том числе НДС 25 %',
+    'payment_status' => 'Статус оплаты', 'payment_method' => 'Способ оплаты',
+    'authorization_notice' => 'Платёж обрабатывает Dintero. Резервирование суммы не является списанием.',
+    'seller' => 'Продавец и контакты', 'terms' => 'Условия покупки', 'privacy' => 'Конфиденциальность', 'withdrawal_form' => 'Стандартная форма отказа (PDF)',
+];

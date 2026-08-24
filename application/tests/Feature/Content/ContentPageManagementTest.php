@@ -48,12 +48,27 @@ test('purchase terms explain Dintero authorization and delayed capture in both l
 
     $this->get('/kjopsvilkar')->assertOk()
         ->assertSee('Betaling med Dintero')
-        ->assertSee('Beløpet trekkes ikke ved innsending av bestillingen');
+        ->assertSee('Beløpet trekkes ikke når bestillingen sendes');
 
     config()->set('storefront.ru_preview_enabled', true);
     $this->get('/ru/kjopsvilkar')->assertOk()
-        ->assertSee('Оплата через Dintero')
+        ->assertSee('Оплата Dintero')
         ->assertSee('При отправке заказа деньги не списываются');
+});
+
+test('merchant review pages expose the seller identity withdrawal form returns and privacy retention periods', function (): void {
+    $this->seed(ContentPageSeeder::class);
+
+    $this->get('/kjopsvilkar')->assertOk()
+        ->assertSee('934 860 187 MVA')
+        ->assertSee('Direkte returkostnader dekkes av EasyTire')
+        ->assertSee('/dokumenter/angreskjema-easytire.pdf', false)
+        ->assertSee('Bestill med betalingsplikt');
+
+    $this->get('/personvern')->assertOk()
+        ->assertSee('Dintero')
+        ->assertSee('fem år')
+        ->assertSee('Datatilsynet');
 });
 
 test('an administrator can create update and delete localized content pages', function (): void {

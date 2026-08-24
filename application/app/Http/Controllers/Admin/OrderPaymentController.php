@@ -9,6 +9,7 @@ use App\Modules\Orders\Models\Order;
 use App\Modules\Payments\CaptureAuthorizedPayment;
 use App\Modules\Payments\FinalizeOrderPayment;
 use App\Modules\Payments\PaymentIdempotencyKey;
+use App\Modules\Payments\RefundCapturedPayment;
 use App\Modules\Payments\SynchronizeProviderPayment;
 use App\Modules\Payments\VoidAuthorizedPayment;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,12 @@ final class OrderPaymentController
 {
     public function capture(Request $request, Order $order, CaptureAuthorizedPayment $capture): RedirectResponse
     {
-        $data = $request->validate(['note' => ['required', 'string', 'max:1000']]);
+        $data = $request->validate([
+            'note' => ['required', 'string', 'max:1000'],
+            'items' => ['nullable', 'array'],
+            'items.*' => ['nullable', 'integer', 'min:0'],
+            'customer_agreement' => ['nullable', 'boolean'],
+        ]);
         DB::transaction(function () use ($request, $order, $data): void {
             /** @var Order $locked */
             $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
@@ -48,12 +54,48 @@ final class OrderPaymentController
         }, 3);
 
         try {
-            $capture->execute($order->refresh(), PaymentIdempotencyKey::captureFor($order));
-        } catch (Throwable) {
+            $capture->execute(
+                $order->refresh(),
+                PaymentIdempotencyKey::captureFor($order),
+                $data['items'] ?? null,
+                $request->user()->id,
+                trim($data['note']),
+                $request->boolean('customer_agreement'),
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+
             return back()->withErrors(['payment' => __('order_ui.capture_pending_reconcile')]);
         }
 
         return back()->with('status', __('order_ui.capture_completed'));
+    }
+
+    public function refund(Request $request, Order $order, RefundCapturedPayment $refund): RedirectResponse
+    {
+        $data = $request->validate([
+            'note' => ['required', 'string', 'max:1000'],
+            'items' => ['required', 'array'],
+            'items.*' => ['nullable', 'integer', 'min:0'],
+        ]);
+        $attempt = $order->paymentAttempt()->firstOrFail();
+        $key = PaymentIdempotencyKey::refundFor($order, $attempt->refunded_amount_minor, $data['items']);
+
+        try {
+            $refund->execute(
+                $order,
+                $key,
+                $data['items'],
+                $request->user()->id,
+                trim($data['note']),
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors(['payment' => __('order_ui.refund_pending_reconcile')]);
+        }
+
+        return back()->with('status', __('order_ui.refund_completed'));
     }
 
     public function reconcile(Order $order, SynchronizeProviderPayment $synchronize, FinalizeOrderPayment $finalize): RedirectResponse
@@ -66,7 +108,9 @@ final class OrderPaymentController
             if ($attempt->status === PaymentStatus::Authorized && $order->refresh()->ndi_status === NdiOrderStatus::NotSubmitted) {
                 $finalize->execute($order);
             }
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            report($exception);
+
             return back()->withErrors(['payment' => __('order_ui.reconcile_failed')]);
         }
 
@@ -75,12 +119,14 @@ final class OrderPaymentController
 
     public function void(Request $request, Order $order, VoidAuthorizedPayment $void): RedirectResponse
     {
-        $request->validate(['note' => ['required', 'string', 'max:1000']]);
+        $data = $request->validate(['note' => ['required', 'string', 'max:1000']]);
         abort_unless(in_array($order->ndi_status, [NdiOrderStatus::NotSubmitted, NdiOrderStatus::Rejected], true), 409);
 
         try {
-            $void->execute($order, PaymentIdempotencyKey::voidFor($order));
-        } catch (Throwable) {
+            $void->execute($order, PaymentIdempotencyKey::voidFor($order), $request->user()->id, trim($data['note']));
+        } catch (Throwable $exception) {
+            report($exception);
+
             return back()->withErrors(['payment' => __('order_ui.void_failed')]);
         }
 

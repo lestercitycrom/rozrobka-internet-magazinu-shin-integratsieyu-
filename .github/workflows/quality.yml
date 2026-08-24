@@ -1,0 +1,97 @@
+name: Quality gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Application quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: application
+    steps:
+      - name: Checkout full repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, fileinfo, mbstring, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: application/package-lock.json
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Prepare hermetic application environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Validate project-control contract
+        working-directory: .
+        run: php scripts/validate-project-control.php
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run Laravel regression
+        run: php artisan test --compact
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run buyer and admin E2E
+        run: npm run test:e2e
+
+      - name: Upload Playwright failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-${{ github.run_id }}
+          path: |
+            application/playwright-report
+            application/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  secrets:
+    name: Reachable history secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Scan secrets
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

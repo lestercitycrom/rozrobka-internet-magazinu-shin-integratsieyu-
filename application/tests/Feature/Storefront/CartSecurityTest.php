@@ -40,6 +40,7 @@ test('empty checkout returns safely to the cart for both get and post', function
 
 test('checkout exposes the styled accessible controls for a ready cart', function (): void {
     $this->seed(E2eStorefrontSeeder::class);
+    config()->set('payments.enabled', true);
 
     $this->withSession(['storefront.cart.lines' => ['000205550016' => 1]])
         ->get('/kasse')
@@ -49,7 +50,12 @@ test('checkout exposes the styled accessible controls for a ready cart', functio
         ->assertSee('id="checkout-phone"', false)
         ->assertSee('pattern="\+?[0-9][0-9 ()-]{7,23}"', false)
         ->assertSee(__('phone_validation.hint'))
-        ->assertSee('type="checkbox"', false)
+        ->assertSee('data-testid="checkout-vat-summary"', false)
+        ->assertSee('data-testid="checkout-merchant-identity"', false)
+        ->assertSee('data-testid="checkout-terms"', false)
+        ->assertSee('data-testid="checkout-privacy"', false)
+        ->assertSee('data-testid="checkout-fitment-confirmation"', false)
+        ->assertSee(__('commerce.order_with_payment_obligation'))
         ->assertSee('easytire-input', false);
 });
 

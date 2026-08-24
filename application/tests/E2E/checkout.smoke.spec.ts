@@ -17,6 +17,16 @@ test('checkout entry has a session-bound idempotency field and unknown confirmat
     await expect(page.getByTestId('checkout-name')).toBeVisible();
     await expect(page.getByTestId('checkout-email')).toHaveAttribute('type', 'email');
     await expect(page.getByTestId('checkout-phone')).toBeVisible();
+    await expect(page.getByTestId('checkout-vat-summary')).toBeVisible();
+    await expect(page.getByTestId('checkout-merchant-identity')).toContainText('934 860 187 MVA');
+    await expect(page.getByTestId('checkout-fitment-confirmation').locator('input')).not.toBeChecked();
+    await expect(page.getByTestId('checkout-privacy').locator('input')).not.toBeChecked();
+    await expect(page.getByTestId('checkout-terms').locator('input')).not.toBeChecked();
+    await expect(page.getByTestId('checkout-submit')).toHaveText(
+        prefix === '/ru'
+            ? 'Заказать с обязательством оплаты'
+            : 'Bestill med betalingsplikt',
+    );
 
     await page.goto(`${prefix}/bestilling/ET-UNKNOWN-REFERENCE`);
     await expect(page.getByRole('heading', { name: /Vi finner ikke siden|Страница не найдена/ })).toBeVisible();

@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'local_team' => 'Lokalt dekkverksted i Tromsø',
+    'subject_order_accepted' => 'Ordrebekreftelse :reference',
+    'subject_payment_captured' => 'Betalingen er belastet – :reference',
+    'subject_payment_partially_captured' => 'Delbetaling er belastet – :reference',
+    'subject_payment_voided' => 'Betalingsreservasjonen er frigitt – :reference',
+    'subject_payment_refunded' => 'Betalingen er refundert – :reference',
+    'subject_payment_partially_refunded' => 'Delvis refusjon – :reference',
+    'heading_order_accepted' => 'Vi har mottatt bestillingen din',
+    'heading_payment_captured' => 'Betalingen er belastet',
+    'heading_payment_partially_captured' => 'Avtalt delbetaling er belastet',
+    'heading_payment_voided' => 'Betalingsreservasjonen er frigitt',
+    'heading_payment_refunded' => 'Betalingen er refundert',
+    'heading_payment_partially_refunded' => 'Deler av betalingen er refundert',
+    'intro_order_accepted' => 'NDI-bestillingen er godkjent. Beløpet er reservert, men belastes først når varen er mottatt, kontrollert og klar for montering eller henting.',
+    'intro_payment_captured' => 'Varen er bekreftet klar, og det avtalte beløpet er nå belastet via Dintero.',
+    'intro_payment_partially_captured' => 'Bare den delen du avtalte med EasyTire er belastet. Resterende reservasjon frigis.',
+    'intro_payment_voided' => 'Ordren gjennomføres ikke med denne betalingen, og reservasjonen er frigitt uten belastning.',
+    'intro_payment_refunded' => 'Det belastede beløpet er refundert til den opprinnelige betalingsmåten.',
+    'intro_payment_partially_refunded' => 'Den avtalte delen av betalingen er refundert til den opprinnelige betalingsmåten.',
+    'order_summary' => 'Ordresammendrag', 'total_including_vat' => 'Total inkl. MVA', 'vat_included' => 'Herav 25 % MVA',
+    'payment_status' => 'Betalingsstatus', 'payment_method' => 'Betalingsmåte',
+    'authorization_notice' => 'Dintero behandler betalingen. En reservasjon er ikke det samme som en belastning.',
+    'seller' => 'Selger og kontakt', 'terms' => 'Kjøpsvilkår', 'privacy' => 'Personvern', 'withdrawal_form' => 'Standard angreskjema (PDF)',
+];

@@ -1,0 +1,66 @@
+name: EasyTire task
+description: Bounded implementation, investigation or documentation work
+title: "[TASK] "
+labels:
+  - ready
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: One concrete outcome, not a list of unrelated wishes.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and authoritative sources
+      description: Link decisions, customer messages/files and relevant As-Built docs. State precedence when sources conflict.
+    validations:
+      required: true
+  - type: textarea
+    id: allowed
+    attributes:
+      label: Allowed scope
+      description: Files, systems and external actions the engineer may change or perform.
+    validations:
+      required: true
+  - type: textarea
+    id: forbidden
+    attributes:
+      label: Forbidden scope
+      description: Explicit non-goals, runtime gates and destructive/external actions that remain prohibited.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable, testable conditions for completion.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required tests and evidence
+      description: Exact suites, viewports, API read-backs or evidence artifacts required.
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Maximum runtime authority
+      options:
+        - Code and tests only
+        - Staging deploy, integrations remain disabled
+        - Named staging integration action
+        - Production action (requires exact separate decision)
+    validations:
+      required: true
+  - type: textarea
+    id: stop
+    attributes:
+      label: Stop condition and blockers
+      description: State when the engineer must stop for PM/owner/external input.
+    validations:
+      required: true

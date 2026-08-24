@@ -73,6 +73,8 @@ MD;
             $page->fill(['slug' => $slug, ...$attributes]);
             $page->save();
         }
+
+        $this->call(DinteroLegalContentSeeder::class);
     }
 
     /** @return array<string, array<string, mixed>> */

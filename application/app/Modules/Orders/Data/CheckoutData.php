@@ -17,5 +17,8 @@ final readonly class CheckoutData
         public ?string $customerNote,
         /** @var array{source:string,width:string,aspect:string,rim:string,confirmed_at:string}|null */
         public ?array $fitmentSnapshot = null,
+        public bool $fitmentConfirmed = false,
+        public bool $paymentObligationConfirmed = false,
+        public bool $earlyServiceStartRequested = false,
     ) {}
 }

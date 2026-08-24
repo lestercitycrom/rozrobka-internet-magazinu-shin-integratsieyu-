@@ -59,7 +59,9 @@ final class DinteroPaymentGateway implements PaymentGateway
             ],
         ];
 
-        $response = $this->request()->post($this->paymentsUrl('/sessions-profile'), $payload);
+        $response = $this->request()
+            ->withHeaders(['Dintero-Feature-Toggles' => 'strict-session-amounts'])
+            ->post($this->paymentsUrl('/sessions-profile'), $payload);
         $this->assertResponse($response, [200, 201], 'create_session');
         $sessionId = $this->reference($response->json('id'));
         $url = $this->httpsUrl((string) $response->json('url'), 'checkout');
@@ -81,12 +83,12 @@ final class DinteroPaymentGateway implements PaymentGateway
             'amount' => $request->amountMinor,
             'capture_reference' => $request->operationReference,
             'items' => $request->items,
-            'final_capture' => true,
+            'final_capture' => $request->finalCapture,
             'metadata' => ['ext_idempotency_key' => $request->idempotencyKey],
         ]);
         $this->assertResponse($response, [200, 202], 'capture');
         $result = $this->transactionFromPayload($response->json());
-        if ($result->state !== ProviderPaymentState::Paid) {
+        if (! in_array($result->state, [ProviderPaymentState::Paid, ProviderPaymentState::PartiallyPaid], true)) {
             throw new \RuntimeException('Dintero capture was accepted but is not final yet; reconciliation is required.');
         }
 
@@ -100,6 +102,26 @@ final class DinteroPaymentGateway implements PaymentGateway
         $result = $this->transactionFromPayload($response->json());
         if ($result->state !== ProviderPaymentState::Voided) {
             throw new \RuntimeException('Dintero void was accepted but is not final yet; reconciliation is required.');
+        }
+
+        return new PaymentOperationResult($result->providerReference);
+    }
+
+    public function refund(PaymentOperationRequest $request): PaymentOperationResult
+    {
+        $response = $this->request()->post($this->paymentsUrl('/transactions/'.rawurlencode($request->providerReference).'/refund'), [
+            'amount' => $request->amountMinor,
+            'reason' => mb_substr(trim((string) $request->reason), 0, 255),
+            'items' => $request->items,
+            'metadata' => [
+                'ext_idempotency_key' => $request->idempotencyKey,
+                'ext_refund_reference' => $request->operationReference,
+            ],
+        ]);
+        $this->assertResponse($response, [200, 202], 'refund');
+        $result = $this->transactionFromPayload($response->json());
+        if (! in_array($result->state, [ProviderPaymentState::Refunded, ProviderPaymentState::PartiallyRefunded], true)) {
+            throw new \RuntimeException('Dintero refund was accepted but is not final yet; reconciliation is required.');
         }
 
         return new PaymentOperationResult($result->providerReference);
@@ -124,9 +146,12 @@ final class DinteroPaymentGateway implements PaymentGateway
         $state = match ($externalStatus) {
             'AUTHORIZED' => ProviderPaymentState::Authorized,
             'CAPTURED' => ProviderPaymentState::Paid,
+            'PARTIALLY_CAPTURED' => ProviderPaymentState::PartiallyPaid,
             'AUTHORIZATION_VOIDED' => ProviderPaymentState::Voided,
             'FAILED', 'DECLINED' => ProviderPaymentState::Failed,
-            'INITIATED', 'ON_HOLD', 'UNKNOWN', 'PARTIALLY_CAPTURED', 'PARTIALLY_CAPTURED_REFUNDED', 'PARTIALLY_REFUNDED', 'REFUNDED' => ProviderPaymentState::Pending,
+            'PARTIALLY_CAPTURED_REFUNDED', 'PARTIALLY_REFUNDED' => ProviderPaymentState::PartiallyRefunded,
+            'REFUNDED' => ProviderPaymentState::Refunded,
+            'INITIATED', 'ON_HOLD', 'UNKNOWN' => ProviderPaymentState::Pending,
             default => throw new PaymentOperationRejected('Dintero returned an unsupported transaction status.'),
         };
 
@@ -140,7 +165,47 @@ final class DinteroPaymentGateway implements PaymentGateway
             externalStatus: $externalStatus,
             paymentProductType: isset($payload['payment_product_type']) ? (string) $payload['payment_product_type'] : null,
             updatedAt: isset($payload['updated_at']) ? (string) $payload['updated_at'] : null,
+            authorizationExpiresAt: $this->authorizationExpiresAt($payload),
+            cardLastFour: $this->cardLastFour($payload),
         );
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function authorizationExpiresAt(array $payload): ?string
+    {
+        if (filled($payload['authorization_expires_at'] ?? null)) {
+            return trim((string) $payload['authorization_expires_at']);
+        }
+        $events = is_array($payload['events'] ?? null) ? array_reverse($payload['events']) : [];
+        foreach ($events as $event) {
+            if (! is_array($event)) {
+                continue;
+            }
+            $type = strtoupper(trim((string) ($event['event'] ?? $event['type'] ?? $event['operation'] ?? '')));
+            if (! in_array($type, ['AUTHORIZE', 'AUTHORIZED', 'AUTHORIZATION'], true)) {
+                continue;
+            }
+            $metadata = is_array($event['metadata'] ?? null) ? $event['metadata'] : [];
+            foreach (['authorization_expiration', 'dintero_psp:authorization_expiration', 'klarna:authorization_expiration'] as $key) {
+                if (filled($metadata[$key] ?? null)) {
+                    return trim((string) $metadata[$key]);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function cardLastFour(array $payload): ?string
+    {
+        $card = is_array($payload['card'] ?? null) ? $payload['card'] : [];
+        $candidate = trim((string) ($card['last_four'] ?? $card['last_four_digits'] ?? $card['masked_pan'] ?? ''));
+        if ($candidate === '' || preg_match('/(\d{4})\D*$/', $candidate, $matches) !== 1) {
+            return null;
+        }
+
+        return $matches[1];
     }
 
     private function request(): PendingRequest

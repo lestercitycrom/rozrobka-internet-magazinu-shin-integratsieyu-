@@ -9,6 +9,9 @@
     } catch (\Throwable) {
         $legalPages = [];
     }
+    $vatPercent = (int) config('payments.dintero.vat_percent', 25);
+    $vatMinor = $vatPercent > 0 ? (int) round($cart->total->minor * $vatPercent / (100 + $vatPercent)) : 0;
+    $hasServices = $cart->serviceLines !== [];
 @endphp
 
 <x-layouts.storefront :title="__('commerce.checkout')" active-section="cart">
@@ -77,22 +80,36 @@
                     </fieldset>
 
                     <fieldset class="et-fieldset" style="margin-top:1.5rem;border-top:1px solid var(--et-line);padding-top:1.3rem">
-                        <legend class="sr-only">{{ __('commerce.consent') }}</legend>
+                        <legend class="sr-only">{{ __('commerce.terms') }}</legend>
                         <div class="et-stack">
-                            <label class="et-check">
+                            <label class="et-check" data-testid="checkout-fitment-confirmation">
+                                <input required type="checkbox" name="fitment_confirmation" value="1" @checked(old('fitment_confirmation'))>
+                                <span>{{ __('commerce.fitment_confirmation') }}</span>
+                            </label>
+                            @error('fitment_confirmation')<p class="et-form-error">{{ $message }}</p>@enderror
+
+                            @if($hasServices)
+                                <label class="et-check" data-testid="checkout-early-service-start">
+                                    <input required type="checkbox" name="early_service_start" value="1" @checked(old('early_service_start'))>
+                                    <span>{{ __('commerce.early_service_start') }}</span>
+                                </label>
+                                @error('early_service_start')<p class="et-form-error">{{ $message }}</p>@enderror
+                            @endif
+
+                            <label class="et-check" data-testid="checkout-privacy">
                                 <input required type="checkbox" name="consent" value="1" @checked(old('consent')) aria-label="{{ __('commerce.consent') }}">
                                 @if (isset($legalPages['personvern']))
-                                    <span>{{ __('legal.consent_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('legal.privacy') }}</a>.</span>
+                                    <span>{{ __('commerce.privacy_acknowledgement') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}" target="_blank" rel="noopener">{{ __('legal.privacy') }}</a>.</span>
                                 @else
                                     <span>{{ __('commerce.consent') }}</span>
                                 @endif
                             </label>
                             @error('consent')<p class="et-form-error">{{ $message }}</p>@enderror
 
-                            <label class="et-check">
+                            <label class="et-check" data-testid="checkout-terms">
                                 <input required type="checkbox" name="terms" value="1" @checked(old('terms')) aria-label="{{ __('commerce.terms') }}">
                                 @if (isset($legalPages['kjopsvilkar']))
-                                    <span>{{ __('legal.terms_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('legal.terms') }}</a>.</span>
+                                    <span>{{ __('legal.terms_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}" target="_blank" rel="noopener">{{ __('legal.terms') }}</a> ({{ \App\Modules\Orders\LegalDocumentVersions::TERMS }}).</span>
                                 @else
                                     <span>{{ __('commerce.terms') }}</span>
                                 @endif
@@ -104,11 +121,12 @@
                     @if(config('payments.enabled'))
                         <div class="et-alert et-alert--info" style="margin-top:1.5rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('commerce.payment_authorization_notice') }}</div></div>
                     @endif
-                    <button class="et-btn et-btn--primary" type="submit" style="margin-top:1.5rem" data-testid="checkout-submit">{{ config('payments.enabled') ? __('commerce.continue_to_payment') : __('commerce.submit') }}</button>
+                    <p class="et-help" style="margin-top:1.2rem">{{ __('commerce.payment_obligation_help') }}</p>
+                    <button class="et-btn et-btn--primary" type="submit" style="margin-top:.75rem" data-testid="checkout-submit">{{ __('commerce.order_with_payment_obligation') }}</button>
                 </div>
             </form>
 
-            <aside class="et-order-summary">
+            <aside class="et-order-summary" aria-label="{{ __('commerce.cart_total') }}">
                 <p class="et-eyebrow">{{ __('commerce.cart_total') }}</p>
                 <div class="et-stack" style="margin-top:1rem">
                     @forelse($cart->lines as $line)
@@ -124,9 +142,13 @@
                 <dl style="margin-top:1rem;border-top:1px solid var(--et-line);padding-top:.5rem">
                     <div class="et-order-summary__row"><dt>{{ __('commerce.products_total') }}</dt><dd><strong>{{ number_format($cart->productsTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->productsTotal()->currency }}</strong></dd></div>
                     @if ($cart->servicesTotal()->minor > 0)<div class="et-order-summary__row"><dt>{{ __('commerce.services_total') }}</dt><dd><strong>{{ number_format($cart->servicesTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->servicesTotal()->currency }}</strong></dd></div>@endif
+                    <div class="et-order-summary__row" data-testid="checkout-vat-summary"><dt>{{ __('commerce.vat_included') }}</dt><dd><strong>{{ number_format($vatMinor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</strong></dd></div>
+                    <div class="et-order-summary__row"><dt>{{ __('commerce.mandatory_fees') }}</dt><dd><strong>{{ __('commerce.no_mandatory_fees') }}</strong></dd></div>
                 </dl>
                 <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span>{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</span></div>
+                <p class="et-help" style="margin-top:1rem">{{ __('commerce.fulfilment_summary') }}</p>
                 <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ config('payments.enabled') ? __('commerce.payment_summary_notice') : __('commerce.pending') }}</div></div>
+                <p class="et-help" data-testid="checkout-merchant-identity" style="margin-top:1rem">{{ __('commerce.merchant_identity') }}</p>
             </aside>
         </div>
     </section>

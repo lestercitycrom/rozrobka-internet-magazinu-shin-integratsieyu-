@@ -151,6 +151,58 @@ class E2eStorefrontSeeder extends Seeder
                 'source_price_observed_at' => now(),
             ],
         );
+
+        $paymentOrder = Order::query()->firstOrNew(['public_reference' => 'ET-E2E-PAYMENT']);
+        if (! $paymentOrder->exists) {
+            $paymentOrder->id = (string) Str::ulid();
+            $paymentOrder->idempotency_key = (string) Str::uuid();
+        }
+        $paymentOrder->fill([
+            'locale' => 'nb',
+            'status' => OrderStatus::AwaitingPayment,
+            'payment_status' => PaymentStatus::Authorized,
+            'ndi_status' => NdiOrderStatus::Accepted,
+            'currency' => 'NOK',
+            'subtotal_minor' => 2000,
+            'total_minor' => 2000,
+            'fulfilment_method' => FulfilmentMethod::Pickup,
+            'customer_name' => 'E2E Payment Customer',
+            'customer_email' => 'e2e-payment@example.test',
+            'customer_phone' => '+4790000000',
+            'fitment_confirmed' => true,
+            'payment_obligation_confirmed' => true,
+            'terms_accepted_at' => now(),
+            'privacy_accepted_at' => now(),
+            'pricing_snapshot_at' => now(),
+            'submitted_at' => now(),
+        ])->save();
+        $paymentOrder->items()->updateOrCreate(
+            ['external_sku' => 'NDI-TEST-4765205551649102'],
+            [
+                'product_title' => 'NDI Test full-cycle test tyre',
+                'quantity' => 2,
+                'unit_price_minor' => 1000,
+                'line_total_minor' => 2000,
+                'currency' => 'NOK',
+                'product_snapshot' => ['title' => 'NDI Test full-cycle test tyre', 'type' => 'tire', 'is_integration_test' => true],
+                'pricing_snapshot' => ['source' => 'e2e_fixture'],
+                'source_price_observed_at' => now(),
+            ],
+        );
+        $paymentOrder->paymentAttempt()->updateOrCreate([], [
+            'provider' => 'dintero',
+            'idempotency_key' => (string) Str::uuid(),
+            'provider_reference' => 'T11116915.e2e-transaction',
+            'provider_session_reference' => 'T11116915.e2e-session',
+            'status' => PaymentStatus::Authorized,
+            'amount_minor' => 2000,
+            'currency' => 'NOK',
+            'payment_product_type' => 'dintero_psp.creditcard',
+            'card_last_four' => '4242',
+            'started_at' => now(),
+            'authorized_at' => now(),
+            'authorization_expires_at' => now()->addDays(7),
+        ]);
     }
 
     private function seedDemoProductMedia(SupplierSku $sku): void

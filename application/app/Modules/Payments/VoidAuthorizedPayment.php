@@ -4,24 +4,31 @@ namespace App\Modules\Payments;
 
 use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\QueueCustomerOrderMessage;
 use App\Modules\Payments\Contracts\PaymentGateway;
 use App\Modules\Payments\Data\PaymentOperationRequest;
+use App\Modules\Payments\Enums\PaymentOperationStatus;
+use App\Modules\Payments\Enums\PaymentOperationType;
 use App\Modules\Payments\Exceptions\PaymentOperationRejected;
 use App\Modules\Payments\Exceptions\PaymentProviderRejected;
 use App\Modules\Payments\Models\PaymentAttempt;
+use App\Modules\Payments\Models\PaymentOperation;
 use Illuminate\Support\Facades\DB;
 
 final class VoidAuthorizedPayment
 {
-    public function __construct(private readonly PaymentGateway $gateway) {}
+    public function __construct(
+        private readonly PaymentGateway $gateway,
+        private readonly QueueCustomerOrderMessage $customerMessages,
+    ) {}
 
-    public function execute(Order $order, string $idempotencyKey): PaymentAttempt
+    public function execute(Order $order, string $idempotencyKey, ?int $actorUserId = null, ?string $note = null): PaymentAttempt
     {
         PaymentBoundaryGuard::assertEnabled();
         $provider = PaymentBoundaryGuard::provider($this->gateway->provider());
         $idempotencyKey = PaymentBoundaryGuard::idempotencyKey($idempotencyKey);
 
-        $attempt = DB::transaction(function () use ($order, $provider, $idempotencyKey): PaymentAttempt {
+        [$attempt, $operation] = DB::transaction(function () use ($order, $provider, $idempotencyKey, $actorUserId, $note): array {
             /** @var Order $lockedOrder */
             $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->getKey());
             /** @var PaymentAttempt|null $attempt */
@@ -32,7 +39,7 @@ final class VoidAuthorizedPayment
             if ($attempt->status === PaymentStatus::Voided) {
                 $this->assertOperationKey($attempt->void_idempotency_key, $idempotencyKey);
 
-                return $attempt;
+                return [$attempt, PaymentOperation::query()->where('idempotency_key', $idempotencyKey)->first()];
             }
             if ($lockedOrder->payment_status !== PaymentStatus::Authorized
                 || ! in_array($attempt->status, [PaymentStatus::Authorized, PaymentStatus::Voiding], true)) {
@@ -43,8 +50,22 @@ final class VoidAuthorizedPayment
             } else {
                 $attempt->update(['void_idempotency_key' => $idempotencyKey, 'status' => PaymentStatus::Voiding]);
             }
+            $operation = PaymentOperation::query()->firstOrCreate(
+                ['idempotency_key' => $idempotencyKey],
+                [
+                    'order_id' => $lockedOrder->id,
+                    'payment_attempt_id' => $attempt->id,
+                    'actor_user_id' => $actorUserId,
+                    'type' => PaymentOperationType::Void,
+                    'status' => PaymentOperationStatus::Pending,
+                    'amount_minor' => $attempt->remainingAuthorizedMinor(),
+                    'currency' => $attempt->currency,
+                    'note' => $note,
+                    'started_at' => now(),
+                ],
+            );
 
-            return $attempt->refresh();
+            return [$attempt->refresh(), $operation];
         }, 3);
 
         if ($attempt->status === PaymentStatus::Voided) {
@@ -54,20 +75,21 @@ final class VoidAuthorizedPayment
         try {
             $result = $this->gateway->void(new PaymentOperationRequest(
                 providerReference: PaymentBoundaryGuard::providerReference((string) $attempt->provider_reference),
-                amountMinor: $attempt->amount_minor,
+                amountMinor: $attempt->remainingAuthorizedMinor(),
                 currency: $attempt->currency,
-                idempotencyKey: $attempt->void_idempotency_key,
+                idempotencyKey: $idempotencyKey,
                 operationReference: $order->public_reference,
+                reason: $note,
             ));
         } catch (PaymentProviderRejected $exception) {
-            $this->resetDefinitiveRejection($attempt);
+            $this->resetDefinitiveRejection($attempt, $operation);
 
             throw $exception;
         }
 
         $reference = PaymentBoundaryGuard::providerReference($result->providerReference);
 
-        return DB::transaction(function () use ($attempt, $reference): PaymentAttempt {
+        $completed = DB::transaction(function () use ($attempt, $operation, $reference, $actorUserId, $note): PaymentAttempt {
             /** @var PaymentAttempt $lockedAttempt */
             $lockedAttempt = PaymentAttempt::query()->lockForUpdate()->findOrFail($attempt->id);
             /** @var Order $lockedOrder */
@@ -83,9 +105,25 @@ final class VoidAuthorizedPayment
 
             $lockedAttempt->update(['status' => PaymentStatus::Voided, 'voided_at' => now(), 'completed_at' => now()]);
             $lockedOrder->update(['payment_status' => PaymentStatus::Voided]);
+            $operation->update([
+                'status' => PaymentOperationStatus::Completed,
+                'provider_reference' => $reference,
+                'completed_at' => now(),
+            ]);
+            $lockedOrder->statusHistory()->create([
+                'actor_user_id' => $actorUserId,
+                'from_status' => $lockedOrder->status,
+                'to_status' => $lockedOrder->status,
+                'note' => $note,
+                'metadata' => ['source' => 'payment_void', 'provider' => $lockedAttempt->provider],
+                'occurred_at' => now(),
+            ]);
 
             return $lockedAttempt->refresh();
         }, 3);
+        $this->customerMessages->execute($completed->order, 'payment_voided');
+
+        return $completed;
     }
 
     private function assertOperationKey(?string $stored, string $given): void
@@ -95,9 +133,9 @@ final class VoidAuthorizedPayment
         }
     }
 
-    private function resetDefinitiveRejection(PaymentAttempt $attempt): void
+    private function resetDefinitiveRejection(PaymentAttempt $attempt, PaymentOperation $operation): void
     {
-        DB::transaction(function () use ($attempt): void {
+        DB::transaction(function () use ($attempt, $operation): void {
             /** @var PaymentAttempt|null $lockedAttempt */
             $lockedAttempt = PaymentAttempt::query()->whereKey($attempt->id)->lockForUpdate()->first();
             if ($lockedAttempt === null || $lockedAttempt->status !== PaymentStatus::Voiding) {
@@ -107,6 +145,11 @@ final class VoidAuthorizedPayment
                 'status' => PaymentStatus::Authorized,
                 'void_idempotency_key' => null,
                 'metadata_encrypted' => ['last_error_code' => 'void_rejected'],
+            ]);
+            $operation->update([
+                'status' => PaymentOperationStatus::Rejected,
+                'error_code' => 'void_rejected',
+                'completed_at' => now(),
             ]);
         }, 3);
     }

@@ -48,9 +48,17 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await expect(page.getByRole('button', { name: /Submit NDI|Reserve|Cancel API/i })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Submit NDI|Reserve|Cancel API/i })).toHaveCount(0);
 
+    await page.goto('/admin/orders');
+    await page.getByText('ET-E2E-PAYMENT').click();
+    await expect(page.getByTestId('admin-order-payment')).toBeVisible();
+    await expect(page.getByTestId('admin-capture-payment')).toBeVisible();
+    await expect(page.getByText('dintero_psp.creditcard')).toBeVisible();
+    await expect(page.getByText(/maks 2/i)).toBeVisible();
+    await expect(page.getByText(/Reservasjonen utløper/i)).toBeVisible();
+
     await page.getByTestId('switch-language-ru').click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
-    await expect(page.getByRole('heading', { name: 'ET-E2E-ORDER' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ET-E2E-PAYMENT' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Товары', exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Панель управления' }).click();
     await expect(page).toHaveURL(/\/admin$/);

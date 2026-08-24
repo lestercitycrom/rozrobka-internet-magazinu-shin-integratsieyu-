@@ -43,6 +43,15 @@ test('checkout freezes an immutable snapshot and duplicate idempotency key retur
         ->and($first->order->payment_status)->toBe(PaymentStatus::NotStarted)
         ->and($first->order->ndi_status)->toBe(NdiOrderStatus::NotSubmitted)
         ->and($first->order->fitment_snapshot)->toMatchArray(['source' => 'statens_vegvesen', 'width' => '205', 'aspect' => '55', 'rim' => '16'])
+        ->and($first->order->terms_version)->toBe('2026-08-24')
+        ->and($first->order->privacy_version)->toBe('2026-08-24')
+        ->and($first->order->fitment_confirmed)->toBeTrue()
+        ->and($first->order->legal_acceptance_snapshot)->toMatchArray([
+            'locale' => 'nb',
+            'terms_version' => '2026-08-24',
+            'privacy_version' => '2026-08-24',
+            'payment_obligation_confirmed' => true,
+        ])
         ->and($first->order->statusHistory()->count())->toBe(1);
 });
 
@@ -128,6 +137,8 @@ function commerceCheckoutData(): CheckoutData
         vehicleRegistration: 'AB12345',
         customerNote: null,
         fitmentSnapshot: ['source' => 'statens_vegvesen', 'width' => '205', 'aspect' => '55', 'rim' => '16', 'confirmed_at' => now()->toIso8601String()],
+        fitmentConfirmed: true,
+        paymentObligationConfirmed: true,
     );
 }
 

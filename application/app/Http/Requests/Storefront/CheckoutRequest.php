@@ -9,6 +9,18 @@ class CheckoutRequest extends FormRequest
 {
     public function rules(): array
     {
-        return ['idempotency_key' => ['required', 'uuid'], 'name' => ['required', 'string', 'max:120'], 'email' => ['required', 'email'], 'phone' => ['required', 'string', 'max:24', new CustomerPhone], 'registration' => ['nullable', 'string', 'max:32'], 'note' => ['nullable', 'string', 'max:2000'], 'consent' => ['accepted'], 'terms' => ['accepted'], 'website' => ['prohibited']];
+        return [
+            'idempotency_key' => ['required', 'uuid'],
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:24', new CustomerPhone],
+            'registration' => ['nullable', 'string', 'max:32'],
+            'note' => ['nullable', 'string', 'max:2000'],
+            'consent' => ['accepted'],
+            'terms' => ['accepted'],
+            'fitment_confirmation' => ['nullable', 'boolean'],
+            'early_service_start' => ['nullable', 'boolean'],
+            'website' => ['prohibited'],
+        ];
     }
 }

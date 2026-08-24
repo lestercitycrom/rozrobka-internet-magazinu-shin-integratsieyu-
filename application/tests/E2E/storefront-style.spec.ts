@@ -126,6 +126,7 @@ test('desktop catalog uses the available canvas without compressing filters or p
     }
 
     await page.setViewportSize({ width: 1024, height: 900 });
+    await expect(page.getByTestId('catalog-filter-toggle')).toBeVisible();
     const tabletGeometry = await page.evaluate(() => {
         const layout = document.querySelector<HTMLElement>('.et-catalog-layout')!;
         const results = document.querySelector<HTMLElement>('.et-catalog-results')!;
