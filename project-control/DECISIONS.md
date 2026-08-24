@@ -1,6 +1,6 @@
 # EasyTire permanent decisions
 
-Updated: 2026-08-22
+Updated: 2026-08-24
 
 Only decisions that must survive closed Issues belong here. Implementation detail stays in code/As-Built docs; discussion stays in Issues and PRs.
 
@@ -39,6 +39,13 @@ Only decisions that must survive closed Issues belong here. Implementation detai
 - CI logs, tests and small redacted evidence are preferred to handoff ZIPs.
 - Large/private source materials remain outside Git; tracked companions include source path/date and SHA-256 where needed.
 - Full E2E is the default for this customer-facing site; visual changes also require named viewport screenshots.
+
+## GOV-007 — Temporary combined project-lead mode
+
+- Owner decision on 2026-08-24: until a separate project manager returns, Mister Red/Codex acts as both project lead and chief engineer under the former workflow.
+- Issue, branch, PR, CI, exact-SHA evidence and explicit runtime authorization remain mandatory.
+- During this temporary mode Mister Red may record the exact-SHA verdict and execute an owner-authorised staging gate; it still may not infer production authorization or broaden external side effects.
+- When the owner restores a separate PM/PRO reviewer, GOV-003 becomes the active review separation again without changing the engineering gates.
 
 ## COM-001 — Dintero capture follows physical readiness
 
