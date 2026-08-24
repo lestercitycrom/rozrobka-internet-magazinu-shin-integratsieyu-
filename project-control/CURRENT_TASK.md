@@ -1,6 +1,7 @@
 # Current task
 
 - Issue: [#4 — Complete Dintero merchant-review readiness](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/4)
+- PR: [#5 — Complete Dintero merchant-review readiness](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/5)
 - State: `in-progress`
 - Branch: `codex/issue-4-dintero-review-readiness`
 - Base dependency: PR #2 / `codex/issue-1-github-workflow`
