@@ -34,12 +34,33 @@
                     <div><dt class="text-easytire-muted">{{ __('order_ui.payment_session') }}</dt><dd class="mt-1 break-all font-mono text-xs">{{ $payment->provider_session_reference ?: __('order_ui.not_available') }}</dd></div>
                     <div><dt class="text-easytire-muted">{{ __('order_ui.payment_transaction') }}</dt><dd class="mt-1 break-all font-mono text-xs">{{ $payment->provider_reference ?: __('order_ui.not_available') }}</dd></div>
                     <div><dt class="text-easytire-muted">{{ __('order_ui.goods_ready') }}</dt><dd class="mt-1 font-bold">{{ $order->goods_ready_at ?: __('order_ui.goods_not_ready') }}</dd></div>
+                    <div><dt class="text-easytire-muted">{{ __('order_ui.payment_method') }}</dt><dd class="mt-1 font-bold">{{ $payment->payment_product_type ?: __('order_ui.not_available') }}@if($payment->card_last_four) · •••• {{ $payment->card_last_four }}@endif</dd></div>
+                    <div><dt class="text-easytire-muted">{{ __('order_ui.authorization_expires') }}</dt><dd class="mt-1 font-bold">{{ $payment->authorization_expires_at ?: __('order_ui.not_available') }}</dd></div>
+                    <div><dt class="text-easytire-muted">{{ __('order_ui.captured_amount') }}</dt><dd class="mt-1 font-bold">{{ $money($payment->captured_amount_minor) }}</dd></div>
+                    <div><dt class="text-easytire-muted">{{ __('order_ui.refunded_amount') }}</dt><dd class="mt-1 font-bold">{{ $money($payment->refunded_amount_minor) }}</dd></div>
                 </dl>
+                @if ($payment->status === \App\Modules\Orders\Enums\PaymentStatus::Authorized && $payment->authorizationExpired())
+                    <div class="mt-5 border border-red-400 bg-red-50 p-4 text-sm font-black text-red-950" role="alert">{{ __('order_ui.authorization_expired') }}</div>
+                @elseif ($payment->status === \App\Modules\Orders\Enums\PaymentStatus::Authorized && $payment->authorization_expires_at?->isBefore(now()->addDays(2)))
+                    <div class="mt-5 border border-amber-400 bg-amber-50 p-4 text-sm font-black text-amber-950" role="alert">{{ __('order_ui.authorization_expiring') }}</div>
+                @endif
 
-                @if ($order->status === \App\Modules\Orders\Enums\OrderStatus::AwaitingPayment && $order->payment_status === \App\Modules\Orders\Enums\PaymentStatus::Authorized && $order->ndi_status === \App\Modules\Orders\Enums\NdiOrderStatus::Accepted)
+                @if ($order->status === \App\Modules\Orders\Enums\OrderStatus::AwaitingPayment && $order->payment_status === \App\Modules\Orders\Enums\PaymentStatus::Authorized && $order->ndi_status === \App\Modules\Orders\Enums\NdiOrderStatus::Accepted && ! $payment->authorizationExpired())
                     <form class="mt-5 border-t border-easytire-border pt-5" method="post" action="{{ route('admin.orders.payment.capture', $order) }}" data-testid="admin-capture-payment">
                         @csrf
                         <p class="max-w-3xl text-sm text-easytire-muted">{{ __('order_ui.capture_help') }}</p>
+                        <fieldset class="mt-4 border border-easytire-border p-4">
+                            <legend class="px-2 text-sm font-black">{{ __('order_ui.capture_lines') }}</legend>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                @foreach ($order->items as $item)
+                                    <label class="grid grid-cols-[1fr_5rem] items-center gap-3 text-sm"><span>{{ $item->product_title }} <span class="text-easytire-muted">({{ __('order_ui.max_quantity', ['quantity' => $item->quantity]) }})</span></span><input class="easytire-input min-h-11 w-full px-3" type="number" min="0" max="{{ $item->quantity }}" name="items[product-{{ $item->id }}]" value="{{ old('items.product-'.$item->id, $item->quantity) }}"></label>
+                                @endforeach
+                                @foreach ($order->serviceItems as $item)
+                                    <label class="grid grid-cols-[1fr_5rem] items-center gap-3 text-sm"><span>{{ app()->getLocale() === 'ru' ? $item->title_ru : $item->title_nb }} <span class="text-easytire-muted">({{ __('order_ui.max_quantity', ['quantity' => $item->quantity]) }})</span></span><input class="easytire-input min-h-11 w-full px-3" type="number" min="0" max="{{ $item->quantity }}" name="items[service-{{ $item->id }}]" value="{{ old('items.service-'.$item->id, $item->quantity) }}"></label>
+                                @endforeach
+                            </div>
+                            <label class="mt-4 flex items-start gap-3 text-sm"><input class="mt-1 size-5" type="checkbox" name="customer_agreement" value="1"><span>{{ __('order_ui.partial_capture_agreement') }}</span></label>
+                        </fieldset>
                         <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
                             <label class="text-sm font-bold">{{ __('order_ui.goods_ready_note') }}<input class="easytire-input mt-2 min-h-11 w-full px-3" name="note" required maxlength="1000" value="{{ old('note', $order->goods_ready_note) }}"></label>
                             <button class="min-h-11 bg-easytire-brand px-5 text-sm font-black text-white sm:self-end" type="submit">{{ __('order_ui.capture_now') }}</button>
@@ -55,6 +76,42 @@
                             <button class="min-h-11 border border-easytire-border bg-white px-5 text-sm font-black hover:border-easytire-brand sm:self-end" type="submit">{{ __('order_ui.void') }}</button>
                         </div>
                     </form>
+                @endif
+
+                @if (in_array($payment->status, [\App\Modules\Orders\Enums\PaymentStatus::Paid, \App\Modules\Orders\Enums\PaymentStatus::PartiallyPaid, \App\Modules\Orders\Enums\PaymentStatus::PartiallyRefunded], true) && $payment->refundableMinor() > 0)
+                    @php($capturedOperation = $payment->operations->where('type', \App\Modules\Payments\Enums\PaymentOperationType::Capture)->where('status', \App\Modules\Payments\Enums\PaymentOperationStatus::Completed)->sortByDesc('started_at')->first())
+                    @php($capturedQuantities = collect($capturedOperation?->items_encrypted ?? [])->mapWithKeys(fn ($line) => [$line['line_id'] => (int) $line['quantity']]))
+                    @php($refundedQuantities = $payment->operations->where('type', \App\Modules\Payments\Enums\PaymentOperationType::Refund)->where('status', \App\Modules\Payments\Enums\PaymentOperationStatus::Completed)->flatMap(fn ($operation) => $operation->items_encrypted ?? [])->groupBy('line_id')->map(fn ($lines) => $lines->sum('quantity')))
+                    <form class="mt-5 border-t border-easytire-border pt-5" method="post" action="{{ route('admin.orders.payment.refund', $order) }}" data-testid="admin-refund-payment">
+                        @csrf
+                        <p class="max-w-3xl text-sm text-easytire-muted">{{ __('order_ui.refund_help') }}</p>
+                        <fieldset class="mt-4 border border-easytire-border p-4">
+                            <legend class="px-2 text-sm font-black">{{ __('order_ui.refund_lines') }}</legend>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                @foreach ($order->items as $item)
+                                    @php($lineId = 'product-'.$item->id)
+                                    @php($remaining = max(0, (int) $capturedQuantities->get($lineId, 0) - (int) $refundedQuantities->get($lineId, 0)))
+                                    @if($remaining > 0)<label class="grid grid-cols-[1fr_5rem] items-center gap-3 text-sm"><span>{{ $item->product_title }} <span class="text-easytire-muted">({{ __('order_ui.max_quantity', ['quantity' => $remaining]) }})</span></span><input class="easytire-input min-h-11 w-full px-3" type="number" min="0" max="{{ $remaining }}" name="items[{{ $lineId }}]" value="0"></label>@endif
+                                @endforeach
+                                @foreach ($order->serviceItems as $item)
+                                    @php($lineId = 'service-'.$item->id)
+                                    @php($remaining = max(0, (int) $capturedQuantities->get($lineId, 0) - (int) $refundedQuantities->get($lineId, 0)))
+                                    @if($remaining > 0)<label class="grid grid-cols-[1fr_5rem] items-center gap-3 text-sm"><span>{{ app()->getLocale() === 'ru' ? $item->title_ru : $item->title_nb }} <span class="text-easytire-muted">({{ __('order_ui.max_quantity', ['quantity' => $remaining]) }})</span></span><input class="easytire-input min-h-11 w-full px-3" type="number" min="0" max="{{ $remaining }}" name="items[{{ $lineId }}]" value="0"></label>@endif
+                                @endforeach
+                            </div>
+                        </fieldset>
+                        <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+                            <label class="text-sm font-bold">{{ __('order_ui.refund_reason') }}<input class="easytire-input mt-2 min-h-11 w-full px-3" name="note" required maxlength="1000"></label>
+                            <button class="min-h-11 bg-easytire-brand px-5 text-sm font-black text-white sm:self-end" type="submit">{{ __('order_ui.refund_now') }}</button>
+                        </div>
+                    </form>
+                @endif
+
+                @if ($payment->operations->isNotEmpty())
+                    <div class="mt-5 border-t border-easytire-border pt-5">
+                        <h3 class="font-black">{{ __('order_ui.operation_log') }}</h3>
+                        <div class="mt-3 overflow-x-auto"><table class="min-w-full text-left text-sm"><thead><tr><th class="p-2">{{ __('order_ui.operation') }}</th><th class="p-2">{{ __('orders.status') }}</th><th class="p-2">{{ __('order_ui.amount') }}</th><th class="p-2">{{ __('order_ui.operator') }}</th><th class="p-2">{{ __('orders.note') }}</th><th class="p-2">{{ __('order_ui.started') }}</th></tr></thead><tbody class="divide-y divide-easytire-border">@foreach($payment->operations->sortByDesc('started_at') as $operation)<tr><td class="p-2 font-bold">{{ __('order_ui.operation_'.$operation->type->value) }}</td><td class="p-2">{{ __('order_ui.operation_status_'.$operation->status->value) }}</td><td class="p-2">{{ $money($operation->amount_minor) }}</td><td class="p-2">{{ $operation->actor?->email ?: __('order_ui.system') }}</td><td class="p-2">{{ $operation->note }}</td><td class="p-2">{{ $operation->started_at }}</td></tr>@endforeach</tbody></table></div>
+                    </div>
                 @endif
             </section>
         @endif

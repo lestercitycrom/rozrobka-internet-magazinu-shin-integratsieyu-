@@ -83,6 +83,7 @@ test('Dintero test checkout creates a manual-capture session with an exact immut
         }
 
         return $request['profile_id'] === 'default'
+            && $request->hasHeader('Dintero-Feature-Toggles', 'strict-session-amounts')
             && $request['configuration']['auto_capture'] === false
             && $request['configuration']['channel'] === 'ecommerce'
             && $request['order']['merchant_reference'] === 'ET-TEST-1001'
@@ -117,6 +118,9 @@ test('Dintero transaction lookup and final capture use the authoritative transac
 
     expect($transaction->state)->toBe(ProviderPaymentState::Authorized)
         ->and($transaction->merchantReference)->toBe('ET-TEST-1001')
+        ->and($transaction->authorizationExpiresAt)->toBe('2026-08-29T10:00:00Z')
+        ->and($transaction->cardLastFour)->toBe('4242')
+        ->and($transaction->paymentProductType)->toBe('dintero_psp.creditcard')
         ->and($capture->providerReference)->toBe('txn-1');
 
     Http::assertSent(fn (HttpRequest $request): bool => ! str_ends_with($request->url(), '/capture') || (
@@ -124,6 +128,54 @@ test('Dintero transaction lookup and final capture use the authoritative transac
         && $request['capture_reference'] === 'ET-TEST-1001'
         && $request['final_capture'] === true
         && $request['items'][0]['line_id'] === 'product-1'
+    ));
+});
+
+test('Dintero partial capture and refund submit exact immutable line items and references', function (): void {
+    Http::fake(function (HttpRequest $request) {
+        if (str_ends_with($request->url(), '/auth/token')) {
+            return Http::response(['access_token' => 'sandbox-token', 'expires_in' => 3600]);
+        }
+        if (str_ends_with($request->url(), '/capture')) {
+            return Http::response(dinteroTransaction('PARTIALLY_CAPTURED'));
+        }
+
+        return Http::response(dinteroTransaction('PARTIALLY_REFUNDED'));
+    });
+
+    $gateway = new DinteroPaymentGateway(new DinteroConfiguration);
+    $items = [['line_id' => 'product-1', 'quantity' => 1, 'amount' => 74950]];
+    $gateway->capture(new PaymentOperationRequest(
+        providerReference: 'txn-1',
+        amountMinor: 74950,
+        currency: 'NOK',
+        idempotencyKey: '33333333-3333-4333-8333-333333333333',
+        operationReference: 'ET-TEST-1001',
+        items: $items,
+        finalCapture: true,
+    ));
+    $gateway->refund(new PaymentOperationRequest(
+        providerReference: 'txn-1',
+        amountMinor: 74950,
+        currency: 'NOK',
+        idempotencyKey: '44444444-4444-4444-8444-444444444444',
+        operationReference: 'ET-TEST-1001',
+        items: $items,
+        reason: 'Customer return',
+    ));
+
+    Http::assertSent(fn (HttpRequest $request): bool => ! str_ends_with($request->url(), '/capture') || (
+        $request['amount'] === 74950
+        && $request['items'] === $items
+        && $request['final_capture'] === true
+        && $request['metadata']['ext_idempotency_key'] === '33333333-3333-4333-8333-333333333333'
+    ));
+    Http::assertSent(fn (HttpRequest $request): bool => ! str_ends_with($request->url(), '/refund') || (
+        $request['amount'] === 74950
+        && $request['items'] === $items
+        && $request['reason'] === 'Customer return'
+        && $request['metadata']['ext_idempotency_key'] === '44444444-4444-4444-8444-444444444444'
+        && $request['metadata']['ext_refund_reference'] === 'ET-TEST-1001'
     ));
 });
 
@@ -172,7 +224,14 @@ function dinteroTransaction(string $status): array
         'status' => $status,
         'amount' => 149900,
         'currency' => 'NOK',
-        'payment_product_type' => 'card',
+        'payment_product_type' => 'dintero_psp.creditcard',
         'updated_at' => '2026-08-22T10:00:00Z',
+        'card' => ['last_four' => '4242'],
+        'events' => [
+            [
+                'event' => 'AUTHORIZE',
+                'metadata' => ['authorization_expiration' => '2026-08-29T10:00:00Z'],
+            ],
+        ],
     ];
 }

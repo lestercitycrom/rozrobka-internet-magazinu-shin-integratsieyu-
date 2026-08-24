@@ -32,6 +32,11 @@ final class DisabledPaymentGateway implements PaymentGateway
         throw new PaymentsDisabled('Payment void is disabled until a provider contract is configured.');
     }
 
+    public function refund(PaymentOperationRequest $request): PaymentOperationResult
+    {
+        throw new PaymentsDisabled('Payment refund is disabled until a provider contract is configured.');
+    }
+
     public function transaction(string $providerReference): PaymentTransactionResult
     {
         throw new PaymentsDisabled('Payment lookup is disabled until a provider contract is configured.');

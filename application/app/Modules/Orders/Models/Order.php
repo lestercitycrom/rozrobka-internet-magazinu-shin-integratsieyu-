@@ -20,7 +20,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'integration_profile', 'is_integration_test',
     'currency', 'subtotal_minor', 'total_minor', 'fulfilment_method', 'customer_name',
     'customer_email', 'customer_phone', 'vehicle_registration', 'fitment_snapshot', 'customer_note',
-    'terms_accepted_at', 'privacy_accepted_at', 'pricing_snapshot_at', 'submitted_at',
+    'fitment_confirmed', 'payment_obligation_confirmed', 'early_service_start_requested', 'early_service_start_requested_at',
+    'terms_accepted_at', 'terms_version', 'privacy_accepted_at', 'privacy_version', 'legal_acceptance_snapshot',
+    'pricing_snapshot_at', 'submitted_at',
     'goods_ready_at', 'goods_ready_by_user_id', 'goods_ready_note',
 ])]
 class Order extends Model
@@ -40,6 +42,11 @@ class Order extends Model
             'is_integration_test' => 'boolean',
             'fulfilment_method' => FulfilmentMethod::class,
             'fitment_snapshot' => 'array',
+            'fitment_confirmed' => 'boolean',
+            'payment_obligation_confirmed' => 'boolean',
+            'early_service_start_requested' => 'boolean',
+            'early_service_start_requested_at' => 'datetime',
+            'legal_acceptance_snapshot' => 'array',
             'subtotal_minor' => 'integer',
             'total_minor' => 'integer',
             'terms_accepted_at' => 'datetime',

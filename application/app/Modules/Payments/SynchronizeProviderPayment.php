@@ -20,6 +20,7 @@ final class SynchronizeProviderPayment
         private readonly PaymentGateway $gateway,
         private readonly OutboxPublisher $outbox,
         private readonly PaidOrderPayload $paidOrderPayload,
+        private readonly AuthorizationExpiryPolicy $expiryPolicy,
     ) {}
 
     public function execute(Order $order, string $providerReference, string $source): PaymentAttempt
@@ -41,6 +42,8 @@ final class SynchronizeProviderPayment
             'status' => $transaction->externalStatus,
             'amount_minor' => $transaction->amountMinor,
             'currency' => $transaction->currency,
+            'payment_product_type' => $transaction->paymentProductType,
+            'authorization_expires_at' => $transaction->authorizationExpiresAt,
             'updated_at' => $transaction->updatedAt,
         ], JSON_THROW_ON_ERROR));
 
@@ -54,11 +57,7 @@ final class SynchronizeProviderPayment
             }
             $this->assertLockedTransaction($lockedOrder, $attempt, $transaction);
 
-            $duplicate = PaymentWebhookEvent::query()
-                ->where('provider', $provider)
-                ->where('external_event_id', $eventId)
-                ->exists();
-            if ($duplicate) {
+            if (PaymentWebhookEvent::query()->where('provider', $provider)->where('external_event_id', $eventId)->exists()) {
                 return $attempt;
             }
 
@@ -82,44 +81,63 @@ final class SynchronizeProviderPayment
             $metadata['payment_product_type'] = $transaction->paymentProductType;
             $metadata['provider_updated_at'] = $transaction->updatedAt;
 
+            $authorizedAt = $attempt->authorized_at;
+            if ($transaction->state === ProviderPaymentState::Authorized && $authorizedAt === null) {
+                $authorizedAt = now();
+            }
+            $authorizationExpiresAt = $attempt->authorization_expires_at;
+            if ($transaction->state === ProviderPaymentState::Authorized && $authorizedAt !== null) {
+                $authorizationExpiresAt = $this->expiryPolicy->expiresAt($transaction, $authorizedAt);
+            }
+
+            $paymentStatus = $this->paymentStatus($transaction->state, $attempt->status);
+            $capturedAmount = $attempt->captured_amount_minor;
+            $refundedAmount = $attempt->refunded_amount_minor;
+            if ($transaction->state === ProviderPaymentState::Paid && $capturedAmount === 0) {
+                $capturedAmount = $transaction->amountMinor;
+            }
+            if ($transaction->state === ProviderPaymentState::Refunded) {
+                $capturedAmount = max($capturedAmount, $transaction->amountMinor);
+                $refundedAmount = $capturedAmount;
+            }
+
             $outcome = match ($transaction->state) {
                 ProviderPaymentState::Pending => 'pending',
                 ProviderPaymentState::Authorized => 'authorized',
+                ProviderPaymentState::PartiallyPaid => $lockedOrder->goods_ready_at === null ? 'partial_capture_without_goods_ready' : 'partially_paid',
                 ProviderPaymentState::Paid => $lockedOrder->goods_ready_at === null ? 'paid_without_goods_ready' : 'paid',
                 ProviderPaymentState::Voided => 'voided',
                 ProviderPaymentState::Failed => 'failed',
+                ProviderPaymentState::PartiallyRefunded => 'partially_refunded',
+                ProviderPaymentState::Refunded => 'refunded',
             };
 
             $attempt->update([
                 'provider_reference' => $transaction->providerReference,
                 'provider_session_reference' => $transaction->providerSessionReference,
-                'status' => match ($transaction->state) {
-                    ProviderPaymentState::Pending => $attempt->status,
-                    ProviderPaymentState::Authorized => PaymentStatus::Authorized,
-                    ProviderPaymentState::Paid => PaymentStatus::Paid,
-                    ProviderPaymentState::Voided => PaymentStatus::Voided,
-                    ProviderPaymentState::Failed => PaymentStatus::Failed,
-                },
+                'status' => $paymentStatus,
                 'metadata_encrypted' => $metadata,
-                'authorized_at' => $transaction->state === ProviderPaymentState::Authorized && $attempt->authorized_at === null ? now() : $attempt->authorized_at,
-                'captured_at' => $transaction->state === ProviderPaymentState::Paid && $attempt->captured_at === null ? now() : $attempt->captured_at,
+                'payment_product_type' => $transaction->paymentProductType ?: $attempt->payment_product_type,
+                'card_last_four' => $transaction->cardLastFour ?: $attempt->card_last_four,
+                'authorized_at' => $authorizedAt,
+                'authorization_expires_at' => $authorizationExpiresAt,
+                'captured_amount_minor' => $capturedAmount,
+                'refunded_amount_minor' => $refundedAmount,
+                'captured_at' => in_array($transaction->state, [ProviderPaymentState::PartiallyPaid, ProviderPaymentState::Paid], true) && $attempt->captured_at === null ? now() : $attempt->captured_at,
                 'voided_at' => $transaction->state === ProviderPaymentState::Voided && $attempt->voided_at === null ? now() : $attempt->voided_at,
-                'completed_at' => in_array($transaction->state, [ProviderPaymentState::Paid, ProviderPaymentState::Voided, ProviderPaymentState::Failed], true) ? ($attempt->completed_at ?? now()) : $attempt->completed_at,
+                'refunded_at' => in_array($transaction->state, [ProviderPaymentState::PartiallyRefunded, ProviderPaymentState::Refunded], true) ? now() : $attempt->refunded_at,
+                'completed_at' => in_array($transaction->state, [ProviderPaymentState::Paid, ProviderPaymentState::Voided, ProviderPaymentState::Failed, ProviderPaymentState::Refunded], true) ? ($attempt->completed_at ?? now()) : $attempt->completed_at,
             ]);
 
             $previousOrderStatus = $lockedOrder->status;
-            $lockedOrder->update([
-                'payment_status' => match ($transaction->state) {
-                    ProviderPaymentState::Pending => $lockedOrder->payment_status,
-                    ProviderPaymentState::Authorized => PaymentStatus::Authorized,
-                    ProviderPaymentState::Paid => PaymentStatus::Paid,
-                    ProviderPaymentState::Voided => PaymentStatus::Voided,
-                    ProviderPaymentState::Failed => PaymentStatus::Failed,
-                },
-                'status' => $transaction->state === ProviderPaymentState::Paid ? OrderStatus::Paid : $lockedOrder->status,
-            ]);
+            $newOrderStatus = match ($transaction->state) {
+                ProviderPaymentState::PartiallyPaid, ProviderPaymentState::Paid => OrderStatus::Paid,
+                ProviderPaymentState::Refunded => OrderStatus::Refunded,
+                default => $lockedOrder->status,
+            };
+            $lockedOrder->update(['payment_status' => $paymentStatus, 'status' => $newOrderStatus]);
 
-            if ($transaction->state === ProviderPaymentState::Paid && $previousOrderStatus !== OrderStatus::Paid) {
+            if (in_array($transaction->state, [ProviderPaymentState::PartiallyPaid, ProviderPaymentState::Paid], true) && $previousOrderStatus !== OrderStatus::Paid) {
                 $lockedOrder->statusHistory()->create([
                     'from_status' => $previousOrderStatus,
                     'to_status' => OrderStatus::Paid,
@@ -128,6 +146,7 @@ final class SynchronizeProviderPayment
                         'provider' => $provider,
                         'provider_reference' => $transaction->providerReference,
                         'unexpected_capture' => $lockedOrder->goods_ready_at === null,
+                        'partial' => $transaction->state === ProviderPaymentState::PartiallyPaid,
                     ],
                     'occurred_at' => now(),
                 ]);
@@ -150,6 +169,20 @@ final class SynchronizeProviderPayment
         }, 3);
     }
 
+    private function paymentStatus(ProviderPaymentState $state, PaymentStatus $current): PaymentStatus
+    {
+        return match ($state) {
+            ProviderPaymentState::Pending => $current,
+            ProviderPaymentState::Authorized => PaymentStatus::Authorized,
+            ProviderPaymentState::PartiallyPaid => PaymentStatus::PartiallyPaid,
+            ProviderPaymentState::Paid => PaymentStatus::Paid,
+            ProviderPaymentState::Voided => PaymentStatus::Voided,
+            ProviderPaymentState::Failed => PaymentStatus::Failed,
+            ProviderPaymentState::PartiallyRefunded => PaymentStatus::PartiallyRefunded,
+            ProviderPaymentState::Refunded => PaymentStatus::Refunded,
+        };
+    }
+
     private function assertTransaction(Order $order, PaymentTransactionResult $transaction): void
     {
         if (! hash_equals($order->public_reference, $transaction->merchantReference)
@@ -162,12 +195,10 @@ final class SynchronizeProviderPayment
     private function assertLockedTransaction(Order $order, PaymentAttempt $attempt, PaymentTransactionResult $transaction): void
     {
         $this->assertTransaction($order, $transaction);
-        if ($attempt->provider_session_reference !== null
-            && ! hash_equals($attempt->provider_session_reference, $transaction->providerSessionReference)) {
+        if ($attempt->provider_session_reference !== null && ! hash_equals($attempt->provider_session_reference, $transaction->providerSessionReference)) {
             throw new PaymentConfirmationRejected('Provider transaction belongs to a different checkout session.');
         }
-        if ($attempt->provider_reference !== null
-            && ! hash_equals($attempt->provider_reference, $transaction->providerReference)) {
+        if ($attempt->provider_reference !== null && ! hash_equals($attempt->provider_reference, $transaction->providerReference)) {
             throw new PaymentConfirmationRejected('Provider transaction reference changed unexpectedly.');
         }
     }
@@ -175,10 +206,12 @@ final class SynchronizeProviderPayment
     private function isTerminalRegression(PaymentStatus $local, ProviderPaymentState $remote): bool
     {
         return match ($local) {
-            PaymentStatus::Paid => $remote !== ProviderPaymentState::Paid,
+            PaymentStatus::Refunded => $remote !== ProviderPaymentState::Refunded,
+            PaymentStatus::PartiallyRefunded => ! in_array($remote, [ProviderPaymentState::PartiallyRefunded, ProviderPaymentState::Refunded], true),
+            PaymentStatus::Paid => ! in_array($remote, [ProviderPaymentState::Paid, ProviderPaymentState::PartiallyRefunded, ProviderPaymentState::Refunded], true),
+            PaymentStatus::PartiallyPaid => ! in_array($remote, [ProviderPaymentState::PartiallyPaid, ProviderPaymentState::Paid, ProviderPaymentState::PartiallyRefunded, ProviderPaymentState::Refunded], true),
             PaymentStatus::Voided => $remote !== ProviderPaymentState::Voided,
             PaymentStatus::Failed => $remote !== ProviderPaymentState::Failed,
-            PaymentStatus::Refunded => true,
             default => false,
         };
     }

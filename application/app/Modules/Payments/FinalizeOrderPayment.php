@@ -11,6 +11,7 @@ use App\Modules\NdiApi\SubmitNdiOrder;
 use App\Modules\Orders\Enums\NdiOrderStatus;
 use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Models\Order;
+use App\Modules\Orders\QueueCustomerOrderMessage;
 use App\Modules\Payments\Contracts\OrderPaymentReadiness;
 use App\Modules\Payments\Exceptions\PaymentOperationRejected;
 use App\Modules\Payments\Models\PaymentAttempt;
@@ -23,6 +24,7 @@ final class FinalizeOrderPayment
         private readonly ConfirmNdiAvailability $availability,
         private readonly SubmitNdiOrder $submit,
         private readonly VoidAuthorizedPayment $void,
+        private readonly QueueCustomerOrderMessage $customerMessages,
     ) {}
 
     public function execute(Order $order): PaymentAttempt
@@ -42,6 +44,8 @@ final class FinalizeOrderPayment
             throw new NdiOrderNotReady('NDI rejected the order; the payment authorization was voided.');
         }
         if ($order->ndi_status === NdiOrderStatus::Accepted) {
+            $this->customerMessages->execute($order, 'order_accepted');
+
             return PaymentAttempt::query()->where('order_id', $order->id)->firstOrFail();
         }
 
@@ -62,6 +66,8 @@ final class FinalizeOrderPayment
         }
 
         if ($submission->status === NdiSubmissionStatus::Accepted) {
+            $this->customerMessages->execute($order->refresh(), 'order_accepted');
+
             return PaymentAttempt::query()->where('order_id', $order->id)->firstOrFail();
         }
         if ($submission->status === NdiSubmissionStatus::Rejected) {

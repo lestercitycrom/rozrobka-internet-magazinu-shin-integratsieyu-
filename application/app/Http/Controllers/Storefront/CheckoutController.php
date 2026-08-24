@@ -59,7 +59,27 @@ class CheckoutController extends Controller
                 && hash_equals((string) ($confirmedFitment['registration'] ?? ''), $registration)
                     ? collect($confirmedFitment)->only(['source', 'width', 'aspect', 'rim', 'confirmed_at'])->all()
                     : null;
-            $result = $orders->execute(new CheckoutData($key, app()->getLocale(), $request->string('name'), $request->string('email'), $request->string('phone'), FulfilmentMethod::Pickup, $registration, $request->input('note'), $fitmentSnapshot), $cart->resolve());
+            $snapshot = $cart->resolve();
+            if ($snapshot->isCheckoutReady() && ! $request->boolean('fitment_confirmation')) {
+                return back()->withInput()->withErrors(['fitment_confirmation' => __('commerce.fitment_confirmation_required')]);
+            }
+            if ($snapshot->isCheckoutReady() && $snapshot->serviceLines !== [] && ! $request->boolean('early_service_start')) {
+                return back()->withInput()->withErrors(['early_service_start' => __('commerce.early_service_start_required')]);
+            }
+            $result = $orders->execute(new CheckoutData(
+                idempotencyKey: $key,
+                locale: app()->getLocale(),
+                customerName: (string) $request->string('name'),
+                customerEmail: (string) $request->string('email'),
+                customerPhone: (string) $request->string('phone'),
+                fulfilmentMethod: FulfilmentMethod::Pickup,
+                vehicleRegistration: $registration,
+                customerNote: $request->input('note'),
+                fitmentSnapshot: $fitmentSnapshot,
+                fitmentConfirmed: $request->boolean('fitment_confirmation'),
+                paymentObligationConfirmed: true,
+                earlyServiceStartRequested: $snapshot->serviceLines !== [] && $request->boolean('early_service_start'),
+            ), $snapshot);
         } catch (CartNotReady) {
             return redirect()->route($this->routePrefix().'cart.index')
                 ->with('cart_error', __('commerce.checkout_not_ready'));
@@ -102,7 +122,7 @@ class CheckoutController extends Controller
 
     public function thanks(string $reference)
     {
-        $order = Order::query()->where('public_reference', $reference)->firstOrFail();
+        $order = Order::query()->with(['items', 'serviceItems', 'paymentAttempt'])->where('public_reference', $reference)->firstOrFail();
 
         return view('storefront.checkout.thanks', compact('reference', 'order'));
     }

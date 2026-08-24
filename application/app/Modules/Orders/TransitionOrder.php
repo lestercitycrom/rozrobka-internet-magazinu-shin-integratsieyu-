@@ -58,7 +58,7 @@ final class TransitionOrder
                 throw new InvalidOrderTransition("Transition from {$locked->status->value} to {$to->value} is not allowed.");
             }
 
-            if ($to === OrderStatus::FulfilmentPending && $locked->payment_status !== PaymentStatus::Paid) {
+            if ($to === OrderStatus::FulfilmentPending && ! in_array($locked->payment_status, [PaymentStatus::Paid, PaymentStatus::PartiallyPaid], true)) {
                 throw new InvalidOrderTransition('Fulfilment cannot start before confirmed payment.');
             }
 

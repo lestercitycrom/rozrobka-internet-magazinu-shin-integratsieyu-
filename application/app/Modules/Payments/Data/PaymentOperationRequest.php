@@ -12,5 +12,7 @@ final readonly class PaymentOperationRequest
         public string $operationReference = '',
         /** @var list<array{line_id:string,quantity:int,amount:int}> */
         public array $items = [],
+        public bool $finalCapture = true,
+        public ?string $reason = null,
     ) {}
 }

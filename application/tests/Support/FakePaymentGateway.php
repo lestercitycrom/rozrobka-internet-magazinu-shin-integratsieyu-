@@ -23,11 +23,16 @@ final class FakePaymentGateway implements PaymentGateway
     /** @var list<PaymentOperationRequest> */
     public array $voidCalls = [];
 
+    /** @var list<PaymentOperationRequest> */
+    public array $refundCalls = [];
+
     public bool $failNextAuthorizationTransport = false;
 
     public bool $failNextCaptureTransport = false;
 
     public bool $failNextVoidTransport = false;
+
+    public bool $failNextRefundTransport = false;
 
     public bool $rejectNextAuthorization = false;
 
@@ -66,6 +71,9 @@ final class FakePaymentGateway implements PaymentGateway
             amountMinor: $request->amountMinor,
             currency: $request->currency,
             externalStatus: 'AUTHORIZED',
+            paymentProductType: 'dintero_psp.creditcard',
+            authorizationExpiresAt: now()->addDays(7)->toIso8601String(),
+            cardLastFour: '4242',
         );
 
         return $result;
@@ -88,6 +96,17 @@ final class FakePaymentGateway implements PaymentGateway
         if ($this->failNextVoidTransport) {
             $this->failNextVoidTransport = false;
             throw new RuntimeException('Synthetic ambiguous void transport failure.');
+        }
+
+        return new PaymentOperationResult($request->providerReference);
+    }
+
+    public function refund(PaymentOperationRequest $request): PaymentOperationResult
+    {
+        $this->refundCalls[] = $request;
+        if ($this->failNextRefundTransport) {
+            $this->failNextRefundTransport = false;
+            throw new RuntimeException('Synthetic ambiguous refund transport failure.');
         }
 
         return new PaymentOperationResult($request->providerReference);

@@ -266,6 +266,7 @@
                     <a href="tel:{{ $phoneHref }}">{{ $phoneDisplay }}</a>
                     <a href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a>
                     <a href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ $businessAddress }}</a>
+                    <span>{{ config('storefront.legal_name') }} · org.nr. {{ config('storefront.organisation_number') }} MVA</span>
                 </div>
                 <a class="et-btn et-btn--ghost et-btn--small" href="{{ $bookingUrl }}" data-testid="footer-booking">{{ __('pro.nav.booking') }}</a>
             </div>
@@ -299,6 +300,7 @@
                             <li><a href="{{ route($routePrefix.'content.show', $slug) }}">{{ __('legal.'.$label) }}</a></li>
                         @endif
                     @endforeach
+                    <li><a href="/dokumenter/angreskjema-easytire.pdf">{{ __('commerce.withdrawal_form') }}</a></li>
                 </ul>
             </div>
         </div>

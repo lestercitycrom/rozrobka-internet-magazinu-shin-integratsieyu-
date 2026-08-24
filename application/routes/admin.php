@@ -72,6 +72,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/transition', [OrderController::class, 'transition'])->name('orders.transition');
         Route::post('/orders/{order}/payment/capture', [OrderPaymentController::class, 'capture'])->name('orders.payment.capture');
+        Route::post('/orders/{order}/payment/refund', [OrderPaymentController::class, 'refund'])->name('orders.payment.refund');
         Route::post('/orders/{order}/payment/reconcile', [OrderPaymentController::class, 'reconcile'])->name('orders.payment.reconcile');
         Route::post('/orders/{order}/payment/void', [OrderPaymentController::class, 'void'])->name('orders.payment.void');
         Route::get('/media', [MediaAssetController::class, 'index'])->name('media.index');

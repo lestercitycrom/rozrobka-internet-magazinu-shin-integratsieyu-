@@ -58,6 +58,48 @@ final class DinteroOrderPayload
         );
     }
 
+    /**
+     * @param  array<string, int|string>  $quantities  keyed by Dintero line_id
+     * @return list<array{line_id:string,quantity:int,amount:int}>
+     */
+    public function operationItemsForQuantities(Order $order, array $quantities): array
+    {
+        $selected = [];
+        foreach ($this->authorizationItems($order) as $item) {
+            $quantity = filter_var($quantities[$item['line_id']] ?? 0, FILTER_VALIDATE_INT);
+            if ($quantity === false || $quantity < 0 || $quantity > $item['quantity']) {
+                throw new PaymentOperationRejected('Payment operation quantity is outside the immutable order line.');
+            }
+            if ($quantity === 0) {
+                continue;
+            }
+            if ($item['amount'] % $item['quantity'] !== 0) {
+                throw new PaymentOperationRejected('Payment operation cannot split a non-divisible order line safely.');
+            }
+            $selected[] = [
+                'line_id' => $item['line_id'],
+                'quantity' => $quantity,
+                'amount' => intdiv($item['amount'], $item['quantity']) * $quantity,
+            ];
+        }
+
+        if ($selected === []) {
+            throw new PaymentOperationRejected('Payment operation must include at least one order line.');
+        }
+
+        return $selected;
+    }
+
+    public function operationAmount(array $items): int
+    {
+        $amount = array_sum(array_map(static fn (array $item): int => (int) ($item['amount'] ?? 0), $items));
+        if ($amount < 1) {
+            throw new PaymentOperationRejected('Payment operation amount must be positive.');
+        }
+
+        return $amount;
+    }
+
     /** @return array{id:string,line_id:string,description:string,quantity:int,amount:int,vat_amount:int,vat:int} */
     private function authorizationLine(string $id, string $lineId, string $description, int $quantity, int $amount, int $vat): array
     {

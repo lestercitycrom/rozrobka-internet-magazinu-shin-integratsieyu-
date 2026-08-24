@@ -16,5 +16,7 @@ final readonly class PaymentTransactionResult
         public string $externalStatus,
         public ?string $paymentProductType = null,
         public ?string $updatedAt = null,
+        public ?string $authorizationExpiresAt = null,
+        public ?string $cardLastFour = null,
     ) {}
 }

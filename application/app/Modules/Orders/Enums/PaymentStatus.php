@@ -8,9 +8,12 @@ enum PaymentStatus: string
     case Pending = 'pending';
     case Authorized = 'authorized';
     case Capturing = 'capturing';
+    case PartiallyPaid = 'partially_paid';
     case Voiding = 'voiding';
+    case Refunding = 'refunding';
     case Paid = 'paid';
     case Voided = 'voided';
     case Failed = 'failed';
+    case PartiallyRefunded = 'partially_refunded';
     case Refunded = 'refunded';
 }

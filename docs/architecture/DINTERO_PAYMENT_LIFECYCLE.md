@@ -1,6 +1,6 @@
 # Dintero payment lifecycle
 
-Updated: 2026-08-22. Owner: Mister Red.
+Updated: 2026-08-24. Owner: Mister Red.
 
 ## Fixed business decision
 
@@ -25,7 +25,11 @@ immutable order snapshot
   -> EasyTire operator confirms goods received and ready
   -> final Dintero capture with the immutable item lines
   -> paid order outbox -> Notion / Telegram
+  -> customer confirmation prepared from the immutable order and legal versions
+  -> full/partial refund against captured, unrefunded immutable lines when required
 ```
+
+A partial capture requires documented customer agreement. EasyTire currently sends it as a final capture, so Dintero releases the remaining authorization. A capture is rejected after the recorded authorization expiry. Capture, void and refund each create an idempotent local operation with actor, amount, item lines, note and provider result.
 
 The browser return URL is informational. Dintero callback plus a server-side `GET transaction` is authoritative. Callback requests are HMAC-validated when `DINTERO_REQUIRE_CALLBACK_SIGNATURE=true`. A paid/voided terminal local state cannot be downgraded by an older callback.
 
@@ -51,6 +55,9 @@ The order page can expose only state-compatible operations:
 - reconcile an existing Dintero transaction;
 - mark goods received/ready and capture only when payment is authorized and NDI is accepted;
 - void only an uncaptured authorization while NDI is not submitted or has rejected the order.
+- select exact immutable quantities for an agreed partial capture;
+- refund only captured, unrefunded quantities against the original transaction;
+- inspect authorization expiry, captured/refunded totals, payment method and the immutable operation audit trail.
 
 The goods-ready action requires an operator note and records the operator and time. Generic local status changes do not call Dintero or NDI.
 
@@ -60,6 +67,9 @@ The goods-ready action requires an operator note and records the operator and ti
 - A definitive NDI rejection voids the authorization.
 - An uncertain C1 result is not retried automatically and is not captured.
 - An uncertain Dintero capture/void remains in an intermediate state and must be reconciled; the operator must not start a second payment.
+- An uncertain refund follows the same reconcile-first rule and must not be duplicated.
+- An expired authorization is never captured; a new customer-authorized payment is required.
+- Customer e-mail delivery stays disabled on staging and may be enabled only after production SMTP/sender verification.
 - A provider-side unexpected capture is recorded, the local order is reconciled as paid, and paid outbox messages are created once. It is also marked as an operational anomaly.
 - Notion and Telegram receive no order event for a pending or authorized payment. Their order event is created only for `paid`.
 
