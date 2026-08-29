@@ -1,6 +1,6 @@
 # EasyTire status
 
-Updated: 2026-08-24
+Updated: 2026-08-29
 Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 
 ## Environments
@@ -19,7 +19,7 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 | NDI catalogue | Normalised catalogue/import boundary implemented. Freshness and feed operations remain monitored separately. |
 | NDI sandbox order | Restricted test fixture/profile only: PartyID `1220000`, article `4765205551649102`, quantity `2`. |
 | Commercial NDI C1 | Disabled unless a separately authorised production gate enables it. |
-| Notion / Telegram | Code/outbox boundary exists; disabled pending approved schema, credentials and PII/idempotency decision. |
+| Notion / Telegram | Code/outbox boundary exists and remains disabled. Notion work is postponed by the owner; no audit or runtime activation is authorised in the current website initiative. |
 | Statens lookup | Implemented where environment key enables it; wheel/full-kit compatibility remains blocked on licensed PCD/DIA fitment data. |
 | RU storefront | Hidden QA route, `noindex`; not a public language selector. |
 
@@ -34,8 +34,10 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 
 ## Current work
 
-- Active task: [Issue #6](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/6), documentation-only release record.
-- Completed Dintero task: [Issue #4](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/4) / [PR #5](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/5).
-- Current requirements: [`docs/management/CURRENT_TZ_2026-08-22.md`](../docs/management/CURRENT_TZ_2026-08-22.md)
+- Active initiative: [Issue #9](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9), audit-first website conformity and later bounded remediation.
+- Active task: [Issue #10](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10), documentation-only source-to-implementation audit on `codex/issue-10-source-conformity-audit`.
+- GitHub `main` at audit start: `4f95712be4bf2238219b51533301823595c306a0`.
+- Notion is postponed and excluded from the current website remediation initiative.
+- Current requirements pending audit consolidation: [`docs/management/CURRENT_TZ_2026-08-22.md`](../docs/management/CURRENT_TZ_2026-08-22.md).
 
 This file is a short runtime snapshot. Detailed history belongs to merged Issues, PRs and the linked reports.

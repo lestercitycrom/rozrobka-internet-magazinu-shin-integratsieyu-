@@ -1,10 +1,11 @@
 # Current task
 
-- Issue: [#6 — Record Dintero staging release and temporary leadership mode](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/6)
+- Umbrella: [#9 — Audit website against customer sources and remediate confirmed gaps](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9)
+- Issue: [#10 — Compare current EasyTire implementation with customer correspondence and TZ](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10)
 - State: `in-progress`
-- Branch: `codex/issue-6-record-dintero-release`
-- Application changes: none
+- Branch: `codex/issue-10-source-conformity-audit`
+- Application changes: forbidden; audit documentation and redacted evidence only
 - Runtime changes: none
-- Most recently completed: [Issue #4](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/4) / [PR #5](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/5), merged and deployed to staging as `01a931d432b32a5a0633d1b508256b225387d429`
+- Base SHA: `4f95712be4bf2238219b51533301823595c306a0`
 
 The Issue is the full task. This file is only a pointer.
