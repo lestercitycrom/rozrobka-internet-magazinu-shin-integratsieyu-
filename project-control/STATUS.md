@@ -7,7 +7,7 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 
 | Environment | State | Canonical evidence |
 |---|---|---|
-| GitHub `main` | Dintero merchant-review release plus project-control documentation | `4f95712be4bf2238219b51533301823595c306a0` at audit start |
+| GitHub `main` | Accepted website conformity audit merged | `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736` / PR #17 |
 | Staging | Accepted release active and verified | <https://staging-easytire.bethub.fun>, server `REVISION` read-back |
 | Production | Not authorised | Separate production review and runtime decision required |
 
@@ -25,7 +25,7 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 
 ## Current quality baseline
 
-- GitHub Actions [run 32705217997](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/32705217997): application quality and reachable-history secret scan passed.
+- GitHub Actions [run 33245827285](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/33245827285): exact accepted audit head passed application quality and reachable-history secret scan.
 - Server release regression: 403 tests, 3069 assertions; backup, additive migrations, seeders and atomic activation passed.
 - Local release E2E: 124 passed, 5 intentional skips across buyer/admin desktop, mobile, 320px and RU QA projects.
 - Live staging Playwright: product → cart → checkout without submission; merchant identity, VAT, consents, legal links, PDF and RU `noindex` passed.
@@ -35,8 +35,8 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 ## Current work
 
 - Active initiative: [Issue #9](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9), audit-first website conformity and later bounded remediation.
-- Active task: [Issue #10](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10), documentation-only source-to-implementation audit on `codex/issue-10-source-conformity-audit`.
-- GitHub `main` at audit start: `4f95712be4bf2238219b51533301823595c306a0`.
+- Accepted audit: [Issue #10](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10) / PR #17, merged as `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736`.
+- Active task: [Issue #18](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/18), read-only staging disk inventory and maintenance-plan gate on `codex/issue-18-staging-disk-headroom`.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
 - Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
