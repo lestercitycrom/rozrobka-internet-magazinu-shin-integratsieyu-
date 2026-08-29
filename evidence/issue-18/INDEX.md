@@ -21,9 +21,9 @@ This is a capacity problem, not an inode problem. The same root filesystem is sh
 
 | Category | Read-only evidence | Maintenance disposition |
 |---|---|---|
-| EasyTire releases | 5 releases, about 1.23 GB total | Retain the active release plus one immediate rollback; the three remaining releases are candidates (about 0.74 GB). The exact inspected set is locked by its manifest hash. |
-| Shared test-site releases | 87 releases, about 8.31 GB total | Retain the active release plus the two newest rollbacks; the remaining 84 direct-child releases are candidates (about 8.02 GB). The exact inspected set is locked by its manifest hash. |
-| EasyTire temporary audit copies | Two isolated extracted audit directories below the operating-system temporary directory, about 0.53 GB | Candidates. The script accepts only two runtime-supplied literal basenames and tolerates their prior disappearance. |
+| EasyTire releases | 5 releases, about 1.23 GB total | Retain the active release plus one immediate rollback; the three remaining releases are candidates (about 0.74 GB). The exact retained and candidate sets are locked by the reviewed plan seal, name manifest and direct-child metadata manifest. |
+| Shared test-site releases | 87 releases, about 8.31 GB total | Retain the active release plus the two newest rollbacks; the remaining 84 direct-child releases are candidates (about 8.02 GB). The exact retained and candidate sets are locked by the reviewed plan seal, name manifest and direct-child metadata manifest. |
+| EasyTire temporary audit copies | Two isolated extracted audit directories below the operating-system temporary directory, about 0.53 GB | Candidates. Their two literal basenames and metadata are included in the reviewed plan seal; either candidate changing or disappearing stops preflight. |
 | Release-local dependencies | Each EasyTire release contains about 104–105 MB `vendor` and 130–131 MB `node_modules`, plus build/cache/test files | Reclaimed only as part of deletion of the three obsolete whole releases. Active and rollback releases are not modified. |
 | EasyTire managed database backups | Configured 14-file retention is present; latest completed backup corresponds to the accepted staging release | Protected in full. No backup pruning is proposed. |
 | Other-project backup set | Multi-gigabyte protected set | Protected in full. Its restore ownership/retention is outside this task and no file is a candidate. |
@@ -38,7 +38,7 @@ This is a capacity problem, not an inode problem. The same root filesystem is sh
 
 ## Proposed bounded maintenance
 
-The reviewed script [`../../scripts/issue-18-staging-headroom.sh`](../../scripts/issue-18-staging-headroom.sh) is the exact command surface. Exact server roots, retained release identifiers and temporary basenames remain in an ignored local execution sheet and are supplied as environment values; they are never committed or echoed in public evidence.
+The reviewed script [`../../scripts/issue-18-staging-headroom.sh`](../../scripts/issue-18-staging-headroom.sh) is the exact command surface. Exact server roots, retained release identifiers and temporary basenames remain in an ignored local execution sheet and are supplied as environment values; they are never committed or echoed in public evidence. A committed SHA-256 seal binds that private tuple to the inspected staging host and to the reviewed manifests, so substituting another host, root, release identifier, temporary basename, owner, group or mode stops preflight.
 
 It has two modes:
 
@@ -48,17 +48,18 @@ bash scripts/issue-18-staging-headroom.sh --inspect
 bash scripts/issue-18-staging-headroom.sh --execute STAGING_MAINTENANCE_APPROVED ISSUE-18
 ```
 
-`--inspect` was executed through standard input on the staging host. It confirmed three obsolete EasyTire releases, 84 obsolete shared test-site releases, two temporary audit directories and about 9.29 GB expected reclaim while preserving the required five active/rollback releases.
+`--inspect` was repeated through standard input on the staging host after the fail-closed hardening. It exited successfully and confirmed three obsolete EasyTire releases, 84 obsolete shared test-site releases, two temporary audit directories and 9,287,729,152 bytes expected reclaim while preserving the required five active/rollback releases. A separate read-only negative test changed one supplied basename and was rejected at the plan-seal check before candidate inventory or any mutation.
 
 The execute mode is blocked until the PM approves the exact reviewed branch SHA and all three candidate categories. Before deleting anything, the script:
 
-1. validates both release roots and both active symlink targets;
-2. validates the exact EasyTire and history release counts and SHA-256 manifests from this inventory;
-3. verifies every candidate is a real direct-child directory on the expected filesystem, not a symlink or mount;
-4. verifies the retained active and rollback releases exist;
-5. requires two explicit approval tokens.
+1. verifies the staging host marker and the deterministic seal over both roots, all active/rollback identifiers, the temporary root and two basenames, expected ownership/modes, and all reviewed manifests;
+2. validates every direct child by exact count and name manifest, then validates metadata manifests covering name, allocated size, modification time, UID, GID and mode;
+3. validates both active symlink targets and verifies every retained or candidate release is a real direct-child directory on the expected filesystem, not a symlink or mount;
+4. requires the exact expected UID, GID and mode on release roots, retained releases, deletion candidates and temporary candidates; release trees may not be group/world writable, and the temporary root must retain its sticky bit;
+5. derives the deletion set only as the exact reviewed direct-child manifest minus the sealed active/rollback identifiers;
+6. requires two explicit approval tokens.
 
-Any changed release set, symlink, path, mount, ownership assumption or candidate count stops the whole preflight before deletion. Removal is then limited to individually validated allowlisted directories. There are no broad-root or unreviewed-glob deletion commands.
+Any mismatch in the sealed private tuple, host marker, direct-child names, covered metadata, symlink target, path boundary, filesystem, owner, group, mode or derived candidate count stops the whole preflight before deletion. Removal is then limited to individually validated allowlisted directories. There are no broad-root or unreviewed-glob deletion commands.
 
 Expected post-maintenance available space is approximately 11 GB, comfortably above the 5 GiB warning threshold. Actual before/after values must be recorded at execution time.
 
