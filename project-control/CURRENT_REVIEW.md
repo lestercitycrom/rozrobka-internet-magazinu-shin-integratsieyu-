@@ -1,9 +1,9 @@
 # Current review
 
-- PR: [#21 — Restore staging disk headroom](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/21)
-- State: Draft maintenance-plan review
+- PR: pending — `[TASK-20] Complete battery request contract`
+- State: Draft implementation review pending branch publication
 - Reviewed head SHA: none
 - PM verdict: pending
-- Runtime authorisation: none; deletion remains blocked until exact `STAGING_MAINTENANCE_APPROVED`
+- Runtime authorisation: local/CI synthetic work only; no staging deployment or external side effects
 
-The PR and Issue #18 conversations are the full review and runtime-gate record. This file is only a pointer.
+The future PR and Issue #20 conversations are the full review and runtime-gate record. This file is only a pointer.
