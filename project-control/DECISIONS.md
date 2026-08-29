@@ -1,6 +1,6 @@
 # EasyTire permanent decisions
 
-Updated: 2026-08-24
+Updated: 2026-08-29
 
 Only decisions that must survive closed Issues belong here. Implementation detail stays in code/As-Built docs; discussion stays in Issues and PRs.
 
@@ -46,6 +46,12 @@ Only decisions that must survive closed Issues belong here. Implementation detai
 - Issue, branch, PR, CI, exact-SHA evidence and explicit runtime authorization remain mandatory.
 - During this temporary mode Mister Red may record the exact-SHA verdict and execute an owner-authorised staging gate; it still may not infer production authorization or broaden external side effects.
 - When the owner restores a separate PM/PRO reviewer, GOV-003 becomes the active review separation again without changing the engineering gates.
+
+## GOV-008 — Audit before remediation; Notion postponed
+
+- Owner decision on 2026-08-29: a separate PM is restored, so GOV-003 is active and Mister Red/Codex acts as chief engineer.
+- Website corrections begin only after Issue #10 has traced current customer sources to accepted code, tests and staging; historical hypotheses are not authorised correction scope.
+- Notion work is postponed and excluded from the current website audit/remediation initiative until a new explicit owner decision starts a separate bounded task.
 
 ## COM-001 — Dintero capture follows physical readiness
 
