@@ -43,3 +43,12 @@
 - Verify encrypted database backups and a recent restore test.
 - Verify retention, off-host storage and restore ownership.
 - Do not place supplier files, credentials, filesystem paths or raw payloads in monitoring output or runbook tickets.
+
+## Shared staging disk maintenance
+
+- Treat the root filesystem as shared infrastructure: identify per-application usage before proposing cleanup and never make another application's database, backup, upload or log data an ad-hoc cleanup target.
+- Inventory disk bytes and inodes, active symlink targets, retained rollbacks, backup retention, supplier storage, logs, caches and database/queue storage before deleting anything.
+- Keep the active EasyTire release and at least one verified rollback release. Preserve the configured completed database-backup retention in full unless a separate backup/restore change is approved.
+- Issue #18 uses `scripts/issue-18-staging-headroom.sh`. Its default `--inspect` mode is non-destructive; execute mode is valid only after the exact reviewed SHA receives `STAGING_MAINTENANCE_APPROVED` for every listed category.
+- The Issue #18 script locks the inventoried release sets by count and SHA-256 manifest, validates current symlinks and direct-child paths, and stops before deletion if staging changed after review.
+- After approved maintenance, record before/after free bytes and inodes; re-check active/rollback releases, homepage, admin login, database, cache, queue, scheduler, worker and failed jobs. A known NDI freshness warning must remain visible until its separate remediation is completed.
