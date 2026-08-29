@@ -10,7 +10,7 @@ Canonical atomic register: [`WEBSITE_REQUIREMENTS_TRACEABILITY.csv`](WEBSITE_REQ
 
 This is the current requirements baseline after reconciling the original brief, the complete Freelancehunt and Telegram correspondence, the correction PDF, the SEO workbook, customer media, provider replies, permanent project decisions and accepted implementation.
 
-The 114 rows in `WEBSITE_REQUIREMENTS_TRACEABILITY.csv` are incorporated into this baseline by reference. Each row is one atomic, independently classifiable requirement with a source, implementation evidence, verification method and current disposition. This document defines the consolidated product contract and resolves contradictions between older documents.
+The 119 rows in `WEBSITE_REQUIREMENTS_TRACEABILITY.csv` are incorporated into this baseline by reference. Each row is one atomic, independently classifiable requirement with a source, implementation evidence, verification method and current disposition. Safety boundaries and the external prerequisites needed to enable a future capability are represented as separate rows. This document defines the consolidated product contract and resolves contradictions between older documents.
 
 ## Authority and interpretation
 

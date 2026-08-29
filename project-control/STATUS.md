@@ -39,6 +39,6 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 - GitHub `main` at audit start: `4f95712be4bf2238219b51533301823595c306a0`.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
-- Audit result: 114 atomic requirements — 94 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
+- Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
 
 This file is a short runtime snapshot. Detailed history belongs to merged Issues, PRs and the linked reports.

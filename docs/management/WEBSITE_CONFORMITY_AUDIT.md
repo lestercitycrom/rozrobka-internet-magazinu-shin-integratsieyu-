@@ -12,17 +12,19 @@ Change boundary: documentation and redacted evidence only; no application/runtim
 
 ## Executive result
 
-The accepted website implementation is substantially conformant with the reconciled customer baseline. The audit contains 114 atomic requirements:
+The accepted website implementation is substantially conformant with the reconciled customer baseline. The corrected audit contains 119 atomic requirements:
 
 | Classification | Rows | Meaning |
 |---|---:|---|
-| `MATCH` | 94 | Implemented and supported by code/test/runtime evidence. |
+| `MATCH` | 99 | Implemented and supported by code/test/runtime evidence. |
 | `MISMATCH` | 4 | Three unique actionable findings; `FND-01` affects two atomic requirements. |
 | `EXTERNAL_BLOCKER` | 10 | Depends on supplier/provider/customer rights, credentials, data or production approval. |
 | `DECISION_REQUIRED` | 4 | Product/commercial choice was discussed but never finally approved. |
 | `TZ_STALE` | 2 | A previous management summary is outdated and is corrected by primary evidence/owner decision. |
 
 This result does not support a broad redesign or rewrite. It supports one operational P1 repair, two bounded P2 repairs and separate decision/external-dependency follow-ups.
+
+Source coverage includes all 140 Telegram `div.message.default` records (normal and joined, including media-only/empty-text records) and all eight non-governing service/date-separator nodes, for 148 total message nodes. All 24 screenshots and all three voice messages were also reviewed. No governing customer message was excluded.
 
 ## Actionable findings
 
@@ -81,7 +83,7 @@ This result does not support a broad redesign or rewrite. It supports one operat
 ## Corrections to earlier management material
 
 - The SEO workbook is accessible and was read completely; its 11 routes were mapped and verified. The earlier `blocked access` statement is stale (`STALE-01`).
-- All three Telegram voice messages were independently transcribed locally. The important confirmed outcome is two mobile vans with an intentionally open allocation algorithm.
+- All 140 Telegram default message records and all eight service/date separators were reviewed; all three voice messages were independently transcribed locally. The important confirmed outcome is two mobile vans with an intentionally open allocation algorithm.
 - Notion was originally described by the customer as later/separate work and was explicitly postponed by the owner on 2026-08-29. It is outside this website initiative (`STALE-02`).
 - PM/ChatGPT Pro drafts are secondary proposals. They cannot override later customer wording, the correction PDF or accepted sharp storefront decisions.
 
@@ -93,6 +95,8 @@ This result does not support a broad redesign or rewrite. It supports one operat
 - Redacted visual evidence: [`../../evidence/issue-10/INDEX.md`](../../evidence/issue-10/INDEX.md).
 
 The audit checked routes, controllers/services, migrations/models, admin forms, localization, CSS/view composition, NDI/Dintero/Statens boundaries, legal content, environment feature flags and relevant automated contracts. Secrets and private customer payloads were not copied into Git.
+
+The correction PDF and `docs/files/SEO EasyTire.no.xlsx` are local/private customer sources, not files tracked by accepted `origin/main` or this PR. They were hash-verified and inspected locally (all eight PDF pages; workbook sheet `Лист1`, range A1:N13 and all 11 non-empty route rows), while the raw files remain excluded from Git.
 
 ## Test and staging baseline
 
