@@ -2,7 +2,7 @@
 
 - Umbrella: [#9 — Audit website against customer sources and remediate confirmed gaps](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9)
 - Issue: [#20 — Complete battery service request contract (FND-02)](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/20)
-- State: `in-progress`
+- State: `ready-for-review`
 - Branch: `codex/issue-20-battery-request-contract`
 - Application changes: bounded battery-only validation, UI/localisation, persistence/admin verification and tests
 - Runtime changes: none; local/CI synthetic work only

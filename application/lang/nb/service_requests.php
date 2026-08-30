@@ -46,6 +46,8 @@ return [
         'vehicle_hint' => 'For eksempel Tesla Model Y',
         'registration_number' => 'Registreringsnummer',
         'registration_number_hint' => 'Valgfritt',
+        'battery_registration_hint' => 'Oppgi registreringsnummeret, slik at vi kan finne riktig batteri til bilen.',
+        'battery_date_hint' => 'Dette er en ønsket dato, ikke en bekreftet time. EasyTire kontakter deg og bekrefter endelig dato og tidspunkt.',
         'tire_size' => 'Dekkdimensjon',
         'tire_size_hint' => 'Valgfritt, for eksempel 205/55 R16',
         'dekkhotell' => 'Jeg ønsker informasjon om dekkhotell',
@@ -71,5 +73,13 @@ return [
         'quote_exact' => 'Beregnet pris: :min NOK',
         'quote_range' => 'Beregnet pris: :min–:max NOK. Velg felgdiameter for en eksakt pris.',
         'quote_unavailable' => 'Vi viser pris så snart valgene har en komplett prisregel. EasyTire bekrefter alltid forespørselen før avtale.',
+    ],
+    'validation' => [
+        'registration_required' => 'Oppgi registreringsnummeret til bilen.',
+        'registration_invalid' => 'Oppgi registreringsnummeret som tekst.',
+        'registration_max' => 'Registreringsnummeret kan ikke være lengre enn 32 tegn.',
+        'preferred_date_required' => 'Velg ønsket dato.',
+        'preferred_date_invalid' => 'Oppgi en gyldig ønsket dato.',
+        'preferred_date_not_past' => 'Ønsket dato kan ikke være tidligere enn i dag.',
     ],
 ];

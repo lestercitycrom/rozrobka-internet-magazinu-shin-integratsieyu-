@@ -1,7 +1,7 @@
 # Current review
 
 - PR: [#23 — Complete battery request contract](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/23)
-- State: Draft implementation in progress
+- State: Ready for PM review
 - Reviewed head SHA: none
 - PM verdict: pending
 - Runtime authorisation: local/CI synthetic work only; no staging deployment or external side effects

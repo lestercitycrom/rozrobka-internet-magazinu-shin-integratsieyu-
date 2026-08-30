@@ -20,6 +20,7 @@
     $requestedFulfilment = old('fulfilment', request()->query('fulfilment', 'workshop'));
     $requestedFulfilment = in_array($requestedFulfilment, ['workshop', 'mobile'], true) ? $requestedFulfilment : 'workshop';
     $isMountingService = $serviceSlug === 'omlegging-balansering';
+    $isBatteryService = $serviceSlug === 'bilbatteri';
     $isWorkshopOnly = in_array($serviceSlug, ['omlegging-balansering', 'tpms-sensor'], true);
     $supportsAdditionalServices = in_array($serviceSlug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
     if ($isWorkshopOnly) $requestedFulfilment = 'workshop';
@@ -332,9 +333,10 @@
                                     @error('vehicle')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
-                                    <label class="et-label" for="booking-registration-number">{{ __('service_requests.form.registration_number') }}</label>
-                                    <input class="et-input easytire-input" id="booking-registration-number" name="registration_number" value="{{ old('registration_number', $prefillRegistration) }}" autocomplete="off" autocapitalize="characters" aria-invalid="{{ $errors->has('registration_number') ? 'true' : 'false' }}">
-                                    @error('registration_number')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    <label class="et-label" for="booking-registration-number">{{ __('service_requests.form.registration_number') }} @if($isBatteryService)<span class="et-required">*</span>@endif</label>
+                                    <input class="et-input easytire-input" id="booking-registration-number" name="registration_number" value="{{ old('registration_number', $prefillRegistration) }}" autocomplete="off" autocapitalize="characters" maxlength="32" @required($isBatteryService) aria-describedby="booking-registration-number-hint @error('registration_number') booking-registration-number-error @enderror" aria-invalid="{{ $errors->has('registration_number') ? 'true' : 'false' }}">
+                                    <p class="et-help" id="booking-registration-number-hint">{{ $isBatteryService ? __('service_requests.form.battery_registration_hint') : __('service_requests.form.registration_number_hint') }}</p>
+                                    @error('registration_number')<p class="et-form-error" id="booking-registration-number-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-tire-size">{{ __('service_requests.form.tire_size') }}</label>
@@ -342,9 +344,10 @@
                                     @error('tire_size')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
-                                    <label class="et-label" for="booking-preferred-date">{{ __('booking.date') }}</label>
-                                    <input class="et-input easytire-input" id="booking-preferred-date" name="preferred_date" type="date" value="{{ old('preferred_date') }}" @required($isMountingService) aria-invalid="{{ $errors->has('preferred_date') ? 'true' : 'false' }}">
-                                    @error('preferred_date')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    <label class="et-label" for="booking-preferred-date">{{ __('booking.date') }} @if($isMountingService || $isBatteryService)<span class="et-required">*</span>@endif</label>
+                                    <input class="et-input easytire-input" id="booking-preferred-date" name="preferred_date" type="date" value="{{ old('preferred_date') }}" min="{{ now()->toDateString() }}" @required($isMountingService || $isBatteryService) @if($isBatteryService) aria-describedby="booking-preferred-date-hint @error('preferred_date') booking-preferred-date-error @enderror" @endif aria-invalid="{{ $errors->has('preferred_date') ? 'true' : 'false' }}">
+                                    @if($isBatteryService)<p class="et-help" id="booking-preferred-date-hint">{{ __('service_requests.form.battery_date_hint') }}</p>@endif
+                                    @error('preferred_date')<p class="et-form-error" id="booking-preferred-date-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-preferred-window">{{ __('booking.window') }}</label>
