@@ -356,6 +356,15 @@ const initConditionalAddress = () => {
     });
 };
 
+const initRequestErrorFocus = () => {
+    all('form[data-testid="generic-service-request"]').forEach((form) => {
+        if (!one('[data-testid="request-errors"]', form)) return;
+        const firstInvalidField = one('[aria-invalid="true"]', form);
+        if (!(firstInvalidField instanceof HTMLElement)) return;
+        window.requestAnimationFrame(() => firstInvalidField.focus());
+    });
+};
+
 const initAdminSidebar = () => {
     const sidebar = one('[data-admin-sidebar]');
     const overlay = one('[data-admin-overlay]');
@@ -388,4 +397,5 @@ initProductionFilters();
 initTabs();
 initBookingFlow();
 initConditionalAddress();
+initRequestErrorFocus();
 initAdminSidebar();

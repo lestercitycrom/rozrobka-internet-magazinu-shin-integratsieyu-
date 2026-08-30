@@ -16,6 +16,7 @@ class StoreServiceRequest extends FormRequest
         $slug = mb_strtolower((string) $this->route('slug'));
         $isSeasonal = $this->isSeasonal($slug);
         $isMounting = $slug === 'omlegging-balansering';
+        $isBattery = $slug === 'bilbatteri';
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
         $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
         $seasonalVehicleTypes = $isSeasonal && $this->input('fulfilment') === 'workshop'
@@ -28,12 +29,12 @@ class StoreServiceRequest extends FormRequest
             'submission_token' => ['required', 'uuid'],
             'service_variant' => [Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
             'fulfilment' => ['required', Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
-            'preferred_date' => [Rule::requiredIf($isSeasonal || $isMounting), 'nullable', 'date', 'after_or_equal:today'],
+            'preferred_date' => [Rule::requiredIf($isSeasonal || $isMounting || $isBattery), 'nullable', 'date', 'after_or_equal:today'],
             'preferred_window' => ['nullable', 'string', 'max:64'],
             'booking_slot_key' => ['nullable', 'string', 'max:80'],
             'car_count' => [Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
             'vehicle' => [Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => ['nullable', 'string', 'max:32'],
+            'registration_number' => [Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
             'tire_size' => [Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
             'vehicle_type' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
             'rim_band' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
@@ -62,6 +63,12 @@ class StoreServiceRequest extends FormRequest
     {
         return [
             'note.required' => __('project.request.problem_required'),
+            'registration_number.required' => __('service_requests.validation.registration_required'),
+            'registration_number.string' => __('service_requests.validation.registration_invalid'),
+            'registration_number.max' => __('service_requests.validation.registration_max'),
+            'preferred_date.required' => __('service_requests.validation.preferred_date_required'),
+            'preferred_date.date' => __('service_requests.validation.preferred_date_invalid'),
+            'preferred_date.after_or_equal' => __('service_requests.validation.preferred_date_not_past'),
         ];
     }
 

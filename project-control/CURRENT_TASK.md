@@ -1,11 +1,11 @@
 # Current task
 
 - Umbrella: [#9 — Audit website against customer sources and remediate confirmed gaps](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9)
-- Issue: [#18 — Restore staging disk headroom (FND-03)](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/18)
-- State: `in-progress`
-- Branch: `codex/issue-18-staging-disk-headroom`
-- Application changes: forbidden; bounded operations documentation/evidence only
-- Runtime changes: read-only staging inventory until exact `STAGING_MAINTENANCE_APPROVED`
-- Base SHA: `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736`
+- Issue: [#20 — Complete battery service request contract (FND-02)](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/20)
+- State: `ready-for-review`
+- Branch: `codex/issue-20-battery-request-contract`
+- Application changes: bounded battery-only validation, UI/localisation, persistence/admin verification and tests
+- Runtime changes: none; local/CI synthetic work only
+- Base SHA: `de3854d9289618d443ded5c50176e6dc43d875a6`
 
 The Issue is the full task. This file is only a pointer.

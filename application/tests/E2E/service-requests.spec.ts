@@ -152,3 +152,45 @@ test('generic service request remains available outside the seasonal flow', asyn
     await expect(form.locator('[name="additional_services[]"]')).toHaveCount(3);
     await expectNoGlobalOverflow(page);
 });
+
+test('battery request enforces its contract in Bokmål, Russian QA and mobile layouts', async ({ page }, testInfo) => {
+    const prefix = localePrefix(testInfo.project.name);
+    const russian = testInfo.project.name.includes('ru');
+    await page.goto(`${prefix}/tjenester/bilbatteri/foresporsel`);
+
+    const form = page.getByTestId('generic-service-request');
+    const registration = field(page, 'registration_number');
+    const preferredDate = field(page, 'preferred_date');
+    await expect(form).toBeVisible();
+    await expect(registration).toHaveAttribute('required', '');
+    await expect(preferredDate).toHaveAttribute('required', '');
+    await expect(registration).toHaveAttribute('aria-describedby', /booking-registration-number-hint/);
+    await expect(preferredDate).toHaveAttribute('aria-describedby', /booking-preferred-date-hint/);
+    await expect(page.locator('#booking-preferred-date-hint')).toContainText(russian ? 'не подтверждённая запись' : 'ikke en bekreftet time');
+    if (russian) await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+
+    await field(page, 'name').fill('Synthetic Battery Buyer');
+    await field(page, 'email').fill('battery-browser@example.test');
+    await field(page, 'phone').fill('939 58 270');
+    await field(page, 'note').fill(russian ? 'Автомобиль плохо заводится утром.' : 'Bilen starter tregt om morgenen.');
+    await field(page, 'consent').check();
+    await form.evaluate((element) => {
+        const formElement = element as HTMLFormElement;
+        formElement.noValidate = true;
+        formElement.requestSubmit();
+    });
+
+    await expect(page.getByTestId('request-errors')).toBeVisible();
+    await expect(page.locator('#booking-registration-number-error')).toHaveText(russian ? 'Укажите госномер автомобиля.' : 'Oppgi registreringsnummeret til bilen.');
+    await expect(registration).toHaveAttribute('aria-invalid', 'true');
+    await expect(preferredDate).toHaveAttribute('aria-invalid', 'true');
+    await expect(registration).toBeFocused();
+    await expectNoGlobalOverflow(page);
+
+    const future = new Date();
+    future.setDate(future.getDate() + 10);
+    await registration.fill('EV12345');
+    await preferredDate.fill(future.toISOString().slice(0, 10));
+    await form.getByTestId('generic-submit').click();
+    await expect(page).toHaveURL(/\/foresporsel\/SR-[A-Z0-9]+\/takk$/);
+});
