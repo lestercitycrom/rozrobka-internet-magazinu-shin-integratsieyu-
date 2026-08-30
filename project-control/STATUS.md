@@ -26,11 +26,9 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 ## Current quality baseline
 
-- GitHub Actions [run 33292285484](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/33292285484): exact accepted PR #23 head passed application quality and reachable-history secret scan.
-- Server release regression: 411 tests, 3123 assertions; backup, no pending migration, seeders and atomic activation passed.
-- Local release E2E: 127 passed, 5 intentional skips across buyer/admin desktop, mobile, 320px and RU QA projects.
-- Live staging Playwright: Bokmål and hidden RU battery validation accepted without persistent request or external side effect; representative non-battery behaviour remained unchanged.
-- Server health read-back: database, queue, cache, scheduler, worker and disk healthy. NDI feed freshness remains the external warning tracked as `FND-01`.
+- Exact-head CI: GitHub Actions [run 33292285484](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/33292285484) passed Laravel (411 tests, 3123 assertions), Playwright (127 passed, 5 intentional skips), frontend build, Pint, project-control validation and reachable-history secret scan on the accepted PR #23 head.
+- Staging deployment/read-back: server `REVISION` matched `ee512d723e78a65a89bfdee4268c3a779f632b33`; migrations reported `Nothing to migrate`; atomic activation completed with rollback `01a931d432b32a5a0633d1b508256b225387d429` retained; database, cache, queue, scheduler, worker, failed jobs and disk were healthy. The isolated NDI feed-freshness warning remains tracked as `FND-01`.
+- Live staging validation: Bokmål and hidden RU battery validation passed without a persistent request or external side effect; representative non-battery behaviour remained unchanged.
 - `docs/access.md`, `.env`, private customer materials and runtime credentials are excluded from Git.
 
 ## Current work
