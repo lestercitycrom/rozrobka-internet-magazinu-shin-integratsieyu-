@@ -1,14 +1,15 @@
 # EasyTire status
 
 Updated: 2026-08-30
-Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
+Accepted release: `ee512d723e78a65a89bfdee4268c3a779f632b33`
+Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 ## Environments
 
 | Environment | State | Canonical evidence |
 |---|---|---|
-| GitHub `main` | Accepted website conformity audit merged | `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736` / PR #17 |
-| Staging | Accepted release active and verified | <https://staging-easytire.bethub.fun>, server `REVISION` read-back |
+| GitHub `main` | Battery request remediation accepted and merged | `ee512d723e78a65a89bfdee4268c3a779f632b33` / PR #23 |
+| Staging | Same exact release deployed and runtime-accepted | <https://staging-easytire.bethub.fun>, server `REVISION` read-back |
 | Production | Not authorised | Separate production review and runtime decision required |
 
 ## Runtime gates
@@ -25,10 +26,10 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 
 ## Current quality baseline
 
-- GitHub Actions [run 33245827285](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/33245827285): exact accepted audit head passed application quality and reachable-history secret scan.
-- Server release regression: 403 tests, 3069 assertions; backup, additive migrations, seeders and atomic activation passed.
-- Local release E2E: 124 passed, 5 intentional skips across buyer/admin desktop, mobile, 320px and RU QA projects.
-- Live staging Playwright: product → cart → checkout without submission; merchant identity, VAT, consents, legal links, PDF and RU `noindex` passed.
+- GitHub Actions [run 33292285484](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/33292285484): exact accepted PR #23 head passed application quality and reachable-history secret scan.
+- Server release regression: 411 tests, 3123 assertions; backup, no pending migration, seeders and atomic activation passed.
+- Local release E2E: 127 passed, 5 intentional skips across buyer/admin desktop, mobile, 320px and RU QA projects.
+- Live staging Playwright: Bokmål and hidden RU battery validation accepted without persistent request or external side effect; representative non-battery behaviour remained unchanged.
 - Server health read-back: database, queue, cache, scheduler, worker and disk healthy. NDI feed freshness remains the external warning tracked as `FND-01`.
 - `docs/access.md`, `.env`, private customer materials and runtime credentials are excluded from Git.
 
@@ -37,8 +38,9 @@ Accepted release: `01a931d432b32a5a0633d1b508256b225387d429`
 - Active initiative: [Issue #9](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9), audit-first website conformity and later bounded remediation.
 - Accepted audit: [Issue #10](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10) / PR #17, merged as `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736`.
 - Completed remediation: [Issue #18](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/18) / PR #21, merged as `de3854d9289618d443ded5c50176e6dc43d875a6`; staging disk health is green.
-- External blocker: [Issue #19](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19) is waiting for a current complete NDI supplier dataset; PR #22 remains Draft and no NDI runtime mutation is authorised.
-- Ready for PM review: [Issue #20](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/20) / PR #23, bounded battery-only request contract on `codex/issue-20-battery-request-contract`; local/CI synthetic verification only and no staging deployment.
+- Completed remediation: [Issue #20](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/20) / PR #23, merged, deployed and runtime-accepted as `ee512d723e78a65a89bfdee4268c3a779f632b33`.
+- Remaining confirmed remediation: [Issue #19](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19) is `blocked-external` pending a current complete NDI `stock` / `tires` / `wheels` dataset. PR #22 remains Draft; reviewed diagnostic head `d9815b99ee1f9dff4b10479c22f32a533e65591f`.
+- No engineering, merge or runtime action is authorised until the Issue #19 provider prerequisite is satisfied and a new gate is recorded.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
 - Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
