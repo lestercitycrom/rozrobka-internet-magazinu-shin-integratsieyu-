@@ -47,6 +47,19 @@ function New-Montage {
         '-strip' '-quality' '84' $Output
 }
 
+function New-FullResolutionEvidence {
+    param(
+        [string] $Source,
+        [string] $Output
+    )
+
+    if (-not (Test-Path -LiteralPath $Source)) {
+        throw "Missing full-resolution evidence: $Source"
+    }
+
+    Invoke-Magick $Source '-strip' '-sampling-factor' '4:2:0' '-quality' '82' $Output
+}
+
 # Desktop first-fold matrix at every required desktop viewport.
 $desktopFrames = @()
 foreach ($viewport in @(
@@ -149,5 +162,39 @@ foreach ($state in @(
     $stateFrames += $frame
 }
 New-Montage $stateFrames '3x2' (Join-Path $outputRoot '08-reusable-interaction-states.jpg')
+
+# Selected screenshots stay at their native pixel dimensions. These are the
+# reviewable proofs for every P1/P2 and for the MATCH results disputed in the
+# first audit; the compact sheets above remain navigation aids only.
+$fullResolutionEvidence = @(
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\sticky-header-after-light.png'; Output = '09-sticky-header-light-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\sticky-header-after-dark.png'; Output = '10-sticky-header-dark-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\sticky-header-after-light.png'; Output = '11-sticky-header-light-mobile-390x844.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\services.png'; Output = '12-services-index-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\service-mobile.png'; Output = '13-service-detail-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\tyres.png'; Output = '14-catalog-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\catalog-filter-open.png'; Output = '15-catalog-filter-open-mobile-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\catalog-loading.png'; Output = '16-catalog-loading-mobile-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\product-test.png'; Output = '17-product-detail-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-narrow-320x800\product-test.png'; Output = '18-product-detail-320-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\cart-empty.png'; Output = '19-cart-empty-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\request-generic.png'; Output = '20-request-form-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-button-outline-hover.png'; Output = '21-button-outline-hover-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-button-link-hover.png'; Output = '22-button-link-hover-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-desktop-submenu-child-focus.png'; Output = '22-submenu-keyboard-focus-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\critical-mobile-menu-group-open.png'; Output = '23-mobile-menu-group-focus-390x844.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-contact-map-after-8s.png'; Output = '24-contact-map-loaded-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\home.png'; Output = '25-home-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\about.png'; Output = '26-about-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\tyres.png'; Output = '27-catalog-mobile-390-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-desktop-1440x900\service-request-validation-error.png'; Output = '28-validation-bokmaal-1440-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-desktop-1440x900\service-request-validation-error-ru.png'; Output = '29-validation-russian-1440-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-mobile-touch-390x844\cart-populated.png'; Output = '30-cart-populated-mobile-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-mobile-touch-390x844\checkout-validation-error.png'; Output = '31-checkout-validation-mobile-full.jpg' }
+)
+
+foreach ($evidence in $fullResolutionEvidence) {
+    New-FullResolutionEvidence $evidence.Source (Join-Path $outputRoot $evidence.Output)
+}
 
 Get-ChildItem -LiteralPath $outputRoot -File | Sort-Object Name | Select-Object Name, Length

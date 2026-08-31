@@ -8,7 +8,7 @@ const databaseForPhp = database.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 export default defineConfig({
     testDir: './tests/Audit',
     testMatch: /issue-26-local-states\.spec\.ts/,
-    outputDir: '../tmp/issue-26/local-test-results',
+    outputDir: './tmp/issue-26/local-test-results-corrected',
     fullyParallel: false,
     workers: 1,
     retries: 0,

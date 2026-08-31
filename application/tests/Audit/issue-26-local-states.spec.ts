@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -14,6 +14,31 @@ async function settle(page: Page): Promise<void> {
         document.querySelectorAll<HTMLImageElement>('img').forEach((image) => image.loading = 'eager');
     });
     await page.waitForTimeout(250);
+}
+
+async function visualState(locator: Locator): Promise<Record<string, string | number | boolean | null>> {
+    return locator.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+
+        return {
+            tag: element.tagName.toLowerCase(),
+            className: element.getAttribute('class'),
+            color: style.color,
+            backgroundColor: style.backgroundColor,
+            borderColor: style.borderColor,
+            borderWidth: style.borderWidth,
+            borderRadius: style.borderRadius,
+            boxShadow: style.boxShadow,
+            outline: style.outline,
+            opacity: style.opacity,
+            cursor: style.cursor,
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+            disabled: (element as HTMLInputElement).disabled === true,
+            ariaInvalid: element.getAttribute('aria-invalid'),
+        };
+    });
 }
 
 async function addFixtureProduct(page: Page): Promise<void> {
@@ -71,6 +96,8 @@ test.describe('Issue #26 safe local synthetic visual states', () => {
         await writeFile(path.join(target, 'checkout-validation.json'), JSON.stringify({
             phoneInvalid: await page.getByTestId('checkout-phone').getAttribute('aria-invalid'),
             error: (await page.getByRole('alert').first().innerText()).trim(),
+            phoneState: await visualState(page.getByTestId('checkout-phone')),
+            errorState: await visualState(page.getByRole('alert').first()),
         }, null, 2));
     });
 
@@ -96,12 +123,21 @@ test.describe('Issue #26 safe local synthetic visual states', () => {
         await expect(page.getByTestId('request-errors')).toBeVisible();
         const ruErrors = await page.locator('.et-form-error').allInnerTexts();
         await page.screenshot({ path: path.join(target, 'service-request-validation-error-ru.png'), fullPage: true });
-        await writeFile(path.join(target, 'service-request-validation.json'), JSON.stringify({ nbErrors, ruErrors }, null, 2));
+        await writeFile(path.join(target, 'service-request-validation.json'), JSON.stringify({
+            nbErrors,
+            ruErrors,
+            russianInvalidFieldState: await visualState(page.locator('[aria-invalid="true"]').first()),
+            russianErrorState: await visualState(page.locator('.et-form-error').first()),
+        }, null, 2));
 
         await page.goto('/tjenester/mobilt-dekkskift/foresporsel?fulfilment=mobile', { waitUntil: 'domcontentloaded' });
         await expect(page.getByTestId('seasonal-step-location')).toBeVisible();
         await expect(page.getByTestId('booking-slot-select')).toBeEnabled();
         await expect(page.getByTestId('booking-manual-window')).toBeDisabled();
         await page.screenshot({ path: path.join(target, 'seasonal-request-disabled-slot.png'), fullPage: true });
+        await writeFile(path.join(target, 'seasonal-request-control-states.json'), JSON.stringify({
+            enabledSlot: await visualState(page.getByTestId('booking-slot-select')),
+            disabledManualWindow: await visualState(page.getByTestId('booking-manual-window')),
+        }, null, 2));
     });
 });

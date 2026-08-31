@@ -4,15 +4,15 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'https://staging-easytire.bet
 
 export default defineConfig({
     testDir: './tests/Audit',
-    testMatch: /issue-26-visual-audit\.spec\.ts/,
-    outputDir: '../tmp/issue-26/test-results-final',
+    testMatch: /issue-26-(visual-audit|interaction-matrix)\.spec\.ts/,
+    outputDir: './tmp/issue-26/test-results-corrected',
     fullyParallel: false,
     workers: 1,
     retries: 0,
     timeout: 180_000,
     reporter: [
         ['list'],
-        ['json', { outputFile: '../tmp/issue-26/playwright-report-final.json' }],
+        ['json', { outputFile: './tmp/issue-26/playwright-report-corrected.json' }],
     ],
     use: {
         baseURL,
