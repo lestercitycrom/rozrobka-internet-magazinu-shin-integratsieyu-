@@ -23,12 +23,12 @@ The first audit was too optimistic. It correctly recognized that the current sha
 The corrected result is:
 
 - **2 P1 conditions**: raw validation keys in a public request form, and the external NDI feed/media dependency that prevents representative live catalogue acceptance;
-- **11 P2 findings**: mobile filter feedback, desktop service-detail balance, design-token bypasses, global focus treatment, sticky-header readability, services-index imagery, desktop filter scrolling, empty-cart composition, product buy-box squeezing and over-broad hover shadows;
-- **4 P3 refinements**: touch target sizing, generic form composition, catalogue category-rail hierarchy and mobile footer density;
-- **22 atomic `MATCH` results** that are narrow enough to defend with evidence;
+- **12 P2 findings**: mobile filter feedback, desktop service-detail balance, design-token and inline-presentation bypasses, global focus treatment, sticky-header readability, services-index imagery, desktop filter scrolling, empty-cart composition, product buy-box squeezing, over-broad hover shadows and the desktop hero/finder focal overlap;
+- **6 P3 refinements**: touch target sizing, generic form composition, catalogue category-rail hierarchy, mobile footer density, the mechanical home process strip and repeated battery-service CTA hierarchy;
+- **23 atomic `MATCH` results** that are narrow enough to defend with evidence;
 - **1 deliberately unverified area**: real order/payment/NDI fulfilment success states.
 
-The site is not visually rejected as a whole. The home page, About page, local photography, first-fold geometry and mobile catalogue ordering provide a credible design baseline. The corrected audit rejects the previous claim that the whole catalogue, sticky header, all shared pages and interaction system were already coherent.
+The site is not visually rejected as a whole. The About page, local photography, home promotion/price composition and mobile catalogue ordering provide a credible design baseline. The corrected audit rejects the previous claims that first-fold hero geometry, the whole catalogue, sticky header, all shared pages and interaction system were already coherent.
 
 No visual remediation belongs in this PR. The purpose of this head is to give the PM an evidence-backed, issue-ready defect inventory.
 
@@ -42,6 +42,8 @@ No visual remediation belongs in this PR. The purpose of this head is to give th
 | Buttons/cards hover was a match | No element changes width/height, but 48 visible elements gain shadows and a later wildcard gives even text-link buttons a raised hover effect (`AUD-26-014`). |
 | Shared pages were collectively a match | About, prices, contact, legal and 404 are now assessed separately. About is a strong match; empty cart and product detail contain independent P2 defects. |
 | Map was present on first render and therefore accepted | The initial capture only shows Google's loader. A dedicated 8-second network-settled test proves the real map loads on desktop/mobile with HTTP 200 responses and zero failures (`AUD-26-033`). |
+| Hero media did not overlap the finder | The old selector returned no logo element and the test treated that absence as non-overlap. Asset-aware, fail-closed geometry projects the approved raster focal regions and proves the finder covers the EasyTire van branding at all four desktop widths (`AUD-26-018`). |
+| Home process strip was accepted together with the price rail | The price rail remains a narrow `MATCH` (`AUD-26-044`); the understandable but mechanical four-step strip is a separate P3 refinement (`AUD-26-021`). |
 
 ## Customer-direction reconciliation
 
@@ -52,9 +54,9 @@ Later accepted customer decisions take precedence over older drafts. `kfc.nu` an
 | Freelancehunt `63792521` | Modern, beautiful, fast, unified service/shop site | Partial match. Strong home/About baseline; named catalogue, form and interaction defects remain. |
 | Telegram `94711`, `94758` | Typography/style inspiration only | Barlow/Barlow Condensed and the strong display hierarchy are coherent without copying a layout. |
 | Telegram `94954–94978` | Alternate dark/light; avoid an all-dark aggressive site | Match on home and principal marketing pages. |
-| Telegram `94972`, `94979` | Hero image, logo, vehicle and finder must not overlap | Measured match at all six viewports (`AUD-26-018`). |
+| Telegram `94972`, `94979` | Hero image, logo, vehicle and finder must not overlap | Fails on desktop: the finder covers the EasyTire van branding at all four desktop widths and grazes the primary vehicle/work focal region at 1920 (`AUD-26-018`). Mobile stacking avoids both. |
 | Telegram `94982` | One seasonal CTA beside the complete shop finder | Match. |
-| Telegram `94984–94993` | Remove unexplained strip; compact understandable process | Match (`AUD-26-021`). |
+| Telegram `94984–94993` | Remove unexplained strip; compact understandable process | Wording/order are clear, but the compressed icon/divider treatment remains mechanically template-like (`AUD-26-021`). The separate price rail matches (`AUD-26-044`). |
 | Telegram `95001`, `95005` | Image-led promotions and service cards | Home promotions match; services index does not (`AUD-26-010`); product media remains external (`AUD-26-002`). |
 | Telegram `95007`, `95010`, `95012` | Remove marked block; Dekkhotell after hero; reviews direction | Match (`AUD-26-019`, `AUD-26-022`). |
 | Telegram `95014`, `95019` | Contact/map/social; translucent sticky header only if readable | Contact/map match after load; sticky header fails readability (`AUD-26-009`). |
@@ -88,7 +90,7 @@ The corrected pass adds:
 
 - **78 composition records**: 13 representative page families × 6 viewports;
 - sticky header before scroll and after independent light/dark scroll targets at all six viewports;
-- hero/finder/logo/vehicle rectangle intersections at all six viewports;
+- fail-closed hero/finder/media geometry at all six viewports, including asset-aware EasyTire-brand and vehicle/work focal rectangles projected through the actual `object-fit: cover` crop;
 - **101 visible hover changes** across 11 routes;
 - **143 real keyboard Tab stops** across six principal routes;
 - explicit desktop submenu hover/focus-within/child-focus states;
@@ -123,12 +125,15 @@ The machine-readable canonical ledger is [`STOREFRONT_VISUAL_FINDINGS.csv`](STOR
 | `AUD-26-015` | P3 | Generic request form | Long bordered form shell has weak service context and reads template-like. |
 | `AUD-26-016` | P3 | Catalogue category rail | Dense equal tiles and small status labels resemble an admin toolbar. |
 | `AUD-26-017` | P3 | Mobile footer | Repeated contact/navigation content dominates short catalogue/cart pages. |
+| `AUD-26-018` | P2 | Home hero/finder | Finder overlaps the branded van focal region at every desktop width and the vehicle/work region at 1920. |
+| `AUD-26-021` | P3 | Home process strip | Clear sequence, but compressed boxes/dividers read as a mechanical template rail. |
+| `AUD-26-042` | P3 | Battery service CTA | The identical primary request action appears three times and competes near the first fold. |
 
 ## Detailed P1/P2 findings
 
 ### `AUD-26-001` — public service form exposes raw validation keys
 
-**Evidence.** Both Bokmål and hidden Russian safe local submissions render `validation.required` and `validation.accepted`. Full-resolution screenshots: [`28-validation-bokmaal-1440-full.jpg`](../../evidence/issue-26/28-validation-bokmaal-1440-full.jpg) and [`29-validation-russian-1440-full.jpg`](../../evidence/issue-26/29-validation-russian-1440-full.jpg).
+**Evidence.** Both Bokmål and hidden Russian safe local submissions render `validation.required` and `validation.accepted`. Full-resolution screenshots: [`29-validation-bokmaal-1440-full.jpg`](../../evidence/issue-26/29-validation-bokmaal-1440-full.jpg) and [`30-validation-russian-1440-full.jpg`](../../evidence/issue-26/30-validation-russian-1440-full.jpg).
 
 **Boundary.** Complete validation dictionaries or explicit request messages for every public request class. Do not change form business rules while correcting copy.
 
@@ -179,7 +184,7 @@ Some dynamic values are legitimate. Repeated static margins, colours, flex/grid 
 
 Real keyboard traversal found all 143 sampled Tab stops focus-visible. The defect is appearance, not discoverability: 138 sampled stops combine a white 3px outline, 3px offset and red 5px shadow. The result becomes a thick double rectangle around large summary rows and submenu items.
 
-**Evidence.** [`22-submenu-keyboard-focus-1440x900.jpg`](../../evidence/issue-26/22-submenu-keyboard-focus-1440x900.jpg), [`23-mobile-menu-group-focus-390x844.jpg`](../../evidence/issue-26/23-mobile-menu-group-focus-390x844.jpg).
+**Evidence.** [`23-submenu-keyboard-focus-1440x900.jpg`](../../evidence/issue-26/23-submenu-keyboard-focus-1440x900.jpg), [`24-mobile-menu-group-focus-390x844.jpg`](../../evidence/issue-26/24-mobile-menu-group-focus-390x844.jpg).
 
 ### `AUD-26-009` — sticky header content bleed
 
@@ -229,20 +234,36 @@ The zero-bounce part is accepted as `AUD-26-023`. The defect is that the late sh
 
 **Boundary.** Preserve stable geometry. Define hover elevation per semantic variant; keep text links flat.
 
+### `AUD-26-018` — desktop finder obscures approved hero focal content
+
+The earlier test queried a non-existent `.et-v3-hero__brand/.et-v3-hero__logo` element and converted the missing rectangle to a false intersection. The corrected contract selects the actual hero image, requires it to be loaded, recognizes only the two audited fallback assets, projects explicit brand and vehicle/work focal regions through the computed `object-fit: cover` crop, and fails if any target or focal contract is absent.
+
+At 1920, 1440, 1366 and 1280 the finder overlaps the EasyTire branding on the red van. At 1920 it also grazes the primary vehicle/work focal region. The stacked 390 and 320 compositions avoid both regions.
+
+**Evidence.** [`33-hero-finder-brand-overlap-1440x900.jpg`](../../evidence/issue-26/33-hero-finder-brand-overlap-1440x900.jpg) overlays the measured finder, EasyTire-brand and vehicle/work rectangles on the published 1440 first fold; the six raw `hero-geometry.json` files retain exact coordinates and both intersection booleans.
+
+**Boundary.** Adjust desktop art direction/object position or finder placement against documented asset focal regions; preserve the approved mobile stacking and do not invent a replacement asset.
+
+**Acceptance.** Both focal intersections are false at every required viewport, and a missing/changed hero asset fails the geometry test instead of being treated as non-overlap.
+
 ## Atomic page-family ledger
 
 | Family/state | Verdict | Notes |
 |---|---|---|
-| Home first fold | `MATCH` | No finder/logo/vehicle overlap at six viewports. |
+| Home first fold | `P2` | Fail-closed asset geometry proves finder/branded-van overlap at all desktop widths; mobile stacking matches. |
 | Home Dekkhotell/media | `MATCH` | Strong local photography and readable overlays. |
-| Home process/price rail | `MATCH` | Compact and understandable. |
+| Home process strip | `P3` | Four steps are understandable, but the compressed icon/divider rail feels mechanical. |
+| Home price rail | `MATCH` | Three linked start prices and the all-prices action are compact and clear. |
+| Home singleton promotion | `MATCH` | One active promotion deliberately expands into one full-width image-led feature. |
 | Home services/reviews | `MATCH` | Coherent; service index is assessed separately. |
+| Store navigation naming | `MATCH` | Home uses broad `Dekk og felger`; the current catalogue link and H1 both use category-specific `Dekk`. |
 | Sticky header | `P2` | Geometry stable, visual transparency fails readability. |
 | Desktop Services submenu | `MATCH` + focus finding | Opens by hover and real keyboard focus-within; next Tab enters submenu. |
 | Mobile menu | `MATCH` + focus finding | Full-width, grouped services open, child keyboard reachable. |
 | Services index | `P2` | Synthetic visual repetition, zero service images. |
 | Service detail desktop | `P2` | Page-long blank second column. |
 | Service detail mobile | `MATCH` | Article, prices and CTA stack logically. |
+| Battery service request CTA | `P3` | Three identical primary request actions weaken hierarchy; two compete near the first fold. |
 | Shop entry | `MATCH` | Finder, choices, process and local context form a clear hierarchy. |
 | Catalogue mobile closed state | `MATCH` | Deliberate order, no horizontal squeezing. |
 | Catalogue mobile filter interaction | `P2` | Live-vs-Apply feedback conflict. |
@@ -266,7 +287,7 @@ The zero-bounce part is accepted as `AUD-26-023`. The defect is that the late sh
 
 ### Pointer states
 
-The corrected matrix covers primary, outline, ghost and text-link buttons; header cart; desktop navigation/submenu; service rows; product card/link; category rail; filter summary; input/select/date/textarea/checkbox; footer/social links; mobile menu; mobile details group; mobile filter action and checkbox.
+The corrected desktop matrix contains 24 required-visible cases. It asserts that every required selector exists and is visible before recording a state; `interaction-matrix-summary.json` reports `24/24`, `missingRequiredCaseIds=[]` and `allRequiredCasesPresent=true`. Stale `.et-service-card`/`.et-shop-link` selectors were replaced with current service-card and shop-category contracts. The matrix covers primary, outline, ghost and text-link buttons; header cart; desktop navigation/submenu; service rows; product card/link; category rail; filter summary; input/select/date/textarea/checkbox; footer/social links; mobile menu; mobile details group; mobile filter action and checkbox.
 
 No representative component moves or changes width/height on hover. This directly addresses the owner's prior complaint about bouncing hover effects. The remaining interaction problem is style semantics (`AUD-26-014`), not layout motion.
 
@@ -280,8 +301,8 @@ Focus visibility is functionally reliable but visually overdrawn (`AUD-26-007`).
 
 Safe local fixtures cover:
 
-- enabled seasonal time-slot select;
-- disabled manual time-window field;
+- the staging `manual-window` mode with its visible manual field enabled and the inactive slot select disabled in the DOM;
+- the configured local `slot` mode with its visible slot select enabled and the inactive manual window disabled in the DOM;
 - generic request validation errors in NB/RU;
 - checkout phone error with `aria-invalid=true`;
 - populated catalogue/product/cart/checkout.
@@ -336,7 +357,8 @@ The PM should create bounded issues only after accepting this audit head.
    - `AUD-26-009` sticky readability;
    - `AUD-26-007` single focus contract;
    - `AUD-26-014` per-variant hover contract;
-   - `AUD-26-003` mobile live-filter feedback.
+   - `AUD-26-003` mobile live-filter feedback;
+   - `AUD-26-018` desktop hero/finder focal overlap.
 
 3. **Catalogue/product composition**
    - `AUD-26-011` desktop filter scroll;
@@ -348,6 +370,8 @@ The PM should create bounded issues only after accepting this audit head.
    - `AUD-26-004` service detail desktop;
    - `AUD-26-010` image-led services index;
    - `AUD-26-015` generic request shell;
+   - `AUD-26-021` home process-strip refinement;
+   - `AUD-26-042` battery-service CTA hierarchy;
    - `AUD-26-008` mobile touch targets;
    - `AUD-26-017` mobile footer density.
 
@@ -362,20 +386,21 @@ The PM should create bounded issues only after accepting this audit head.
 
 `AUD-26-040` remains `NOT_VERIFIED_BY_DESIGN`. This PR does not claim visual acceptance for a real successful Dintero payment, real NDI order, real service request, real email or notification. Those transitions require a separately authorized sandbox/runtime issue with isolated references and redacted evidence.
 
-## Verification results
+## Verification results and provenance
 
-The corrected audit head passed every authorized gate on 31 August 2026:
+The local and GitHub records are intentionally kept separate; neither is presented as the other:
 
-| Gate | Result |
+| Gate/provenance | Result |
 |---|---|
-| read-only staging visual audit | 42 passed, 36 intentionally viewport-specific skips, 0 failed |
-| safe local synthetic visual states | 6 passed, 0 failed |
-| full buyer/admin Playwright suite | 127 passed, 5 project-defined skips, 0 failed |
-| Laravel application suite | 410 passed, 1 skipped, 3,120 assertions |
-| frontend production build | passed |
-| Pint formatting check | passed |
-| project-control validation | passed |
-| evidence build, CSV/path validation and `git diff --check` | passed |
+| read-only staging visual audit — current correction | 43 passed, 41 intentionally viewport-specific skips, 0 failed |
+| safe local synthetic visual states — current correction | 6 passed, 0 failed |
+| full buyer/admin Playwright suite | 127 passed, 5 project-defined skips, 0 failed in the local audit workspace |
+| Laravel application suite — local Windows run | 410 passed, 1 skipped, 3,120 assertions |
+| Laravel application suite — GitHub Quality Gates run [`33361771011`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/33361771011) on reviewed SHA `d547b18ec3db8f526d3084d03cc846e13fed66e5` | 411 passed, 3,123 assertions |
+| frontend production build | passed locally |
+| Pint formatting check | passed locally |
+| project-control validation | passed locally |
+| evidence build, CSV/path validation and `git diff --check` | passed on the current correction |
 
 The full buyer/admin run used one worker with payments, NDI order submission and NDI sandbox order submission disabled, log mail and isolated local state. No external write was authorized or performed.
 

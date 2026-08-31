@@ -131,13 +131,25 @@ test.describe('Issue #26 safe local synthetic visual states', () => {
         }, null, 2));
 
         await page.goto('/tjenester/mobilt-dekkskift/foresporsel?fulfilment=mobile', { waitUntil: 'domcontentloaded' });
-        await expect(page.getByTestId('seasonal-step-location')).toBeVisible();
-        await expect(page.getByTestId('booking-slot-select')).toBeEnabled();
-        await expect(page.getByTestId('booking-manual-window')).toBeDisabled();
+        const locationStep = page.getByTestId('seasonal-step-location');
+        await expect(locationStep).toBeVisible();
+        await locationStep.locator('input[name="fulfilment"][value="workshop"]').check();
+        await locationStep.locator('[data-booking-next]').click();
+        const vehicleStep = page.getByTestId('seasonal-step-vehicle-storage');
+        await expect(vehicleStep).toBeVisible();
+        await vehicleStep.locator('[name="vehicle"]').fill('Audit vehicle');
+        await vehicleStep.locator('[data-booking-next]').click();
+        await expect(page.getByTestId('seasonal-step-time')).toBeVisible();
+        const enabledSlot = page.getByTestId('booking-slot-select');
+        const disabledManualWindow = page.getByTestId('booking-manual-window');
+        await expect(enabledSlot).toBeVisible();
+        await expect(enabledSlot).toBeEnabled();
+        await expect(disabledManualWindow).toHaveCount(1);
+        await expect(disabledManualWindow).toBeDisabled();
         await page.screenshot({ path: path.join(target, 'seasonal-request-disabled-slot.png'), fullPage: true });
         await writeFile(path.join(target, 'seasonal-request-control-states.json'), JSON.stringify({
-            enabledSlot: await visualState(page.getByTestId('booking-slot-select')),
-            disabledManualWindow: await visualState(page.getByTestId('booking-manual-window')),
+            enabledSlot: { visible: await enabledSlot.isVisible(), state: await visualState(enabledSlot) },
+            disabledManualWindow: { visible: await disabledManualWindow.isVisible(), state: await visualState(disabledManualWindow) },
         }, null, 2));
     });
 });

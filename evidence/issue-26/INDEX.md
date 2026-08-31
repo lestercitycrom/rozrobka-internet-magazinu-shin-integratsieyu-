@@ -62,10 +62,11 @@ These sheets help reviewers compare states quickly. They are not substitutes for
 | [`20-request-form-1440-full.jpg`](20-request-form-1440-full.jpg) | `AUD-26-015`: generic form-shell composition |
 | [`21-button-outline-hover-1440x900.jpg`](21-button-outline-hover-1440x900.jpg) | `AUD-26-014`: raised hover treatment on outline variant |
 | [`22-button-link-hover-1440x900.jpg`](22-button-link-hover-1440x900.jpg) | `AUD-26-014`: text-link button receives the late universal shadow |
-| [`22-submenu-keyboard-focus-1440x900.jpg`](22-submenu-keyboard-focus-1440x900.jpg) | `AUD-26-007`: double focus ring in desktop submenu |
-| [`23-mobile-menu-group-focus-390x844.jpg`](23-mobile-menu-group-focus-390x844.jpg) | `AUD-26-007`: oversized focus frame on mobile group summary |
-| [`28-validation-bokmaal-1440-full.jpg`](28-validation-bokmaal-1440-full.jpg) | `AUD-26-001`: raw validation keys in Bokmål |
-| [`29-validation-russian-1440-full.jpg`](29-validation-russian-1440-full.jpg) | `AUD-26-001`: same failure on hidden Russian QA route |
+| [`23-submenu-keyboard-focus-1440x900.jpg`](23-submenu-keyboard-focus-1440x900.jpg) | `AUD-26-007`: double focus ring in desktop submenu |
+| [`24-mobile-menu-group-focus-390x844.jpg`](24-mobile-menu-group-focus-390x844.jpg) | `AUD-26-007`: oversized focus frame on mobile group summary |
+| [`29-validation-bokmaal-1440-full.jpg`](29-validation-bokmaal-1440-full.jpg) | `AUD-26-001`: raw validation keys in Bokmål |
+| [`30-validation-russian-1440-full.jpg`](30-validation-russian-1440-full.jpg) | `AUD-26-001`: same failure on hidden Russian QA route |
+| [`33-hero-finder-brand-overlap-1440x900.jpg`](33-hero-finder-brand-overlap-1440x900.jpg) | `AUD-26-018`: asset-aware EasyTire-brand focal overlap rather than a missing-selector false pass |
 
 `AUD-26-005` and `AUD-26-006` are source-architecture findings. Their proof is the deterministic CSS/Blade scan recorded in [`STOREFRONT_VISUAL_AUDIT.md`](../../docs/management/STOREFRONT_VISUAL_AUDIT.md), not a screenshot.
 
@@ -73,12 +74,21 @@ These sheets help reviewers compare states quickly. They are not substitutes for
 
 | File | Atomic result proven |
 |---|---|
-| [`24-contact-map-loaded-1440x900.jpg`](24-contact-map-loaded-1440x900.jpg) | real Google map after 8-second settle, not merely iframe presence |
-| [`25-home-1440-full.jpg`](25-home-1440-full.jpg) | accepted home sequence, photography and first-fold direction |
-| [`26-about-1440-full.jpg`](26-about-1440-full.jpg) | strong local/image-led shared-page reference |
-| [`27-catalog-mobile-390-full.jpg`](27-catalog-mobile-390-full.jpg) | deliberate mobile catalogue ordering without horizontal squeezing |
-| [`30-cart-populated-mobile-full.jpg`](30-cart-populated-mobile-full.jpg) | safe populated cart composition |
-| [`31-checkout-validation-mobile-full.jpg`](31-checkout-validation-mobile-full.jpg) | localized checkout error and mobile checkout shell |
+| [`25-contact-map-loaded-1440x900.jpg`](25-contact-map-loaded-1440x900.jpg) | real Google map after 8-second settle, not merely iframe presence |
+| [`26-home-1440-full.jpg`](26-home-1440-full.jpg) | accepted home photography and page-level direction; hero/process exceptions are assessed separately |
+| [`27-about-1440-full.jpg`](27-about-1440-full.jpg) | strong local/image-led shared-page reference |
+| [`28-catalog-mobile-390-full.jpg`](28-catalog-mobile-390-full.jpg) | deliberate mobile catalogue ordering without horizontal squeezing |
+| [`31-cart-populated-mobile-full.jpg`](31-cart-populated-mobile-full.jpg) | safe populated cart composition |
+| [`32-checkout-validation-mobile-full.jpg`](32-checkout-validation-mobile-full.jpg) | localized checkout error and mobile checkout shell |
+| [`35-home-singleton-promotion-1440.jpg`](35-home-singleton-promotion-1440.jpg) | one promotion intentionally expands into one image-led feature |
+| [`37-navigation-context-catalog-1440x900.jpg`](37-navigation-context-catalog-1440x900.jpg) | contextual `Dekk og felger` landing label versus current catalogue `Dekk` label/H1 |
+
+## Native-resolution P3 refinement evidence
+
+| File | Finding/state proven |
+|---|---|
+| [`34-home-process-strip-1440.jpg`](34-home-process-strip-1440.jpg) | `AUD-26-021`: clear wording/order but mechanical compressed process rail |
+| [`36-battery-repeated-cta-1440-full.jpg`](36-battery-repeated-cta-1440-full.jpg) | `AUD-26-042`: three identical primary request CTAs weaken hierarchy |
 
 Desktop submenu and mobile-menu screenshots simultaneously prove working pointer/keyboard disclosure and the separate focus-appearance defect.
 
@@ -89,10 +99,12 @@ Ignored raw data under `tmp/issue-26/` includes:
 - full public page screenshots and layout metrics;
 - `page-composition.json` for 13 page families at six viewports;
 - `sticky-header-states.json` and light/dark viewport captures;
-- `hero-geometry.json` at six viewports;
+- fail-closed `hero-geometry.json` at six viewports, including non-null media, brand and vehicle focal rectangles plus both intersection results;
 - `hover-inventory.json` across 11 routes;
 - `keyboard-focus-order.json` from real Tab traversal;
-- `interaction-matrix.json`, desktop submenu and mobile group matrices;
+- `interaction-matrix.json` plus `interaction-matrix-summary.json` proving 24/24 required-visible desktop cases, no absent required case, one explicit DOM-only inactive timing control and the observed timing mode;
+- `explicit-composition-classifications.json` for navigation naming, repeated battery CTA, home process strip and singleton promotion;
+- desktop submenu and mobile group matrices;
 - contact-map frame/request evidence at desktop/mobile;
 - safe local validation/disabled/populated commerce fixtures.
 
@@ -115,12 +127,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\build-issue-26-e
 
 The staging suite is read-only. The local suite uses fresh SQLite fixtures with NDI submission and payments disabled, log mail and a synchronous queue.
 
-## Accepted run totals
+## Verification provenance
 
 | Gate | Result |
 |---|---|
-| staging visual suite | 42 passed, 36 viewport-specific skips, 0 failed |
-| local synthetic visual suite | 6 passed, 0 failed |
-| complete buyer/admin E2E | 127 passed, 5 project-defined skips, 0 failed |
+| staging visual suite — current correction | 43 passed, 41 viewport-specific skips, 0 failed |
+| local synthetic visual suite — current correction | 6 passed, 0 failed |
+| complete buyer/admin E2E — local audit workspace | 127 passed, 5 project-defined skips, 0 failed |
+| Laravel — local Windows run | 410 passed, 1 skipped, 3,120 assertions |
+| Laravel — GitHub Quality Gates run [`33361771011`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/33361771011), exact reviewed SHA `d547b18ec3db8f526d3084d03cc846e13fed66e5` | 411 passed, 3,123 assertions |
 
-The application regression suite also passed with 410 tests, one skip and 3,120 assertions. The frontend production build, Pint check, project-control validator and evidence/path checks passed. No payment, NDI order, email or notification was sent.
+The frontend production build, Pint check, project-control validator and evidence/path checks passed locally on the current correction. Local and GitHub test totals are separate facts and are not interchangeable. No payment, NDI order, email or notification was sent.

@@ -38,6 +38,9 @@ type MatrixRecord = {
     route: string;
     selector: string;
     present: boolean;
+    visible: boolean;
+    requiredVisible: boolean;
+    verification: 'required-visible' | 'dom-state';
     states: Record<string, VisualState | string | boolean | null>;
 };
 
@@ -215,9 +218,20 @@ async function recordCase(
     await settle(page);
     if (prepare) await prepare(page);
     const locator = page.locator(selector).first();
-    const present = await locator.isVisible().catch(() => false);
-    const record: MatrixRecord = { id, route, selector, present, states: {} };
-    if (present) record.states = await captureStandardStates(page, target, id, locator, options);
+    const present = await locator.count() > 0;
+    const visible = present && await locator.isVisible();
+    expect(present, `${id} must resolve to a current component on ${route}`).toBe(true);
+    expect(visible, `${id} must have a visible representative on ${route}`).toBe(true);
+    const record: MatrixRecord = {
+        id,
+        route,
+        selector,
+        present,
+        visible,
+        requiredVisible: true,
+        verification: 'required-visible',
+        states: await captureStandardStates(page, target, id, locator, options),
+    };
     records.push(record);
 }
 
@@ -239,7 +253,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         const after: Record<string, unknown> = {};
         for (const scrollTarget of targets) {
             const locator = page.locator(scrollTarget.selector).first();
-            if (!await locator.count()) continue;
+            await expect(locator, `${scrollTarget.id} sticky-header target must exist`).toBeVisible();
             const absoluteTop = await locator.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
             await page.evaluate((top) => window.scrollTo({ top: Math.max(1, top - 24), behavior: 'instant' }), absoluteTop);
             await page.waitForTimeout(180);
@@ -262,7 +276,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await writeFile(path.join(target, 'sticky-header-states.json'), JSON.stringify({ before, after }, null, 2));
     });
 
-    test('measures hero, finder and logo geometry at every required viewport', async ({ page }, testInfo) => {
+    test('fails closed and measures hero finder against approved media focal regions', async ({ page }, testInfo) => {
         const target = rawRoot(testInfo);
         await mkdir(target, { recursive: true });
         await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -272,8 +286,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
             const selectors = {
                 hero: '.et-v3-hero',
                 finder: '[data-testid="quick-finder"]',
-                logo: '.et-v3-hero__brand, .et-v3-hero__logo',
-                vehicle: '.et-v3-hero__media, .et-v3-hero__photo, .et-v3-hero img',
+                media: '.et-v3-hero > picture > .et-v3-hero__photo',
             };
             const rect = (selector: string) => {
                 const element = document.querySelector(selector);
@@ -282,21 +295,116 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
             };
             const intersects = (a: ReturnType<typeof rect>, b: ReturnType<typeof rect>) => Boolean(a && b && a.x < b.right && a.right > b.x && a.y < b.bottom && a.bottom > b.y);
             const finder = rect(selectors.finder);
-            const logo = rect(selectors.logo);
-            const vehicle = rect(selectors.vehicle);
+            const mediaElement = document.querySelector<HTMLImageElement>(selectors.media);
+            const media = rect(selectors.media);
+            const currentPath = mediaElement ? new URL(mediaElement.currentSrc || mediaElement.src, location.href).pathname : null;
+            const focalContract = currentPath?.endsWith('/brand/hero-service-mobile.webp')
+                ? {
+                    asset: '/brand/hero-service-mobile.webp',
+                    brand: { left: 0, top: .19, right: .37, bottom: .38 },
+                    vehicle: { left: .23, top: .18, right: 1, bottom: .82 },
+                }
+                : currentPath?.endsWith('/brand/hero-service-desktop.webp')
+                    ? {
+                        asset: '/brand/hero-service-desktop.webp',
+                        brand: { left: .66, top: .21, right: .89, bottom: .42 },
+                        vehicle: { left: .21, top: .29, right: .59, bottom: .71 },
+                    }
+                    : null;
+            const projectFocalRegion = (region: { left: number; top: number; right: number; bottom: number } | undefined) => {
+                if (!mediaElement || !media || !region || mediaElement.naturalWidth <= 0 || mediaElement.naturalHeight <= 0) return null;
+                const style = getComputedStyle(mediaElement);
+                if (style.objectFit !== 'cover') return null;
+                const position = style.objectPosition.split(/\s+/);
+                const percentage = (value: string | undefined, fallback: number) => value?.endsWith('%') ? Number.parseFloat(value) / 100 : fallback;
+                const positionX = percentage(position[0], .5);
+                const positionY = percentage(position[1], .5);
+                const scale = Math.max(media.width / mediaElement.naturalWidth, media.height / mediaElement.naturalHeight);
+                const renderedWidth = mediaElement.naturalWidth * scale;
+                const renderedHeight = mediaElement.naturalHeight * scale;
+                const offsetX = media.x + ((media.width - renderedWidth) * positionX);
+                const offsetY = media.y + ((media.height - renderedHeight) * positionY);
+                const x = offsetX + (region.left * renderedWidth);
+                const y = offsetY + (region.top * renderedHeight);
+                const right = offsetX + (region.right * renderedWidth);
+                const bottom = offsetY + (region.bottom * renderedHeight);
+
+                return {
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    width: Math.round(right - x),
+                    height: Math.round(bottom - y),
+                    right: Math.round(right),
+                    bottom: Math.round(bottom),
+                };
+            };
+            const brand = projectFocalRegion(focalContract?.brand);
+            const vehicle = projectFocalRegion(focalContract?.vehicle);
 
             return {
                 viewport: { width: innerWidth, height: innerHeight },
                 hero: rect(selectors.hero),
                 finder,
-                logo,
+                media,
+                mediaAsset: currentPath,
+                mediaNaturalSize: mediaElement ? { width: mediaElement.naturalWidth, height: mediaElement.naturalHeight } : null,
+                focalContract: focalContract?.asset ?? null,
+                brand,
                 vehicle,
-                finderOverlapsLogo: intersects(finder, logo),
+                finderOverlapsBrand: intersects(finder, brand),
                 finderOverlapsVehicle: intersects(finder, vehicle),
             };
         });
         await writeFile(path.join(target, 'hero-geometry.json'), JSON.stringify(geometry, null, 2));
-        expect(geometry.finderOverlapsLogo).toBe(false);
+        expect(geometry.hero, 'hero must exist').not.toBeNull();
+        expect(geometry.finder, 'finder must exist').not.toBeNull();
+        expect(geometry.media, 'the explicit hero media selector must exist').not.toBeNull();
+        expect(geometry.mediaNaturalSize?.width, 'hero media must be loaded').toBeGreaterThan(0);
+        expect(geometry.focalContract, 'the published hero asset must have an audited focal contract').not.toBeNull();
+        expect(geometry.brand, 'the EasyTire van brand focal region must project into the viewport').not.toBeNull();
+        expect(geometry.vehicle, 'the customer-relevant vehicle/work focal region must project into the viewport').not.toBeNull();
+        expect(
+            geometry.finderOverlapsVehicle,
+            'the 1920 composition currently grazes the primary vehicle focal region; narrower desktop and mobile layouts must not',
+        ).toBe(testInfo.project.name === 'desktop-1920x1080');
+        expect(
+            geometry.finderOverlapsBrand,
+            'desktop finder currently obscures the EasyTire van brand; mobile stacking must not',
+        ).toBe(testInfo.project.name.startsWith('desktop-'));
+        await page.evaluate((snapshot) => {
+            const layer = document.createElement('div');
+            layer.dataset.auditHeroOverlay = 'true';
+            const addRegion = (
+                rect: { x: number; y: number; width: number; height: number } | null,
+                label: string,
+                color: string,
+            ) => {
+                if (!rect) return;
+                const region = document.createElement('div');
+                region.style.cssText = [
+                    'position:absolute',
+                    `left:${rect.x}px`,
+                    `top:${rect.y + window.scrollY}px`,
+                    `width:${rect.width}px`,
+                    `height:${rect.height}px`,
+                    `border:4px solid ${color}`,
+                    `background:${color}22`,
+                    'z-index:2147483646',
+                    'pointer-events:none',
+                    'box-sizing:border-box',
+                ].join(';');
+                const caption = document.createElement('span');
+                caption.textContent = label;
+                caption.style.cssText = `position:absolute;left:0;top:0;padding:4px 7px;background:${color};color:#fff;font:700 13px/1.2 sans-serif;letter-spacing:.02em;white-space:nowrap`;
+                region.append(caption);
+                layer.append(region);
+            };
+            addRegion(snapshot.finder, 'Finder', '#1769ff');
+            addRegion(snapshot.brand, 'EasyTire brand focal region', '#df0a0a');
+            addRegion(snapshot.vehicle, 'Vehicle/work focal region', '#b26a00');
+            document.body.append(layer);
+        }, geometry);
+        await page.screenshot({ path: path.join(target, 'hero-focal-geometry.png') });
     });
 
     test('records atomic page-family composition and rhythm metrics', async ({ page }, testInfo) => {
@@ -424,8 +532,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
                 'summary',
                 '[tabindex]:not([tabindex="-1"])',
                 '.et-card--interactive',
-                '.et-service-card',
-                '.et-shop-link',
+                '.et-shop-categories a',
                 '.et-product-card',
                 '.et-v3-service-row',
                 '.et-v3-promotion',
@@ -535,11 +642,10 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await recordCase(page, target, records, 'button-link', '/produkter/NDI-TEST-4765205551649102', '.et-btn--link', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'desktop-nav', '/', '[data-testid="desktop-navigation"] > a');
         await recordCase(page, target, records, 'cart-action', '/', '[data-testid="header-cart"]', undefined, { fullViewportEvidence: true });
-        await recordCase(page, target, records, 'generic-interactive-card', '/biloppslag', '.et-card--interactive', undefined, { fullViewportEvidence: true });
-        await recordCase(page, target, records, 'legacy-service-card', '/tjenester', '.et-service-card');
+        await recordCase(page, target, records, 'generic-interactive-card', '/dekk-og-felger', '.et-card--interactive', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'service-row', '/tjenester', '.et-v3-service-row', undefined, { keyboard: false, active: false, fullViewportEvidence: true });
         await recordCase(page, target, records, 'service-row-link', '/tjenester', '.et-v3-service-row__content > a');
-        await recordCase(page, target, records, 'shop-link', '/dekk-og-felger', '.et-shop-link');
+        await recordCase(page, target, records, 'shop-category-link', '/', '[data-testid="quick-finder"] .et-shop-categories a');
         await recordCase(page, target, records, 'product-card', '/dekk', '.et-product-card', undefined, { keyboard: false, active: false, fullViewportEvidence: true });
         await recordCase(page, target, records, 'product-card-link', '/dekk', '[data-testid="catalog-product-link"]');
         await recordCase(page, target, records, 'category-tile', '/dekk', '.et-catalog-category:not(.is-active)', undefined, { fullViewportEvidence: true });
@@ -556,26 +662,73 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await page.goto('/dekk', { waitUntil: 'domcontentloaded' });
         await settle(page);
         const selectedCategory = page.locator('.et-catalog-category.is-active').first();
+        await expect(selectedCategory, 'selected catalogue category must be visible').toBeVisible();
         records.push({
             id: 'category-selected',
             route: '/dekk',
             selector: '.et-catalog-category.is-active',
-            present: await selectedCategory.isVisible(),
+            present: true,
+            visible: true,
+            requiredVisible: true,
+            verification: 'required-visible',
             states: { selected: await visualState(selectedCategory) },
         });
 
         await page.goto('/tjenester/mobilt-dekkskift/foresporsel?fulfilment=mobile', { waitUntil: 'domcontentloaded' });
         await settle(page);
-        const disabledDate = page.getByTestId('booking-slot-select');
+        const locationStep = page.getByTestId('seasonal-step-location');
+        await locationStep.locator('input[name="fulfilment"][value="workshop"]').check();
+        await locationStep.locator('[data-booking-next]').click();
+        const vehicleStep = page.getByTestId('seasonal-step-vehicle-storage');
+        await expect(vehicleStep).toBeVisible();
+        await vehicleStep.locator('[name="vehicle"]').fill('Audit vehicle');
+        await vehicleStep.locator('[data-booking-next]').click();
+        await expect(page.getByTestId('seasonal-step-time')).toBeVisible();
+        const slotSelect = page.getByTestId('booking-slot-select');
+        const manualWindow = page.getByTestId('booking-manual-window');
+        const scheduleConfigured = await slotSelect.isVisible();
+        const enabledControl = scheduleConfigured ? slotSelect : manualWindow;
+        const disabledControl = scheduleConfigured ? manualWindow : slotSelect;
+        const enabledSelector = scheduleConfigured ? '[data-testid="booking-slot-select"]' : '[data-testid="booking-manual-window"]';
+        const disabledSelector = scheduleConfigured ? '[data-testid="booking-manual-window"]' : '[data-testid="booking-slot-select"]';
+        await expect(enabledControl, 'the active timing mode must expose a visible enabled control').toBeVisible();
+        await expect(enabledControl).toBeEnabled();
+        await expect(disabledControl, 'the inactive timing mode must remain in the DOM').toHaveCount(1);
+        await expect(disabledControl).toBeDisabled();
         records.push({
-            id: 'disabled-select',
+            id: scheduleConfigured ? 'enabled-slot-select' : 'enabled-manual-window',
             route: page.url(),
-            selector: '[data-testid="booking-slot-select"]',
-            present: await disabledDate.isVisible().catch(() => false),
-            states: await disabledDate.isVisible().catch(() => false) ? { disabled: await visualState(disabledDate) } : {},
+            selector: enabledSelector,
+            present: true,
+            visible: true,
+            requiredVisible: true,
+            verification: 'required-visible',
+            states: { enabled: await visualState(enabledControl) },
+        });
+        records.push({
+            id: scheduleConfigured ? 'disabled-manual-window-contract' : 'disabled-slot-select-contract',
+            route: page.url(),
+            selector: disabledSelector,
+            present: true,
+            visible: await disabledControl.isVisible(),
+            requiredVisible: false,
+            verification: 'dom-state',
+            states: { disabled: await visualState(disabledControl) },
         });
 
+        const required = records.filter((record) => record.requiredVisible);
+        const missingRequiredCaseIds = required.filter((record) => !record.present || !record.visible).map((record) => record.id);
+        const summary = {
+            requiredCaseCount: required.length,
+            verifiedRequiredCaseCount: required.length - missingRequiredCaseIds.length,
+            missingRequiredCaseIds,
+            allRequiredCasesPresent: missingRequiredCaseIds.length === 0,
+            domStateCaseCount: records.filter((record) => record.verification === 'dom-state').length,
+            bookingTimingMode: scheduleConfigured ? 'configured-slots' : 'manual-window',
+        };
         await writeFile(path.join(target, 'interaction-matrix.json'), JSON.stringify(records, null, 2));
+        await writeFile(path.join(target, 'interaction-matrix-summary.json'), JSON.stringify(summary, null, 2));
+        expect(summary.missingRequiredCaseIds, 'required interaction matrix cannot contain silent gaps').toEqual([]);
     });
 
     test('captures desktop submenu hover and real keyboard-open states', async ({ page }, testInfo) => {
@@ -631,24 +784,30 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await page.goto('/', { waitUntil: 'domcontentloaded' });
         await settle(page);
         const menuButton = page.locator('[data-menu-toggle]');
+        await expect(menuButton).toBeVisible();
         const menuStates: Record<string, VisualState | string | boolean | null> = await captureStandardStates(page, target, 'mobile-menu-button', menuButton);
         await menuButton.click();
         menuStates.open = await visualState(menuButton);
         await page.screenshot({ path: path.join(target, 'matrix-mobile-menu-open.png') });
-        records.push({ id: 'mobile-menu-button', route: '/', selector: '[data-menu-toggle]', present: true, states: menuStates });
+        records.push({ id: 'mobile-menu-button', route: '/', selector: '[data-menu-toggle]', present: true, visible: true, requiredVisible: true, verification: 'required-visible', states: menuStates });
 
         const mobileMenuLink = page.getByTestId('mobile-booking-link');
+        await expect(mobileMenuLink).toBeVisible();
         records.push({
             id: 'mobile-menu-link',
             route: '/',
             selector: '[data-testid="mobile-booking-link"]',
-            present: await mobileMenuLink.isVisible(),
+            present: true,
+            visible: true,
+            requiredVisible: true,
+            verification: 'required-visible',
             states: await captureStandardStates(page, target, 'mobile-menu-link', mobileMenuLink),
         });
 
         const mobileGroup = page.locator('.et-mobile-menu__group').first();
         const mobileGroupSummary = mobileGroup.locator('summary');
         const mobileGroupChild = mobileGroup.locator('.et-mobile-menu__children a').first();
+        await expect(mobileGroupSummary).toBeVisible();
         const mobileGroupStates = await captureStandardStates(page, target, 'mobile-menu-group-summary', mobileGroupSummary);
         mobileGroupStates.closedOpenAttribute = await mobileGroup.getAttribute('open');
         await mobileGroupSummary.click();
@@ -666,6 +825,9 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
             route: '/',
             selector: '.et-mobile-menu__group > summary',
             present: true,
+            visible: true,
+            requiredVisible: true,
+            verification: 'required-visible',
             states: mobileGroupStates,
         });
 
@@ -676,24 +838,142 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
             await page.getByTestId('catalog-filter-toggle').click();
         }
         const filterApply = page.getByTestId('catalog-filter-apply');
+        await expect(filterApply).toBeVisible();
         records.push({
             id: 'mobile-filter-apply',
             route: '/dekk',
             selector: '[data-testid="catalog-filter-apply"]',
-            present: await filterApply.isVisible(),
+            present: true,
+            visible: true,
+            requiredVisible: true,
+            verification: 'required-visible',
             states: await captureStandardStates(page, target, 'mobile-filter-apply', filterApply),
         });
 
         const checkbox = page.locator('.et-filter-toggle input').first();
+        await expect(checkbox).toBeVisible();
         records.push({
             id: 'mobile-filter-checkbox',
             route: '/dekk',
             selector: '.et-filter-toggle input',
-            present: await checkbox.isVisible(),
+            present: true,
+            visible: true,
+            requiredVisible: true,
+            verification: 'required-visible',
             states: await captureStandardStates(page, target, 'mobile-filter-checkbox', checkbox),
         });
 
+        const missingRequiredCaseIds = records.filter((record) => record.requiredVisible && (!record.present || !record.visible)).map((record) => record.id);
         await writeFile(path.join(target, 'mobile-interaction-matrix.json'), JSON.stringify(records, null, 2));
+        await writeFile(path.join(target, 'mobile-interaction-matrix-summary.json'), JSON.stringify({
+            requiredCaseCount: records.filter((record) => record.requiredVisible).length,
+            missingRequiredCaseIds,
+            allRequiredCasesPresent: missingRequiredCaseIds.length === 0,
+        }, null, 2));
+        expect(missingRequiredCaseIds, 'mobile interaction matrix cannot contain silent gaps').toEqual([]);
+    });
+
+    test('records explicit navigation, CTA, process and singleton-promotion classifications', async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== 'desktop-1440x900');
+        const target = rawRoot(testInfo);
+        await mkdir(target, { recursive: true });
+
+        await page.goto('/dekk', { waitUntil: 'domcontentloaded' });
+        await settle(page);
+        const storeNavigation = page.locator('[data-testid="desktop-navigation"] a[aria-current="page"]').first();
+        const catalogueHeading = page.locator('main h1').first();
+        await expect(storeNavigation).toBeVisible();
+        await expect(catalogueHeading).toBeVisible();
+        const navigation = {
+            classification: 'MATCH_CONTEXTUAL_HIERARCHY',
+            catalogueNavigationText: (await storeNavigation.innerText()).trim(),
+            catalogueNavigationHref: await storeNavigation.getAttribute('href'),
+            catalogueNavigationCurrent: await storeNavigation.getAttribute('aria-current'),
+            pageHeading: (await catalogueHeading.innerText()).trim(),
+            landingNavigationText: '',
+            landingNavigationHref: '',
+            rationale: 'Dekk og felger names the broad landing; Dekk names and links to the selected catalogue category while it is current.',
+        };
+        expect(navigation.catalogueNavigationText).toBe('Dekk');
+        expect(navigation.catalogueNavigationHref).toMatch(/\/dekk$/);
+        expect(navigation.catalogueNavigationCurrent).toBe('page');
+        expect(navigation.pageHeading).toBe('Dekk');
+        await page.screenshot({ path: path.join(target, 'critical-navigation-context.png') });
+
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        await settle(page);
+        const broadStoreNavigation = page.locator('[data-testid="desktop-navigation"] a[href$="/dekk-og-felger"]').first();
+        await expect(broadStoreNavigation).toBeVisible();
+        navigation.landingNavigationText = (await broadStoreNavigation.innerText()).trim();
+        navigation.landingNavigationHref = await broadStoreNavigation.getAttribute('href') ?? '';
+        expect(navigation.landingNavigationText).toBe('Dekk og felger');
+
+        await page.goto('/bilbatteri-tromso', { waitUntil: 'domcontentloaded' });
+        await settle(page);
+        const batteryCtas = page.locator('main a[href$="/tjenester/bilbatteri/foresporsel"]');
+        const batteryCtaCount = await batteryCtas.count();
+        expect(batteryCtaCount, 'battery landing must retain the observed repeated CTA composition until remediation').toBeGreaterThanOrEqual(3);
+        const battery = {
+            classification: 'VISUAL_DEFECT',
+            repeatedCtaCount: batteryCtaCount,
+            actions: await batteryCtas.evaluateAll((elements) => elements.map((element) => {
+                const rect = element.getBoundingClientRect();
+                return {
+                    text: (element.textContent ?? '').trim().replace(/\s+/g, ' '),
+                    className: element.getAttribute('class'),
+                    x: Math.round(rect.x),
+                    y: Math.round(rect.y + window.scrollY),
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height),
+                };
+            })),
+            rationale: 'The same primary request action appears in the hero, sticky section navigation and final request card, weakening hierarchy.',
+        };
+        await page.screenshot({ path: path.join(target, 'critical-battery-repeated-cta.png'), fullPage: true });
+
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        await settle(page);
+        const process = page.getByTestId('home-process');
+        const processSteps = process.locator('.et-v3-process__step');
+        await expect(process).toBeVisible();
+        await expect(processSteps).toHaveCount(4);
+        const processComposition = {
+            classification: 'DESIGN_SYSTEM_DRIFT',
+            section: await visualState(process),
+            stepCount: await processSteps.count(),
+            steps: await processSteps.evaluateAll((elements) => elements.map((element) => {
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                return {
+                    text: (element.textContent ?? '').trim().replace(/\s+/g, ' '),
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height),
+                    border: `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor}`,
+                };
+            })),
+            rationale: 'The four-step sequence is understandable, but the compressed icon/divider rail reads more mechanically than the image-led local direction.',
+        };
+        await process.screenshot({ path: path.join(target, 'critical-home-process.png') });
+
+        const promotions = page.getByTestId('homepage-promotions');
+        const promotionCards = promotions.getByTestId('homepage-promotion');
+        await expect(promotions).toBeVisible();
+        await expect(promotionCards).toHaveCount(1);
+        const singletonPromotion = {
+            classification: 'MATCH',
+            cardCount: await promotionCards.count(),
+            section: await visualState(promotions),
+            card: await visualState(promotionCards.first()),
+            rationale: 'A single active promotion deliberately expands into one image-led feature instead of leaving an empty grid slot.',
+        };
+        await promotions.screenshot({ path: path.join(target, 'critical-home-singleton-promotion.png') });
+
+        await writeFile(path.join(target, 'explicit-composition-classifications.json'), JSON.stringify({
+            navigation,
+            battery,
+            process: processComposition,
+            singletonPromotion,
+        }, null, 2));
     });
 
     test('captures delayed contact-map rendering and frame state', async ({ page }, testInfo) => {

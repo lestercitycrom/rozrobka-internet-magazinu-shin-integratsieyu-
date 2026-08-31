@@ -181,16 +181,21 @@ $fullResolutionEvidence = @(
     @{ Source = Join-Path $rawRoot 'desktop-1440x900\request-generic.png'; Output = '20-request-form-1440-full.jpg' },
     @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-button-outline-hover.png'; Output = '21-button-outline-hover-1440x900.jpg' },
     @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-button-link-hover.png'; Output = '22-button-link-hover-1440x900.jpg' },
-    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-desktop-submenu-child-focus.png'; Output = '22-submenu-keyboard-focus-1440x900.jpg' },
-    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\critical-mobile-menu-group-open.png'; Output = '23-mobile-menu-group-focus-390x844.jpg' },
-    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-contact-map-after-8s.png'; Output = '24-contact-map-loaded-1440x900.jpg' },
-    @{ Source = Join-Path $rawRoot 'desktop-1440x900\home.png'; Output = '25-home-1440-full.jpg' },
-    @{ Source = Join-Path $rawRoot 'desktop-1440x900\about.png'; Output = '26-about-1440-full.jpg' },
-    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\tyres.png'; Output = '27-catalog-mobile-390-full.jpg' },
-    @{ Source = Join-Path $localRoot 'local-desktop-1440x900\service-request-validation-error.png'; Output = '28-validation-bokmaal-1440-full.jpg' },
-    @{ Source = Join-Path $localRoot 'local-desktop-1440x900\service-request-validation-error-ru.png'; Output = '29-validation-russian-1440-full.jpg' },
-    @{ Source = Join-Path $localRoot 'local-mobile-touch-390x844\cart-populated.png'; Output = '30-cart-populated-mobile-full.jpg' },
-    @{ Source = Join-Path $localRoot 'local-mobile-touch-390x844\checkout-validation-error.png'; Output = '31-checkout-validation-mobile-full.jpg' }
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-desktop-submenu-child-focus.png'; Output = '23-submenu-keyboard-focus-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\critical-mobile-menu-group-open.png'; Output = '24-mobile-menu-group-focus-390x844.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-contact-map-after-8s.png'; Output = '25-contact-map-loaded-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\home.png'; Output = '26-home-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\about.png'; Output = '27-about-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'mobile-touch-390x844\tyres.png'; Output = '28-catalog-mobile-390-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-desktop-1440x900\service-request-validation-error.png'; Output = '29-validation-bokmaal-1440-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-desktop-1440x900\service-request-validation-error-ru.png'; Output = '30-validation-russian-1440-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-mobile-touch-390x844\cart-populated.png'; Output = '31-cart-populated-mobile-full.jpg' },
+    @{ Source = Join-Path $localRoot 'local-mobile-touch-390x844\checkout-validation-error.png'; Output = '32-checkout-validation-mobile-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\hero-focal-geometry.png'; Output = '33-hero-finder-brand-overlap-1440x900.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-home-process.png'; Output = '34-home-process-strip-1440.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-home-singleton-promotion.png'; Output = '35-home-singleton-promotion-1440.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-battery-repeated-cta.png'; Output = '36-battery-repeated-cta-1440-full.jpg' },
+    @{ Source = Join-Path $rawRoot 'desktop-1440x900\critical-navigation-context.png'; Output = '37-navigation-context-catalog-1440x900.jpg' }
 )
 
 foreach ($evidence in $fullResolutionEvidence) {
