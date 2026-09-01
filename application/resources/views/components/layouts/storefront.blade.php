@@ -254,7 +254,7 @@
 
     <main class="et-page-main" id="innhold">{{ $slot }}</main>
 
-    <footer class="et-footer">
+    <footer class="et-footer" data-footer-groups>
         <div class="et-container et-footer__main">
             <div class="et-footer__brand">
                 <div class="et-footer__logo-lockup">
@@ -271,9 +271,10 @@
                 <a class="et-btn et-btn--ghost et-btn--small" href="{{ $bookingUrl }}" data-testid="footer-booking">{{ __('pro.nav.booking') }}</a>
             </div>
 
-            <div class="et-footer__nav">
+            <div class="et-footer__nav" data-footer-group>
+                <button class="et-footer__toggle" type="button" aria-expanded="true" aria-controls="footer-services-links" data-footer-toggle data-testid="footer-services-toggle">{{ __('pro.footer.services') }}</button>
                 <h2>{{ __('pro.footer.services') }}</h2>
-                <ul>
+                <ul id="footer-services-links" data-footer-links>
                     @foreach ($headerServices->take(3) as $service)
                         <li><a href="{{ route($routePrefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ $service->title }}</a></li>
                     @endforeach
@@ -282,9 +283,10 @@
                 </ul>
             </div>
 
-            <div class="et-footer__nav">
+            <div class="et-footer__nav" data-footer-group>
+                <button class="et-footer__toggle" type="button" aria-expanded="true" aria-controls="footer-store-links" data-footer-toggle data-testid="footer-store-toggle">{{ __('pro.footer.store') }}</button>
                 <h2>{{ __('pro.footer.store') }}</h2>
-                <ul>
+                <ul id="footer-store-links" data-footer-links>
                     <li><a href="{{ route($routePrefix.'store.index') }}">{{ __('pro.footer.find_car') }}</a></li>
                     <li><a href="{{ route($routePrefix.'tires.index') }}">{{ __('pro.footer.tires') }}</a></li>
                     <li><a href="{{ route($routePrefix.'wheels.index') }}">{{ __('pro.footer.wheels') }}</a></li>
@@ -292,9 +294,10 @@
                 </ul>
             </div>
 
-            <div class="et-footer__nav et-footer__nav--company">
+            <div class="et-footer__nav et-footer__nav--company" data-footer-group>
+                <button class="et-footer__toggle" type="button" aria-expanded="true" aria-controls="footer-company-links" data-footer-toggle data-testid="footer-company-toggle">{{ __('pro.footer.company') }}</button>
                 <h2>{{ __('pro.footer.company') }}</h2>
-                <ul>
+                <ul id="footer-company-links" data-footer-links>
                     @foreach (['om-oss' => 'about', 'kontakt' => 'contact', 'personvern' => 'privacy', 'kjopsvilkar' => 'terms'] as $slug => $label)
                         @if (isset($contentPages[$slug]))
                             <li><a href="{{ route($routePrefix.'content.show', $slug) }}">{{ __('legal.'.$label) }}</a></li>

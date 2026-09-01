@@ -68,7 +68,7 @@
 }
 
 .storefront[data-storefront-style='sharp'] :where(.et-btn, .et-product-card__buy, .et-product-card__more):hover {
-    box-shadow: var(--et-shadow-sharp-hover);
+    box-shadow: none;
 }
 
 /* True circular controls keep their functional silhouette. */
