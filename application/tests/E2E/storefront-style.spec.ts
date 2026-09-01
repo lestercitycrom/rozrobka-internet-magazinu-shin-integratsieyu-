@@ -49,7 +49,14 @@ test('mobile footer links remain comfortable touch targets', async ({ page }, te
     test.skip(!isMobileProject(testInfo.project.name), 'Mobile touch-target contract');
 
     await page.goto('/dekk');
-    const footerLinkHeights = await page.locator('.et-footer li > a').evaluateAll((links) =>
+    const footerToggles = page.locator('[data-footer-toggle]');
+    await expect(footerToggles).toHaveCount(3);
+    for (const toggle of await footerToggles.all()) {
+        await expect(toggle).toBeVisible();
+        await toggle.click();
+    }
+
+    const footerLinkHeights = await page.locator('.et-footer li > a:visible').evaluateAll((links) =>
         links.map((link) => Math.round(link.getBoundingClientRect().height))
     );
 

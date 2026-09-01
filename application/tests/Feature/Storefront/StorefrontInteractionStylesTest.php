@@ -5,7 +5,8 @@ test('storefront interactive cards stay anchored and remain keyboard accessible'
     $home = file_get_contents(resource_path('views/welcome.blade.php'));
 
     expect($styles)
-        ->toContain('.easytire-interactive:focus-visible')
+        ->toContain('.easytire-interactive:hover')
+        ->not->toContain('.easytire-interactive:focus-visible')
         ->toContain('@media (prefers-reduced-motion: reduce)')
         ->not->toContain('transform: translateY');
 
@@ -31,6 +32,10 @@ test('storefront and admin consume one shared design foundation', function (): v
         ->toContain('--et-section-space:')
         ->toContain('--et-layout-gap:')
         ->toContain('--et-shadow-surface:')
+        ->toContain('--et-header-background: #ffffff;')
+        ->toContain('--et-header-background-scrolled: #ffffff;')
+        ->toContain('--et-focus-color-light:')
+        ->toContain('--et-focus-color-dark:')
         ->not->toContain('--et-color-brand-admin:')
         ->not->toContain('--et-color-brand-public:')
         ->not->toContain('--et-red: #')
@@ -40,13 +45,17 @@ test('storefront and admin consume one shared design foundation', function (): v
 
     expect($styles)
         ->toContain("@import './design-tokens.css';")
-        ->toContain('box-shadow: var(--et-focus-ring)')
+        ->toContain('outline: var(--et-focus-width) solid var(--et-focus-color);')
+        ->toContain('box-shadow: none;')
         ->not->toContain('--easytire-brand: #ff0000;');
 
     expect($layout)
         ->toContain('<meta name="theme-color" content="#101010">')
         ->toContain('data-site-header')
-        ->toContain('et-footer__logo-lockup');
+        ->toContain('et-footer__logo-lockup')
+        ->toContain('data-footer-groups')
+        ->toContain('data-footer-toggle')
+        ->toContain('data-footer-links');
 
     $storefront = file_get_contents(resource_path('css/storefront-v3.css'));
     $shapes = file_get_contents(resource_path('css/storefront-shapes.css'));
@@ -58,6 +67,9 @@ test('storefront and admin consume one shared design foundation', function (): v
         ->and($storefront)
         ->toContain('.et-v3-promotion:hover .et-v3-promotion__details')
         ->toContain('.et-v3-promotion:focus-within .et-v3-promotion__details')
+        ->toContain('.storefront .et-btn--outline:hover')
+        ->toContain("[aria-disabled='true']")
+        ->toContain('.storefront .et-footer.is-enhanced .et-footer__toggle')
         ->toContain('@media (hover: none), (max-width: 767px)')
         ->and($home)
         ->toContain('class="et-v3-promotion__details"')

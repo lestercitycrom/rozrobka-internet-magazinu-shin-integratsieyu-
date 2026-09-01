@@ -18,7 +18,7 @@ const initMobileMenu = () => {
         const open = !menu.classList.contains('is-open');
         menu.classList.toggle('is-open', open);
         setExpanded(button, open);
-        if (open) one('a', menu)?.focus();
+        if (open) one('summary, a', menu)?.focus();
     });
     menu.addEventListener('click', (event) => {
         if (event.target instanceof HTMLAnchorElement) close();
@@ -44,6 +44,37 @@ const initStickyHeader = () => {
         window.requestAnimationFrame(update);
     }, { passive: true });
     update();
+};
+
+const initFooterGroups = () => {
+    const footer = one('[data-footer-groups]');
+    if (!footer) return;
+
+    const mobile = window.matchMedia('(max-width: 640px)');
+    const groups = all('[data-footer-group]', footer);
+
+    const setExpanded = (group, expanded) => {
+        const button = one('[data-footer-toggle]', group);
+        const links = one('[data-footer-links]', group);
+        if (!button || !links) return;
+        button.setAttribute('aria-expanded', String(expanded));
+        links.hidden = mobile.matches ? !expanded : false;
+    };
+
+    groups.forEach((group) => {
+        one('[data-footer-toggle]', group)?.addEventListener('click', () => {
+            const button = one('[data-footer-toggle]', group);
+            setExpanded(group, button?.getAttribute('aria-expanded') !== 'true');
+        });
+    });
+
+    const sync = () => {
+        footer.classList.add('is-enhanced');
+        groups.forEach((group) => setExpanded(group, !mobile.matches));
+    };
+
+    mobile.addEventListener('change', sync);
+    sync();
 };
 
 const initProductionFilters = () => {
@@ -393,6 +424,7 @@ const initAdminSidebar = () => {
 
 initMobileMenu();
 initStickyHeader();
+initFooterGroups();
 initProductionFilters();
 initTabs();
 initBookingFlow();

@@ -1,13 +1,13 @@
 # Current task
 
 - Umbrella: [#9 — Audit website against customer sources and remediate confirmed gaps](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9)
-- Issue: [#28 — Localize every public validation error (AUD-26-001)](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/28)
+- Issue: [#29 — Unify storefront interaction states and shared shell](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/29)
 - State: `ready-for-review`
-- Branch: `codex/issue-28-public-validation-localization`
-- PR: [#35 — Localize public validation errors](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/35)
-- Exact base: `ce2ee0eebf8dca361b5bdce8d9eef4d13435492c`
-- Exact green implementation/PR head before this pointer-only state update: `f249775b95ed52c77dcda4c49dccd127ecb97111`
-- Scope: natural Bokmål and hidden-Russian public validation copy, attributes, accessible error association and focused regression coverage; no business-rule changes.
+- Branch: `codex/issue-29-storefront-interaction-shell`
+- PR: [#36 — Unify storefront interaction states and shell](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/36)
+- Exact base: `07ce99a2d09afdfe521f6150486aa98c799cef97`
+- Exact green implementation head before the pointer-only review-state update: `c5739b3aa03ee6eb988cc0a857f0189d7728fc9a`
+- Scope: semantic hover/focus states, opaque sticky header, standalone mobile touch targets and a compact complete mobile footer; no page redesign or business-rule changes.
 - Runtime authorisation: none; local/CI synthetic only, no deployment, NDI, Dintero, email, Notion, Telegram or other external side effect.
 
 The Issue is the full task. This file is only a pointer.
