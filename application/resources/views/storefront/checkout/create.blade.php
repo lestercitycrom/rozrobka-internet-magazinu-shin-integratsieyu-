@@ -43,7 +43,7 @@
                         <div class="et-alert et-alert--info" data-testid="checkout-confirmed-fitment" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('commerce.confirmed_fitment', ['size' => $confirmedFitment['width'].'/'.$confirmedFitment['aspect'].' R'.$confirmedFitment['rim']]) }}</div></div>
                     @endif
                     @if($errors->any())
-                        <div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
+                        <div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem" data-testid="request-errors"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
                     @endif
                     @error('payment')<div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $message }}</div></div>@enderror
 
@@ -83,38 +83,38 @@
                         <legend class="sr-only">{{ __('commerce.terms') }}</legend>
                         <div class="et-stack">
                             <label class="et-check" data-testid="checkout-fitment-confirmation">
-                                <input required type="checkbox" name="fitment_confirmation" value="1" @checked(old('fitment_confirmation'))>
+                                <input required type="checkbox" name="fitment_confirmation" value="1" @checked(old('fitment_confirmation')) aria-describedby="checkout-fitment-confirmation-error" aria-invalid="{{ $errors->has('fitment_confirmation') ? 'true' : 'false' }}">
                                 <span>{{ __('commerce.fitment_confirmation') }}</span>
                             </label>
-                            @error('fitment_confirmation')<p class="et-form-error">{{ $message }}</p>@enderror
+                            @error('fitment_confirmation')<p class="et-form-error" id="checkout-fitment-confirmation-error">{{ $message }}</p>@enderror
 
                             @if($hasServices)
                                 <label class="et-check" data-testid="checkout-early-service-start">
-                                    <input required type="checkbox" name="early_service_start" value="1" @checked(old('early_service_start'))>
+                                    <input required type="checkbox" name="early_service_start" value="1" @checked(old('early_service_start')) aria-describedby="checkout-early-service-start-error" aria-invalid="{{ $errors->has('early_service_start') ? 'true' : 'false' }}">
                                     <span>{{ __('commerce.early_service_start') }}</span>
                                 </label>
-                                @error('early_service_start')<p class="et-form-error">{{ $message }}</p>@enderror
+                                @error('early_service_start')<p class="et-form-error" id="checkout-early-service-start-error">{{ $message }}</p>@enderror
                             @endif
 
                             <label class="et-check" data-testid="checkout-privacy">
-                                <input required type="checkbox" name="consent" value="1" @checked(old('consent')) aria-label="{{ __('commerce.consent') }}">
+                                <input required type="checkbox" name="consent" value="1" @checked(old('consent')) aria-label="{{ __('commerce.consent') }}" aria-describedby="checkout-consent-error" aria-invalid="{{ $errors->has('consent') ? 'true' : 'false' }}">
                                 @if (isset($legalPages['personvern']))
                                     <span>{{ __('commerce.privacy_acknowledgement') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}" target="_blank" rel="noopener">{{ __('legal.privacy') }}</a>.</span>
                                 @else
                                     <span>{{ __('commerce.consent') }}</span>
                                 @endif
                             </label>
-                            @error('consent')<p class="et-form-error">{{ $message }}</p>@enderror
+                            @error('consent')<p class="et-form-error" id="checkout-consent-error">{{ $message }}</p>@enderror
 
                             <label class="et-check" data-testid="checkout-terms">
-                                <input required type="checkbox" name="terms" value="1" @checked(old('terms')) aria-label="{{ __('commerce.terms') }}">
+                                <input required type="checkbox" name="terms" value="1" @checked(old('terms')) aria-label="{{ __('commerce.terms') }}" aria-describedby="checkout-terms-error" aria-invalid="{{ $errors->has('terms') ? 'true' : 'false' }}">
                                 @if (isset($legalPages['kjopsvilkar']))
                                     <span>{{ __('legal.terms_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}" target="_blank" rel="noopener">{{ __('legal.terms') }}</a> ({{ \App\Modules\Orders\LegalDocumentVersions::TERMS }}).</span>
                                 @else
                                     <span>{{ __('commerce.terms') }}</span>
                                 @endif
                             </label>
-                            @error('terms')<p class="et-form-error">{{ $message }}</p>@enderror
+                            @error('terms')<p class="et-form-error" id="checkout-terms-error">{{ $message }}</p>@enderror
                         </div>
                     </fieldset>
 

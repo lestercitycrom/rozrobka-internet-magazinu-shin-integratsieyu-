@@ -357,7 +357,7 @@ const initConditionalAddress = () => {
 };
 
 const initRequestErrorFocus = () => {
-    all('form[data-testid="generic-service-request"]').forEach((form) => {
+    all('form[data-testid="generic-service-request"], form[data-testid="checkout-form"]').forEach((form) => {
         if (!one('[data-testid="request-errors"]', form)) return;
         const firstInvalidField = one('[aria-invalid="true"]', form);
         if (!(firstInvalidField instanceof HTMLElement)) return;

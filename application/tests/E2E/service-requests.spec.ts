@@ -153,6 +153,37 @@ test('generic service request remains available outside the seasonal flow', asyn
     await expectNoGlobalOverflow(page);
 });
 
+test('generic request renders natural localized server errors with accessible focus', async ({ page }, testInfo) => {
+    const prefix = localePrefix(testInfo.project.name);
+    const russian = testInfo.project.name.includes('ru');
+    await page.goto(`${prefix}/tjenester/oljeskift/foresporsel`);
+
+    const form = page.getByTestId('generic-service-request');
+    await expect(form).toBeVisible();
+    await form.locator('[name="email"]').fill('invalid');
+    await form.locator('[name="phone"]').fill('123');
+    await form.evaluate((element) => {
+        const formElement = element as HTMLFormElement;
+        formElement.noValidate = true;
+        formElement.requestSubmit();
+    });
+
+    await expect(page.getByTestId('request-errors')).toBeVisible();
+    const name = field(page, 'name');
+    const nameError = page.locator('#booking-name-error');
+    await expect(nameError).toHaveText(russian ? 'Заполните поле «имя».' : 'Fyll ut navn.');
+    await expect(name).toHaveAttribute('aria-invalid', 'true');
+    await expect(name).toHaveAttribute('aria-describedby', /booking-name-error/);
+    await expect(name).toBeFocused();
+
+    const visibleErrors = (await form.locator('.et-form-error').allTextContents()).join(' ');
+    expect(visibleErrors).not.toMatch(/\b(?:validation|[a-z][a-z0-9_]*)\.[a-z0-9_.]+\b/i);
+    expect(visibleErrors).toContain(russian ? 'Укажите корректный адрес электронной почты.' : 'Oppgi en gyldig e-postadresse.');
+    expect(visibleErrors).toContain(russian ? 'Необходимо согласиться на обработку персональных данных.' : 'Du må godta behandlingen av personopplysninger.');
+    await expectNoGlobalOverflow(page);
+    await form.screenshot({ path: testInfo.outputPath(`issue-28-service-validation-${testInfo.project.name}.png`) });
+});
+
 test('battery request enforces its contract in Bokmål, Russian QA and mobile layouts', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     const russian = testInfo.project.name.includes('ru');
