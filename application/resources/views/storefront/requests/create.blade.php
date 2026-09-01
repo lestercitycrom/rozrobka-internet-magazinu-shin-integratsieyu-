@@ -228,13 +228,13 @@
                                     <div class="et-form-grid" style="margin-top:1.2rem">
                                         <div class="et-field">
                                             <label class="et-label" for="booking-name">{{ __('booking.name') }} <span class="et-required">*</span></label>
-                                            <input class="et-input easytire-input" id="booking-name" name="name" type="text" value="{{ old('name') }}" required autocomplete="name" aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}">
-                                            @error('name')<p class="et-form-error">{{ $message }}</p>@enderror
+                                            <input class="et-input easytire-input" id="booking-name" name="name" type="text" value="{{ old('name') }}" required autocomplete="name" aria-describedby="booking-name-error" aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}">
+                                            @error('name')<p class="et-form-error" id="booking-name-error">{{ $message }}</p>@enderror
                                         </div>
                                         <div class="et-field">
                                             <label class="et-label" for="booking-email">{{ __('booking.email') }} <span class="et-required">*</span></label>
-                                            <input class="et-input easytire-input" id="booking-email" name="email" type="email" value="{{ old('email') }}" required autocomplete="email" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
-                                            @error('email')<p class="et-form-error">{{ $message }}</p>@enderror
+                                            <input class="et-input easytire-input" id="booking-email" name="email" type="email" value="{{ old('email') }}" required autocomplete="email" aria-describedby="booking-email-error" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
+                                            @error('email')<p class="et-form-error" id="booking-email-error">{{ $message }}</p>@enderror
                                         </div>
                                         <div class="et-field">
                                             <label class="et-label" for="booking-phone">{{ __('booking.phone') }} <span class="et-required">*</span></label>
@@ -356,13 +356,13 @@
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-name">{{ __('booking.name') }} <span class="et-required">*</span></label>
-                                    <input class="et-input easytire-input" id="booking-name" name="name" value="{{ old('name') }}" required autocomplete="name" aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}">
-                                    @error('name')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    <input class="et-input easytire-input" id="booking-name" name="name" value="{{ old('name') }}" required autocomplete="name" aria-describedby="booking-name-error" aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}">
+                                    @error('name')<p class="et-form-error" id="booking-name-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-email">{{ __('booking.email') }} <span class="et-required">*</span></label>
-                                    <input class="et-input easytire-input" id="booking-email" name="email" type="email" value="{{ old('email') }}" required autocomplete="email" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
-                                    @error('email')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    <input class="et-input easytire-input" id="booking-email" name="email" type="email" value="{{ old('email') }}" required autocomplete="email" aria-describedby="booking-email-error" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
+                                    @error('email')<p class="et-form-error" id="booking-email-error">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-phone">{{ __('booking.phone') }} <span class="et-required">*</span></label>
@@ -394,10 +394,10 @@
 
                             <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('booking.intro') }}</div></div>
                             <label class="et-check" style="margin-top:1.2rem">
-                                <input required name="consent" type="checkbox" value="1" @checked(old('consent'))>
+                                <input required name="consent" type="checkbox" value="1" @checked(old('consent')) aria-describedby="booking-consent-error" aria-invalid="{{ $errors->has('consent') ? 'true' : 'false' }}">
                                 <span>{{ __('booking.consent') }}</span>
                             </label>
-                            @error('consent')<p class="et-form-error">{{ $message }}</p>@enderror
+                            @error('consent')<p class="et-form-error" id="booking-consent-error">{{ $message }}</p>@enderror
                             <button class="et-btn et-btn--primary" type="submit" style="margin-top:1.2rem" data-testid="generic-submit">{{ __('pro.booking.submit') }}</button>
                         </div>
                     </div>
