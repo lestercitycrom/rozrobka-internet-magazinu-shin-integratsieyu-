@@ -2,6 +2,8 @@ import { expect, test, type Locator, type Page, type TestInfo } from '@playwrigh
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+const auditProductRoute = process.env.PLAYWRIGHT_AUDIT_PRODUCT_ROUTE ?? '/produkter/NDI-TEST-4765205551649102';
+
 type VisualState = {
     tag: string;
     className: string | null;
@@ -50,7 +52,7 @@ const compositionSurfaces = [
     { id: 'service-detail', route: '/tjenester/mobilt-dekkskift' },
     { id: 'shop-entry', route: '/dekk-og-felger' },
     { id: 'catalog', route: '/dekk' },
-    { id: 'product-detail', route: '/produkter/NDI-TEST-4765205551649102' },
+    { id: 'product-detail', route: auditProductRoute },
     { id: 'request-form', route: '/tjenester/bilbatteri/foresporsel' },
     { id: 'empty-cart', route: '/handlekurv' },
     { id: 'prices', route: '/priser' },
@@ -363,14 +365,8 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         expect(geometry.focalContract, 'the published hero asset must have an audited focal contract').not.toBeNull();
         expect(geometry.brand, 'the EasyTire van brand focal region must project into the viewport').not.toBeNull();
         expect(geometry.vehicle, 'the customer-relevant vehicle/work focal region must project into the viewport').not.toBeNull();
-        expect(
-            geometry.finderOverlapsVehicle,
-            'the 1920 composition currently grazes the primary vehicle focal region; narrower desktop and mobile layouts must not',
-        ).toBe(testInfo.project.name === 'desktop-1920x1080');
-        expect(
-            geometry.finderOverlapsBrand,
-            'desktop finder currently obscures the EasyTire van brand; mobile stacking must not',
-        ).toBe(testInfo.project.name.startsWith('desktop-'));
+        expect(geometry.finderOverlapsVehicle, 'finder must not cover the vehicle/work focal region').toBeFalsy();
+        expect(geometry.finderOverlapsBrand, 'finder must not cover the EasyTire van brand focal region').toBeFalsy();
         await page.evaluate((snapshot) => {
             const layer = document.createElement('div');
             layer.dataset.auditHeroOverlay = 'true';
@@ -516,7 +512,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         test.setTimeout(600_000);
         test.skip(testInfo.project.name !== 'desktop-1440x900');
         const target = rawRoot(testInfo);
-        const routes = ['/', '/tjenester', '/tjenester/mobilt-dekkskift', '/dekk-og-felger', '/dekk', '/produkter/NDI-TEST-4765205551649102', '/tjenester/bilbatteri/foresporsel', '/handlekurv', '/priser', '/om-oss', '/kontakt'];
+        const routes = ['/', '/tjenester', '/tjenester/mobilt-dekkskift', '/dekk-og-felger', '/dekk', auditProductRoute, '/tjenester/bilbatteri/foresporsel', '/handlekurv', '/priser', '/om-oss', '/kontakt'];
         const inventory: Record<string, unknown>[] = [];
         await mkdir(target, { recursive: true });
 
@@ -639,7 +635,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await recordCase(page, target, records, 'button-primary', '/', '[data-testid="header-booking"]', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'button-outline', '/dekk', '[data-testid="catalog-filter-reset"]', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'button-ghost', '/tjenester/mobilt-dekkskift', '.et-btn--ghost', undefined, { fullViewportEvidence: true });
-        await recordCase(page, target, records, 'button-link', '/produkter/NDI-TEST-4765205551649102', '.et-btn--link', undefined, { fullViewportEvidence: true });
+        await recordCase(page, target, records, 'button-link', auditProductRoute, '.et-btn--link', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'desktop-nav', '/', '[data-testid="desktop-navigation"] > a');
         await recordCase(page, target, records, 'cart-action', '/', '[data-testid="header-cart"]', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'generic-interactive-card', '/dekk-og-felger', '.et-card--interactive', undefined, { fullViewportEvidence: true });
@@ -650,7 +646,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await recordCase(page, target, records, 'product-card-link', '/dekk', '[data-testid="catalog-product-link"]');
         await recordCase(page, target, records, 'category-tile', '/dekk', '.et-catalog-category:not(.is-active)', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'filter-summary', '/dekk', '.et-filter-section > summary');
-        await recordCase(page, target, records, 'quantity-control', '/produkter/NDI-TEST-4765205551649102', '[data-testid="product-quantity"]');
+        await recordCase(page, target, records, 'quantity-control', auditProductRoute, '[data-testid="product-quantity"]');
         await recordCase(page, target, records, 'input', '/tjenester/bilbatteri/foresporsel', '#booking-registration-number', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'select', '/tjenester/bilbatteri/foresporsel', '#booking-fulfilment');
         await recordCase(page, target, records, 'date', '/tjenester/bilbatteri/foresporsel', '#booking-preferred-date');

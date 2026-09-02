@@ -1,0 +1,278 @@
+[
+  {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "asset": "/brand/hero-service-desktop.webp",
+    "media": {
+      "x": 538,
+      "y": 117,
+      "width": 1382,
+      "height": 544
+    },
+    "brand": {
+      "x": 1450,
+      "y": 199,
+      "width": 318,
+      "height": 163
+    },
+    "vehicle": {
+      "x": 828,
+      "y": 261,
+      "width": 525,
+      "height": 326
+    },
+    "finder": {
+      "x": 320,
+      "y": 661,
+      "width": 1280,
+      "height": 236
+    },
+    "content": {
+      "x": 320,
+      "y": 131.71875,
+      "width": 665.59375,
+      "height": 514.5625
+    },
+    "primaryAction": {
+      "x": 320,
+      "y": 511.9375,
+      "width": 178.703125,
+      "height": 50
+    },
+    "finderBrandOverlapArea": 0,
+    "finderVehicleOverlapArea": 0,
+    "finderContentOverlapArea": 0
+  },
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "asset": "/brand/hero-service-desktop.webp",
+    "media": {
+      "x": 403,
+      "y": 117,
+      "width": 1037,
+      "height": 544
+    },
+    "brand": {
+      "x": 1087,
+      "y": 226,
+      "width": 239,
+      "height": 122
+    },
+    "vehicle": {
+      "x": 621,
+      "y": 272,
+      "width": 394,
+      "height": 245
+    },
+    "finder": {
+      "x": 80,
+      "y": 661,
+      "width": 1280,
+      "height": 236
+    },
+    "content": {
+      "x": 80,
+      "y": 140.21875,
+      "width": 665.59375,
+      "height": 497.5625
+    },
+    "primaryAction": {
+      "x": 80,
+      "y": 503.4375,
+      "width": 178.703125,
+      "height": 50
+    },
+    "finderBrandOverlapArea": 0,
+    "finderVehicleOverlapArea": 0,
+    "finderContentOverlapArea": 0
+  },
+  {
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "asset": "/brand/hero-service-desktop.webp",
+    "media": {
+      "x": 382,
+      "y": 117,
+      "width": 984,
+      "height": 488
+    },
+    "brand": {
+      "x": 1031,
+      "y": 210,
+      "width": 226,
+      "height": 116
+    },
+    "vehicle": {
+      "x": 589,
+      "y": 255,
+      "width": 374,
+      "height": 232
+    },
+    "finder": {
+      "x": 43,
+      "y": 605.46875,
+      "width": 1280,
+      "height": 236
+    },
+    "content": {
+      "x": 43,
+      "y": 117,
+      "width": 665.59375,
+      "height": 488.46875
+    },
+    "primaryAction": {
+      "x": 43,
+      "y": 471.125,
+      "width": 178.703125,
+      "height": 50
+    },
+    "finderBrandOverlapArea": 0,
+    "finderVehicleOverlapArea": 0,
+    "finderContentOverlapArea": 0
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "asset": "/brand/hero-service-desktop.webp",
+    "media": {
+      "x": 358,
+      "y": 117,
+      "width": 922,
+      "height": 494
+    },
+    "brand": {
+      "x": 967,
+      "y": 217,
+      "width": 212,
+      "height": 109
+    },
+    "vehicle": {
+      "x": 552,
+      "y": 259,
+      "width": 350,
+      "height": 218
+    },
+    "finder": {
+      "x": 24,
+      "y": 611,
+      "width": 1232,
+      "height": 236
+    },
+    "content": {
+      "x": 24,
+      "y": 125.78125,
+      "width": 640.625,
+      "height": 476.4375
+    },
+    "primaryAction": {
+      "x": 24,
+      "y": 467.875,
+      "width": 178.703125,
+      "height": 50
+    },
+    "finderBrandOverlapArea": 0,
+    "finderVehicleOverlapArea": 0,
+    "finderContentOverlapArea": 0
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "asset": "/brand/hero-service-mobile.webp",
+    "media": {
+      "x": 0,
+      "y": 71,
+      "width": 390,
+      "height": 260
+    },
+    "brand": {
+      "x": 0,
+      "y": 9,
+      "width": 144,
+      "height": 93
+    },
+    "vehicle": {
+      "x": 90,
+      "y": 4,
+      "width": 300,
+      "height": 312
+    },
+    "finder": {
+      "x": 16,
+      "y": 634.5625,
+      "width": 358,
+      "height": 418.96875
+    },
+    "content": {
+      "x": 16,
+      "y": 332.390625,
+      "width": 358,
+      "height": 273.375
+    },
+    "primaryAction": {
+      "x": 16,
+      "y": 555.765625,
+      "width": 358,
+      "height": 50
+    },
+    "finderBrandOverlapArea": 0,
+    "finderVehicleOverlapArea": 0,
+    "finderContentOverlapArea": 0
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "asset": "/brand/hero-service-mobile.webp",
+    "media": {
+      "x": 0,
+      "y": 71,
+      "width": 320,
+      "height": 260
+    },
+    "brand": {
+      "x": 0,
+      "y": 52,
+      "width": 118,
+      "height": 76
+    },
+    "vehicle": {
+      "x": 74,
+      "y": 48,
+      "width": 246,
+      "height": 256
+    },
+    "finder": {
+      "x": 12,
+      "y": 621.375,
+      "width": 296,
+      "height": 445.484375
+    },
+    "content": {
+      "x": 12,
+      "y": 332.390625,
+      "width": 296,
+      "height": 260.1875
+    },
+    "primaryAction": {
+      "x": 12,
+      "y": 542.578125,
+      "width": 296,
+      "height": 50
+    },
+    "finderBrandOverlapArea": 0,
+    "finderVehicleOverlapArea": 0,
+    "finderContentOverlapArea": 0
+  }
+]
