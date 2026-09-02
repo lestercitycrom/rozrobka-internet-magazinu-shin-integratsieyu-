@@ -1,15 +1,6 @@
 @php
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
     $contact = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->contact();
-    $serviceIcon = static function ($service): string {
-        $slug = mb_strtolower((string) data_get($service, 'slug'));
-
-        return match (true) {
-            str_contains($slug, 'mobil'), str_contains($slug, 'bobil'), str_contains($slug, 'varebil') => 'mobile-service',
-            str_contains($slug, 'verksted'), str_contains($slug, 'batteri'), str_contains($slug, 'diagnose'), str_contains($slug, 'olje') => 'workshop',
-            default => 'tire',
-        };
-    };
 @endphp
 
 <x-layouts.storefront :title="__('storefront.services_title')" active-section="services">
@@ -34,30 +25,34 @@
                     <p class="et-lead">{{ __('pro.home.services_text') }}</p>
                 </div>
             </div>
-            <div class="et-v3-services-index">
+            <div class="et-services-catalog" data-testid="services-catalog">
                 @forelse ($services as $index => $service)
-                    @php($publishedHero = data_get($service, 'hero.url'))
-                    <article class="et-v3-service-row">
-                        <a class="et-v3-service-row__media" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}" tabindex="-1" aria-hidden="true">
-                            @if (is_string($publishedHero) && $publishedHero !== '')
-                                <img src="{{ $publishedHero }}" width="1000" height="720" loading="lazy" alt="">
+                    @php
+                        $destination = route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug);
+                        $media = $serviceMedia[$service->slug];
+                    @endphp
+                    <article class="et-service-offer{{ $media['feature'] ? ' et-service-offer--feature' : '' }}" data-testid="service-card" data-service-slug="{{ $service->slug }}" data-media-kind="{{ $media['kind'] }}" data-media-source="{{ $media['source'] }}">
+                        <a class="et-service-card__media et-service-card__media--{{ $media['crop'] }}" href="{{ $destination }}" tabindex="-1" aria-hidden="true">
+                            @if ($media['url'])
+                                <img src="{{ $media['url'] }}" width="1000" height="720" loading="lazy" alt="">
                             @else
-                                <span class="et-v3-service-row__graphic et-v3-service-row__graphic--{{ $index % 3 }}">
-                                    <x-icon :name="$serviceIcon($service)" :size="72" />
-                                    <strong>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</strong>
+                                <span class="et-service-card__fallback">
+                                    <img src="/brand/easytire-mark.svg" width="88" height="88" alt="">
+                                    <span>{{ __('pro.services.kicker') }}</span>
                                 </span>
                             @endif
+                            <strong class="et-service-card__number">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</strong>
                         </a>
-                        <div class="et-v3-service-row__content">
-                            <span>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                            <h2>{{ $service->title }}</h2>
+                        <div class="et-service-card__content">
+                            <p class="et-service-card__meta">{{ __('pro.services.kicker') }}</p>
+                            <h2><a href="{{ $destination }}">{{ $service->title }}</a></h2>
                             @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
-                            <a href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
+                            <span class="et-service-card__link" aria-hidden="true">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></span>
                         </div>
                     </article>
                 @empty
-                    <div class="et-empty-state" style="grid-column:1/-1">
-                        <div><div class="et-empty-state__icon" aria-hidden="true">+</div><h2 class="et-h3" style="margin-top:1rem">{{ __('storefront.services_empty') }}</h2></div>
+                    <div class="et-empty-state et-services-catalog__empty">
+                        <div><div class="et-empty-state__icon" aria-hidden="true">+</div><h2 class="et-h3">{{ __('storefront.services_empty') }}</h2></div>
                     </div>
                 @endforelse
             </div>

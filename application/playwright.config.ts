@@ -7,7 +7,10 @@ const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
 const e2eDatabase = process.env.E2E_DB_DATABASE ?? `${process.cwd()}/database/e2e.sqlite`;
 const e2eDatabaseForPhp = e2eDatabase.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
-const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|catalog-mobile-layout|header-navigation|home-hero-process|homepage-feedback|interaction-shell|product-detail|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
+const phpTempDirectory = (process.env.PLAYWRIGHT_PHP_TEMP_DIR ?? `${process.cwd()}/storage/framework/playwright-tmp`).replace(/\\/g, '/');
+const phpTempDirectoryForPhp = phpTempDirectory.replace(/'/g, "\\'");
+const phpCommand = `"${phpBinary}" -d "sys_temp_dir=${phpTempDirectory}"`;
+const buyerSpecs = /(buyer\.smoke|checkout\.smoke|catalog-live|catalog-mobile-layout|header-navigation|home-hero-process|homepage-feedback|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
 
 export default defineConfig({
     testDir: './tests/E2E',
@@ -71,7 +74,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: `"${phpBinary}" -r "file_exists('${e2eDatabaseForPhp}') || touch('${e2eDatabaseForPhp}');" && "${phpBinary}" artisan migrate:fresh --force && "${phpBinary}" artisan e2e:seed-admin && "${phpBinary}" artisan db:seed --class=E2eStorefrontSeeder && "${phpBinary}" artisan storage:link && "${phpBinary}" artisan serve --host=127.0.0.1 --port=${serverPort}`,
+        command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${e2eDatabaseForPhp}') || touch('${e2eDatabaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan e2e:seed-admin && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder && ${phpCommand} artisan storage:link && ${phpCommand} artisan serve --host=127.0.0.1 --port=${serverPort}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Storefront\StoreServiceRequest;
 use App\Modules\Content\Enums\ServicePageLocale;
 use App\Modules\Content\ReadModel\PublishedServicePageReadService;
+use App\Modules\Content\ReadModel\ServiceMediaCatalog;
 use App\Modules\Outbox\OutboxPublisher;
 use App\Modules\ServiceBooking\BookingCalendar;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
@@ -18,7 +19,7 @@ use Illuminate\View\View;
 
 class ServiceRequestController extends Controller
 {
-    public function create(string $slug, PublishedServicePageReadService $services, SeasonalQuoteCalculator $quotes, BookingCalendar $calendar): View
+    public function create(string $slug, PublishedServicePageReadService $services, SeasonalQuoteCalculator $quotes, BookingCalendar $calendar, ServiceMediaCatalog $media): View
     {
         $service = $services->findBySlug($slug, $this->locale());
         abort_if($service === null, 404);
@@ -31,6 +32,7 @@ class ServiceRequestController extends Controller
             'seasonalPrices' => $quotes->publicMatrix(),
             'scheduleConfigured' => $calendar->hasConfiguredSchedule($requestedFulfilment),
             'submissionToken' => old('submission_token', (string) Str::uuid()),
+            'serviceMedia' => $media->for($service),
         ]);
     }
 

@@ -1,0 +1,450 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "inventory": [
+      {
+        "slug": "mobilt-dekkskift",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tromso",
+        "width": 845,
+        "height": 420
+      },
+      {
+        "slug": "dekkverksted",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/tjenester/dekkverksted",
+        "width": 411,
+        "height": 420
+      },
+      {
+        "slug": "tesla-og-elbil",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tesla-elbil-tromso",
+        "width": 411,
+        "height": 495
+      },
+      {
+        "slug": "bobil-og-varebil",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/tjenester/bobil-og-varebil",
+        "width": 411,
+        "height": 495
+      },
+      {
+        "slug": "dekkhotell",
+        "kind": "repository",
+        "source": "customer-local-tire-storage-photo",
+        "href": "http://127.0.0.1:8031/dekkhotell-tromso",
+        "width": 845,
+        "height": 609
+      },
+      {
+        "slug": "dekk-felg-og-hjulpakker",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tjenester/dekk-felg-og-hjulpakker",
+        "width": 411,
+        "height": 609
+      },
+      {
+        "slug": "omlegging-balansering",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/omlegging-balansering-dekk-tromso",
+        "width": 411,
+        "height": 473
+      },
+      {
+        "slug": "dekkreparasjon",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/dekkreparasjon-tromso",
+        "width": 411,
+        "height": 473
+      },
+      {
+        "slug": "tpms-sensor",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tpms-sensor-tromso",
+        "width": 411,
+        "height": 473
+      },
+      {
+        "slug": "oljeskift",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/oljeskift-tromso",
+        "width": 411,
+        "height": 508
+      },
+      {
+        "slug": "bilbatteri",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/bilbatteri-tromso",
+        "width": 411,
+        "height": 508
+      },
+      {
+        "slug": "bildiagnose",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/bildiagnose-tromso",
+        "width": 411,
+        "height": 508
+      },
+      {
+        "slug": "lyspaerer-viskerblad",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/bytte-lyspaerer-viskerblad-tromso",
+        "width": 411,
+        "height": 495
+      }
+    ]
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "inventory": [
+      {
+        "slug": "mobilt-dekkskift",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tromso",
+        "width": 814,
+        "height": 420
+      },
+      {
+        "slug": "dekkverksted",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/tjenester/dekkverksted",
+        "width": 395,
+        "height": 420
+      },
+      {
+        "slug": "tesla-og-elbil",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tesla-elbil-tromso",
+        "width": 395,
+        "height": 461
+      },
+      {
+        "slug": "bobil-og-varebil",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/tjenester/bobil-og-varebil",
+        "width": 395,
+        "height": 461
+      },
+      {
+        "slug": "dekkhotell",
+        "kind": "repository",
+        "source": "customer-local-tire-storage-photo",
+        "href": "http://127.0.0.1:8031/dekkhotell-tromso",
+        "width": 814,
+        "height": 586
+      },
+      {
+        "slug": "dekk-felg-og-hjulpakker",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tjenester/dekk-felg-og-hjulpakker",
+        "width": 395,
+        "height": 586
+      },
+      {
+        "slug": "omlegging-balansering",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/omlegging-balansering-dekk-tromso",
+        "width": 395,
+        "height": 466
+      },
+      {
+        "slug": "dekkreparasjon",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/dekkreparasjon-tromso",
+        "width": 395,
+        "height": 466
+      },
+      {
+        "slug": "tpms-sensor",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tpms-sensor-tromso",
+        "width": 395,
+        "height": 466
+      },
+      {
+        "slug": "oljeskift",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/oljeskift-tromso",
+        "width": 395,
+        "height": 505
+      },
+      {
+        "slug": "bilbatteri",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/bilbatteri-tromso",
+        "width": 395,
+        "height": 505
+      },
+      {
+        "slug": "bildiagnose",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/bildiagnose-tromso",
+        "width": 395,
+        "height": 505
+      },
+      {
+        "slug": "lyspaerer-viskerblad",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/bytte-lyspaerer-viskerblad-tromso",
+        "width": 395,
+        "height": 488
+      }
+    ]
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "inventory": [
+      {
+        "slug": "mobilt-dekkskift",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "dekkverksted",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/tjenester/dekkverksted",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "tesla-og-elbil",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tesla-elbil-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "bobil-og-varebil",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/tjenester/bobil-og-varebil",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "dekkhotell",
+        "kind": "repository",
+        "source": "customer-local-tire-storage-photo",
+        "href": "http://127.0.0.1:8031/dekkhotell-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "dekk-felg-og-hjulpakker",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tjenester/dekk-felg-og-hjulpakker",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "omlegging-balansering",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/omlegging-balansering-dekk-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "dekkreparasjon",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/dekkreparasjon-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "tpms-sensor",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tpms-sensor-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "oljeskift",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/oljeskift-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "bilbatteri",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/bilbatteri-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "bildiagnose",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/bildiagnose-tromso",
+        "width": 358,
+        "height": 184
+      },
+      {
+        "slug": "lyspaerer-viskerblad",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/bytte-lyspaerer-viskerblad-tromso",
+        "width": 358,
+        "height": 184
+      }
+    ]
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "inventory": [
+      {
+        "slug": "mobilt-dekkskift",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "dekkverksted",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/tjenester/dekkverksted",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "tesla-og-elbil",
+        "kind": "repository",
+        "source": "customer-local-mobile-service-photo",
+        "href": "http://127.0.0.1:8031/dekkskift-tesla-elbil-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "bobil-og-varebil",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/tjenester/bobil-og-varebil",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "dekkhotell",
+        "kind": "repository",
+        "source": "customer-local-tire-storage-photo",
+        "href": "http://127.0.0.1:8031/dekkhotell-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "dekk-felg-og-hjulpakker",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tjenester/dekk-felg-og-hjulpakker",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "omlegging-balansering",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/omlegging-balansering-dekk-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "dekkreparasjon",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo-alt",
+        "href": "http://127.0.0.1:8031/dekkreparasjon-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "tpms-sensor",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/tpms-sensor-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "oljeskift",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/oljeskift-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "bilbatteri",
+        "kind": "repository",
+        "source": "customer-local-exterior-fleet-photo",
+        "href": "http://127.0.0.1:8031/bilbatteri-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "bildiagnose",
+        "kind": "repository",
+        "source": "customer-local-workshop-photo",
+        "href": "http://127.0.0.1:8031/bildiagnose-tromso",
+        "width": 296,
+        "height": 184
+      },
+      {
+        "slug": "lyspaerer-viskerblad",
+        "kind": "fallback",
+        "source": "honest-approved-media-unavailable",
+        "href": "http://127.0.0.1:8031/bytte-lyspaerer-viskerblad-tromso",
+        "width": 296,
+        "height": 184
+      }
+    ]
+  }
+]
