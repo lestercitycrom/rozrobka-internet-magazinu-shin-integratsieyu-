@@ -8,12 +8,13 @@ use App\Modules\Content\Enums\ServicePageLocale;
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Models\ServicePage;
 use App\Modules\Content\ReadModel\PublishedServicePageReadService;
+use App\Modules\Content\ReadModel\ServiceMediaCatalog;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 final class SeoServicePageController extends Controller
 {
-    public function __invoke(string $canonicalPath, PublishedServicePageReadService $services): View
+    public function __invoke(string $canonicalPath, PublishedServicePageReadService $services, ServiceMediaCatalog $media): View
     {
         abort_unless(Schema::hasTable('service_pages'), 404);
 
@@ -44,6 +45,11 @@ final class SeoServicePageController extends Controller
             ->get()
             ->groupBy('category_code');
 
-        return view('storefront.services.show', compact('service', 'canonicalUrl', 'servicePrices'));
+        return view('storefront.services.show', [
+            'service' => $service,
+            'canonicalUrl' => $canonicalUrl,
+            'servicePrices' => $servicePrices,
+            'serviceMedia' => $media->for($service),
+        ]);
     }
 }

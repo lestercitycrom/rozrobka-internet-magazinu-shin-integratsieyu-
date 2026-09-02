@@ -285,7 +285,26 @@
                     <input name="website" class="hidden" aria-hidden="true" tabindex="-1" autocomplete="off">
                     <input type="hidden" name="service_slug" value="{{ $service->slug }}">
 
-                    <div class="et-booking-card">
+                    <div class="et-request-layout">
+                        <aside class="et-request-context" data-testid="request-service-context" data-media-kind="{{ $serviceMedia['kind'] }}" data-media-source="{{ $serviceMedia['source'] }}">
+                            <div class="et-request-context__media et-request-context__media--{{ $serviceMedia['crop'] }}">
+                                @if ($serviceMedia['url'])
+                                    <img src="{{ $serviceMedia['url'] }}" width="720" height="560" alt="{{ $serviceMedia['alt'] }}">
+                                @else
+                                    <div class="et-request-context__fallback">
+                                        <img src="/brand/easytire-mark.svg" width="96" height="96" alt="">
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="et-request-context__body">
+                                <p class="et-eyebrow">{{ __('pro.booking.generic_service_label') }}</p>
+                                <h2 class="et-h3">{{ $service->title }}</h2>
+                                @if ($service->excerpt)<p class="et-copy">{{ $service->excerpt }}</p>@endif
+                                <a class="et-btn et-btn--link" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
+                            </div>
+                        </aside>
+
+                        <div class="et-booking-card et-request-form-card">
                         <div class="et-booking-card__head">
                             <p class="et-caption">{{ __('pro.booking.generic_service_label') }}</p>
                             <h2 class="et-h3">{{ $service->title }}</h2>
@@ -399,6 +418,7 @@
                             </label>
                             @error('consent')<p class="et-form-error" id="booking-consent-error">{{ $message }}</p>@enderror
                             <button class="et-btn et-btn--primary" type="submit" style="margin-top:1.2rem" data-testid="generic-submit">{{ __('pro.booking.submit') }}</button>
+                        </div>
                         </div>
                     </div>
                 </form>

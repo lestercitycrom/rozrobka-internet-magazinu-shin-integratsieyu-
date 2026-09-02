@@ -1,0 +1,5 @@
+{
+  "sha": "d69d8d2a70d492c039ae2e76be67938bda274349",
+  "baseURL": "http://127.0.0.1:8032",
+  "runtime": "local synthetic E2E database; invalid request submissions only"
+}

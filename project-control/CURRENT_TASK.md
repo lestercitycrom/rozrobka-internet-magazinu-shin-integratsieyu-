@@ -1,14 +1,13 @@
 # Current task
 
 - Umbrella: [#9 — Audit website against customer sources and remediate confirmed gaps](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9)
-- Issue: [#30 — Correct home hero composition and process strip](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/30)
-- State: `ready-for-review`
-- Branch: `codex/issue-30-home-hero-process`
-- PR: [#37 — Correct home hero and process composition](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/37)
-- Exact base: `0678fe39964292648c52ab97119b9977acbeaba2`
-- Exact green implementation head: `5ce320a6106b12e07b07d1ceec120183c8197897`
-- Scope: home hero/finder focal composition and the four-step process strip only; preserve the approved media, mobile stacking, section order and all protected homepage matches.
-- Verification: implementation-head GitHub `Quality gates` completed successfully; final pointer-only head CI is pending before engineer handoff.
+- Issue: [#31 — Rework services and request-page composition](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/31)
+- State: `pm-review`
+- Branch: `codex/issue-31-services-request-composition`
+- PR: [#38 — Rework services and request composition](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/38)
+- Exact base: `d69d8d2a70d492c039ae2e76be67938bda274349`
+- Scope: all 13 service destinations, their approved-media/fallback contract, service-detail desktop composition, generic request-page composition and service/battery CTA hierarchy; preserve accepted #28–#30 behaviour and all protected business contracts.
+- Verification: deterministic 13-service inventory, implementation and root `evidence/issue-31/` are complete; the PM-requested single-focus correction is covered by real `Tab` traversal on featured/regular cards at desktop/mobile. Local gates passed (418 Laravel tests, 1 skipped; 146 Playwright E2E tests, 20 project-matrix skips; 27 applicable interaction-audit tests, 33 viewport skips; Pint, production build and project-control validation). The immutable head SHA and GitHub Actions result are recorded in PR #38 and the final `ENGINEER UPDATE`.
 - Runtime authorisation: none; local/CI synthetic only, no deployment, NDI, Dintero, email, Notion, Telegram or other external side effect.
 
 The Issue is the full task. This file is only a pointer.

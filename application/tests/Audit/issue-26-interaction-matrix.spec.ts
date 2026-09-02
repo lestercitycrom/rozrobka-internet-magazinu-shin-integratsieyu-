@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page, type TestInfo } from '@playwrigh
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const auditProductRoute = process.env.PLAYWRIGHT_AUDIT_PRODUCT_ROUTE ?? '/produkter/NDI-TEST-4765205551649102';
+const auditProductRoute = process.env.PLAYWRIGHT_AUDIT_PRODUCT_ROUTE ?? '/produkter/000205550016';
 
 type VisualState = {
     tag: string;
@@ -63,7 +63,11 @@ const compositionSurfaces = [
 ];
 
 function rawRoot(testInfo: TestInfo): string {
-    return path.resolve(process.cwd(), '../tmp/issue-26/raw', testInfo.project.name);
+    const root = process.env.PLAYWRIGHT_AUDIT_OUTPUT_ROOT
+        ? path.resolve(process.env.PLAYWRIGHT_AUDIT_OUTPUT_ROOT)
+        : path.resolve(process.cwd(), '../tmp/issue-26/raw');
+
+    return path.join(root, testInfo.project.name);
 }
 
 async function settle(page: Page): Promise<void> {
@@ -484,13 +488,12 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
                     componentCounts: {
                         buttons: document.querySelectorAll('main .et-btn').length,
                         interactiveCards: document.querySelectorAll('main .et-card--interactive').length,
-                        legacyServiceCards: document.querySelectorAll('main .et-service-card').length,
-                        serviceRows: document.querySelectorAll('main .et-v3-service-row').length,
+                        serviceCards: document.querySelectorAll('main .et-service-offer').length,
                         productCards: document.querySelectorAll('main .et-product-card').length,
                         shopLinks: document.querySelectorAll('main .et-shop-link').length,
                         promotions: document.querySelectorAll('[data-testid="homepage-promotion"]').length,
-                        serviceMediaImages: document.querySelectorAll('.et-v3-service-row__media img').length,
-                        serviceSyntheticGraphics: document.querySelectorAll('.et-v3-service-row__graphic').length,
+                        serviceMediaImages: document.querySelectorAll('.et-service-card__media > img').length,
+                        serviceHonestFallbacks: document.querySelectorAll('.et-service-card__fallback').length,
                         inlineStyles: document.querySelectorAll('main [style]').length,
                     },
                     catalogue: {
@@ -530,7 +533,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
                 '.et-card--interactive',
                 '.et-shop-categories a',
                 '.et-product-card',
-                '.et-v3-service-row',
+                '.et-service-offer',
                 '.et-v3-promotion',
                 '.et-v3-service',
             ].join(','));
@@ -639,8 +642,8 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await recordCase(page, target, records, 'desktop-nav', '/', '[data-testid="desktop-navigation"] > a');
         await recordCase(page, target, records, 'cart-action', '/', '[data-testid="header-cart"]', undefined, { fullViewportEvidence: true });
         await recordCase(page, target, records, 'generic-interactive-card', '/dekk-og-felger', '.et-card--interactive', undefined, { fullViewportEvidence: true });
-        await recordCase(page, target, records, 'service-row', '/tjenester', '.et-v3-service-row', undefined, { keyboard: false, active: false, fullViewportEvidence: true });
-        await recordCase(page, target, records, 'service-row-link', '/tjenester', '.et-v3-service-row__content > a');
+        await recordCase(page, target, records, 'service-card', '/tjenester', '.et-service-offer', undefined, { keyboard: false, active: false, fullViewportEvidence: true });
+        await recordCase(page, target, records, 'service-card-link', '/tjenester', '.et-service-card__content h2 > a');
         await recordCase(page, target, records, 'shop-category-link', '/', '[data-testid="quick-finder"] .et-shop-categories a');
         await recordCase(page, target, records, 'product-card', '/dekk', '.et-product-card', undefined, { keyboard: false, active: false, fullViewportEvidence: true });
         await recordCase(page, target, records, 'product-card-link', '/dekk', '[data-testid="catalog-product-link"]');
@@ -908,10 +911,21 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await settle(page);
         const batteryCtas = page.locator('main a[href$="/tjenester/bilbatteri/foresporsel"]');
         const batteryCtaCount = await batteryCtas.count();
-        expect(batteryCtaCount, 'battery landing must retain the observed repeated CTA composition until remediation').toBeGreaterThanOrEqual(3);
+        const stickyDuplicateCount = await page.locator('.et-service-anchor a[href$="/tjenester/bilbatteri/foresporsel"]').count();
+        const primaryActions = page.locator('main a.et-btn--primary[href$="/tjenester/bilbatteri/foresporsel"]');
+        const primaryPositions = await primaryActions.evaluateAll((elements) => elements.map((element) => {
+            const rect = element.getBoundingClientRect();
+
+            return Math.round(rect.y + window.scrollY);
+        }));
+        expect(stickyDuplicateCount, 'the sticky navigation must no longer duplicate the battery request action').toBe(0);
+        expect(primaryActions, 'hero and final reading stage retain one primary request action each').toHaveCount(2);
+        expect(primaryPositions[1] - primaryPositions[0], 'primary request actions must belong to separate reading stages').toBeGreaterThan(900);
         const battery = {
-            classification: 'VISUAL_DEFECT',
+            classification: 'RESOLVED',
             repeatedCtaCount: batteryCtaCount,
+            stickyDuplicateCount,
+            primaryPositions,
             actions: await batteryCtas.evaluateAll((elements) => elements.map((element) => {
                 const rect = element.getBoundingClientRect();
                 return {
@@ -923,7 +937,7 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
                     height: Math.round(rect.height),
                 };
             })),
-            rationale: 'The same primary request action appears in the hero, sticky section navigation and final request card, weakening hierarchy.',
+            rationale: 'The hero and final reading stage retain their primary actions while sticky navigation is orientation-only and the intermediate aside is secondary.',
         };
         await page.screenshot({ path: path.join(target, 'critical-battery-repeated-cta.png'), fullPage: true });
 

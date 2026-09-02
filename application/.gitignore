@@ -18,6 +18,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/framework/playwright-tmp/
 /vendor
 playwright-report/
 test-results/
