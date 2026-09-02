@@ -1,13 +1,13 @@
 # Current task
 
 - Umbrella: [#9 — Audit website against customer sources and remediate confirmed gaps](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9)
-- Issue: [#31 — Rework services and request-page composition](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/31)
-- State: `pm-review`
-- Branch: `codex/issue-31-services-request-composition`
-- PR: [#38 — Rework services and request composition](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/38)
-- Exact base: `d69d8d2a70d492c039ae2e76be67938bda274349`
-- Scope: all 13 service destinations, their approved-media/fallback contract, service-detail desktop composition, generic request-page composition and service/battery CTA hierarchy; preserve accepted #28–#30 behaviour and all protected business contracts.
-- Verification: deterministic 13-service inventory, implementation and root `evidence/issue-31/` are complete; the PM-requested single-focus correction is covered by real `Tab` traversal on featured/regular cards at desktop/mobile. Local gates passed (418 Laravel tests, 1 skipped; 146 Playwright E2E tests, 20 project-matrix skips; 27 applicable interaction-audit tests, 33 viewport skips; Pint, production build and project-control validation). The immutable head SHA and GitHub Actions result are recorded in PR #38 and the final `ENGINEER UPDATE`.
+- Issue: [#32 — Polish catalogue, product and cart journeys](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32)
+- State: `in-progress`
+- Branch: `codex/issue-32-catalog-product-cart-polish`
+- PR: not opened yet
+- Exact base: `9d49ac82ced177d5310a909ddb7e82fff9c3678a`
+- Scope: mobile deferred-Apply filter behaviour, natural desktop filter flow, customer-facing category navigation, readable product buy box and intentional empty-cart composition; preserve accepted #28–#31 behaviour and every NDI/commerce boundary.
+- Verification: pending implementation, root `evidence/issue-32/` and complete exact-head quality gates.
 - Runtime authorisation: none; local/CI synthetic only, no deployment, NDI, Dintero, email, Notion, Telegram or other external side effect.
 
 The Issue is the full task. This file is only a pointer.
