@@ -1,0 +1,54 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "processStrip": {
+      "x": 0,
+      "y": 1889.015625,
+      "width": 1440,
+      "height": 370.640625
+    },
+    "steps": 4
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "processStrip": {
+      "x": 0,
+      "y": 1796.25,
+      "width": 1280,
+      "height": 356.15625
+    },
+    "steps": 4
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "processStrip": {
+      "x": 0,
+      "y": 2192.125,
+      "width": 390,
+      "height": 789.53125
+    },
+    "steps": 4
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "processStrip": {
+      "x": 0,
+      "y": 2192.265625,
+      "width": 320,
+      "height": 834.53125
+    },
+    "steps": 4
+  }
+]

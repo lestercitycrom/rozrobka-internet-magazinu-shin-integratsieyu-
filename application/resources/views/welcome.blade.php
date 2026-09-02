@@ -174,7 +174,7 @@
 @endphp
 
 <x-layouts.storefront :title="__('storefront.site_title')" :description="__('storefront.site_description')">
-    <section class="et-v3-hero">
+    <section class="et-v3-hero" data-testid="home-hero">
         <picture>
             <source media="(max-width: 640px)" srcset="{{ $heroMobileImage }}">
             <img class="et-v3-hero__photo" src="{{ $heroImage }}" width="1920" height="1080" alt="{{ $heroImageAlt }}" fetchpriority="high">
@@ -231,7 +231,8 @@
         <div class="et-container et-v3-process-strip__inner">
             <div class="et-v3-process-strip__head">
                 <p class="et-eyebrow">{{ $storefrontValue('process_kicker_'.$homepageLocale, __('pro.home.process_kicker')) }}</p>
-                <h2 class="sr-only" id="home-process-title">{{ $storefrontValue('process_title_'.$homepageLocale, __('project.home.process_title')) }}</h2>
+                <h2 class="et-v3-process-strip__title" id="home-process-title">{{ $storefrontValue('process_title_'.$homepageLocale, __('project.home.process_title')) }}</h2>
+                <p class="et-v3-process-strip__lead">{{ $storefrontValue('process_lead_'.$homepageLocale, __('project.home.process_note')) }}</p>
             </div>
             <div class="et-v3-process">
                 @foreach ([
