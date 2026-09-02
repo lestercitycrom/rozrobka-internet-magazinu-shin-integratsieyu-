@@ -2096,11 +2096,6 @@
     box-shadow: 0 12px 30px rgb(11 11 12 / .07);
 }
 
-.et-service-offer:focus-within {
-    outline: 3px solid var(--et-color-focus-ring);
-    outline-offset: 3px;
-}
-
 .et-service-offer--feature {
     min-height: 420px;
     grid-column: span 8;

@@ -57,10 +57,14 @@ Representative pairs:
 ## Human review
 
 - The index now reads as one local workshop offer: real EasyTire environments lead, crop choices match service meaning, and missing photography is disclosed by one consistent fallback contract.
-- Hover changes border/shadow and applies only a 1.5% image scale; card geometry does not move. Keyboard focus is a visible 3 px outline.
+- Hover changes border/shadow and applies only a 1.5% image scale; card geometry does not move. Real `Tab` traversal leaves the card itself unframed and gives its title link the single accepted 3 px focus outline.
 - The long detail page keeps a readable wide article, a restrained conversion aside and a full-width final action without the old page-long empty column.
 - The generic request form gains selected-service context without adding another oversized marketing hero or changing field order.
 - Bokmål and hidden Russian QA preserve old input, show the localized error summary and focus the first invalid field.
+
+## Focus correction evidence
+
+`service-focus-contract.json` records computed outline, offset, colour and shadow state for both a featured and a regular service offer at `1440x900` and `390x844`. Each target is reached through real `Tab` traversal; the title link has the one visible focus treatment, while the parent card has neither outline nor shadow and keeps identical dimensions. The four matching viewport captures are named `focus-service-{featured|regular}-{1440x900|390x844}.jpg`.
 
 ## Protected behaviour
 

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,6 +38,58 @@ async function captureViewport(page: Page, file: string): Promise<void> {
     if (!captureEvidence) return;
     await mkdir(evidenceRoot, { recursive: true });
     await page.screenshot({ path: path.join(evidenceRoot, file), type: 'jpeg', quality: 84 });
+}
+
+async function tabTo(page: Page, target: Locator, maximum = 80): Promise<number> {
+    await expect(target).toBeVisible();
+
+    for (let index = 1; index <= maximum; index += 1) {
+        await page.keyboard.press('Tab');
+        if (await target.evaluate((element) => element === document.activeElement)) return index;
+    }
+
+    throw new Error(`Target was not reached by Tab traversal: ${await target.evaluate((element) => element.outerHTML)}`);
+}
+
+async function focusPresentation(target: Locator): Promise<{
+    outlineWidth: string;
+    outlineStyle: string;
+    outlineColor: string;
+    outlineOffset: string;
+    boxShadow: string;
+}> {
+    return target.evaluate((element) => {
+        const style = getComputedStyle(element);
+
+        return {
+            outlineWidth: style.outlineWidth,
+            outlineStyle: style.outlineStyle,
+            outlineColor: style.outlineColor,
+            outlineOffset: style.outlineOffset,
+            boxShadow: style.boxShadow,
+        };
+    });
+}
+
+function hasVisibleOutline(state: Awaited<ReturnType<typeof focusPresentation>>): boolean {
+    return state.outlineStyle !== 'none' && Number.parseFloat(state.outlineWidth) > 0;
+}
+
+function hasVisibleShadow(state: Awaited<ReturnType<typeof focusPresentation>>): boolean {
+    return state.boxShadow !== 'none';
+}
+
+async function documentBox(target: Locator): Promise<{ x: number; y: number; width: number; height: number }> {
+    return target.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+
+        return {
+            x: rect.x + scrollX,
+            y: rect.y + scrollY,
+            width: rect.width,
+            height: rect.height,
+        };
+    });
 }
 
 test('the thirteen-service index is image-led, deterministic, accessible and compact at every required viewport', async ({ page }, testInfo) => {
@@ -95,9 +147,6 @@ test('the thirteen-service index is image-led, deterministic, accessible and com
         const after = await firstCard.boundingBox();
         expect(after?.width).toBe(before?.width);
         expect(after?.height).toBe(before?.height);
-        await firstLink.focus();
-        await expect(firstLink).toBeFocused();
-        expect(await firstCard.evaluate((element) => getComputedStyle(element).outlineWidth)).toBe('3px');
 
         records.push({ viewport, inventory });
         await capture(page, `after-services-index-${viewport.width}x${viewport.height}.jpg`);
@@ -105,6 +154,66 @@ test('the thirteen-service index is image-led, deterministic, accessible and com
 
     if (captureEvidence) {
         await writeFile(path.join(evidenceRoot, 'service-media-inventory.json'), JSON.stringify(records, null, 2));
+    }
+});
+
+test('service offers expose exactly one focus treatment through real keyboard traversal', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop');
+    test.setTimeout(120_000);
+
+    const records: Record<string, unknown>[] = [];
+    const cases = [
+        { viewport: { width: 1440, height: 900 }, type: 'featured', selector: '.et-service-offer--feature' },
+        { viewport: { width: 1440, height: 900 }, type: 'regular', selector: '.et-service-offer:not(.et-service-offer--feature)' },
+        { viewport: { width: 390, height: 844 }, type: 'featured', selector: '.et-service-offer--feature' },
+        { viewport: { width: 390, height: 844 }, type: 'regular', selector: '.et-service-offer:not(.et-service-offer--feature)' },
+    ];
+
+    for (const focusCase of cases) {
+        await page.setViewportSize(focusCase.viewport);
+        await page.goto('/tjenester');
+        await settle(page);
+
+        const card = page.locator(focusCase.selector).first();
+        const link = card.locator('.et-service-card__content h2 > a');
+        const before = await documentBox(card);
+        const keyboardTabs = await tabTo(page, link);
+        await expect(link).toBeFocused();
+        await expectNoGlobalOverflow(page);
+
+        const after = await documentBox(card);
+        const linkState = await focusPresentation(link);
+        const cardState = await focusPresentation(card);
+        const visibleTreatments = [
+            hasVisibleOutline(linkState),
+            hasVisibleShadow(linkState),
+            hasVisibleOutline(cardState),
+            hasVisibleShadow(cardState),
+        ].filter(Boolean);
+
+        expect(linkState.outlineWidth).toBe('3px');
+        expect(linkState.outlineStyle).toBe('solid');
+        expect(linkState.outlineColor).toBe('rgb(159, 0, 0)');
+        expect(linkState.outlineOffset).toBe('3px');
+        expect(linkState.boxShadow).toBe('none');
+        expect(cardState.outlineStyle).toBe('none');
+        expect(hasVisibleOutline(cardState)).toBe(false);
+        expect(cardState.boxShadow).toBe('none');
+        expect(visibleTreatments).toHaveLength(1);
+        expect(after.x).toBeCloseTo(before.x, 2);
+        expect(after.y).toBeCloseTo(before.y, 2);
+        expect(after.width).toBeCloseTo(before.width, 2);
+        expect(after.height).toBeCloseTo(before.height, 2);
+
+        const evidenceName = `focus-service-${focusCase.type}-${focusCase.viewport.width}x${focusCase.viewport.height}.jpg`;
+        await link.scrollIntoViewIfNeeded();
+        await expect(link).toBeFocused();
+        await captureViewport(page, evidenceName);
+        records.push({ ...focusCase, keyboardTabs, linkState, cardState, before, after, evidenceName });
+    }
+
+    if (captureEvidence) {
+        await writeFile(path.join(evidenceRoot, 'service-focus-contract.json'), JSON.stringify(records, null, 2));
     }
 });
 
