@@ -5,7 +5,7 @@ return [
     'name' => 'Navn', 'email' => 'E-post', 'phone' => 'Telefon', 'registration' => 'Registreringsnummer', 'note' => 'Merknad',
     'consent' => 'Personvern', 'terms' => 'Kjøpsvilkår', 'submit' => 'Send bestilling',
     'received' => 'Bestilling mottatt', 'reference' => 'Referanse', 'pending' => 'Betaling og NDI-bestilling er ikke startet.',
-    'empty' => 'Handlekurven er tom.', 'update' => 'Oppdater', 'remove' => 'Fjern', 'quantity' => 'Antall',
+    'empty' => 'Handlekurven er tom.', 'empty_help' => 'Finn riktig dimensjon i dekkatalogen, eller se felger og komplette hjulpakker.', 'update' => 'Oppdater', 'remove' => 'Fjern', 'quantity' => 'Antall',
     'pickup' => 'Henting eller montering hos EasyTire i Tromsø. Forventet tidspunkt bekreftes etter leverandørkontroll.',
     'confirmed_fitment' => 'Du bekreftet dekkdimensjon :size fra kjøretøyoppslaget. Vi lagrer dette som del av bestillingsgrunnlaget.',
     'issues' => 'Handlekurven må oppdateres før du kan gå videre.',

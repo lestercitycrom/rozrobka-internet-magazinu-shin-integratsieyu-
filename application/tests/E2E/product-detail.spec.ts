@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectNoGlobalOverflow, isMobileProject, isRussianProject } from './helpers';
+import { expectNoGlobalOverflow, isMobileProject, isRussianProject, overlapArea } from './helpers';
 
 async function expectStoreSection(page: import('@playwright/test').Page, mobile: boolean, label: string) {
     if (mobile) {
@@ -50,4 +50,82 @@ test('a failed product image is replaced by the honest catalog fallback', async 
     await expect(fallback.locator('.et-fallback-meta__status')).toHaveText(/Uten produktfoto|Без фото товара/);
     await expect(page.locator('[data-product-media-note]')).toContainText(/Produktbilde mangler|Фото товара отсутствует/);
     await expectNoGlobalOverflow(page);
+});
+
+test('product media and honest fallback remain composed across the required viewport matrix', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
+
+    for (const viewport of [
+        { width: 1440, height: 900 },
+        { width: 1280, height: 800 },
+        { width: 390, height: 844 },
+        { width: 320, height: 800 },
+    ]) {
+        await page.setViewportSize(viewport);
+        await page.goto('/produkter/000205550016');
+        await expect(page.getByTestId('product-primary-media')).toBeVisible();
+        await expect(page.getByTestId('product-cart-form')).toBeVisible();
+        await expectNoGlobalOverflow(page);
+
+        await page.goto('/produkter/DEMO-WHEEL-18112');
+        await expect(page.getByTestId('product-visual-fallback')).toBeVisible();
+        await expect(page.getByTestId('product-fallback-blueprint')).toBeVisible();
+        await expectNoGlobalOverflow(page);
+    }
+});
+
+test('sandbox quantity, explanation and purchase actions use separate readable regions', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
+
+    for (const viewport of [
+        { width: 1440, height: 900 },
+        { width: 1280, height: 800 },
+        { width: 390, height: 844 },
+        { width: 320, height: 800 },
+    ]) {
+        await page.setViewportSize(viewport);
+        await page.goto('/produkter/NDI-TEST-4765205551649102');
+
+        const quantity = page.getByTestId('product-quantity');
+        const note = page.getByTestId('integration-test-quantity-note');
+        const actions = page.getByTestId('product-purchase-actions');
+        const add = page.getByTestId('product-add-to-cart');
+        const buy = page.getByTestId('product-buy-now');
+        await expect(quantity).toHaveValue('2');
+        await expect(quantity).toHaveAttribute('readonly', '');
+        await expect(quantity).toHaveAttribute('min', '2');
+        await expect(quantity).toHaveAttribute('max', '2');
+        await expect(note).toBeVisible();
+        await expect(add).toBeVisible();
+        await expect(buy).toBeVisible();
+
+        const [quantityBox, noteBox, actionsBox, addBox, buyBox] = await Promise.all([
+            quantity.boundingBox(), note.boundingBox(), actions.boundingBox(), add.boundingBox(), buy.boundingBox(),
+        ]);
+        expect(quantityBox).not.toBeNull();
+        expect(noteBox).not.toBeNull();
+        expect(actionsBox).not.toBeNull();
+        expect(addBox).not.toBeNull();
+        expect(buyBox).not.toBeNull();
+        expect(quantityBox!.width).toBeGreaterThanOrEqual(96);
+        expect(noteBox!.width).toBeGreaterThanOrEqual(Math.min(240, viewport.width - 40));
+        expect(addBox!.width).toBeGreaterThanOrEqual(viewport.width <= 390 ? 150 : 130);
+        expect(buyBox!.width).toBeGreaterThanOrEqual(viewport.width <= 390 ? 150 : 130);
+        expect(overlapArea(quantityBox!, noteBox!)).toBe(0);
+        expect(overlapArea(actionsBox!, noteBox!)).toBe(0);
+        expect(overlapArea(addBox!, buyBox!)).toBe(0);
+
+        const noteTypography = await note.locator('small').evaluate((element) => {
+            const style = getComputedStyle(element);
+            return {
+                lineHeight: Number.parseFloat(style.lineHeight),
+                height: element.getBoundingClientRect().height,
+            };
+        });
+        expect(noteTypography.height).toBeLessThanOrEqual(noteTypography.lineHeight * 4.2);
+        await expectNoGlobalOverflow(page);
+    }
+
+    await page.goto('/produkter/000205550016');
+    await expect(page.getByTestId('integration-test-quantity-note')).toHaveCount(0);
 });

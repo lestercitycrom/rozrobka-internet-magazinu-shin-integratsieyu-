@@ -12,6 +12,7 @@ use App\Modules\Commerce\Enums\ServiceAddonBillingMode;
 use App\Modules\Commerce\Models\ServiceAddon;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\MediaAssignment;
+use App\Modules\NdiApi\NdiSandboxCatalogManager;
 use App\Modules\Orders\Enums\FulfilmentMethod;
 use App\Modules\Orders\Enums\NdiOrderStatus;
 use App\Modules\Orders\Enums\OrderStatus;
@@ -44,6 +45,10 @@ class E2eStorefrontSeeder extends Seeder
             ServiceAddonSeeder::class,
             E2eBookingCalendarSeeder::class,
         ]);
+
+        if (config('ndi_api.sandbox.enabled')) {
+            app(NdiSandboxCatalogManager::class)->refresh();
+        }
 
         ServiceAddon::query()->updateOrCreate(['code' => 'e2e-wheel-care'], [
             'title_nb' => 'E2E felgservice',

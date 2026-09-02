@@ -76,7 +76,11 @@ const russianParitySurfaces: Surface[] = [
 ];
 
 function rawRoot(testInfo: TestInfo): string {
-    return path.resolve(process.cwd(), '../tmp/issue-26/raw', testInfo.project.name);
+    const root = process.env.PLAYWRIGHT_AUDIT_OUTPUT_ROOT
+        ? path.resolve(process.env.PLAYWRIGHT_AUDIT_OUTPUT_ROOT)
+        : path.resolve(process.cwd(), '../tmp/issue-26/raw');
+
+    return path.join(root, testInfo.project.name);
 }
 
 async function settle(page: Page): Promise<void> {
@@ -347,6 +351,9 @@ test.describe('Issue #26 public storefront visual audit', () => {
         });
         const search = page.locator('input[name="q"]');
         await search.fill('NDI');
+        if (testInfo.project.name === 'mobile-touch-390x844') {
+            await page.getByTestId('catalog-filter-apply').click();
+        }
         await expect(page.locator('[data-catalog-live-root]')).toHaveAttribute('aria-busy', 'true');
         states.loadingRoot = await computedState(page.locator('[data-catalog-live-root]'));
         await page.screenshot({ path: path.join(target, 'catalog-loading.png') });

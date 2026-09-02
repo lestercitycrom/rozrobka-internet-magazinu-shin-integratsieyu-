@@ -1,5 +1,6 @@
 @php
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+    $isCartEmpty = $cart->lines === [] && $cart->issues === [] && $cart->serviceIssues === [];
 @endphp
 
 <x-layouts.storefront :title="__('commerce.cart')" active-section="cart">
@@ -16,22 +17,26 @@
 
     <section class="et-section et-section--compact" aria-live="polite">
         <div class="et-container">
-            <div class="et-toolbar">
-                <div></div>
-                <a class="et-btn et-btn--outline" href="{{ route($prefix.'tires.index') }}">{{ __('commerce.continue_shopping') }}</a>
-            </div>
+            @unless ($isCartEmpty)
+                <div class="et-toolbar et-cart-toolbar">
+                    <div></div>
+                    <a class="et-btn et-btn--outline" href="{{ route($prefix.'tires.index') }}">{{ __('commerce.continue_shopping') }}</a>
+                </div>
+            @endunless
 
             @if (session('cart_error'))
                 <div class="et-alert et-alert--error" role="alert"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ session('cart_error') }}</div></div>
             @endif
 
-            @if ($cart->lines === [] && $cart->issues === [] && $cart->serviceIssues === [])
-                <div class="et-empty-state border-dashed" style="margin-top:1rem" data-testid="cart-empty">
-                    <div>
-                        <div class="et-empty-state__icon" aria-hidden="true"><x-icon name="cart" :size="34" /></div>
-                        <h2 class="et-h3" style="margin-top:1rem">{{ __('commerce.empty') }}</h2>
-                        <a class="et-btn et-btn--primary" href="{{ route($prefix.'tires.index') }}" style="margin-top:1rem">{{ __('commerce.continue_shopping') }}</a>
+            @if ($isCartEmpty)
+                <div class="et-cart-empty" data-testid="cart-empty">
+                    <div class="et-cart-empty__mark" aria-hidden="true"><x-icon name="cart" :size="34" /></div>
+                    <div class="et-cart-empty__copy">
+                        <p class="et-eyebrow">{{ __('pro.nav.store') }}</p>
+                        <h2 class="et-h2">{{ __('commerce.empty') }}</h2>
+                        <p>{{ __('commerce.empty_help') }}</p>
                     </div>
+                    <a class="et-btn et-btn--primary" href="{{ route($prefix.'tires.index') }}">{{ __('commerce.continue_shopping') }}</a>
                 </div>
             @else
                 <div class="et-cart-layout" style="margin-top:1rem">

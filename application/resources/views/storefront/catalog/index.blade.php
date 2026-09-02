@@ -232,8 +232,15 @@
                             </div>
 
                             <div class="et-production-filter__footer">
+                                <p class="et-filter-request-error" role="alert" aria-live="assertive" data-catalog-filter-error data-testid="catalog-filter-error" hidden>
+                                    <span class="et-filter-request-error__icon" aria-hidden="true">!</span>
+                                    <span>{{ __('storefront.filter_request_failed') }}</span>
+                                </p>
                                 <a class="et-btn et-btn--outline" href="{{ $baseUrl }}" data-catalog-live-link data-testid="catalog-filter-reset">{{ __('storefront.reset') }}</a>
-                                <button class="et-btn et-btn--primary" type="submit" data-testid="catalog-filter-apply">{{ __('storefront.show_products') }}</button>
+                                <button class="et-btn et-btn--primary" type="submit" data-testid="catalog-filter-apply" aria-busy="false">
+                                    <span data-catalog-apply-label>{{ __('storefront.show_products') }}</span>
+                                    <span class="et-filter-apply-busy" data-catalog-apply-busy hidden><span class="et-catalog-loading-dot" aria-hidden="true"></span>{{ __('storefront.applying_filters') }}</span>
+                                </button>
                             </div>
                         </form>
                     </div>

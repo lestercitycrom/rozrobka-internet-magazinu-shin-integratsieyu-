@@ -15,7 +15,11 @@ test('unknown public order reference is not exposed', function (): void {
 });
 
 test('cart exposes the styled accessible purchase controls', function (): void {
-    $this->get('/handlekurv')->assertOk()->assertSee('border-dashed', false);
+    $this->get('/handlekurv')
+        ->assertOk()
+        ->assertSee('data-testid="cart-empty"', false)
+        ->assertSee('et-cart-empty', false)
+        ->assertDontSee('border-dashed', false);
 });
 
 test('empty checkout returns safely to the cart for both get and post', function (): void {

@@ -102,3 +102,86 @@ test('mobile catalog keeps filters, sorting and product actions usable at 390 an
     expect(fallbackGeometry.statusWidth).toBeGreaterThan(30);
     await expectNoGlobalOverflow(page);
 });
+
+test('desktop filter uses natural page scrolling and keeps every control reachable', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic desktop viewport matrix is sufficient');
+
+    for (const viewport of [
+        { width: 1440, height: 900 },
+        { width: 1366, height: 768 },
+        { width: 1280, height: 800 },
+    ]) {
+        await page.setViewportSize(viewport);
+        await page.goto('/dekk');
+        const panel = page.locator('.et-production-filter__panel');
+        const apply = page.getByTestId('catalog-filter-apply');
+        const reset = page.getByTestId('catalog-filter-reset');
+        await expect(panel).toBeVisible();
+        await expect(apply).toBeVisible();
+        await expect(reset).toBeVisible();
+
+        const geometry = await panel.evaluate((element) => {
+            const style = getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            return {
+                clientHeight: element.clientHeight,
+                scrollHeight: element.scrollHeight,
+                overflowY: style.overflowY,
+                top: rect.top,
+                bottom: rect.bottom,
+                documentHeight: document.documentElement.scrollHeight,
+            };
+        });
+
+        expect(geometry.overflowY).toBe('visible');
+        expect(geometry.scrollHeight - geometry.clientHeight).toBeLessThanOrEqual(1);
+        expect(geometry.documentHeight).toBeGreaterThanOrEqual(geometry.bottom);
+        await apply.scrollIntoViewIfNeeded();
+        await expect(apply).toBeInViewport();
+        await reset.scrollIntoViewIfNeeded();
+        await expect(reset).toBeInViewport();
+        await expectNoGlobalOverflow(page);
+    }
+});
+
+test('catalogue categories read as shop navigation with distinct current, hover and focus states', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('ru'), 'Bokmål category presentation contract');
+
+    await page.goto('/dekk');
+    const rail = page.getByTestId('catalog-category-rail').locator('.et-catalog-categories__rail');
+    const current = page.getByTestId('catalog-category-tires');
+    const next = page.getByTestId('catalog-category-wheels');
+    await expect(rail).toBeVisible();
+    await expect(current).toHaveAttribute('aria-current', 'page');
+
+    const railState = await rail.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { shadow: style.boxShadow, borderTop: style.borderTopWidth, borderBottom: style.borderBottomWidth };
+    });
+    expect(railState.shadow).toBe('none');
+    expect(railState.borderTop).toBe('0px');
+    expect(railState.borderBottom).toBe('1px');
+
+    const selected = await current.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { color: style.color, background: style.backgroundColor };
+    });
+    const resting = await next.evaluate((element) => getComputedStyle(element).color);
+    await next.hover();
+    await page.waitForTimeout(200);
+    const hovered = await next.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { color: style.color, background: style.backgroundColor };
+    });
+    expect(hovered.color).not.toBe(resting);
+    expect(hovered.background).not.toBe(selected.background);
+
+    await next.focus();
+    const focus = await next.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { outlineWidth: style.outlineWidth, outlineColor: style.outlineColor };
+    });
+    expect(focus.outlineWidth).toBe('3px');
+    expect(focus.outlineColor).toBe('rgb(159, 0, 0)');
+    await expectNoGlobalOverflow(page);
+});

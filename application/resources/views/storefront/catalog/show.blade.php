@@ -72,23 +72,28 @@
                                 {{ number_format($sellingPrice->money->minor / 100, 2, ',', ' ') }} {{ $sellingPrice->money->currency }}
                                 <small>{{ __('storefront.selling_price_note') }}</small>
                             </div>
-                            <form method="post" action="{{ route($prefix.'cart.add') }}" data-testid="product-cart-form">
+                            <form class="et-product-purchase" method="post" action="{{ route($prefix.'cart.add') }}" data-testid="product-cart-form">
                                 @csrf
                                 <input type="hidden" name="sku" value="{{ $item->sku }}">
-                                <div class="et-quantity-row">
-                                    <div>
+                                <div class="et-purchase-controls">
+                                    <div class="et-purchase-quantity">
                                         <label class="et-label" for="product-quantity">{{ __('storefront.quantity') }}</label>
                                         @php $requiredTestQuantity = (int) config('ndi_api.sandbox.quantity', 2); @endphp
                                         <input class="et-input easytire-input" id="product-quantity" data-testid="product-quantity" type="number" name="quantity" value="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" min="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $item->isIntegrationTest ? $requiredTestQuantity : min(40, $item->stock->quantity) }}" inputmode="numeric" {{ $item->isIntegrationTest ? 'readonly' : '' }}>
-                                        @if ($item->isIntegrationTest)<small class="et-help" data-testid="integration-test-quantity-note">{{ __('storefront.integration_test_quantity_note', ['quantity' => $requiredTestQuantity]) }}</small>@endif
                                     </div>
-                                    <div style="display:flex;gap:.6rem;align-self:end;flex-wrap:wrap">
+                                    <div class="et-purchase-actions" data-testid="product-purchase-actions">
                                         <button class="et-btn et-btn--outline" type="submit" name="intent" value="cart" data-testid="product-add-to-cart">{{ __('storefront.add_to_cart') }}</button>
                                         <button class="et-btn et-btn--primary" type="submit" name="intent" value="checkout" data-testid="product-buy-now">{{ __('storefront.buy_now') }}</button>
                                     </div>
                                 </div>
+                                @if ($item->isIntegrationTest)
+                                    <aside class="et-sandbox-purchase-note" data-testid="integration-test-quantity-note">
+                                        <span>{{ __('storefront.integration_test_product') }}</span>
+                                        <small>{{ __('storefront.integration_test_quantity_note', ['quantity' => $requiredTestQuantity]) }}</small>
+                                    </aside>
+                                @endif
                             </form>
-                            <p class="et-help">{{ __('pro.catalog.buy_box_note') }}</p>
+                            <p class="et-help et-purchase-fulfilment-note">{{ __('pro.catalog.buy_box_note') }}</p>
                         @else
                             <div class="et-alert et-alert--warning" style="margin-top:1.2rem">
                                 <span class="et-alert__icon" aria-hidden="true">!</span>
