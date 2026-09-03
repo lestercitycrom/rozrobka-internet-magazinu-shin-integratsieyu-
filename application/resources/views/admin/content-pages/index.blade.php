@@ -28,7 +28,7 @@
                         <tr class="transition hover:bg-easytire-brand-soft/50">
                             <td class="p-4">{{ $page->sort_order }}</td>
                             <td class="p-4 font-bold">{{ $page->title_nb }}</td>
-                            <td class="p-4"><span class="rounded-full bg-easytire-brand-soft px-3 py-1 text-xs font-bold text-easytire-brand-strong">{{ __('content_ui.status_'.$page->publication_status->value) }}</span></td>
+                            <td class="p-4"><span class="et-admin-status et-admin-status--{{ $page->publication_status->value === 'published' ? 'success' : 'neutral' }}">{{ __('content_ui.status_'.$page->publication_status->value) }}</span></td>
                             <td class="p-4 text-right"><a class="font-semibold underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.content-pages.edit', $page) }}">{{ __('admin.content.edit') }}</a></td>
                         </tr>
                     @empty

@@ -37,9 +37,11 @@ export default defineConfig({
         { name: 'mobile-320x800', use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 800 }, hasTouch: true } },
     ],
     webServer: {
-        command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${databaseForPhp}') || touch('${databaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan e2e:seed-admin --email=issue-41-admin@example.test --password=issue-41-local-only-password && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder && ${phpCommand} artisan db:seed --class=E2eAdminVisualSeeder && ${phpCommand} artisan serve --host=127.0.0.1 --port=8042`,
+        command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${databaseForPhp}') || touch('${databaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan e2e:seed-admin --email=issue-41-admin@example.test --password=issue-41-local-only-password && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder && ${phpCommand} artisan db:seed --class=E2eAdminVisualSeeder && ${phpCommand} -S 127.0.0.1:8042 -t public tests/Audit/server.php`,
         url: baseURL,
         reuseExistingServer: false,
+        stdout: 'ignore',
+        stderr: 'ignore',
         timeout: 120_000,
         env: {
             APP_DEBUG: 'false',

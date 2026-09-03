@@ -1,0 +1,992 @@
+[
+  {
+    "key": "dashboard",
+    "family": "dashboard",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Det som trenger oppfølging nå.",
+      "Arbeidsområder"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 28
+  },
+  {
+    "key": "requests-list",
+    "family": "requests",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Tjenesteforespørsler"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "easytire-card hidden overflow-x-auto rounded-2xl md:block",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Tjenesteforespørsler"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 76
+  },
+  {
+    "key": "booking-calendar",
+    "family": "booking",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Timeplan og kapasitet",
+      "Ukentlige intervaller",
+      "Stengte perioder"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "easytire-card hidden overflow-x-auto md:block",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Ukentlige intervaller"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 39
+  },
+  {
+    "key": "orders-list",
+    "family": "orders",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Bestillinger"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "overflow-x-auto rounded-2xl border border-easytire-border bg-white",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Bestillinger"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 32
+  },
+  {
+    "key": "catalog-list",
+    "family": "catalogue",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Katalog"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "easytire-card overflow-x-auto rounded-2xl",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Katalog"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 31
+  },
+  {
+    "key": "imports-list",
+    "family": "imports",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "NDI-importer"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 26
+  },
+  {
+    "key": "services-list",
+    "family": "services",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Tjenestesider"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "hidden overflow-x-auto border border-easytire-border bg-easytire-panel md:block",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Tjenestesider"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 50
+  },
+  {
+    "key": "service-addons-list",
+    "family": "services",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Tilleggstjenester"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "w-full min-w-0 overflow-x-auto overscroll-x-contain",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Tilleggstjenester"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 27
+  },
+  {
+    "key": "public-prices-list",
+    "family": "services",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Tjenestepriser"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "w-full min-w-0 overflow-x-auto",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Publiserte tjenestepriser"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 35
+  },
+  {
+    "key": "content-list",
+    "family": "content",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Innholdssider"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "w-full min-w-0 overflow-x-auto overscroll-x-contain",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Innholdssider"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 28
+  },
+  {
+    "key": "promotions-list",
+    "family": "content",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Forsidetilbud"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "w-full min-w-0 overflow-x-auto overscroll-x-contain",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Forsidetilbud"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 25
+  },
+  {
+    "key": "reviews-list",
+    "family": "content",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Kundeomtaler"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "w-full min-w-0 overflow-x-auto overscroll-x-contain",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Kundeomtaler"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 27
+  },
+  {
+    "key": "ratings-list",
+    "family": "content",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Omtalesammendrag"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "overflow-x-auto rounded-2xl border border-easytire-border bg-easytire-panel",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Omtalesammendrag"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 26
+  },
+  {
+    "key": "partners-list",
+    "family": "content",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Bedriftspartnerlogoer"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "overflow-x-auto rounded-2xl border border-easytire-border bg-easytire-panel",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Bedriftspartnerlogoer"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 24
+  },
+  {
+    "key": "media-library",
+    "family": "media",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Media",
+      "Last opp bilde",
+      "Bildebibliotek"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 30
+  },
+  {
+    "key": "pricing-list",
+    "family": "pricing",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Prisregler",
+      "E2E public catalog price",
+      "NDI Sandbox fixture exact price"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "easytire-card hidden overflow-x-auto rounded-2xl md:block",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Prisregler"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 28
+  },
+  {
+    "key": "storefront-settings",
+    "family": "settings",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Butikkfront",
+      "Første seksjon på forsiden",
+      "Kontakt og kart",
+      "Dekk- og felgbutikken",
+      "Redaksjonelle seksjoner på forsiden"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 115
+  },
+  {
+    "key": "health",
+    "family": "operations",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Systemhelse"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 23
+  },
+  {
+    "key": "service-form",
+    "family": "forms",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Ny tjenesteside",
+      "NO",
+      "RU"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 40
+  },
+  {
+    "key": "content-form",
+    "family": "forms",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Ny innholdsside",
+      "Norsk innhold",
+      "Russisk testoversettelse"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 38
+  },
+  {
+    "key": "promotion-form",
+    "family": "forms",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Nytt tilbud",
+      "Norsk innhold",
+      "Russisk testoversettelse"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 35
+  },
+  {
+    "key": "pricing-form",
+    "family": "forms",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Prisregler"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 38
+  },
+  {
+    "key": "booking-form",
+    "family": "forms",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Legg til intervall"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 32
+  },
+  {
+    "key": "request-detail",
+    "family": "requests",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "SR-VISUAL-0006",
+      "Kunde",
+      "Ønsker",
+      "Status"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 27
+  },
+  {
+    "key": "order-detail",
+    "family": "orders",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "ET-E2E-PAYMENT",
+      "Autorisert",
+      "Produkter",
+      "Tilleggstjenester",
+      "Summer",
+      "Lokal statusendring",
+      "Historikk"
+    ],
+    "unresolvedKeys": [],
+    "tables": [
+      {
+        "width": 1586,
+        "scrollWidth": 1586,
+        "overflowOwner": "easytire-card overflow-x-auto",
+        "overflowOwnerTabIndex": "0",
+        "overflowOwnerRole": "region",
+        "overflowOwnerLabel": "Produkter"
+      }
+    ],
+    "clippedControls": [],
+    "controlCount": 32
+  },
+  {
+    "key": "catalog-detail",
+    "family": "catalogue",
+    "locale": "nb",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "Forhåndsvis kvalifisert publisering"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 24
+  },
+  {
+    "key": "dashboard-ru",
+    "family": "dashboard",
+    "locale": "ru",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "document": {
+      "width": 1920,
+      "overflow": false
+    },
+    "main": {
+      "width": 1660,
+      "left": 255
+    },
+    "topbar": {
+      "height": 70
+    },
+    "sidebar": {
+      "width": 250,
+      "position": "sticky"
+    },
+    "headings": [
+      "То, что требует внимания сейчас.",
+      "Рабочие разделы"
+    ],
+    "unresolvedKeys": [],
+    "tables": [],
+    "clippedControls": [],
+    "controlCount": 28
+  }
+]

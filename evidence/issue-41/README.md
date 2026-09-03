@@ -18,3 +18,5 @@ $env:ISSUE_41_EVIDENCE_MODE='before' # or after
 ```
 
 The seven required viewport projects are 1920×1080, 1440×900, 1366×768, 1280×800, 1024×768, 390×844, and 320×800. The final `after` run also enforces no document overflow, no unclipped controls, no unresolved translation keys, and labelled keyboard-focusable table regions.
+
+Final local result: **7/7 Playwright projects passed**. The `after/selected/` directory contains native-resolution review evidence for the dashboard, request lifecycle, health semantics, mobile dense-record layouts, hover/focus behavior, and keyboard table access.

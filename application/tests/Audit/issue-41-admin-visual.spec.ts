@@ -118,6 +118,50 @@ async function measure(page: Page, surface: Surface) {
     }, surface);
 }
 
+async function verifyInteractionStates(page: Page, rawProject: string, project: string): Promise<void> {
+    await page.goto('/admin');
+    const primaryAction = page.locator('#main-content .et-btn--primary').first();
+    const initialBox = await primaryAction.boundingBox();
+    await primaryAction.hover();
+    const hoverBox = await primaryAction.boundingBox();
+    expect(hoverBox).toEqual(initialBox);
+
+    await primaryAction.focus();
+    await expect(primaryAction).toBeFocused();
+    const focusStyle = await primaryAction.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { outlineWidth: style.outlineWidth, transform: style.transform };
+    });
+    expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThanOrEqual(2);
+    expect(focusStyle.transform).toBe('none');
+    if (['desktop-1440x900', 'mobile-390x844'].includes(project)) {
+        await page.screenshot({ path: path.join(rawProject, 'interaction-focus.png'), fullPage: true });
+    }
+
+    await page.goto('/admin/services/create');
+    const saveButton = page.locator('#main-content form button').last();
+    await saveButton.evaluate((button: HTMLButtonElement) => { button.disabled = true; });
+    const disabledStyle = await saveButton.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { cursor: style.cursor, opacity: Number.parseFloat(style.opacity) };
+    });
+    expect(disabledStyle.cursor).toBe('not-allowed');
+    expect(disabledStyle.opacity).toBeLessThan(1);
+
+    await page.goto('/admin/orders');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    let reachedTableRegion = false;
+    for (let index = 0; index < 60; index += 1) {
+        await page.keyboard.press('Tab');
+        reachedTableRegion = await page.evaluate(() => document.activeElement?.matches('[role="region"][tabindex="0"]') ?? false);
+        if (reachedTableRegion) break;
+    }
+    expect(reachedTableRegion).toBeTruthy();
+    if (['desktop-1440x900', 'mobile-390x844'].includes(project)) {
+        await page.screenshot({ path: path.join(rawProject, 'table-keyboard-focus.png'), fullPage: true });
+    }
+}
+
 test('login, error and authenticated admin surface inventory', async ({ page }, testInfo) => {
     const project = testInfo.project.name;
     const rawProject = path.join(rawRoot, project);
@@ -200,6 +244,10 @@ test('login, error and authenticated admin surface inventory', async ({ page }, 
         await page.screenshot({ path: path.join(rawProject, 'drawer-open.png'), fullPage: true });
         await page.keyboard.press('Escape');
         await expect(toggle).toBeFocused();
+    }
+
+    if (evidenceMode === 'after') {
+        await verifyInteractionStates(page, rawProject, project);
     }
 
     await writeFile(

@@ -32,3 +32,34 @@ test('service request administration is available in Russian for internal testin
         ->assertOk()
         ->assertSee('Заявки на услуги');
 });
+
+test('legacy request option codes never leak raw translation keys to administrators', function (): void {
+    $admin = User::factory()->operations()->create();
+    ServicePage::create([
+        'slug' => 'legacy-service',
+        'sort_order' => 1,
+        'publication_status' => ServicePagePublicationStatus::Published,
+        'title_nb' => 'Eldre tjeneste',
+        'title_ru' => 'Старая услуга',
+    ]);
+    $request = ServiceRequest::create([
+        'reference' => 'SR-LEGACY-OPTIONS',
+        'locale' => 'nb',
+        'service_slug' => 'legacy-service',
+        'service_variant' => 'legacy_variant',
+        'additional_services' => ['legacy_addon'],
+        'fulfilment' => 'workshop',
+        'name' => 'Legacy Test',
+        'email' => 'legacy@example.test',
+        'phone' => '+47 900 00 000',
+        'status' => ServiceRequestStatus::New,
+        'consent_at' => now(),
+    ]);
+
+    $this->actingAs($admin)->get('/admin/service-requests/'.$request->id)
+        ->assertOk()
+        ->assertSee('Legacy Variant')
+        ->assertSee('Legacy Addon')
+        ->assertDontSee('project.request.legacy_variant', false)
+        ->assertDontSee('project.request.legacy_addon', false);
+});

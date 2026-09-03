@@ -75,7 +75,7 @@ test('pricing rule screens expose accessible controls and responsive status pres
     $this->actingAs($admin)->get('/admin/pricing-rules')
         ->assertOk()
         ->assertSee('easytire-card', false)
-        ->assertSee('rounded-full', false)
+        ->assertSee('et-admin-status--success', false)
         ->assertSee('Active retail');
 
     $this->actingAs($admin)->get('/admin/pricing-rules/create')
