@@ -1,0 +1,382 @@
+{
+  "keyboard": {
+    "desktop": {
+      "sidebarOrder": [
+        "brand",
+        "dashboard",
+        "service_requests",
+        "health"
+      ],
+      "topbarOrder": [
+        "NB",
+        "RU",
+        "logout"
+      ],
+      "dashboardOrder": [
+        "primary-action",
+        "work-catalog"
+      ],
+      "form": {
+        "slugSteps": 24,
+        "saveSteps": 15,
+        "disabledSubmitSkipped": true
+      },
+      "table": [
+        "region",
+        "first-row-action"
+      ]
+    }
+  },
+  "states": {
+    "clientValidation": {
+      "selector": "#content-slug:invalid",
+      "validationMessagePresent": true
+    },
+    "serverValidation": {
+      "selector": "[role=\"alert\"]",
+      "retainedValue": "INVALID SLUG"
+    },
+    "dirtyGuard": {
+      "selector": "[data-admin-locale-form]",
+      "dialog": "Du har ulagrede endringer. Vil du bytte språk og forkaste dem?",
+      "navigationCancelled": true
+    },
+    "destructiveConfirmation": {
+      "selector": "[data-testid^=\"media-delete-\"]",
+      "dialog": "Slett?",
+      "deletionCancelled": true
+    },
+    "emptyState": {
+      "selector": "[data-testid=\"imports-empty-state\"]",
+      "visible": true
+    },
+    "longValues": {
+      "selectors": [
+        "Visuell Testkunde med et bevisst langt navn",
+        "langt-administrativt-testnavn@synthetic.example.test"
+      ],
+      "locales": [
+        "nb",
+        "ru"
+      ],
+      "widths": {
+        "nb": {
+          "document": 1440,
+          "viewport": 1440
+        },
+        "ru": {
+          "document": 1440,
+          "viewport": 1440
+        }
+      }
+    }
+  },
+  "dashboardStates": [
+    {
+      "state": "zero",
+      "locale": "nb",
+      "expectedValues": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 4,
+      "geometry": [
+        {
+          "left": 285,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Nye tjenesteforespørsler"
+        },
+        {
+          "left": 568,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle tjenesteforespørsler"
+        },
+        {
+          "left": 851,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Bestillinger til oppfølging"
+        },
+        {
+          "left": 1134,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle bestillinger"
+        }
+      ]
+    },
+    {
+      "state": "low",
+      "locale": "nb",
+      "expectedValues": [
+        1,
+        3,
+        1,
+        2
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 4,
+      "geometry": [
+        {
+          "left": 285,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Nye tjenesteforespørsler"
+        },
+        {
+          "left": 568,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle tjenesteforespørsler"
+        },
+        {
+          "left": 851,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Bestillinger til oppfølging"
+        },
+        {
+          "left": 1134,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle bestillinger"
+        }
+      ]
+    },
+    {
+      "state": "large",
+      "locale": "nb",
+      "expectedValues": [
+        987,
+        1234,
+        876,
+        4321
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 4,
+      "geometry": [
+        {
+          "left": 285,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Nye tjenesteforespørsler"
+        },
+        {
+          "left": 568,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle tjenesteforespørsler"
+        },
+        {
+          "left": 851,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Bestillinger til oppfølging"
+        },
+        {
+          "left": 1134,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle bestillinger"
+        }
+      ]
+    },
+    {
+      "state": "zero",
+      "locale": "ru",
+      "expectedValues": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 4,
+      "geometry": [
+        {
+          "left": 285,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Новые заявки на услуги"
+        },
+        {
+          "left": 568,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заявки на услуги"
+        },
+        {
+          "left": 851,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Заказы для обработки"
+        },
+        {
+          "left": 1134,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заказы"
+        }
+      ]
+    },
+    {
+      "state": "low",
+      "locale": "ru",
+      "expectedValues": [
+        1,
+        3,
+        1,
+        2
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 4,
+      "geometry": [
+        {
+          "left": 285,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Новые заявки на услуги"
+        },
+        {
+          "left": 568,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заявки на услуги"
+        },
+        {
+          "left": 851,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Заказы для обработки"
+        },
+        {
+          "left": 1134,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заказы"
+        }
+      ]
+    },
+    {
+      "state": "large",
+      "locale": "ru",
+      "expectedValues": [
+        987,
+        1234,
+        876,
+        4321
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 4,
+      "geometry": [
+        {
+          "left": 285,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Новые заявки на услуги"
+        },
+        {
+          "left": 568,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заявки на услуги"
+        },
+        {
+          "left": 851,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Заказы для обработки"
+        },
+        {
+          "left": 1134,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заказы"
+        }
+      ]
+    }
+  ]
+}

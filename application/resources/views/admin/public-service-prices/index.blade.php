@@ -22,7 +22,7 @@
                                 <td class="p-4"><strong>{{ $price->category_title_nb }}</strong><small class="mt-1 block text-easytire-muted">{{ $price->category_code }}</small></td>
                                 <td class="p-4"><strong>{{ $price->title_nb }}</strong><small class="mt-1 block text-easytire-muted">{{ $price->code }}</small></td>
                                 <td class="p-4 font-bold">{{ number_format($price->price_minor / 100, 2, ',', ' ') }} NOK</td>
-                                <td class="p-4"><span class="rounded-full px-3 py-1 text-xs font-bold {{ $price->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $price->is_active ? __('public_service_prices.active') : __('public_service_prices.inactive') }}</span></td>
+                                <td class="p-4"><span class="et-admin-status et-admin-status--{{ $price->is_active ? 'success' : 'neutral' }}">{{ $price->is_active ? __('public_service_prices.active') : __('public_service_prices.inactive') }}</span></td>
                                 <td class="p-4 text-right"><a class="font-semibold underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.public-service-prices.edit', $price) }}">{{ __('public_service_prices.edit') }}</a></td>
                             </tr>
                         @empty

@@ -58,6 +58,11 @@
         @if ($orders->isEmpty())
             <p class="rounded-2xl border border-dashed border-easytire-border bg-white p-8 text-easytire-muted">{{ __('orders.empty') }}</p>
         @else
+            @php
+                $orderTone = ['pending_review' => 'attention', 'awaiting_payment' => 'attention', 'paid' => 'success', 'fulfilment_pending' => 'attention', 'fulfilled' => 'success', 'cancelled' => 'neutral', 'failed' => 'error', 'refunded' => 'neutral'];
+                $paymentTone = ['not_started' => 'neutral', 'pending' => 'attention', 'authorized' => 'info', 'capturing' => 'attention', 'partially_paid' => 'info', 'voiding' => 'attention', 'refunding' => 'attention', 'paid' => 'success', 'voided' => 'neutral', 'failed' => 'error', 'partially_refunded' => 'info', 'refunded' => 'neutral'];
+                $ndiTone = ['not_submitted' => 'neutral', 'awaiting_approval' => 'attention', 'submitted' => 'info', 'accepted' => 'success', 'rejected' => 'error', 'unknown' => 'neutral'];
+            @endphp
             <div class="overflow-x-auto rounded-2xl border border-easytire-border bg-white">
                 <table class="min-w-full text-left text-sm">
                     <thead class="bg-easytire-surface text-easytire-muted">
@@ -76,9 +81,9 @@
                         @foreach ($orders as $order)
                             <tr class="border-t border-easytire-border">
                                 <td class="p-4 font-bold"><a class="underline underline-offset-4" href="{{ route('admin.orders.show', $order) }}">{{ $order->public_reference }}</a>@if ($order->is_integration_test)<span class="ml-2 text-xs uppercase text-amber-700">{{ __('order_ui.integration_test_short') }}</span>@endif</td>
-                                <td class="p-4">{{ __('order_statuses.'.$order->status->value) }}</td>
-                                <td class="p-4">{{ __('payment_statuses.'.$order->payment_status->value) }}</td>
-                                <td class="p-4">{{ __('ndi_statuses.'.$order->ndi_status->value) }}</td>
+                                <td class="p-4"><span class="et-admin-status et-admin-status--{{ $orderTone[$order->status->value] ?? 'neutral' }}">{{ __('order_statuses.'.$order->status->value) }}</span></td>
+                                <td class="p-4"><span class="et-admin-status et-admin-status--{{ $paymentTone[$order->payment_status->value] ?? 'neutral' }}">{{ __('payment_statuses.'.$order->payment_status->value) }}</span></td>
+                                <td class="p-4"><span class="et-admin-status et-admin-status--{{ $ndiTone[$order->ndi_status->value] ?? 'neutral' }}">{{ __('ndi_statuses.'.$order->ndi_status->value) }}</span></td>
                                 <td class="p-4">{{ number_format(($order->product_total_minor ?? 0) / 100, 2, ',', ' ') }} {{ $order->currency }}</td>
                                 <td class="p-4">{{ number_format(($order->service_total_minor ?? 0) / 100, 2, ',', ' ') }} {{ $order->currency }}</td>
                                 <td class="p-4 font-bold">{{ number_format($order->total_minor / 100, 2, ',', ' ') }} {{ $order->currency }}</td>

@@ -401,11 +401,16 @@ const initAdminSidebar = () => {
     const overlay = one('[data-admin-overlay]');
     const button = one('[data-admin-menu]');
     if (!sidebar || !overlay || !button) return;
+    const mobile = window.matchMedia('(max-width: 900px)');
+    const syncInertState = () => {
+        sidebar.inert = mobile.matches && !sidebar.classList.contains('is-open');
+    };
     const close = ({ focus = false } = {}) => {
         sidebar.classList.remove('is-open');
         overlay.classList.remove('is-open');
         setExpanded(button, false);
         document.body.style.overflow = '';
+        syncInertState();
         if (focus) button.focus();
     };
     button.addEventListener('click', () => {
@@ -414,12 +419,15 @@ const initAdminSidebar = () => {
         overlay.classList.toggle('is-open', open);
         setExpanded(button, open);
         document.body.style.overflow = open ? 'hidden' : '';
+        syncInertState();
         if (open) one('a', sidebar)?.focus();
     });
     overlay.addEventListener('click', () => close({ focus: true }));
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && sidebar.classList.contains('is-open')) close({ focus: true });
     });
+    mobile.addEventListener('change', syncInertState);
+    syncInertState();
 };
 
 initMobileMenu();

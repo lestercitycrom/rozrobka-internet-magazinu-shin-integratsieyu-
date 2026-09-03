@@ -10,6 +10,12 @@ test('a guest is redirected from the admin dashboard to the admin login', functi
     $this->get('/admin')->assertRedirect(route('admin.login'));
 });
 
+test('dashboard acceptance fixture routes are unavailable by default', function (): void {
+    $this->actingAs(User::factory()->operations()->create())
+        ->get('/admin/_e2e/dashboard/zero')
+        ->assertNotFound();
+});
+
 test('an administrator sees operational dashboard links', function (): void {
     $this->actingAs(User::factory()->operations()->create())
         ->get('/admin')
