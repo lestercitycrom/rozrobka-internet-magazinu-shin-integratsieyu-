@@ -18,7 +18,7 @@
     </section>
 
     <section class="et-section et-section--compact" data-testid="order-receipt">
-        <div class="et-container" style="max-width:980px">
+        <div class="et-container et-container--receipt">
             <div class="et-booking-card">
                 <div class="et-booking-card__head">
                     <div>
@@ -31,17 +31,17 @@
                     <div class="et-form-grid">
                         <section>
                             <p class="et-eyebrow">{{ __('commerce.receipt_merchant') }}</p>
-                            <p style="margin-top:.6rem"><strong>EasyTask AS / EasyTire</strong><br>Org.nr. 934 860 187 MVA<br>Ringvegen 200, 9018 Tromsø<br>+47 939 58 270<br>max.easytire@gmail.com</p>
+                            <p class="et-receipt-meta"><strong>EasyTask AS / EasyTire</strong><br>Org.nr. 934 860 187 MVA<br>Ringvegen 200, 9018 Tromsø<br>+47 939 58 270<br>max.easytire@gmail.com</p>
                         </section>
                         <section>
                             <p class="et-eyebrow">{{ __('commerce.receipt_customer') }}</p>
-                            <p style="margin-top:.6rem"><strong>{{ $order->customer_name }}</strong><br>{{ $order->customer_email }}<br>{{ $order->customer_phone }}@if($order->vehicle_registration)<br>{{ __('commerce.registration') }}: {{ $order->vehicle_registration }}@endif</p>
+                            <p class="et-receipt-meta"><strong>{{ $order->customer_name }}</strong><br>{{ $order->customer_email }}<br>{{ $order->customer_phone }}@if($order->vehicle_registration)<br>{{ __('commerce.registration') }}: {{ $order->vehicle_registration }}@endif</p>
                         </section>
                     </div>
 
-                    <section style="margin-top:1.75rem;border-top:1px solid var(--et-line);padding-top:1.5rem">
+                    <section class="et-receipt-section">
                         <p class="et-eyebrow">{{ __('commerce.receipt_items') }}</p>
-                        <div class="et-stack" style="margin-top:.8rem">
+                        <div class="et-stack et-receipt-lines">
                             @foreach($order->items as $item)
                                 <div class="et-order-summary__row"><span>{{ $item->product_title }} × {{ $item->quantity }}<br><small>{{ __('commerce.sku') }} {{ $item->external_sku }}</small></span><strong>{{ $money($item->line_total_minor) }}</strong></div>
                             @endforeach
@@ -49,18 +49,18 @@
                                 <div class="et-order-summary__row"><span>{{ app()->getLocale() === 'ru' ? $item->title_ru : $item->title_nb }} × {{ $item->quantity }}</span><strong>{{ $money($item->line_total_minor) }}</strong></div>
                             @endforeach
                         </div>
-                        <dl style="margin-top:1rem;border-top:1px solid var(--et-line);padding-top:.75rem">
+                        <dl class="et-receipt-totals">
                             <div class="et-order-summary__row"><dt>{{ __('commerce.vat_included') }}</dt><dd><strong>{{ $money($vatMinor) }}</strong></dd></div>
                             <div class="et-order-summary__row"><dt>{{ __('commerce.mandatory_fees') }}</dt><dd><strong>{{ $money(0) }}</strong></dd></div>
                             <div class="et-order-summary__total"><dt>{{ __('commerce.cart_total') }}</dt><dd>{{ $money($order->total_minor) }}</dd></div>
                         </dl>
                     </section>
 
-                    <div class="et-form-grid" style="margin-top:1.75rem;border-top:1px solid var(--et-line);padding-top:1.5rem">
+                    <div class="et-form-grid et-receipt-section">
                         <section data-testid="receipt-payment">
                             <p class="et-eyebrow">{{ __('commerce.receipt_payment') }}</p>
-                            <p style="margin-top:.6rem"><strong>{{ __('payment_statuses.'.$order->payment_status->value) }}</strong></p>
-                            @if($payment?->provider_reference)<p class="et-help">{{ __('commerce.dintero_transaction') }}: <span style="word-break:break-all">{{ $payment->provider_reference }}</span></p>@endif
+                            <p class="et-receipt-meta"><strong>{{ __('payment_statuses.'.$order->payment_status->value) }}</strong></p>
+                            @if($payment?->provider_reference)<p class="et-help">{{ __('commerce.dintero_transaction') }}: <span class="et-breakable-reference">{{ $payment->provider_reference }}</span></p>@endif
                             @if($payment?->payment_product_type)<p class="et-help">{{ __('commerce.payment_method') }}: {{ $payment->payment_product_type }}</p>@endif
                             @if($payment?->card_last_four)<p class="et-help">{{ __('commerce.card_ending', ['digits' => $payment->card_last_four]) }}</p>@endif
                             @if(($payment?->captured_amount_minor ?? 0) > 0)<p class="et-help">{{ __('payment_statuses.paid') }}: {{ $money($payment->captured_amount_minor) }}</p>@endif
@@ -68,14 +68,14 @@
                         </section>
                         <section>
                             <p class="et-eyebrow">{{ __('commerce.receipt_delivery') }}</p>
-                            <p style="margin-top:.6rem">{{ __('commerce.fulfilment_summary') }}<br><strong>Ringvegen 200, 9018 Tromsø</strong></p>
+                            <p class="et-receipt-meta">{{ __('commerce.fulfilment_summary') }}<br><strong>Ringvegen 200, 9018 Tromsø</strong></p>
                         </section>
                     </div>
 
-                    <section style="margin-top:1.75rem;border-top:1px solid var(--et-line);padding-top:1.5rem" data-testid="receipt-legal-evidence">
+                    <section class="et-receipt-section" data-testid="receipt-legal-evidence">
                         <p class="et-eyebrow">{{ __('commerce.receipt_legal') }}</p>
-                        <p style="margin-top:.6rem"><a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('commerce.terms_version', ['version' => $order->terms_version]) }}</a><br><a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('commerce.privacy_version', ['version' => $order->privacy_version]) }}</a></p>
-                        <p style="margin-top:.75rem"><a class="et-btn et-btn--ghost et-btn--small" href="/dokumenter/angreskjema-easytire.pdf" download>{{ __('commerce.withdrawal_form') }}</a></p>
+                        <p class="et-receipt-meta"><a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('commerce.terms_version', ['version' => $order->terms_version]) }}</a><br><a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('commerce.privacy_version', ['version' => $order->privacy_version]) }}</a></p>
+                        <p class="et-receipt-download"><a class="et-btn et-btn--ghost et-btn--small" href="/dokumenter/angreskjema-easytire.pdf" download>{{ __('commerce.withdrawal_form') }}</a></p>
                     </section>
                 </div>
             </div>

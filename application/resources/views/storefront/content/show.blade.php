@@ -59,7 +59,7 @@
                                 <div><dt>{{ __('pro.content.address') }}</dt><dd>{{ $businessAddress }}<br><small>{{ __('project.contact.map_pin_note', ['address' => $mapPinAddress]) }}</small></dd></div>
                                 <div><dt>{{ __('pro.content.hours') }}</dt><dd>{{ __('project.contact.hours') }}</dd></div>
                             </dl>
-                            <div class="et-page-actions" style="margin-top:1rem">
+                            <div class="et-page-actions et-page-actions--section">
                                 <a class="et-btn et-btn--light" href="tel:{{ $phoneHref }}">{{ __('pro.content.call_now') }}</a>
                                 <a class="et-btn et-btn--ghost" href="mailto:{{ $contactEmail }}">{{ __('pro.home.email') }}</a>
                             </div>
@@ -86,12 +86,12 @@
                     </div>
 
                     @if ($page->body)
-                        <div class="et-card et-card--flat" style="margin-top:1rem">
+                        <div class="et-card et-card--flat et-content-followup">
                             <div class="et-card__body et-richtext">{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
                         </div>
                     @endif
 
-                    <div class="et-grid-2" style="margin-top:1rem">
+                    <div class="et-grid-2 et-content-followup-grid">
                         <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.private_customer') }}</span><h2 class="et-h3">{{ __('pro.content.private_title') }}</h2><p class="et-copy">{{ __('pro.content.private_text') }}</p><a class="et-card__link" href="{{ route($prefix.'services.index') }}">{{ __('pro.nav.services') }}</a></div></article>
                         <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.business_customer') }}</span><h2 class="et-h3">{{ __('pro.content.business_title') }}</h2><p class="et-copy">{{ __('pro.content.business_text') }}</p><a class="et-card__link" href="mailto:{{ $contactEmail }}">{{ __('pro.home.email') }}</a></div></article>
                     </div>
@@ -122,7 +122,7 @@
                         <p class="et-eyebrow">EasyTire Tromsø</p>
                         <h2 class="et-h2">{{ __('pro.content.about_heading') }}</h2>
                         @if ($page->body)
-                            <div class="et-richtext" style="margin-top:1.25rem">{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+                            <div class="et-richtext et-content-intro">{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
                         @elseif ($page->excerpt)
                             <p class="et-lead">{{ $page->excerpt }}</p>
                         @endif
@@ -150,12 +150,12 @@
                 </div>
             </section>
             <section class="et-section et-section--white">
-                <div class="et-container" style="max-width:900px">
+                <div class="et-container et-container--reading">
                     @if ($page->hero)
                         <img data-testid="page-hero" class="et-cms-hero" src="{{ $heroUrl }}" alt="{{ $heroAlt }}" loading="lazy">
                     @endif
                     @if ($page->body)
-                        <div class="et-richtext" @if($page->hero) style="margin-top:2rem" @endif>{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+                        <div @class(['et-richtext', 'et-richtext--after-media' => $page->hero])>{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
                     @elseif ($page->excerpt)
                         <p class="et-lead">{{ $page->excerpt }}</p>
                     @endif

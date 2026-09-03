@@ -37,7 +37,7 @@
                 <p class="et-eyebrow et-eyebrow--light">{{ __('pro.services.kicker') }}</p>
                 <h1 class="et-h1">{{ $service->title }}</h1>
                 @if ($service->excerpt)<p class="et-lead et-lead--light">{{ $service->excerpt }}</p>@endif
-                <div class="et-page-actions" style="margin-top:1.5rem">
+                <div class="et-page-actions et-page-actions--hero">
                     @if ($hasSeasonalIntentChoice)
                         <a class="et-btn et-btn--primary" href="{{ $mobileRequestHref }}" data-testid="service-hero-mobile">{{ __('services.mobile_intent_cta') }}</a>
                         <a class="et-btn et-btn--ghost" href="{{ $workshopRequestHref }}" data-testid="service-hero-workshop">{{ __('services.workshop_intent_cta') }}</a>

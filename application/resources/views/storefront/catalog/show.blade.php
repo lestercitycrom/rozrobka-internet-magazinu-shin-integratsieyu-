@@ -29,7 +29,7 @@
 <x-layouts.storefront :title="'EasyTire | '.$productHeading" :description="$productDescription" :image="$item->primaryMedia['url'] ?? null" :structured-data="[$productSchema]" active-section="store" :store-route="route($catalogRoute)" :store-label="$catalogLabel">
     <section class="et-section et-section--compact">
         <div class="et-container">
-            <div class="et-breadcrumbs" style="color:var(--et-muted)">
+            <div class="et-breadcrumbs et-breadcrumbs--muted">
                 <span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span>
                 <span><a href="{{ route($catalogRoute) }}">{{ $catalogLabel }}</a></span>
                 <span>{{ $productHeading }}</span>
@@ -37,7 +37,7 @@
 
             <a class="et-btn et-btn--link" href="{{ route($catalogRoute) }}">{{ __('pro.catalog.back') }}</a>
 
-            <article class="et-product-layout" style="margin-top:1rem">
+            <article class="et-product-layout et-product-layout--spaced">
                 <div>
                     <div class="et-product-gallery">
                         <div class="et-product-gallery__main">
@@ -95,14 +95,14 @@
                             </form>
                             <p class="et-help et-purchase-fulfilment-note">{{ __('pro.catalog.buy_box_note') }}</p>
                         @else
-                            <div class="et-alert et-alert--warning" style="margin-top:1.2rem">
+                            <div class="et-alert et-alert--warning et-product-unavailable">
                                 <span class="et-alert__icon" aria-hidden="true">!</span>
                                 <div><strong>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale') : ($item->stock->quantity > 0 ? __('storefront.price_unavailable') : __('storefront.stock_none')) }}</strong><br>{{ __('storefront.unavailable_note') }}</div>
                             </div>
                         @endif
                     </div>
 
-                    <h2 class="et-h3" style="margin:1.5rem 0 .8rem">{{ __('storefront.technical_details') }}</h2>
+                    <h2 class="et-h3 et-product-spec-heading">{{ __('storefront.technical_details') }}</h2>
                     <dl class="et-spec-grid" data-testid="technical-details">
                         <div><dt>{{ __('storefront.item_number') }}</dt><dd>{{ $item->sku }}</dd></div>
                         <div><dt>{{ __('pro.catalog.stock') }}</dt><dd>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale_detail') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso_detail', ['count' => $item->stock->localQuantity]) : __('storefront.stock_remote_detail')) }}</dd></div>
@@ -130,13 +130,13 @@
                             ];
                         @endphp
                         @if ($label->isNotEmpty())
-                            <section class="et-card et-card--flat" style="margin-top:1rem" aria-labelledby="eu-label-heading">
+                            <section class="et-card et-card--flat et-product-label" aria-labelledby="eu-label-heading">
                                 <div class="et-card__body">
                                     <h2 class="et-h3" id="eu-label-heading">{{ __('storefront.eu_label') }}</h2>
-                                    <dl class="et-grid-4" style="margin-top:1rem">
+                                    <dl class="et-grid-4 et-product-label__grid">
                                         @foreach (['rolling_resistance', 'wet_grip', 'noise_db', 'noise_class'] as $key)
                                             @if (($item->tire['label'][$key] ?? null) !== null && $item->tire['label'][$key] !== '')
-                                                <div><dt class="et-caption">{{ $labelNames[$key] }}</dt><dd class="et-price" style="margin:0">{{ $item->tire['label'][$key] }}{{ $key === 'noise_db' ? ' dB' : '' }}</dd></div>
+                                                <div><dt class="et-caption">{{ $labelNames[$key] }}</dt><dd class="et-price et-product-label__value">{{ $item->tire['label'][$key] }}{{ $key === 'noise_db' ? ' dB' : '' }}</dd></div>
                                             @endif
                                         @endforeach
                                     </dl>

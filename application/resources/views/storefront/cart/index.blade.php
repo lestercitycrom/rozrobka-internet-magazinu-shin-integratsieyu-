@@ -39,7 +39,7 @@
                     <a class="et-btn et-btn--primary" href="{{ route($prefix.'tires.index') }}">{{ __('commerce.continue_shopping') }}</a>
                 </div>
             @else
-                <div class="et-cart-layout" style="margin-top:1rem">
+                <div class="et-cart-layout et-cart-layout--populated">
                     <div class="et-cart-list">
                         @foreach ($cart->lines as $line)
                             @php
@@ -62,11 +62,11 @@
                                             <div>
                                                 <label class="et-label" for="{{ $quantityId }}">{{ __('commerce.quantity') }}</label>
                                                 @php $requiredTestQuantity = (int) config('ndi_api.sandbox.quantity', 2); @endphp
-                                                <input class="et-input easytire-input" id="{{ $quantityId }}" name="quantity" data-testid="cart-line-quantity" type="number" min="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : min(40, $line->item->stock->quantity) }}" value="{{ $line->quantity }}" inputmode="numeric" style="width:88px;min-height:40px" {{ $line->item->isIntegrationTest ? 'readonly' : '' }}>
+                                                <input class="et-input easytire-input et-cart-quantity" id="{{ $quantityId }}" name="quantity" data-testid="cart-line-quantity" type="number" min="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : min(40, $line->item->stock->quantity) }}" value="{{ $line->quantity }}" inputmode="numeric" {{ $line->item->isIntegrationTest ? 'readonly' : '' }}>
                                             </div>
-                                            <button class="et-btn et-btn--dark et-btn--small" type="submit" style="align-self:end" data-testid="cart-line-update">{{ __('commerce.update') }}</button>
+                                            <button class="et-btn et-btn--dark et-btn--small et-cart-action" type="submit" data-testid="cart-line-update">{{ __('commerce.update') }}</button>
                                         </form>
-                                        <form method="post" action="{{ route($prefix.'cart.remove') }}" style="align-self:end">
+                                        <form class="et-cart-action" method="post" action="{{ route($prefix.'cart.remove') }}">
                                             @csrf @method('DELETE')
                                             <input type="hidden" name="sku" value="{{ $line->item->sku }}">
                                             <input type="hidden" name="quantity" value="1">
@@ -76,7 +76,7 @@
                                 </div>
                                 <dl class="et-cart-item__price">
                                     <div><dt class="et-caption">{{ __('commerce.unit_price') }}</dt><dd>{{ number_format($line->price->money->minor / 100, 2, ',', ' ') }} {{ $line->price->money->currency }}</dd></div>
-                                    <div style="margin-top:.6rem"><dt class="et-caption">{{ __('commerce.line_total') }}</dt><dd class="et-price">{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</dd></div>
+                                    <div class="et-cart-line-total"><dt class="et-caption">{{ __('commerce.line_total') }}</dt><dd class="et-price">{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</dd></div>
                                 </dl>
                             </article>
                         @endforeach
@@ -88,12 +88,12 @@
                                 <div>
                                     <h2 class="et-h3">{{ __('commerce.issue_title') }}</h2>
                                     <p>{{ __('commerce.issue_'.$issue->reason, ['sku' => $issue->sku, 'quantity' => $issue->quantity, 'available' => $issue->availableQuantity ?? 0]) }}</p>
-                                    <div class="et-cluster" style="margin-top:.8rem">
+                                    <div class="et-cluster et-cart-issue-actions">
                                         @if (in_array($issue->reason, ['stock_changed', 'sandbox_quantity_required'], true) && $issue->availableQuantity > 0)
                                             <form class="et-cluster" method="post" action="{{ route($prefix.'cart.update') }}">
                                                 @csrf @method('PATCH')
                                                 <input type="hidden" name="sku" value="{{ $issue->sku }}">
-                                                <div><label class="et-label" for="{{ $issueQuantityId }}">{{ __('commerce.quantity') }}</label><input class="et-input" id="{{ $issueQuantityId }}" name="quantity" type="number" min="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : 1 }}" max="{{ min(40, $issue->availableQuantity) }}" value="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : min($issue->quantity, $issue->availableQuantity) }}" inputmode="numeric" style="width:88px" {{ $issue->reason === 'sandbox_quantity_required' ? 'readonly' : '' }}></div>
+                                                <div><label class="et-label" for="{{ $issueQuantityId }}">{{ __('commerce.quantity') }}</label><input class="et-input et-cart-issue-quantity" id="{{ $issueQuantityId }}" name="quantity" type="number" min="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : 1 }}" max="{{ min(40, $issue->availableQuantity) }}" value="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : min($issue->quantity, $issue->availableQuantity) }}" inputmode="numeric" {{ $issue->reason === 'sandbox_quantity_required' ? 'readonly' : '' }}></div>
                                                 <button class="et-btn et-btn--dark et-btn--small" type="submit">{{ __('commerce.update') }}</button>
                                             </form>
                                         @endif
@@ -112,7 +112,7 @@
                             <section class="et-card" data-testid="cart-service-addons">
                                 <div class="et-card__body">
                                     <p class="et-eyebrow">{{ __('commerce.additional_services') }}</p>
-                                    <h2 class="et-h3" style="margin-top:.6rem">{{ __('commerce.additional_services') }}</h2>
+                                    <h2 class="et-h3 et-cart-addons-title">{{ __('commerce.additional_services') }}</h2>
                                     <p class="et-copy">{{ __('commerce.additional_services_intro') }}</p>
                                     <div class="et-service-addon-list">
                                         @foreach ($cart->serviceOptions as $option)
@@ -123,7 +123,7 @@
                                                         @if ($option->selected)<span class="et-badge et-badge--red">{{ __('commerce.service_selected') }}</span>@endif
                                                     </div>
                                                     <small>{{ __('commerce.service_'.$option->billingMode->value) }} · {{ __('commerce.quantity') }}: {{ $option->quantity }}</small>
-                                                    <div class="et-price" style="margin-top:.45rem">{{ number_format($option->total()->minor / 100, 2, ',', ' ') }} {{ $option->total()->currency }}</div>
+                                                    <div class="et-price et-cart-addon-price">{{ number_format($option->total()->minor / 100, 2, ',', ' ') }} {{ $option->total()->currency }}</div>
                                                 </div>
                                                 <form method="post" action="{{ route($prefix.($option->selected ? 'cart.services.remove' : 'cart.services.add')) }}">
                                                     @csrf
@@ -144,7 +144,7 @@
                                 <div>
                                     <h2 class="et-h3">{{ __('commerce.service_issue_title') }}</h2>
                                     <p>{{ __('commerce.service_issue_'.$issue->reason, ['code' => $issue->code]) }}</p>
-                                    <form method="post" action="{{ route($prefix.'cart.services.remove') }}" style="margin-top:.8rem">
+                                    <form class="et-cart-issue-actions" method="post" action="{{ route($prefix.'cart.services.remove') }}">
                                         @csrf @method('DELETE')
                                         <input type="hidden" name="code" value="{{ $issue->code }}">
                                         <button class="et-btn et-btn--outline et-btn--small" type="submit">{{ __('commerce.remove_service') }}</button>
@@ -162,9 +162,9 @@
                         </dl>
                         <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span>{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</span></div>
                         @if ($cart->issues !== [] || $cart->serviceIssues !== [])
-                            <div class="et-alert et-alert--warning" style="margin-top:1rem" role="alert"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ __('commerce.issues') }}</div></div>
+                            <div class="et-alert et-alert--warning et-cart-summary-action" role="alert"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ __('commerce.issues') }}</div></div>
                         @else
-                            <a class="et-btn et-btn--primary et-btn--full" href="{{ route($prefix.'checkout.create') }}" style="margin-top:1rem" data-testid="cart-checkout">{{ __('commerce.to_checkout') }}</a>
+                            <a class="et-btn et-btn--primary et-btn--full et-cart-summary-action" href="{{ route($prefix.'checkout.create') }}" data-testid="cart-checkout">{{ __('commerce.to_checkout') }}</a>
                         @endif
                     </aside>
                 </div>
