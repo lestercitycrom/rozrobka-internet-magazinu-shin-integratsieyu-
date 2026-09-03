@@ -41,11 +41,11 @@
                 </div>
             @else
                 <div class="et-empty-state" data-testid="public-prices-pending">
-                    <div><div class="et-empty-state__icon" aria-hidden="true">i</div><h2 class="et-h3" style="margin-top:1rem">{{ __('public_pricing.pending_title') }}</h2><p class="et-copy">{{ __('public_pricing.pending_text') }}</p></div>
+                    <div><div class="et-empty-state__icon" aria-hidden="true">i</div><h2 class="et-h3 et-empty-state__heading">{{ __('public_pricing.pending_title') }}</h2><p class="et-copy">{{ __('public_pricing.pending_text') }}</p></div>
                     <a class="et-btn et-btn--primary" href="{{ route($prefix.'services.index') }}">{{ __('public_pricing.cta') }}</a>
                 </div>
             @endif
-            <div class="et-alert et-alert--info" style="margin-top:1.25rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('public_pricing.confirmation') }}</div></div>
+            <div class="et-alert et-alert--info et-pricing-confirmation"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('public_pricing.confirmation') }}</div></div>
         </div>
     </section>
 </x-layouts.storefront>

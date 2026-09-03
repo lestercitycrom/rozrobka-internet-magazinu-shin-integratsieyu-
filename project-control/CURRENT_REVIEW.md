@@ -1,11 +1,12 @@
 # Current review
 
-- PR: [#39 — Polish catalogue product and cart journeys](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39) (Draft)
-- Accepted baseline: Issue #31 / PR #38 merge `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; current accepted staging application remains `ee512d723e78a65a89bfdee4268c3a779f632b33`
-- State: `ci-pending`
-- Exact branch base: `9d49ac82ced177d5310a909ddb7e82fff9c3678a`
-- Exact green implementation head: `833db99df9c903ca68ab8af0f219de0dd0a8ead1`
-- PM gate: Issue #32 is `ready/current`; implementation and evidence are complete locally, with PR #39 waiting for exact-head GitHub quality gates before Ready-for-review
+- Issue: [#33 — Consolidate storefront geometry and presentation ownership](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33)
+- PR: [#40 — Consolidate storefront design system](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40) (Draft)
+- Accepted baseline: Issue #32 / PR #39 merge `87509a644022a4df232c118d9bf4bab32f2c3683`; current accepted staging application remains on its separately authorised SHA.
+- State: `engineer-complete-ci-pending`
+- Exact branch base: `87509a644022a4df232c118d9bf4bab32f2c3683`
+- Exact locally tested implementation head: `e33195eaa6a052fd7e308779402e7ad87c51dfda`
+- PM gate: implementation and durable evidence are complete; PR CI must pass before the engineer marks the exact final PR head `pm-review` and requests PM review.
 - Runtime authorisation: none; staging deployment remains a separate exact-SHA gate
 
-Issue #32 is the full task and review boundary. This file is only a pointer.
+Issue #33 is the full task and review boundary. This file is only a pointer.

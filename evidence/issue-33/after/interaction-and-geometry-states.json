@@ -1,0 +1,106 @@
+{
+  "headerDefault": {
+    "className": "et-btn et-btn--primary min-h-11",
+    "borderRadius": "2px",
+    "borderColor": "rgb(210, 10, 10)",
+    "backgroundColor": "rgb(210, 10, 10)",
+    "boxShadow": "none",
+    "outline": "rgb(255, 255, 255) none 3px",
+    "focusVisible": false,
+    "disabled": false,
+    "open": false
+  },
+  "headerHover": {
+    "className": "et-btn et-btn--primary min-h-11",
+    "borderRadius": "2px",
+    "borderColor": "rgb(205, 9, 9)",
+    "backgroundColor": "rgb(205, 9, 9)",
+    "boxShadow": "none",
+    "outline": "rgb(255, 255, 255) none 3px",
+    "focusVisible": false,
+    "disabled": false,
+    "open": false
+  },
+  "headerFocus": {
+    "className": "et-btn et-btn--primary min-h-11",
+    "borderRadius": "2px",
+    "borderColor": "rgb(194, 7, 7)",
+    "backgroundColor": "rgb(194, 7, 7)",
+    "boxShadow": "none",
+    "outline": "rgb(159, 0, 0) solid 3px",
+    "focusVisible": true,
+    "disabled": false,
+    "open": false
+  },
+  "headerScrolled": {
+    "className": "et-header is-scrolled",
+    "borderRadius": "0px",
+    "borderColor": "rgb(16, 16, 16) rgb(16, 16, 16) rgba(11, 11, 12, 0.12)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "boxShadow": "rgba(11, 11, 12, 0.09) 0px 9.98133px 31.9627px 0px",
+    "outline": "rgb(16, 16, 16) none 3px",
+    "focusVisible": false,
+    "disabled": false,
+    "open": false
+  },
+  "desktopFilter": {
+    "className": "et-production-filter__panel",
+    "borderRadius": "2px",
+    "borderColor": "rgb(220, 216, 209)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "boxShadow": "rgba(11, 11, 12, 0.08) 0px 1px 0px 0px",
+    "outline": "rgb(16, 16, 16) none 3px",
+    "focusVisible": false,
+    "disabled": false,
+    "open": false
+  },
+  "filterOpen": {
+    "className": "et-production-filter__panel",
+    "borderRadius": "2px 2px 0px 0px",
+    "borderColor": "rgb(16, 16, 16)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "boxShadow": "rgba(0, 0, 0, 0.24) 0px 14px 36px 0px",
+    "outline": "rgb(16, 16, 16) none 3px",
+    "focusVisible": false,
+    "disabled": false,
+    "open": false
+  },
+  "filterDisabled": {
+    "className": "et-btn et-btn--primary",
+    "borderRadius": "2px",
+    "borderColor": "rgb(210, 10, 10)",
+    "backgroundColor": "rgb(210, 10, 10)",
+    "boxShadow": "none",
+    "outline": "rgb(255, 255, 255) none 3px",
+    "focusVisible": false,
+    "disabled": true,
+    "open": false
+  },
+  "filterError": {
+    "className": "et-filter-request-error",
+    "borderRadius": "0px",
+    "borderColor": "rgb(118, 16, 18) rgb(118, 16, 18) rgb(118, 16, 18) rgb(210, 10, 10)",
+    "backgroundColor": "rgb(255, 240, 239)",
+    "boxShadow": "none",
+    "outline": "rgb(118, 16, 18) none 3px",
+    "focusVisible": false,
+    "disabled": false,
+    "open": false
+  },
+  "selectedRadio": {
+    "className": null,
+    "borderRadius": "0px",
+    "borderColor": "rgb(16, 16, 16)",
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "boxShadow": "none",
+    "outline": "rgb(16, 16, 16) none 3px",
+    "focusVisible": false,
+    "disabled": false,
+    "open": false,
+    "functionalCircle": "50%",
+    "appearance": "auto",
+    "width": "20px",
+    "height": "20px"
+  },
+  "mapPin": "not rendered because the configured map iframe is available"
+}

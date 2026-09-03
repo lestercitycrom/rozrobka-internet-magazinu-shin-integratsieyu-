@@ -12,7 +12,7 @@
 @import './design-tokens.css';
 @import './pro-design.css';
 @import './storefront-v3.css';
-@import './storefront-shapes.css';
+@import './storefront-contracts.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../**/*.blade.php';

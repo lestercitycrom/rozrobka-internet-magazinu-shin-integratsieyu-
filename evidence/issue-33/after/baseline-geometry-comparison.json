@@ -1,0 +1,44 @@
+[
+  {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "preserved": true
+  },
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "preserved": true
+  },
+  {
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "preserved": true
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "preserved": true
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "preserved": true
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "preserved": true
+  }
+]

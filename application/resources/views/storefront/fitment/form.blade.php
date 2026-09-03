@@ -47,10 +47,10 @@
                     <p class="et-copy">{{ __('fitment.registration_help') }}</p>
 
                     @if ($errors->any())
-                        <div class="et-alert et-alert--error" role="alert" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
+                        <div class="et-alert et-alert--error et-fitment-alert" role="alert"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ $errors->first() }}</div></div>
                     @endif
 
-                    <form method="POST" action="{{ url()->current() }}" style="margin-top:1.4rem">
+                    <form class="et-fitment-lookup" method="POST" action="{{ url()->current() }}">
                         @csrf
                         <div class="et-field">
                             <label class="et-label" for="registration">{{ __('fitment.registration') }}</label>
@@ -72,7 +72,7 @@
                             <p class="et-help" id="registration-help">{{ __('pro.fitment.privacy') }}</p>
                             @error('registration')<p class="et-form-error" id="registration-error" role="alert">{{ $message }}</p>@enderror
                         </div>
-                        <button class="et-btn et-btn--primary" type="submit" style="margin-top:1rem">{{ __('fitment.submit') }}</button>
+                        <button class="et-btn et-btn--primary et-fitment-submit" type="submit">{{ __('fitment.submit') }}</button>
                     </form>
                 </div>
             </div>
@@ -83,8 +83,8 @@
                         <p class="et-eyebrow">{{ __('pro.fitment.result_kicker') }}</p>
                         <h2 class="et-h2" id="fitment-result-title">{{ $fitment->make }} {{ $fitment->model }}</h2>
                         <p class="et-copy">{{ __('fitment.results_notice') }}</p>
-                        <h3 class="et-h3" style="margin-top:1.5rem">{{ __('pro.fitment.result_title') }}</h3>
-                        <form method="post" action="{{ route($routePrefix.'fitment.confirm') }}" class="et-fitment-choice" style="margin-top:1rem">
+                        <h3 class="et-h3 et-fitment-result-heading">{{ __('pro.fitment.result_title') }}</h3>
+                        <form method="post" action="{{ route($routePrefix.'fitment.confirm') }}" class="et-fitment-choice">
                             @csrf
                             <fieldset class="et-fieldset">
                                 <legend class="et-label">{{ __('fitment.intent_legend') }}</legend>
@@ -97,21 +97,21 @@
                                     @endforeach
                                 </div>
                             </fieldset>
-                            <p class="et-caption" style="margin-top:1.25rem">{{ __('fitment.choose_size') }}</p>
-                            <div class="et-stack" style="margin-top:.65rem">
+                            <p class="et-caption et-fitment-size-prompt">{{ __('fitment.choose_size') }}</p>
+                            <div class="et-stack et-fitment-size-list">
                                 @foreach ($fitment->tyres as $tyre)
-                                    <button class="et-card et-card--interactive" data-testid="fitment-confirm-size" name="size" value="{{ $tyre['width'] }}|{{ $tyre['aspect'] }}|{{ $tyre['rim'] }}" type="submit" style="width:100%;text-align:left">
-                                        <span class="et-card__body" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
-                                            <span><strong>{{ $tyre['width'] }}/{{ $tyre['aspect'] }} R{{ $tyre['rim'] }}</strong><small style="display:block;margin-top:.25rem">{{ __('fitment.confirm_size') }}</small></span><span aria-hidden="true">→</span>
+                                    <button class="et-card et-card--interactive et-fitment-size-option" data-testid="fitment-confirm-size" name="size" value="{{ $tyre['width'] }}|{{ $tyre['aspect'] }}|{{ $tyre['rim'] }}" type="submit">
+                                        <span class="et-card__body et-fitment-size-option__body">
+                                            <span><strong>{{ $tyre['width'] }}/{{ $tyre['aspect'] }} R{{ $tyre['rim'] }}</strong><small class="et-fitment-size-option__help">{{ __('fitment.confirm_size') }}</small></span><span aria-hidden="true">→</span>
                                         </span>
                                     </button>
                                 @endforeach
                             </div>
                         </form>
                         @if ($fitment->wheels !== [])
-                            <h3 class="et-h3" style="margin-top:1.5rem">{{ __('fitment.original_wheels') }}</h3>
+                            <h3 class="et-h3 et-fitment-result-heading">{{ __('fitment.original_wheels') }}</h3>
                             <p class="et-copy">{{ __('fitment.wheel_notice') }}</p>
-                            <ul class="et-stack" data-testid="fitment-wheel-sizes" style="margin-top:1rem">
+                            <ul class="et-stack et-fitment-wheel-list" data-testid="fitment-wheel-sizes">
                                 @foreach ($fitment->wheels as $wheel)
                                     <li class="et-card"><div class="et-card__body"><strong>{{ $wheel['dimension'] }}</strong>@if($wheel['offset']) <span>· {{ __('storefront.offset') }} {{ $wheel['offset'] }}</span>@endif</div></li>
                                 @endforeach
@@ -139,8 +139,8 @@
             <div class="et-container">
                 <p class="et-eyebrow">{{ __('seo_store.categories_kicker') }}</p>
                 <h2 class="et-h2" id="store-categories-title">{{ __('seo_store.categories_title') }}</h2>
-                <p class="et-copy" style="max-width:48rem">{{ __('seo_store.categories_lead') }}</p>
-                <div class="et-grid-3" style="margin-top:1.7rem">
+                <p class="et-copy et-store-category-lead">{{ __('seo_store.categories_lead') }}</p>
+                <div class="et-grid-3 et-store-card-grid">
                     <a class="et-card et-card--interactive" href="{{ route($routePrefix.'tires.index') }}"><div class="et-card__body"><span class="et-step-index">01</span><h3 class="et-h3">{{ __('seo_store.tires_title') }}</h3><p>{{ __('seo_store.tires_text') }}</p><strong>{{ __('seo_store.explore') }} →</strong></div></a>
                     <a class="et-card et-card--interactive" href="{{ route($routePrefix.'wheels.index') }}"><div class="et-card__body"><span class="et-step-index">02</span><h3 class="et-h3">{{ __('seo_store.wheels_title') }}</h3><p>{{ __('seo_store.wheels_text') }}</p><strong>{{ __('seo_store.explore') }} →</strong></div></a>
                     <a class="et-card et-card--interactive" href="{{ route($routePrefix.'requests.create', ['slug' => 'omlegging-balansering']) }}"><div class="et-card__body"><span class="et-step-index">03</span><h3 class="et-h3">{{ __('seo_store.packages_title') }}</h3><p>{{ __('seo_store.packages_text') }}</p><strong>{{ __('seo_store.ask_us') }} →</strong></div></a>
@@ -151,8 +151,8 @@
         <section class="et-section et-section--ink" aria-labelledby="store-process-title">
             <div class="et-container">
                 <p class="et-eyebrow et-eyebrow--light">{{ __('seo_store.advantages_kicker') }}</p>
-                <h2 class="et-h2" id="store-process-title" style="color:#fff">{{ __('seo_store.advantages_title') }}</h2>
-                <div class="et-grid-3" style="margin-top:1.7rem">
+                <h2 class="et-h2 et-heading--on-dark" id="store-process-title">{{ __('seo_store.advantages_title') }}</h2>
+                <div class="et-grid-3 et-store-card-grid">
                     @foreach ([1, 2, 3] as $step)
                         <article class="et-step-card"><span class="et-step-index">0{{ $step }}</span><h3>{{ $storefrontValue('store_benefit_'.$step.'_title_'.$storefrontLocale, __('seo_store.advantage_'.$step.'_title')) }}</h3><p>{{ $storefrontValue('store_benefit_'.$step.'_text_'.$storefrontLocale, __('seo_store.advantage_'.$step.'_text')) }}</p></article>
                     @endforeach
@@ -166,7 +166,7 @@
                     <p class="et-eyebrow">{{ __('seo_store.services_kicker') }}</p>
                     <h2 class="et-h2" id="store-services-title">{{ __('seo_store.services_title') }}</h2>
                     <p class="et-copy">{{ __('seo_store.services_text') }}</p>
-                    <div style="display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1.4rem">
+                    <div class="et-store-service-actions">
                         <a class="et-btn et-btn--primary" href="{{ route($routePrefix.'services.show', ['slug' => 'mobilt-dekkskift']) }}">{{ __('seo_store.change_cta') }}</a>
                         <a class="et-btn et-btn--outline" href="{{ route($routePrefix.'services.show', ['slug' => 'dekkhotell']) }}">{{ __('seo_store.hotel_cta') }}</a>
                     </div>
@@ -174,7 +174,7 @@
                 <figure class="et-media-card"><img src="/brand/workshop.webp" width="1500" height="1000" loading="lazy" alt="{{ __('pro.content.workshop_image_alt') }}"></figure>
             </div>
             @if (! empty($brands))
-                <div class="et-container" style="margin-top:2.5rem">
+                <div class="et-container et-store-brands">
                     <p class="et-caption">{{ __('seo_store.brands_label') }}</p>
                     <div class="et-brand-strip" aria-label="{{ __('seo_store.brands_label') }}">
                         @foreach ($brands as $brand)<span>{{ $brand }}</span>@endforeach

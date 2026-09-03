@@ -81,7 +81,7 @@
                                 </div>
 
                                 @if ($errors->any())
-                                    <div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem" data-testid="request-errors">
+                                    <div class="et-alert et-alert--error et-request-form-alert" role="alert" data-testid="request-errors">
                                         <span class="et-alert__icon" aria-hidden="true">!</span>
                                         <div><strong>{{ __('pro.booking.error_title') }}</strong><br>{{ $errors->first() }}</div>
                                     </div>
@@ -90,7 +90,7 @@
                                 <section class="et-step-panel" data-booking-panel data-testid="seasonal-step-location">
                                     <h2 class="et-h3" tabindex="-1">{{ __('pro.booking.location_title') }}</h2>
                                     <p class="et-copy">{{ __('pro.booking.location_text') }}</p>
-                                    <fieldset class="et-fieldset" data-fulfilment-controller style="margin-top:1.2rem">
+                                    <fieldset class="et-fieldset et-request-fulfilment" data-fulfilment-controller>
                                         <legend class="sr-only">{{ __('booking.fulfilment') }}</legend>
                                         <div class="et-radio-grid">
                                             <label class="et-radio-card">
@@ -104,7 +104,7 @@
                                         </div>
                                         @error('fulfilment')<p class="et-form-error">{{ $message }}</p>@enderror
                                     </fieldset>
-                                    <div class="et-field" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif style="margin-top:1rem">
+                                    <div class="et-field et-request-mobile-address" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif>
                                         <label class="et-label" for="booking-address">{{ __('pro.booking.mobile_address_title') }}</label>
                                         <input class="et-input easytire-input" id="booking-address" name="address" type="text" value="{{ old('address') }}" autocomplete="street-address" @required($requestedFulfilment === 'mobile') aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}">
                                         @error('address')<p class="et-form-error">{{ $message }}</p>@enderror
@@ -115,7 +115,7 @@
                                 <section class="et-step-panel" data-booking-panel data-testid="seasonal-step-vehicle-storage">
                                     <h2 class="et-h3" tabindex="-1">{{ __('pro.booking.vehicle_title') }}</h2>
                                     <p class="et-copy">{{ __('pro.booking.vehicle_text') }}</p>
-                                    <div class="et-field" style="margin-top:1.2rem">
+                                    <div class="et-field et-request-field-separated">
                                         <label class="et-label" for="booking-car-count">{{ __('service_requests.form.car_count') }}</label>
                                         <select class="et-select easytire-input" id="booking-car-count" name="car_count" data-car-count required>
                                             <option value="1" @selected((int) old('car_count', 1) === 1)>{{ __('service_requests.form.one_car') }}</option>
@@ -123,8 +123,8 @@
                                         </select>
                                     </div>
 
-                                    <fieldset class="et-form-section" data-seasonal-vehicle="1" style="margin-top:1rem;padding:1rem">
-                                        <legend class="et-label" style="padding-inline:.3rem">{{ __('service_requests.form.car_1') }}</legend>
+                                    <fieldset class="et-form-section et-seasonal-vehicle" data-seasonal-vehicle="1">
+                                        <legend class="et-label et-seasonal-vehicle__legend">{{ __('service_requests.form.car_1') }}</legend>
                                         <div class="et-form-grid">
                                         <div class="et-field">
                                             <label class="et-label" for="booking-vehicle">{{ __('service_requests.form.vehicle') }} <span class="et-required">*</span></label>
@@ -166,8 +166,8 @@
                                         </div>
                                     </fieldset>
 
-                                    <fieldset class="et-form-section" data-seasonal-vehicle="2" @if((int) old('car_count', 1) !== 2) hidden @endif style="margin-top:1rem;padding:1rem">
-                                        <legend class="et-label" style="padding-inline:.3rem">{{ __('service_requests.form.car_2') }}</legend>
+                                    <fieldset class="et-form-section et-seasonal-vehicle" data-seasonal-vehicle="2" @if((int) old('car_count', 1) !== 2) hidden @endif>
+                                        <legend class="et-label et-seasonal-vehicle__legend">{{ __('service_requests.form.car_2') }}</legend>
                                         <div class="et-form-grid">
                                             <div class="et-field"><label class="et-label" for="booking-vehicle-2">{{ __('service_requests.form.vehicle') }} <span class="et-required">*</span></label><input class="et-input easytire-input" id="booking-vehicle-2" name="vehicle_2" value="{{ old('vehicle_2') }}" @required((int) old('car_count', 1) === 2) autocomplete="off">@error('vehicle_2')<p class="et-form-error">{{ $message }}</p>@enderror</div>
                                             <div class="et-field"><label class="et-label" for="booking-registration-number-2">{{ __('service_requests.form.registration_number') }}</label><input class="et-input easytire-input" id="booking-registration-number-2" name="registration_number_2" value="{{ old('registration_number_2') }}" autocapitalize="characters"></div>
@@ -178,14 +178,14 @@
                                         </div>
                                     </fieldset>
 
-                                    <div class="et-alert et-alert--info" style="margin-top:1rem" data-seasonal-quote data-exact-template="{{ __('service_requests.form.quote_exact') }}" data-range-template="{{ __('service_requests.form.quote_range') }}" data-unavailable-template="{{ __('service_requests.form.quote_unavailable') }}"><span class="et-alert__icon" aria-hidden="true">i</span><div data-seasonal-quote-text>{{ __('service_requests.form.quote_unavailable') }}</div></div>
+                                    <div class="et-alert et-alert--info et-request-notice" data-seasonal-quote data-exact-template="{{ __('service_requests.form.quote_exact') }}" data-range-template="{{ __('service_requests.form.quote_range') }}" data-unavailable-template="{{ __('service_requests.form.quote_unavailable') }}"><span class="et-alert__icon" aria-hidden="true">i</span><div data-seasonal-quote-text>{{ __('service_requests.form.quote_unavailable') }}</div></div>
                                     <div class="et-step-actions"><button class="et-btn et-btn--outline" type="button" data-booking-back>{{ __('pro.booking.back') }}</button><button class="et-btn et-btn--primary" type="button" data-booking-next>{{ __('pro.booking.next') }}</button></div>
                                 </section>
 
                                 <section class="et-step-panel" data-booking-panel data-testid="seasonal-step-time">
                                     <h2 class="et-h3" tabindex="-1">{{ __('pro.booking.time_title') }}</h2>
                                     <p class="et-copy">{{ __('pro.booking.time_text') }}</p>
-                                    <div class="et-form-grid" style="margin-top:1.2rem">
+                                    <div class="et-form-grid et-request-form-grid">
                                         <div class="et-field">
                                             <label class="et-label" for="booking-preferred-date">{{ __('booking.date') }}</label>
                                             <input class="et-input easytire-input" id="booking-preferred-date" name="preferred_date" type="date" value="{{ old('preferred_date') }}" min="{{ now()->toDateString() }}" required aria-invalid="{{ $errors->has('preferred_date') ? 'true' : 'false' }}">
@@ -218,14 +218,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('booking.intro') }}</div></div>
+                                    <div class="et-alert et-alert--info et-request-notice"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('booking.intro') }}</div></div>
                                     <div class="et-step-actions"><button class="et-btn et-btn--outline" type="button" data-booking-back>{{ __('pro.booking.back') }}</button><button class="et-btn et-btn--primary" type="button" data-booking-next>{{ __('pro.booking.next') }}</button></div>
                                 </section>
 
                                 <section class="et-step-panel" data-booking-panel data-testid="seasonal-step-contact">
                                     <h2 class="et-h3" tabindex="-1">{{ __('pro.booking.contact_title') }}</h2>
                                     <p class="et-copy">{{ __('pro.booking.contact_text') }}</p>
-                                    <div class="et-form-grid" style="margin-top:1.2rem">
+                                    <div class="et-form-grid et-request-form-grid">
                                         <div class="et-field">
                                             <label class="et-label" for="booking-name">{{ __('booking.name') }} <span class="et-required">*</span></label>
                                             <input class="et-input easytire-input" id="booking-name" name="name" type="text" value="{{ old('name') }}" required autocomplete="name" aria-describedby="booking-name-error" aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}">
@@ -254,8 +254,8 @@
                                 <section class="et-step-panel" data-booking-panel data-testid="seasonal-step-review">
                                     <h2 class="et-h3" tabindex="-1">{{ __('pro.booking.review_title') }}</h2>
                                     <p class="et-copy">{{ __('pro.booking.review_text') }}</p>
-                                    <div class="et-alert et-alert--info" style="margin-top:1.1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('pro.booking.summary_price') }}. {{ __('pro.booking.summary_price_note') }}</div></div>
-                                    <label class="et-check" style="margin-top:1.2rem">
+                                    <div class="et-alert et-alert--info et-request-review-note"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('pro.booking.summary_price') }}. {{ __('pro.booking.summary_price_note') }}</div></div>
+                                    <label class="et-check et-request-consent">
                                         <input required name="consent" type="checkbox" value="1" @checked(old('consent'))>
                                         <span>{{ __('booking.consent') }}</span>
                                     </label>
@@ -267,7 +267,7 @@
 
                         <aside class="et-summary-card" aria-labelledby="booking-summary-title">
                             <p class="et-eyebrow et-eyebrow--light">{{ __('pro.booking.summary_title') }}</p>
-                            <h2 class="et-h3" id="booking-summary-title" style="margin-top:.5rem;color:#fff">{{ $service->title }}</h2>
+                            <h2 class="et-h3 et-request-summary-title" id="booking-summary-title">{{ $service->title }}</h2>
                             <dl class="et-summary-list">
                                 <div><dt>{{ __('pro.booking.summary_location') }}</dt><dd data-summary-field="fulfilment" data-empty-label="—">{{ $requestedFulfilment === 'mobile' ? __('booking.mobile') : __('booking.workshop') }}</dd></div>
                                 <div><dt>{{ __('pro.booking.summary_vehicle') }}</dt><dd data-summary-field="vehicle" data-empty-label="—">{{ old('vehicle') ?: '—' }}</dd></div>
@@ -311,11 +311,11 @@
                         </div>
                         <div class="et-booking-card__body">
                             @if ($errors->any())
-                                <div class="et-alert et-alert--error" role="alert" style="margin-bottom:1.2rem" data-testid="request-errors"><span class="et-alert__icon" aria-hidden="true">!</span><div><strong>{{ __('pro.booking.error_title') }}</strong><br>{{ $errors->first() }}</div></div>
+                                <div class="et-alert et-alert--error et-request-form-alert" role="alert" data-testid="request-errors"><span class="et-alert__icon" aria-hidden="true">!</span><div><strong>{{ __('pro.booking.error_title') }}</strong><br>{{ $errors->first() }}</div></div>
                             @endif
 
                             <p class="et-copy">{{ __('pro.booking.generic_form_intro') }}</p>
-                            <div class="et-form-grid" style="margin-top:1.2rem">
+                            <div class="et-form-grid et-request-form-grid">
                                 @if ($isMountingService)
                                     <div class="et-field">
                                         <label class="et-label" for="booking-service-variant">{{ __('project.request.variant') }} <span class="et-required">*</span></label>
@@ -397,7 +397,7 @@
                                 @if ($supportsAdditionalServices)
                                     <fieldset class="et-field et-field--full">
                                         <legend class="et-label">{{ __('project.request.additional_services') }}</legend>
-                                        <div class="et-radio-grid" style="margin-top:.6rem">
+                                        <div class="et-radio-grid et-request-addons">
                                             @foreach (['air_filter', 'cabin_filter', 'wiper_blades'] as $additionalService)
                                                 <label class="et-radio-card">
                                                     <input name="additional_services[]" type="checkbox" value="{{ $additionalService }}" @checked(in_array($additionalService, $selectedAdditionalServices, true))>
@@ -411,13 +411,13 @@
                                 @endif
                             </div>
 
-                            <div class="et-alert et-alert--info" style="margin-top:1rem"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('booking.intro') }}</div></div>
-                            <label class="et-check" style="margin-top:1.2rem">
+                            <div class="et-alert et-alert--info et-request-notice"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('booking.intro') }}</div></div>
+                            <label class="et-check et-request-consent">
                                 <input required name="consent" type="checkbox" value="1" @checked(old('consent')) aria-describedby="booking-consent-error" aria-invalid="{{ $errors->has('consent') ? 'true' : 'false' }}">
                                 <span>{{ __('booking.consent') }}</span>
                             </label>
                             @error('consent')<p class="et-form-error" id="booking-consent-error">{{ $message }}</p>@enderror
-                            <button class="et-btn et-btn--primary" type="submit" style="margin-top:1.2rem" data-testid="generic-submit">{{ __('pro.booking.submit') }}</button>
+                            <button class="et-btn et-btn--primary et-request-submit" type="submit" data-testid="generic-submit">{{ __('pro.booking.submit') }}</button>
                         </div>
                         </div>
                     </div>

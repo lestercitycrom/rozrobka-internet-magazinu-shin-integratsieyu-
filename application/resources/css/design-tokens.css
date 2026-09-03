@@ -51,6 +51,10 @@
     --et-radius-public: 18px;
     --et-radius-public-large: 28px;
     --et-radius-sharp: 2px;
+    --et-radius-media: var(--et-radius-surface-large);
+    --et-radius-drawer: 1.5rem;
+    --et-radius-functional-circle: var(--et-radius-circle);
+    --et-radius-map-pin: 999px 999px 999px .2rem;
 
     /* Spacing and fixed dimensions */
     --et-space-1: .25rem;

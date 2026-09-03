@@ -1,0 +1,180 @@
+/*
+ * Storefront presentation contracts.
+ *
+ * Component definitions in pro-design.css and storefront-v3.css consume these
+ * semantic tokens. This file selects the accepted crisp public profile and
+ * owns the small, named layout hooks extracted from Blade. It must never use a
+ * universal descendant selector or an !important specificity repair.
+ */
+
+.storefront[data-storefront-style='sharp'] {
+    --et-radius-surface: var(--et-radius-sharp);
+    --et-radius-surface-small: var(--et-radius-sharp);
+    --et-radius-control: var(--et-radius-sharp);
+    --et-radius-surface-large: var(--et-radius-sharp);
+    --et-radius-hero: var(--et-radius-sharp);
+    --et-radius-pill: var(--et-radius-sharp);
+    --et-radius-public: var(--et-radius-sharp);
+    --et-radius-public-large: var(--et-radius-sharp);
+    --et-radius-media: var(--et-radius-sharp);
+    --et-radius-drawer: var(--et-radius-sharp);
+    --et-radius-map-pin: 999px 999px 999px var(--et-radius-sharp);
+    /* Compatibility aliases are redeclared at this scope because inherited
+       custom properties resolve references where they are defined. */
+    --et-radius-xs: var(--et-radius-sharp);
+    --et-radius-sm: var(--et-radius-sharp);
+    --et-radius: var(--et-radius-sharp);
+    --et-radius-lg: var(--et-radius-sharp);
+    --et-radius-xl: var(--et-radius-sharp);
+    --v3-radius: var(--et-radius-sharp);
+    --v3-radius-lg: var(--et-radius-sharp);
+    --et-shadow-sm: 0 1px 0 rgb(11 11 12 / .12);
+    --et-shadow: 0 10px 24px rgb(11 11 12 / .1);
+    --et-shadow-dark: 0 14px 36px rgb(0 0 0 / .24);
+    --et-storefront-surface-shadow: var(--et-shadow-sharp);
+}
+
+/* The custom admin consumes the same approved crisp compatibility aliases. */
+.et-admin-body {
+    --radius-lg: var(--et-radius-sharp);
+    --radius-xl: var(--et-radius-sharp);
+    --radius-2xl: var(--et-radius-sharp);
+    --radius-3xl: var(--et-radius-sharp);
+}
+
+/* Shared content and status composition. */
+.storefront .et-page-actions--section,
+.storefront .et-content-followup,
+.storefront .et-content-followup-grid,
+.storefront .et-empty-state__heading,
+.storefront .et-product-layout--spaced,
+.storefront .et-product-label,
+.storefront .et-product-label__grid,
+.storefront .et-fitment-alert,
+.storefront .et-fitment-submit,
+.storefront .et-fitment-choice,
+.storefront .et-fitment-wheel-list,
+.storefront .et-request-mobile-address,
+.storefront .et-request-notice,
+.storefront .et-cart-layout--populated,
+.storefront .et-cart-summary-action,
+.storefront .et-order-summary__lines,
+.storefront .et-order-summary__note {
+    margin-block-start: 1rem;
+}
+
+.storefront .et-page-actions--hero,
+.storefront .et-fitment-result-heading,
+.storefront .et-checkout-payment-notice,
+.storefront .et-status-card__reference {
+    margin-block-start: 1.5rem;
+}
+
+.storefront .et-content-intro,
+.storefront .et-fitment-size-prompt,
+.storefront .et-pricing-confirmation {
+    margin-block-start: 1.25rem;
+}
+
+.storefront .et-container--reading { max-width: 900px; }
+.storefront .et-container--receipt { max-width: 980px; }
+.storefront .et-richtext--after-media,
+.storefront .et-catalog-pagination { margin-block-start: 2rem; }
+.storefront .et-status-card__heading,
+.storefront .et-status-card__lead { margin-inline: auto; }
+.storefront .et-status-card__reference { text-align: left; }
+
+/* Catalogue and product composition. */
+.storefront .et-catalog-sort__label,
+.storefront .et-product-label__value { margin: 0; }
+.storefront .et-breadcrumbs--muted { color: var(--et-muted); }
+.storefront .et-product-unavailable { margin-block-start: 1.2rem; }
+.storefront .et-product-spec-heading { margin: 1.5rem 0 .8rem; }
+
+/* Checkout and receipt composition. */
+.storefront .et-checkout-form-alert,
+.storefront .et-request-form-alert { margin-block-end: 1.2rem; }
+.storefront .et-checkout-consent-section {
+    margin-block-start: 1.5rem;
+    border-block-start: 1px solid var(--et-line);
+    padding-block-start: 1.3rem;
+}
+.storefront .et-checkout-obligation,
+.storefront .et-request-fulfilment,
+.storefront .et-request-field-separated,
+.storefront .et-request-form-grid,
+.storefront .et-request-consent,
+.storefront .et-request-submit { margin-block-start: 1.2rem; }
+.storefront .et-checkout-submit { margin-block-start: .75rem; }
+.storefront .et-order-summary__breakdown {
+    margin-block-start: 1rem;
+    border-block-start: 1px solid var(--et-line);
+    padding-block-start: .5rem;
+}
+.storefront .et-receipt-meta { margin-block-start: .6rem; }
+.storefront .et-receipt-section {
+    margin-block-start: 1.75rem;
+    border-block-start: 1px solid var(--et-line);
+    padding-block-start: 1.5rem;
+}
+.storefront .et-receipt-lines,
+.storefront .et-cart-issue-actions { margin-block-start: .8rem; }
+.storefront .et-receipt-totals {
+    margin-block-start: 1rem;
+    border-block-start: 1px solid var(--et-line);
+    padding-block-start: .75rem;
+}
+.storefront .et-breakable-reference { word-break: break-all; }
+.storefront .et-receipt-download { margin-block-start: .75rem; }
+
+/* Fitment/store composition. */
+.storefront .et-fitment-lookup,
+.storefront .et-store-service-actions { margin-block-start: 1.4rem; }
+.storefront .et-fitment-size-list { margin-block-start: .65rem; }
+.storefront .et-fitment-size-option {
+    width: 100%;
+    text-align: left;
+}
+.storefront .et-fitment-size-option__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.storefront .et-fitment-size-option__help {
+    display: block;
+    margin-block-start: .25rem;
+}
+.storefront .et-store-category-lead { max-width: 48rem; }
+.storefront .et-store-card-grid { margin-block-start: 1.7rem; }
+.storefront .et-heading--on-dark { color: #fff; }
+.storefront .et-store-service-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .7rem;
+}
+.storefront .et-store-brands { margin-block-start: 2.5rem; }
+
+/* Request composition. */
+.storefront .et-seasonal-vehicle {
+    margin-block-start: 1rem;
+    padding: 1rem;
+}
+.storefront .et-seasonal-vehicle__legend { padding-inline: .3rem; }
+.storefront .et-request-review-note { margin-block-start: 1.1rem; }
+.storefront .et-request-summary-title {
+    margin-block-start: .5rem;
+    color: #fff;
+}
+.storefront .et-request-addons,
+.storefront .et-cart-line-total,
+.storefront .et-cart-addons-title { margin-block-start: .6rem; }
+
+/* Cart composition. */
+.storefront .et-cart-quantity {
+    width: 88px;
+    min-height: 40px;
+}
+.storefront .et-cart-issue-quantity { width: 88px; }
+.storefront .et-cart-action { align-self: end; }
+.storefront .et-cart-addon-price { margin-block-start: .45rem; }

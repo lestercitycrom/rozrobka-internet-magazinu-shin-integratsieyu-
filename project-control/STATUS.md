@@ -1,6 +1,6 @@
 # EasyTire status
 
-Updated: 2026-09-02
+Updated: 2026-09-03
 Accepted release: `ee512d723e78a65a89bfdee4268c3a779f632b33`
 Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
@@ -8,7 +8,7 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 | Environment | State | Canonical evidence |
 |---|---|---|
-| GitHub `main` | Services/request composition accepted and merged; not deployed | `9d49ac82ced177d5310a909ddb7e82fff9c3678a` / PR #38 |
+| GitHub `main` | Catalogue/product/cart polish accepted and merged; not deployed | `87509a644022a4df232c118d9bf4bab32f2c3683` / PR #39 |
 | Staging | Same exact release deployed and runtime-accepted | <https://staging-easytire.bethub.fun>, server `REVISION` read-back |
 | Production | Not authorised | Separate production review and runtime decision required |
 
@@ -42,7 +42,8 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 - Issue #29 / PR #36 is accepted and merged on GitHub as `0678fe39964292648c52ab97119b9977acbeaba2`; this does not change staging or any integration gate.
 - Completed internal remediation: [Issue #30](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/30) / PR #37, merged as `d69d8d2a70d492c039ae2e76be67938bda274349`; no deployment was authorised.
 - Completed internal remediation: [Issue #31](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/31) / PR #38, merged as `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; no deployment was authorised.
-- Active internal remediation: [Issue #32](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32) / Draft [PR #39](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39), catalogue/product/cart composition and mobile deferred-Apply filters; local exact implementation `833db99df9c903ca68ab8af0f219de0dd0a8ead1` is green and GitHub quality gates are pending. Runtime authorization remains none.
+- Completed internal remediation: [Issue #32](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32) / [PR #39](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39), merged as `87509a644022a4df232c118d9bf4bab32f2c3683`; no deployment was authorised.
+- Active final internal cleanup: [Issue #33](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33) / [PR #40](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40), storefront geometry and presentation ownership consolidation. The implementation based on `87509a644022a4df232c118d9bf4bab32f2c3683` is locally complete and green at tested implementation head `e33195eaa6a052fd7e308779402e7ad87c51dfda`; CI and PM exact-head review remain pending. Runtime authorization remains none.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
 - Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.

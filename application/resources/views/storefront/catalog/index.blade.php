@@ -255,7 +255,7 @@
                     </div>
                     <form method="GET" action="{{ $baseUrl }}" class="et-toolbar__group et-catalog-sort" data-catalog-live-sort>
                         @foreach ($query as $key => $value)@if ($key !== 'sort' && $key !== 'page')<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif @endforeach
-                        <label class="et-label" for="sort" style="margin:0">{{ __('storefront.sort') }}</label>
+                        <label class="et-label et-catalog-sort__label" for="sort">{{ __('storefront.sort') }}</label>
                         <select class="et-select" id="sort" name="sort">
                             <option value="">{{ __('storefront.sort_recommended') }}</option>
                             <option value="title" @selected(($query['sort'] ?? null) === 'title')>{{ __('storefront.sort_title') }}</option>
@@ -293,7 +293,7 @@
                     <div class="et-empty-state" data-testid="catalog-empty">
                         <div>
                             <div class="et-empty-state__icon" aria-hidden="true">⌕</div>
-                            <h2 class="et-h3" style="margin-top:1rem">{{ __('storefront.empty_title') }}</h2>
+                            <h2 class="et-h3 et-empty-state__heading">{{ __('storefront.empty_title') }}</h2>
                             <p>{{ __('storefront.empty_text') }}</p>
                             <a class="et-btn et-btn--primary" href="{{ $baseUrl }}" data-catalog-live-link>{{ __('storefront.all_catalog') }}</a>
                         </div>
@@ -306,7 +306,7 @@
                     </div>
 
                     @if ($items->total > $items->perPage)
-                        <nav class="et-toolbar" style="margin-top:2rem" aria-label="{{ __('storefront.catalog') }}">
+                        <nav class="et-toolbar et-catalog-pagination" aria-label="{{ __('storefront.catalog') }}">
                             @if ($items->page > 1)
                                 <a class="et-btn et-btn--outline" href="{{ $baseUrl.'?'.http_build_query([...$query, 'page' => $items->page - 1]) }}" data-catalog-live-link>{{ __('storefront.previous') }}</a>
                             @else<span></span>@endif

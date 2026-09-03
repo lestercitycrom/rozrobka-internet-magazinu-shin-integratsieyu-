@@ -1,0 +1,938 @@
+[
+  {
+    "id": "home",
+    "url": "/",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 7831
+  },
+  {
+    "id": "services",
+    "url": "/tjenester",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 5672
+  },
+  {
+    "id": "service-detail",
+    "url": "/tjenester/bilbatteri",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 3328
+  },
+  {
+    "id": "request",
+    "url": "/tjenester/bilbatteri/foresporsel",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 2673
+  },
+  {
+    "id": "store",
+    "url": "/dekk-og-felger",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 3832
+  },
+  {
+    "id": "catalog",
+    "url": "/dekk",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 2071
+  },
+  {
+    "id": "product",
+    "url": "/produkter/000205550016",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 1970
+  },
+  {
+    "id": "cart-empty",
+    "url": "/handlekurv",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 1420
+  },
+  {
+    "id": "prices",
+    "url": "/priser",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 1815
+  },
+  {
+    "id": "about",
+    "url": "/om-oss",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 2770
+  },
+  {
+    "id": "contact",
+    "url": "/kontakt",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 2418
+  },
+  {
+    "id": "legal",
+    "url": "/kjopsvilkar",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 200,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 3829
+  },
+  {
+    "id": "not-found",
+    "url": "/issue-33-intentional-404",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "status": 404,
+    "viewportWidth": 1920,
+    "scrollWidth": 1920,
+    "documentHeight": 1530
+  },
+  {
+    "id": "home",
+    "url": "/",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 7703
+  },
+  {
+    "id": "services",
+    "url": "/tjenester",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 5610
+  },
+  {
+    "id": "service-detail",
+    "url": "/tjenester/bilbatteri",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 3297
+  },
+  {
+    "id": "request",
+    "url": "/tjenester/bilbatteri/foresporsel",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 2664
+  },
+  {
+    "id": "store",
+    "url": "/dekk-og-felger",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 3746
+  },
+  {
+    "id": "catalog",
+    "url": "/dekk",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 2062
+  },
+  {
+    "id": "product",
+    "url": "/produkter/000205550016",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 1961
+  },
+  {
+    "id": "cart-empty",
+    "url": "/handlekurv",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 1411
+  },
+  {
+    "id": "prices",
+    "url": "/priser",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 1805
+  },
+  {
+    "id": "about",
+    "url": "/om-oss",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 2730
+  },
+  {
+    "id": "contact",
+    "url": "/kontakt",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 2391
+  },
+  {
+    "id": "legal",
+    "url": "/kjopsvilkar",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 3819
+  },
+  {
+    "id": "not-found",
+    "url": "/issue-33-intentional-404",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 404,
+    "viewportWidth": 1440,
+    "scrollWidth": 1440,
+    "documentHeight": 1350
+  },
+  {
+    "id": "home",
+    "url": "/",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 7554
+  },
+  {
+    "id": "services",
+    "url": "/tjenester",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 5525
+  },
+  {
+    "id": "service-detail",
+    "url": "/tjenester/bilbatteri",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 3270
+  },
+  {
+    "id": "request",
+    "url": "/tjenester/bilbatteri/foresporsel",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 2650
+  },
+  {
+    "id": "store",
+    "url": "/dekk-og-felger",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 3679
+  },
+  {
+    "id": "catalog",
+    "url": "/dekk",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 2053
+  },
+  {
+    "id": "product",
+    "url": "/produkter/000205550016",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 1947
+  },
+  {
+    "id": "cart-empty",
+    "url": "/handlekurv",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 1397
+  },
+  {
+    "id": "prices",
+    "url": "/priser",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 1793
+  },
+  {
+    "id": "about",
+    "url": "/om-oss",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 2700
+  },
+  {
+    "id": "contact",
+    "url": "/kontakt",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 2376
+  },
+  {
+    "id": "legal",
+    "url": "/kjopsvilkar",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 200,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 3808
+  },
+  {
+    "id": "not-found",
+    "url": "/issue-33-intentional-404",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "status": 404,
+    "viewportWidth": 1366,
+    "scrollWidth": 1366,
+    "documentHeight": 1218
+  },
+  {
+    "id": "home",
+    "url": "/",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 7400
+  },
+  {
+    "id": "services",
+    "url": "/tjenester",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 5425
+  },
+  {
+    "id": "service-detail",
+    "url": "/tjenester/bilbatteri",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 3225
+  },
+  {
+    "id": "request",
+    "url": "/tjenester/bilbatteri/foresporsel",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 2633
+  },
+  {
+    "id": "store",
+    "url": "/dekk-og-felger",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 3597
+  },
+  {
+    "id": "catalog",
+    "url": "/dekk",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 2042
+  },
+  {
+    "id": "product",
+    "url": "/produkter/000205550016",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 1930
+  },
+  {
+    "id": "cart-empty",
+    "url": "/handlekurv",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 1377
+  },
+  {
+    "id": "prices",
+    "url": "/priser",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 1776
+  },
+  {
+    "id": "about",
+    "url": "/om-oss",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 2665
+  },
+  {
+    "id": "contact",
+    "url": "/kontakt",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 2358
+  },
+  {
+    "id": "legal",
+    "url": "/kjopsvilkar",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 3791
+  },
+  {
+    "id": "not-found",
+    "url": "/issue-33-intentional-404",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "status": 404,
+    "viewportWidth": 1280,
+    "scrollWidth": 1280,
+    "documentHeight": 1250
+  },
+  {
+    "id": "home",
+    "url": "/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 10237
+  },
+  {
+    "id": "services",
+    "url": "/tjenester",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 4670
+  },
+  {
+    "id": "service-detail",
+    "url": "/tjenester/bilbatteri",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 3786
+  },
+  {
+    "id": "request",
+    "url": "/tjenester/bilbatteri/foresporsel",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 3491
+  },
+  {
+    "id": "store",
+    "url": "/dekk-og-felger",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 4222
+  },
+  {
+    "id": "catalog",
+    "url": "/dekk",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 1744
+  },
+  {
+    "id": "product",
+    "url": "/produkter/000205550016",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 2650
+  },
+  {
+    "id": "cart-empty",
+    "url": "/handlekurv",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 1276
+  },
+  {
+    "id": "prices",
+    "url": "/priser",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 2346
+  },
+  {
+    "id": "about",
+    "url": "/om-oss",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 3393
+  },
+  {
+    "id": "contact",
+    "url": "/kontakt",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 2913
+  },
+  {
+    "id": "legal",
+    "url": "/kjopsvilkar",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 5653
+  },
+  {
+    "id": "not-found",
+    "url": "/issue-33-intentional-404",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 404,
+    "viewportWidth": 390,
+    "scrollWidth": 390,
+    "documentHeight": 1274
+  },
+  {
+    "id": "home",
+    "url": "/",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 10411
+  },
+  {
+    "id": "services",
+    "url": "/tjenester",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 4658
+  },
+  {
+    "id": "service-detail",
+    "url": "/tjenester/bilbatteri",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 4045
+  },
+  {
+    "id": "request",
+    "url": "/tjenester/bilbatteri/foresporsel",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 3621
+  },
+  {
+    "id": "store",
+    "url": "/dekk-og-felger",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 4321
+  },
+  {
+    "id": "catalog",
+    "url": "/dekk",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 1767
+  },
+  {
+    "id": "product",
+    "url": "/produkter/000205550016",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 2792
+  },
+  {
+    "id": "cart-empty",
+    "url": "/handlekurv",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 1301
+  },
+  {
+    "id": "prices",
+    "url": "/priser",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 2472
+  },
+  {
+    "id": "about",
+    "url": "/om-oss",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 3522
+  },
+  {
+    "id": "contact",
+    "url": "/kontakt",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 2993
+  },
+  {
+    "id": "legal",
+    "url": "/kjopsvilkar",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 200,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 6434
+  },
+  {
+    "id": "not-found",
+    "url": "/issue-33-intentional-404",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "status": 404,
+    "viewportWidth": 320,
+    "scrollWidth": 320,
+    "documentHeight": 1230
+  }
+]

@@ -58,7 +58,7 @@ test('storefront and admin consume one shared design foundation', function (): v
         ->toContain('data-footer-links');
 
     $storefront = file_get_contents(resource_path('css/storefront-v3.css'));
-    $shapes = file_get_contents(resource_path('css/storefront-shapes.css'));
+    $contracts = file_get_contents(resource_path('css/storefront-contracts.css'));
     $home = file_get_contents(resource_path('views/welcome.blade.php'));
 
     expect(substr_count($storefront, '.et-v3-process-strip {'))->toBe(1)
@@ -74,6 +74,6 @@ test('storefront and admin consume one shared design foundation', function (): v
         ->and($home)
         ->toContain('class="et-v3-promotion__details"')
         ->toContain('tabindex="0"')
-        ->and($shapes)->toContain('.et-admin-body')
-        ->and($shapes)->toContain('--radius-2xl: var(--et-radius-sharp);');
+        ->and($contracts)->toContain('.et-admin-body')
+        ->and($contracts)->toContain('--radius-2xl: var(--et-radius-sharp);');
 });
