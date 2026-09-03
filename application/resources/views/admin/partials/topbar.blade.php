@@ -27,6 +27,6 @@
 
     <form method="POST" action="{{ route('admin.logout') }}">
         @csrf
-        <button class="et-btn et-btn--outline et-btn--small" type="submit">{{ __('admin.topbar.logout') }}</button>
+        <button class="et-btn et-btn--outline et-btn--small" type="submit" data-testid="admin-logout">{{ __('admin.topbar.logout') }}</button>
     </form>
 </div>

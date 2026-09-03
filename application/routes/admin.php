@@ -33,6 +33,28 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
     Route::middleware(['admin.active', 'admin.locale'])->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
+        if (app()->environment(['local', 'testing']) && config('app.e2e_admin_visual_states')) {
+            Route::get('/_e2e/dashboard/{state}', function (string $state) {
+                $states = [
+                    'zero' => [
+                        'serviceRequestCounts' => ['attention' => 0, 'total' => 0],
+                        'orderCounts' => ['attention' => 0, 'total' => 0],
+                    ],
+                    'low' => [
+                        'serviceRequestCounts' => ['attention' => 1, 'total' => 3],
+                        'orderCounts' => ['attention' => 1, 'total' => 2],
+                    ],
+                    'large' => [
+                        'serviceRequestCounts' => ['attention' => 987, 'total' => 1234],
+                        'orderCounts' => ['attention' => 876, 'total' => 4321],
+                    ],
+                ];
+
+                abort_unless(array_key_exists($state, $states), 404);
+
+                return view('admin.dashboard', $states[$state] + ['e2eDashboardState' => $state]);
+            })->whereIn('state', ['zero', 'low', 'large'])->name('e2e.dashboard-state');
+        }
         Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
         Route::get('/catalog/publication-preview', [CatalogController::class, 'publicationPreview'])->name('catalog.publication.preview');
         Route::put('/catalog/publication', [CatalogController::class, 'publishEligible'])->name('catalog.publication.publish');

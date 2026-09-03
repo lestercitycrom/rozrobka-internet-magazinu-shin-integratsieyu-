@@ -1,0 +1,348 @@
+{
+  "keyboard": {
+    "mobile": {
+      "drawer": [
+        "toggle",
+        "brand",
+        "dashboard",
+        "brand",
+        "Escape",
+        "toggle"
+      ],
+      "topbarAfterClose": [
+        "NB",
+        "RU"
+      ]
+    }
+  },
+  "states": {
+    "longValues": {
+      "selectors": [
+        "Visuell Testkunde med et bevisst langt navn",
+        "langt-administrativt-testnavn@synthetic.example.test"
+      ],
+      "locales": [
+        "nb",
+        "ru"
+      ],
+      "widths": {
+        "nb": {
+          "document": 390,
+          "viewport": 390
+        },
+        "ru": {
+          "document": 390,
+          "viewport": 390
+        }
+      }
+    }
+  },
+  "dashboardStates": [
+    {
+      "state": "zero",
+      "locale": "nb",
+      "expectedValues": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 2,
+      "geometry": [
+        {
+          "left": 13,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Nye tjenesteforespørsler"
+        },
+        {
+          "left": 201,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle tjenesteforespørsler"
+        },
+        {
+          "left": 13,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Bestillinger til oppfølging"
+        },
+        {
+          "left": 201,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle bestillinger"
+        }
+      ]
+    },
+    {
+      "state": "low",
+      "locale": "nb",
+      "expectedValues": [
+        1,
+        3,
+        1,
+        2
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 2,
+      "geometry": [
+        {
+          "left": 13,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Nye tjenesteforespørsler"
+        },
+        {
+          "left": 201,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle tjenesteforespørsler"
+        },
+        {
+          "left": 13,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Bestillinger til oppfølging"
+        },
+        {
+          "left": 201,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle bestillinger"
+        }
+      ]
+    },
+    {
+      "state": "large",
+      "locale": "nb",
+      "expectedValues": [
+        987,
+        1234,
+        876,
+        4321
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 2,
+      "geometry": [
+        {
+          "left": 13,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Nye tjenesteforespørsler"
+        },
+        {
+          "left": 201,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle tjenesteforespørsler"
+        },
+        {
+          "left": 13,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Bestillinger til oppfølging"
+        },
+        {
+          "left": 201,
+          "height": 114,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Alle bestillinger"
+        }
+      ]
+    },
+    {
+      "state": "zero",
+      "locale": "ru",
+      "expectedValues": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 2,
+      "geometry": [
+        {
+          "left": 13,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Новые заявки на услуги"
+        },
+        {
+          "left": 201,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заявки на услуги"
+        },
+        {
+          "left": 13,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Заказы для обработки"
+        },
+        {
+          "left": 201,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заказы"
+        }
+      ]
+    },
+    {
+      "state": "low",
+      "locale": "ru",
+      "expectedValues": [
+        1,
+        3,
+        1,
+        2
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 2,
+      "geometry": [
+        {
+          "left": 13,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Новые заявки на услуги"
+        },
+        {
+          "left": 201,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заявки на услуги"
+        },
+        {
+          "left": 13,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Заказы для обработки"
+        },
+        {
+          "left": 201,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заказы"
+        }
+      ]
+    },
+    {
+      "state": "large",
+      "locale": "ru",
+      "expectedValues": [
+        987,
+        1234,
+        876,
+        4321
+      ],
+      "tones": [
+        "attention",
+        "neutral",
+        "attention",
+        "neutral"
+      ],
+      "columns": 2,
+      "geometry": [
+        {
+          "left": 13,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Новые заявки на услуги"
+        },
+        {
+          "left": 201,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заявки на услуги"
+        },
+        {
+          "left": 13,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Заказы для обработки"
+        },
+        {
+          "left": 201,
+          "height": 139,
+          "cardOverflow": false,
+          "valueLineCount": 1,
+          "valueInside": true,
+          "labelText": "Все заказы"
+        }
+      ]
+    }
+  ]
+}

@@ -575,7 +575,7 @@
     "unresolvedKeys": [],
     "tables": [],
     "clippedControls": [],
-    "controlCount": 31
+    "controlCount": 35
   },
   {
     "key": "pricing-list",
@@ -870,7 +870,7 @@
       "position": "fixed"
     },
     "headings": [
-      "SR-VISUAL-0006",
+      "SR-VISUAL-0001",
       "Kunde",
       "Ønsker",
       "Status"

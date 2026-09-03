@@ -39,7 +39,7 @@ export default defineConfig({
     webServer: {
         command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${databaseForPhp}') || touch('${databaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan e2e:seed-admin --email=issue-41-admin@example.test --password=issue-41-local-only-password && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder && ${phpCommand} artisan db:seed --class=E2eAdminVisualSeeder && ${phpCommand} -S 127.0.0.1:8042 -t public tests/Audit/server.php`,
         url: baseURL,
-        reuseExistingServer: false,
+        reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === 'true',
         stdout: 'ignore',
         stderr: 'ignore',
         timeout: 120_000,
@@ -50,6 +50,7 @@ export default defineConfig({
             CACHE_STORE: 'array',
             DB_CONNECTION: 'sqlite',
             DB_DATABASE: database,
+            E2E_ADMIN_VISUAL_STATES_ENABLED: 'true',
             E2E_ADMIN_EMAIL: 'issue-41-admin@example.test',
             E2E_ADMIN_PASSWORD: 'issue-41-local-only-password',
             MAIL_MAILER: 'log',

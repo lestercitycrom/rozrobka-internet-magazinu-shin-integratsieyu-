@@ -86,6 +86,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Deterministic local acceptance fixtures
+    |--------------------------------------------------------------------------
+    |
+    | This switch is deliberately false by default. The guarded route that
+    | consumes it is registered only in local/testing environments.
+    |
+    */
+
+    'e2e_admin_visual_states' => (bool) env('E2E_ADMIN_VISUAL_STATES_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |

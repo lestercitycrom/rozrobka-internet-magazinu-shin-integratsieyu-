@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
+use App\Modules\Content\Models\MediaAsset;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 use LogicException;
 
 class E2eAdminVisualSeeder extends Seeder
@@ -59,5 +62,31 @@ class E2eAdminVisualSeeder extends Seeder
                 ],
             );
         }
+
+        $admin = User::query()->where('email', 'issue-41-admin@example.test')->firstOrFail();
+        $path = 'media/issue-41-removable-fixture.png';
+        $bytes = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true);
+
+        if ($bytes === false) {
+            throw new LogicException('Unable to decode the admin visual media fixture.');
+        }
+
+        Storage::disk('public')->put($path, $bytes);
+        MediaAsset::query()->updateOrCreate(
+            ['path' => $path],
+            [
+                'disk' => 'public',
+                'original_name' => 'issue-41-removable-fixture.png',
+                'mime' => 'image/png',
+                'byte_size' => strlen($bytes),
+                'width' => 1,
+                'height' => 1,
+                'sha256' => hash('sha256', $bytes),
+                'alt_nb' => 'Syntetisk slettbar mediefil',
+                'alt_ru' => 'Синтетический удаляемый медиафайл',
+                'uploader_id' => $admin->id,
+                'is_active' => true,
+            ],
+        );
     }
 }

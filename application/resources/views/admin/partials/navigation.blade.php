@@ -26,7 +26,7 @@
 @endphp
 
 <div class="et-admin-sidebar__brand">
-    <a href="{{ route('admin.dashboard') }}" aria-label="{{ __('admin.brand') }}">
+    <a href="{{ route('admin.dashboard') }}" aria-label="{{ __('admin.brand') }}" data-testid="admin-brand-link">
         <img src="/brand/easytire-logo.png" width="900" height="243" alt="EasyTire Admin">
     </a>
 </div>
@@ -36,7 +36,7 @@
         <div class="et-admin-nav__label">{{ $groupLabel }}</div>
         @foreach ($items as $item)
             @php($active = collect($item['patterns'])->contains(fn ($pattern) => request()->routeIs($pattern)))
-            <a href="{{ route('admin.'.$item['route']) }}" @if($active) aria-current="page" @endif>
+            <a href="{{ route('admin.'.$item['route']) }}" data-testid="admin-nav-{{ $item['key'] }}" @if($active) aria-current="page" @endif>
                 <span>{{ __('admin_nav.'.$item['key']) }}</span>
             </a>
         @endforeach
