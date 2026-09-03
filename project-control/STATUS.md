@@ -8,7 +8,7 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 | Environment | State | Canonical evidence |
 |---|---|---|
-| GitHub `main` | Catalogue/product/cart polish accepted and merged; not deployed | `87509a644022a4df232c118d9bf4bab32f2c3683` / PR #39 |
+| GitHub `main` | Storefront design-system consolidation accepted and merged; not deployed | `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612` / PR #40 |
 | Staging | Same exact release deployed and runtime-accepted | <https://staging-easytire.bethub.fun>, server `REVISION` read-back |
 | Production | Not authorised | Separate production review and runtime decision required |
 
@@ -43,7 +43,8 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 - Completed internal remediation: [Issue #30](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/30) / PR #37, merged as `d69d8d2a70d492c039ae2e76be67938bda274349`; no deployment was authorised.
 - Completed internal remediation: [Issue #31](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/31) / PR #38, merged as `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; no deployment was authorised.
 - Completed internal remediation: [Issue #32](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32) / [PR #39](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39), merged as `87509a644022a4df232c118d9bf4bab32f2c3683`; no deployment was authorised.
-- Active final internal cleanup: [Issue #33](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33) / [PR #40](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40), storefront geometry and presentation ownership consolidation. The implementation based on `87509a644022a4df232c118d9bf4bab32f2c3683` is locally complete and green at tested implementation head `e33195eaa6a052fd7e308779402e7ad87c51dfda`; CI and PM exact-head review remain pending. Runtime authorization remains none.
+- Completed internal remediation: [Issue #33](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33) / [PR #40](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40), merged as `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`; no deployment was authorised.
+- Active admin visual remediation: [Issue #41](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41), authenticated admin audit and bounded dashboard/shared-admin P1/P2 polish from exact base `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`. Runtime authorisation remains none.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
 - Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
