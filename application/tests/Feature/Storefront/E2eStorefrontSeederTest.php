@@ -14,6 +14,7 @@ uses(RefreshDatabase::class);
 
 test('the restricted E2E seed is repeatable and provides a priced buyer and admin fixture', function (): void {
     Storage::fake('public');
+    config()->set('ndi_api.sandbox.enabled', true);
 
     $this->seed(E2eStorefrontSeeder::class);
 
@@ -23,6 +24,7 @@ test('the restricted E2E seed is repeatable and provides a priced buyer and admi
     $order = Order::query()->with('items')->where('public_reference', 'ET-E2E-ORDER')->sole();
     $item = app(CatalogReadService::class)->findPublicSku('000205550016');
     $wheel = app(CatalogReadService::class)->findPublicSku('DEMO-WHEEL-18112');
+    $sandbox = app(CatalogReadService::class)->findPublicSku('NDI-TEST-4765205551649102');
     $sellingPrice = app(SellingPriceService::class)->forItem($item);
     $wheelSellingPrice = app(SellingPriceService::class)->forItem($wheel);
     $asset = MediaAsset::query()->where('path', 'media/e2e-demo-product.png')->sole();
@@ -38,6 +40,9 @@ test('the restricted E2E seed is repeatable and provides a priced buyer and admi
         ->and($wheel->wheel)->toMatchArray(['bolt_holes' => 5, 'pcd_mm' => '112.00'])
         ->and($wheelSellingPrice)->not->toBeNull()
         ->and($wheelSellingPrice->money->minor)->toBe(219900)
+        ->and($sandbox)->not->toBeNull()
+        ->and($sandbox->isIntegrationTest)->toBeTrue()
+        ->and(app(SellingPriceService::class)->forItem($sandbox)->money->minor)->toBe(1000)
         ->and(Storage::disk($asset->disk)->exists($asset->path))->toBeTrue()
         ->and($dimensions)->not->toBeFalse()
         ->and($dimensions[0])->toBeGreaterThan(0)

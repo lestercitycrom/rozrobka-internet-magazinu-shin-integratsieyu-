@@ -50,10 +50,12 @@ test('Norwegian storefront, catalog and product use stable scoped targets', asyn
     await page.goto('/dekk');
     const form = await ensureCatalogFiltersVisible(page);
     await form.locator('select[name="width"]').selectOption('205');
-    await expect(page).toHaveURL(/width=205/);
     if (isMobileProject(testInfo.project.name)) {
-        await page.getByTestId('catalog-filter-close').click();
+        await form.getByTestId('catalog-filter-apply').click();
+        await expect(page).toHaveURL(/width=205/);
         await expect(page.getByTestId('catalog-filter-drawer')).not.toHaveAttribute('open', '');
+    } else {
+        await expect(page).toHaveURL(/width=205/);
     }
     const card = productCard(page, tireSku);
     await expect(card).toBeVisible();
