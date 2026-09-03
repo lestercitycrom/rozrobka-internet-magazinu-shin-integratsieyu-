@@ -1,7 +1,7 @@
 # Current review
 
 - Issue: [#41 — Audit and polish admin visual coherence and dashboard](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41)
-- PR: pending Draft PR `[TASK-41] Audit and polish admin visual coherence`
+- PR: [#42 — Audit and polish admin visual coherence](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/42) (Draft)
 - Accepted baseline: Issue #33 / PR #40 merge `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`; current accepted staging application remains on its separately authorised SHA.
 - State: `engineer-started-audit`
 - Exact branch base: `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`
