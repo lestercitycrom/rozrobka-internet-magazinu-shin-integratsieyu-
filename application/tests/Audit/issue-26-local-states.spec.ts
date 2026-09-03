@@ -5,7 +5,11 @@ import path from 'node:path';
 const tireSku = '000205550016';
 
 function rawRoot(testInfo: TestInfo): string {
-    return path.resolve(process.cwd(), '../tmp/issue-26/local-raw', testInfo.project.name);
+    const root = process.env.PLAYWRIGHT_AUDIT_OUTPUT_ROOT
+        ? path.resolve(process.env.PLAYWRIGHT_AUDIT_OUTPUT_ROOT)
+        : path.resolve(process.cwd(), '../tmp/issue-26/local-raw');
+
+    return path.join(root, testInfo.project.name);
 }
 
 async function settle(page: Page): Promise<void> {

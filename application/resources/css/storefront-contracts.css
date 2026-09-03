@@ -18,6 +18,16 @@
     --et-radius-public-large: var(--et-radius-sharp);
     --et-radius-media: var(--et-radius-sharp);
     --et-radius-drawer: var(--et-radius-sharp);
+    --et-radius-map-pin: 999px 999px 999px var(--et-radius-sharp);
+    /* Compatibility aliases are redeclared at this scope because inherited
+       custom properties resolve references where they are defined. */
+    --et-radius-xs: var(--et-radius-sharp);
+    --et-radius-sm: var(--et-radius-sharp);
+    --et-radius: var(--et-radius-sharp);
+    --et-radius-lg: var(--et-radius-sharp);
+    --et-radius-xl: var(--et-radius-sharp);
+    --v3-radius: var(--et-radius-sharp);
+    --v3-radius-lg: var(--et-radius-sharp);
     --et-shadow-sm: 0 1px 0 rgb(11 11 12 / .12);
     --et-shadow: 0 10px 24px rgb(11 11 12 / .1);
     --et-shadow-dark: 0 14px 36px rgb(0 0 0 / .24);

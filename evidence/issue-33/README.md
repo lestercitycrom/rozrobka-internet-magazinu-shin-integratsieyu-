@@ -28,3 +28,11 @@ $env:PLAYWRIGHT_PHP_BINARY='C:\OSPanel\modules\PHP-8.3\php.exe'
 
 Expected result: 3 tests pass. On this Windows host the Laravel web-server wrapper may remain open after Playwright prints all green results; stopping that already-completed wrapper does not change the test result or evidence.
 
+The accepted Issue #26 audit is also rerun locally against the branch, with its output isolated under ignored `application/tmp/issue-33/` paths:
+
+```powershell
+$env:PLAYWRIGHT_PHP_BINARY='C:\OSPanel\modules\PHP-8.3\php.exe'
+& 'C:\Users\dmcpc\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' node_modules\@playwright\test\cli.js test --config=playwright.issue-33.accepted-audit.config.ts --workers=1
+```
+
+Expected result: 61 applicable checks pass and 41 project-specific combinations skip. The suite covers the accepted Issue #26 visual, interaction/composition and safe synthetic-state specifications without connecting to staging or submitting to NDI/Dintero.

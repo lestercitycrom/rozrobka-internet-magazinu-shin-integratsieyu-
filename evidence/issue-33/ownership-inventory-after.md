@@ -27,6 +27,7 @@ Both commands return no matches.
 - `design-tokens.css` owns the semantic geometry contracts for surfaces, controls, media, drawers, functional circles and the map pin.
 - `pro-design.css` and `storefront-v3.css` own component geometry, borders, elevation and interactive states at the component definition.
 - `storefront-contracts.css` selects the accepted sharp storefront profile and owns the named, reusable layout hooks extracted from Blade.
+- The sharp profile redeclares the legacy `--et-radius-*` and `--v3-radius*` aliases in its own scope. CSS custom-property references inherited from `:root` otherwise resolve against the root values before inheritance and would silently restore rounded v3 surfaces.
 - Storefront Blade templates now contain semantics, state and content only; no inline presentation remains.
 - `storefront-shapes.css` and its final specificity-repair cascade were removed.
 
@@ -45,4 +46,3 @@ No dynamic inline style exception was retained because the audited templates con
 ## Preserved result
 
 The Issue #33 Playwright evidence covers 13 representative page/state families at all six accepted viewports (78 full-page screenshots), named interaction states and exact geometry comparisons against the accepted Issue #30–#32 JSON baselines. `baseline-geometry-comparison.json` reports `preserved: true` at every viewport and `surface-layouts.json` records no horizontal overflow.
-
