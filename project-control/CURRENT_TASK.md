@@ -1,14 +1,13 @@
 # Current task
 
 - Umbrella: [#9 — Audit website against customer sources and remediate confirmed gaps](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9)
-- Issue: [#32 — Polish catalogue, product and cart journeys](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32)
-- State: `ci-pending`
-- Branch: `codex/issue-32-catalog-product-cart-polish`
-- PR: [#39 — Polish catalogue product and cart journeys](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39) (Draft)
-- Exact base: `9d49ac82ced177d5310a909ddb7e82fff9c3678a`
-- Exact green implementation head: `833db99df9c903ca68ab8af0f219de0dd0a8ead1`
-- Scope: mobile deferred-Apply filter behaviour, natural desktop filter flow, customer-facing category navigation, readable product buy box and intentional empty-cart composition; preserve accepted #28–#31 behaviour and every NDI/commerce boundary.
-- Verification: local exact implementation passed — Laravel 418 passed / 1 skipped (3887 assertions), buyer/admin Playwright 156 passed / 41 viewport skips, accepted Issue #26 audit runnable matrix 43 passed, Issue #32 evidence capture passed, build/Pint/project-control passed; GitHub Actions and reachable-history secret scan pending on PR #39.
-- Runtime authorisation: none; local/CI synthetic only, no deployment, NDI, Dintero, email, Notion, Telegram or other external side effect.
+- Issue: [#33 — Consolidate storefront geometry and presentation ownership](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33)
+- State: `inventory-pending`
+- Branch: `codex/issue-33-storefront-design-system-consolidation`
+- PR: pending initial control-pointer commit
+- Exact base/head: `87509a644022a4df232c118d9bf4bab32f2c3683`
+- Scope: remove the universal radius override and migrate repeated static storefront inline presentation into explicit token/component ownership without changing the accepted appearance or behaviour from Issues #28–#32.
+- Verification: deterministic ownership inventory and exact-head full quality gates pending.
+- Runtime authorisation: none; local/CI synthetic and read-only visual comparison only, no deployment or external side effects.
 
 The Issue is the full task. This file is only a pointer.
