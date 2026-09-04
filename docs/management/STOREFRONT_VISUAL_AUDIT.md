@@ -16,6 +16,8 @@ Browser: Playwright `1.62.1`, Chromium `151.0.7922.34`
 
 Runtime authorization: **NONE**. This audit performed no form submission, order, payment, NDI write, email, notification, production mutation or deployment.
 
+> Resolution addendum (2026-09-04): this document intentionally preserves the original Issue #26 findings. Their current disposition is recorded row by row in `STOREFRONT_VISUAL_FINDINGS.csv`. Issue #34 deployed and live-verified application SHA `f70f358f06af384364973951eaab8d4fac2b2203`; 19 findings are resolved, 23 protected MATCH rows were rechecked, `AUD-26-002` remains externally blocked under Issue #19 and `AUD-26-040` remains not verified by design. See `evidence/issue-34/final-staging-acceptance.md`.
+
 ## Corrected executive assessment
 
 The first audit was too optimistic. It correctly recognized that the current sharp version is materially better than the old rounded/compressed version, but it promoted several broad page families to `MATCH` without inspecting the states and page-level composition deeply enough.
