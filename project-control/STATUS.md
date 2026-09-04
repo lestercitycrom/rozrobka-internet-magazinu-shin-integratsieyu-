@@ -8,7 +8,7 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 | Environment | State | Canonical evidence |
 |---|---|---|
-| GitHub `main` | Storefront design-system consolidation accepted and merged; not deployed | `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612` / PR #40 |
+| GitHub `main` | Cumulative storefront and authenticated-admin visual remediation accepted and merged; not deployed | `f70f358f06af384364973951eaab8d4fac2b2203` / PR #42 |
 | Staging | Same exact release deployed and runtime-accepted | <https://staging-easytire.bethub.fun>, server `REVISION` read-back |
 | Production | Not authorised | Separate production review and runtime decision required |
 
@@ -44,7 +44,8 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 - Completed internal remediation: [Issue #31](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/31) / PR #38, merged as `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; no deployment was authorised.
 - Completed internal remediation: [Issue #32](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32) / [PR #39](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39), merged as `87509a644022a4df232c118d9bf4bab32f2c3683`; no deployment was authorised.
 - Completed internal remediation: [Issue #33](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33) / [PR #40](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40), merged as `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`; no deployment was authorised.
-- Admin visual remediation awaiting PM review: [Issue #41](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41) / [PR #42](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/42), authenticated admin audit and bounded dashboard/shared-admin P1/P2 polish from exact base `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`. All six atomic findings and PM acceptance-completeness entries M41-001–M41-007 are resolved locally; strict Playwright passed 7/7 named viewports, the standard buyer/admin Playwright suite passed 156 tests with 41 project-specific skips, and full local Pest passed 423 tests / 3917 assertions with one expected skip. Runtime authorisation remains none.
+- Completed internal remediation: [Issue #41](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41) / [PR #42](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/42), accepted and merged as `f70f358f06af384364973951eaab8d4fac2b2203`; no deployment was authorised.
+- Active final acceptance: [Issue #34](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/34), Phase 1 exact pre-deployment checkpoint for cumulative application SHA `f70f358f06af384364973951eaab8d4fac2b2203`. Current staging remains `ee512d723e78a65a89bfdee4268c3a779f632b33`; runtime authorisation is none pending a separate exact-SHA staging gate.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
 - Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
