@@ -16,9 +16,9 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 | Gate | State |
 |---|---|
-| Dintero | Merchant-review package active on staging with manual capture/void/refund/reconcile and legal evidence; sandbox only. Production account/KYC and acceptance remain external. |
+| Dintero | Merchant-review implementation remains in code, but payment enablement is disabled on staging for the final acceptance checkpoint. Production account/KYC and acceptance remain external. |
 | NDI catalogue | Normalised catalogue/import boundary implemented, but the staging feed is currently beyond its freshness window. The correct fail-closed gate hides real NDI stock until a current import succeeds. |
-| NDI sandbox order | Restricted test fixture/profile only: PartyID `1220000`, article `4765205551649102`, quantity `2`. |
+| NDI sandbox order | Restricted test fixture/profile remains implemented but every sandbox catalogue/inquiry/order gate is disabled on staging for the final acceptance checkpoint. |
 | Commercial NDI C1 | Disabled unless a separately authorised production gate enables it. |
 | Notion / Telegram | Code/outbox boundary exists and remains disabled. Notion work is postponed by the owner; no audit or runtime activation is authorised in the current website initiative. |
 | Statens lookup | Implemented where environment key enables it; wheel/full-kit compatibility remains blocked on licensed PCD/DIA fitment data. |
@@ -46,7 +46,7 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 - Completed internal remediation: [Issue #33](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33) / [PR #40](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40), merged as `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`; no deployment was authorised.
 - Completed internal remediation: [Issue #41](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41) / [PR #42](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/42), accepted and merged as `f70f358f06af384364973951eaab8d4fac2b2203`; no deployment was authorised.
 - Active final acceptance: [Issue #34](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/34), Phase 1 exact pre-deployment checkpoint for cumulative application SHA `f70f358f06af384364973951eaab8d4fac2b2203`. Current staging remains `ee512d723e78a65a89bfdee4268c3a779f632b33`; runtime authorisation is none pending a separate exact-SHA staging gate.
-- Issue #34 Phase 1 application quality is green. Read-only runtime inspection found the worker heartbeat stale with a non-empty pending queue and found test external gates enabled contrary to the PM-required all-disabled checkpoint. Deployment remains blocked; no runtime change or external action was performed.
+- Issue #34 Phase 1 application quality is green. PM-authorised Runtime Precondition Pass B disabled test Dintero and all NDI inquiry/C1/sandbox gates, retained non-delivery mail and disabled Notion/Telegram, classified the fixed 301-row backlog as internal heartbeat-only, and diagnosed the explicitly stopped managed worker without starting it. Repeated health/HTTP checks are green except the expected stale worker heartbeat and known external NDI freshness blocker. Deployment and queue consumption remain blocked pending the next exact-head PM decision.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
 - Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.

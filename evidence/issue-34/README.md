@@ -8,4 +8,4 @@ This directory contains compact, redacted, reproducible evidence for the final c
 - Phase 2 may begin only after PM posts `STAGING_DEPLOY_APPROVED` for the exact application candidate.
 - No credentials, unrestricted server paths, customer PII, real order/request data, supplier payloads or external mutations belong in committed evidence.
 
-`predeploy-checkpoint.md` records the Phase 1 result. Live visual evidence is added only after the exact staging deployment gate.
+`predeploy-checkpoint.md` records the initial Phase 1 result. `runtime-precondition-b.md` records the PM-authorised external-gate hardening, bounded queue inventory, read-only worker diagnosis and repeated health checkpoint. Live visual evidence is added only after the exact staging deployment gate.
