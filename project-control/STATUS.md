@@ -8,8 +8,8 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 | Environment | State | Canonical evidence |
 |---|---|---|
-| GitHub `main` | Cumulative storefront and authenticated-admin visual remediation accepted and merged; not deployed | `f70f358f06af384364973951eaab8d4fac2b2203` / PR #42 |
-| Staging | Same exact release deployed and runtime-accepted | <https://staging-easytire.bethub.fun>, server `REVISION` read-back |
+| GitHub `main` | Cumulative storefront and authenticated-admin visual remediation accepted and merged | `f70f358f06af384364973951eaab8d4fac2b2203` / PR #42 |
+| Staging | Exact cumulative release deployed; engineer live acceptance complete, pending final PM review | <https://staging-easytire.bethub.fun>, server `REVISION` read-back and Issue #34 evidence |
 | Production | Not authorised | Separate production review and runtime decision required |
 
 ## Runtime gates
@@ -27,8 +27,9 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 ## Current quality baseline
 
 - GitHub-main baseline: Issue #31 / PR #38 is merged as `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; its accepted checks preserve the full Laravel/Playwright regression, frontend build, Pint, project-control validation and reachable-history secret scan gates.
-- Staging deployment/read-back: server `REVISION` matched `ee512d723e78a65a89bfdee4268c3a779f632b33`; migrations reported `Nothing to migrate`; atomic activation completed with rollback `01a931d432b32a5a0633d1b508256b225387d429` retained; database, cache, queue, scheduler, worker, failed jobs and disk were healthy. The isolated NDI feed-freshness warning remains tracked as `FND-01`.
-- Live staging validation: Bokmål and hidden RU battery validation passed without a persistent request or external side effect; representative non-battery behaviour remained unchanged.
+- Staging deployment/read-back: server `REVISION` matches `f70f358f06af384364973951eaab8d4fac2b2203`; the atomic hook completed `424` Laravel tests / `3920` assertions, reported `Nothing to migrate` and retained `ee512d723e78a65a89bfdee4268c3a779f632b33` plus `01a931d432b32a5a0633d1b508256b225387d429` as rollback releases.
+- Final engineer runtime read-back: database, cache, scheduler and managed queue worker healthy; queue/reservations, failed jobs, outbox pending/failed and supplier-media pending/failed are all zero; payment, NDI write/sandbox, customer-email, Notion and Telegram gates remain disabled. Homepage, admin login and robots return HTTP 200. The isolated NDI feed-freshness warning remains tracked under Issue #19.
+- Live staging validation: the public Issue #26 matrix is effectively green at all six required viewports (43 passed plus 41 expected skips after correcting one obsolete synthetic audit route). Authenticated admin passed 276 NB/RU surface checks and 12 interaction contracts. No external side effect was triggered.
 - `docs/access.md`, `.env`, private customer materials and runtime credentials are excluded from Git.
 
 ## Current work
@@ -44,9 +45,9 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 - Completed internal remediation: [Issue #31](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/31) / PR #38, merged as `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; no deployment was authorised.
 - Completed internal remediation: [Issue #32](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32) / [PR #39](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39), merged as `87509a644022a4df232c118d9bf4bab32f2c3683`; no deployment was authorised.
 - Completed internal remediation: [Issue #33](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33) / [PR #40](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40), merged as `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`; no deployment was authorised.
-- Completed internal remediation: [Issue #41](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41) / [PR #42](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/42), accepted and merged as `f70f358f06af384364973951eaab8d4fac2b2203`; no deployment was authorised.
-- Active final acceptance: [Issue #34](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/34), Phase 1 exact pre-deployment checkpoint for cumulative application SHA `f70f358f06af384364973951eaab8d4fac2b2203`. Current staging remains `ee512d723e78a65a89bfdee4268c3a779f632b33`; runtime authorisation is none pending a separate exact-SHA staging gate.
-- Issue #34 Phase 1 application quality is green. PM-authorised Runtime Precondition Pass B disabled test Dintero and all NDI inquiry/C1/sandbox gates, retained non-delivery mail and disabled Notion/Telegram, classified the fixed 301-row backlog as internal heartbeat-only, and diagnosed the explicitly stopped managed worker without starting it. Repeated health/HTTP checks are green except the expected stale worker heartbeat and known external NDI freshness blocker. Deployment and queue consumption remain blocked pending the next exact-head PM decision.
+- Completed internal remediation: [Issue #41](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41) / [PR #42](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/42), accepted and merged as `f70f358f06af384364973951eaab8d4fac2b2203`; that exact release is now deployed on staging under Issue #34 authorization.
+- Active final acceptance: [Issue #34](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/34) / [PR #43](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/43). Managed queue recovery, exact deployment and public/admin live acceptance are complete. The PR is being handed to the PM for exact-head final review; the previously accepted release remains the immediate rollback until that review is accepted.
+- Issue #34 durable evidence: [`evidence/issue-34/final-staging-acceptance.md`](../evidence/issue-34/final-staging-acceptance.md). The 44-row visual ledger is reconciled: 19 historical findings resolved on live staging, 23 protected MATCH rows rechecked, `AUD-26-002` still externally blocked and `AUD-26-040` still not verified by design.
 - Notion is postponed and excluded from the current website remediation initiative.
 - Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
 - Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
