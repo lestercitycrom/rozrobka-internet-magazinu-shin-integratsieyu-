@@ -47,16 +47,19 @@ Both directions use exact expected-old-value checks, are idempotent and preserve
 
 ## Visual evidence
 
-- `header-menu-{1920x1080,1440x900,1366x768,1280x800,390x844,320x800}.png`
-- `finder-{1920x1080,1440x900,1366x768,1280x800,390x844,320x800}.png`
-- `footer-{1920x1080,1440x900,1366x768,1280x800,390x844,320x800}.png`
+- `header-menu-{1920x1080,1440x900,1366x768,1280x800,390x844,320x800}.png`: desktop header/menu clips and mobile viewport captures;
+- `finder-{1920x1080,1440x900,1366x768,1280x800,390x844,320x800}.png`: viewport captures of the finder state;
+- `footer-{1920x1080,1440x900,1366x768,1280x800,390x844,320x800}.png`: footer-element captures;
+- `menu-closed-focus-1440x900.png`: viewport after real Tab/open/Escape with focus returned and the panel visually closed;
+- `search-focus-{desktop,mobile}-{input,submit}.png`: NB viewport captures showing the single-control focus treatment;
+- `service-directory-{nb,ru}-{390x844,320x800}.png`: full-page mobile service-directory captures after the responsive correction;
 - `viewport-measurements.json` records menu, finder, hero and original-logo computed geometry.
 
-Representative images were manually inspected after the final build. Desktop navigation does not wrap or resize the header at 1280/1366; the mobile menu is a bounded internal scroll region, and the last service is reachable by touch/keyboard scrolling.
+Representative and correction images were manually inspected after the final build. Desktop navigation does not wrap or resize the header at 1280/1366; explicit close leaves no visible panel; the mobile menu is a bounded internal scroll region; the service directory is one readable column in NB/RU at 390/320; and each search control has one visible focus outline without a wrapper shadow.
 
 ## Verification
 
-Final working-tree verification before the review commit:
+Original implementation working-tree verification before the first review commit:
 
 - project-control validation: passed;
 - `git diff --check`: passed;
@@ -67,7 +70,7 @@ Final working-tree verification before the review commit:
 - full buyer/admin Playwright matrix: 172 passed, 53 intentionally project-scoped skips, 0 failures;
 - Issue #45 viewport capture: passed at 1920, 1440, 1366, 1280, 390 and 320 pixels.
 
-The GitHub exact-head checks remain authoritative for the reachable-history Gitleaks scan and repeat the repository gates after push. The exact review SHA and check run are recorded in the PR #48 ENGINEER UPDATE.
+The R1–R3 correction cycle adds real Tab/open/Escape/next-Tab assertions in NB/RU, computed desktop/mobile grid checks, all three real anchors, and real Tab/Shift+Tab focus-style/geometry checks in NB/RU desktop/mobile. Its focused capture run passed, the focus race regression passed 10/10 parallel repetitions, and the split 320 plus RU/cart/admin projects passed all applicable tests. The GitHub exact-head checks remain authoritative for the single-process full buyer/admin matrix and reachable-history Gitleaks scan. The exact review SHA, full counts and check run are recorded in the final PR #48 ENGINEER UPDATE.
 
 ## Runtime boundary
 

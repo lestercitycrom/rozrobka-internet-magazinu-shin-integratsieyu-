@@ -60,6 +60,7 @@ const initDesktopMegaMenu = () => {
             root.classList.toggle('is-open', open);
             setExpanded(toggle, open);
             panel.setAttribute('aria-hidden', String(!open));
+            panel.toggleAttribute('inert', !open);
         };
 
         toggle.addEventListener('click', () => {
@@ -90,6 +91,8 @@ const initDesktopMegaMenu = () => {
             pinnedOpen = false;
             setOpen(false);
         });
+        root.setAttribute('data-mega-menu-ready', '');
+        setOpen(false);
     });
 };
 
@@ -107,7 +110,7 @@ const initHeaderCatalogSearch = () => {
             panel.setAttribute('aria-hidden', String(!open));
             if (open) {
                 focusTimer = window.setTimeout(() => {
-                    if (root.classList.contains('is-open')) one('input', panel)?.focus();
+                    if (root.classList.contains('is-open') && !panel.matches(':focus-within')) one('input', panel)?.focus();
                 }, 170);
             }
             if (restoreFocus) toggle.focus();

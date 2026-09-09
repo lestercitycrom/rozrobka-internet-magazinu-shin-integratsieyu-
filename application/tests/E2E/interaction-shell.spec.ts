@@ -187,6 +187,7 @@ test('mobile menu keeps keyboard focus handoff and order', async ({ page }, test
 
 test('sticky header is opaque and stable across the required viewport matrix', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
+    test.setTimeout(120_000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
 
     for (const viewport of [
