@@ -10,7 +10,7 @@ const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 const phpTempDirectory = (process.env.PLAYWRIGHT_PHP_TEMP_DIR ?? `${process.cwd()}/storage/framework/playwright-tmp`).replace(/\\/g, '/');
 const phpTempDirectoryForPhp = phpTempDirectory.replace(/'/g, "\\'");
 const phpCommand = `"${phpBinary}" -d "sys_temp_dir=${phpTempDirectory}"`;
-const buyerSpecs = /(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|header-navigation|home-hero-process|homepage-feedback|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
+const buyerSpecs = /(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|home-hero-process|homepage-feedback|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
 
 export default defineConfig({
     testDir: './tests/E2E',
@@ -38,12 +38,12 @@ export default defineConfig({
         {
             name: 'buyer-mobile-320',
             use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
-            testMatch: /(catalog-live|catalog-mobile-layout|header-navigation|interaction-shell|map-overflow|product-detail|project-content|storefront-style)\.spec\.ts/,
+            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|interaction-shell|map-overflow|product-detail|project-content|storefront-style)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|header-navigation|product-detail|service-requests|map-overflow|project-content)\.spec\.ts/,
+            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|customer-navigation|header-navigation|product-detail|service-requests|map-overflow|project-content)\.spec\.ts/,
         },
         {
             name: 'buyer-cart-390',

@@ -1,0 +1,188 @@
+[
+  {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "desktop": true,
+    "menuGeometry": {
+      "left": 650.96875,
+      "right": 1410.96875,
+      "top": 97.181884765625,
+      "bottom": 535.103759765625,
+      "width": 760,
+      "height": 437.921875
+    },
+    "finder": {
+      "x": 320,
+      "y": 661,
+      "width": 1280,
+      "height": 236
+    },
+    "heroContent": {
+      "x": 320,
+      "y": 131.71875,
+      "width": 665.59375,
+      "height": 514.5625
+    },
+    "footerLogo": {
+      "filter": "none",
+      "src": "/brand/easytire-logo.png"
+    }
+  },
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "desktop": true,
+    "menuGeometry": {
+      "left": 419.953125,
+      "right": 1179.953125,
+      "top": 98.06616973876953,
+      "bottom": 535.9880447387695,
+      "width": 760,
+      "height": 437.921875
+    },
+    "finder": {
+      "x": 80,
+      "y": 661,
+      "width": 1280,
+      "height": 236
+    },
+    "heroContent": {
+      "x": 80,
+      "y": 140.21875,
+      "width": 665.59375,
+      "height": 497.5625
+    },
+    "footerLogo": {
+      "filter": "none",
+      "src": "/brand/easytire-logo.png"
+    }
+  },
+  {
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "desktop": true,
+    "menuGeometry": {
+      "left": 385.296875,
+      "right": 1145.296875,
+      "top": 98.07181549072266,
+      "bottom": 535.9936599731445,
+      "width": 760,
+      "height": 437.9218444824219
+    },
+    "finder": {
+      "x": 43,
+      "y": 605.46875,
+      "width": 1280,
+      "height": 236
+    },
+    "heroContent": {
+      "x": 43,
+      "y": 117,
+      "width": 665.59375,
+      "height": 488.46875
+    },
+    "footerLogo": {
+      "filter": "none",
+      "src": "/brand/easytire-logo.png"
+    }
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "desktop": true,
+    "menuGeometry": {
+      "left": 339.546875,
+      "right": 1099.546875,
+      "top": 97.18545532226562,
+      "bottom": 535.1072998046875,
+      "width": 760,
+      "height": 437.9218444824219
+    },
+    "finder": {
+      "x": 24,
+      "y": 611,
+      "width": 1232,
+      "height": 236
+    },
+    "heroContent": {
+      "x": 24,
+      "y": 125.78125,
+      "width": 640.625,
+      "height": 476.4375
+    },
+    "footerLogo": {
+      "filter": "none",
+      "src": "/brand/easytire-logo.png"
+    }
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "desktop": false,
+    "menuGeometry": {
+      "left": 0,
+      "right": 390,
+      "top": 70,
+      "bottom": 396,
+      "width": 390,
+      "height": 326
+    },
+    "finder": {
+      "x": 16,
+      "y": 634.5625,
+      "width": 358,
+      "height": 433.734375
+    },
+    "heroContent": {
+      "x": 16,
+      "y": 332.390625,
+      "width": 358,
+      "height": 273.375
+    },
+    "footerLogo": {
+      "filter": "none",
+      "src": "/brand/easytire-logo.png"
+    }
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "desktop": false,
+    "menuGeometry": {
+      "left": 0,
+      "right": 320,
+      "top": 70,
+      "bottom": 396,
+      "width": 320,
+      "height": 326
+    },
+    "finder": {
+      "x": 12,
+      "y": 621.375,
+      "width": 296,
+      "height": 460.25
+    },
+    "heroContent": {
+      "x": 12,
+      "y": 332.390625,
+      "width": 296,
+      "height": 260.1875
+    },
+    "footerLogo": {
+      "filter": "none",
+      "src": "/brand/easytire-logo.png"
+    }
+  }
+]

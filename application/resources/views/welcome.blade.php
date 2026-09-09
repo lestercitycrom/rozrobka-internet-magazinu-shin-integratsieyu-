@@ -272,6 +272,7 @@
         </div>
     </section>
 
+    <span class="et-section-anchor" id="aktuelle-tilbud" aria-hidden="true"></span>
     @if ($homepagePromotions->isNotEmpty())
         <section class="et-v3-notices" aria-labelledby="home-promotions-title" data-testid="homepage-promotions">
             <div class="et-container">

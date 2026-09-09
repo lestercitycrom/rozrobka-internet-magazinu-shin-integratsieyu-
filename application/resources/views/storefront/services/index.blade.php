@@ -1,6 +1,12 @@
 @php
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
     $contact = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->contact();
+    $publishedServiceSlugs = collect($services)->pluck('slug');
+    $serviceDirectory = collect([
+        ['slug' => 'interiorrens', 'id' => 'service-interior-cleaning', 'title' => __('pro.nav.interior_cleaning'), 'text' => __('pro.services.interior_cleaning_text'), 'href' => route($prefix.'content.show', 'kontakt')],
+        ['slug' => 'polering-lakkorrigering', 'id' => 'service-polishing-paint', 'title' => __('pro.nav.polishing_paint'), 'text' => __('pro.services.polishing_paint_text'), 'href' => route($prefix.'content.show', 'kontakt')],
+        ['slug' => 'utelasing-bil', 'id' => 'service-lockout', 'title' => __('pro.nav.lockout'), 'text' => __('pro.services.lockout_text'), 'href' => 'tel:'.$contact['phone_href']],
+    ])->reject(fn (array $entry): bool => $publishedServiceSlugs->contains($entry['slug']));
 @endphp
 
 <x-layouts.storefront :title="__('storefront.services_title')" active-section="services">
@@ -58,6 +64,31 @@
             </div>
         </div>
     </section>
+
+    <span class="et-section-anchor" id="bilpleie" aria-hidden="true"></span>
+    @if ($serviceDirectory->isNotEmpty())
+        <section class="et-v3-section et-v3-section--soft et-service-directory" aria-labelledby="service-directory-title" data-testid="service-directory">
+            <div class="et-container">
+                <div class="et-v3-section-head">
+                    <div>
+                        <p class="et-eyebrow">{{ __('pro.services.directory_kicker') }}</p>
+                        <h2 class="et-h2" id="service-directory-title">{{ __('pro.services.directory_title') }}</h2>
+                        <p class="et-lead">{{ __('pro.services.directory_text') }}</p>
+                    </div>
+                </div>
+                <div class="et-service-directory__grid">
+                    @foreach ($serviceDirectory as $entry)
+                        <article class="et-service-directory__item" id="{{ $entry['id'] }}">
+                            <span aria-hidden="true">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                            <h3>{{ $entry['title'] }}</h3>
+                            <p>{{ $entry['text'] }}</p>
+                            <a href="{{ $entry['href'] }}">{{ __('pro.services.directory_contact') }} <x-icon name="arrow" :size="17" /></a>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
 
     <section class="et-v3-section et-v3-section--ink">
         <div class="et-container et-v3-services-cta">

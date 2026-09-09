@@ -16,4 +16,11 @@ return [
         ?: 'https://www.google.com/maps?q=EasyTire%20Dekkskift%20Troms%C3%B8%2C%20Ringvegen%20202%2C%209018%20Troms%C3%B8&output=embed',
     'facebook_url' => 'https://www.facebook.com/share/1Bgf5oF3bL/?mibextid=wwXIfr',
     'instagram_url' => 'https://www.instagram.com/easytire_tromso/',
+    // Stable finder vocabulary, independent of supplier freshness. These values
+    // narrow the existing catalogue filters and never claim stock or fitment.
+    'tyre_dimensions' => [
+        'widths' => [125, 135, 145, 155, 165, 175, 185, 195, 205, 215, 225, 235, 245, 255, 265, 275, 285, 295, 305, 315, 325, 335, 345, 355],
+        'aspects' => [25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80],
+        'rims' => [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+    ],
 ];

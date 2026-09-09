@@ -1,5 +1,7 @@
 <?php
 
+use Database\Seeders\SeoServicePageSeeder;
+use Database\Seeders\ServicePageSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -38,19 +40,21 @@ test('the current Norwegian storefront section is exposed in both navigation var
 });
 
 test('services navigation exposes the customer requested direct paths', function (): void {
+    $this->seed([ServicePageSeeder::class, SeoServicePageSeeder::class]);
     $response = $this->get('/')->assertOk();
 
     $response
-        ->assertSee('Sesongskift')
-        ->assertSee('Hjemme hos deg')
-        ->assertSee('På vårt verksted')
+        ->assertSee('Dekk og hjul')
+        ->assertSee('Biltjenester')
+        ->assertSee('Dekkskift hjemme hos deg')
+        ->assertSee('Dekkskift på verksted')
         ->assertSee('Dekkhotell')
-        ->assertSee('Andre biltjenester')
-        ->assertSee('href="'.route('storefront.seo-services.show', 'dekkskift-tromso').'"', false)
+        ->assertSee('Montering og balansering')
+        ->assertSee('Utelåsing – åpning av bil')
         ->assertSee('href="'.e(route('storefront.requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile'])).'"', false)
         ->assertSee('href="'.e(route('storefront.requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop'])).'"', false)
         ->assertSee('href="'.route('storefront.seo-services.show', 'dekkhotell-tromso').'"', false)
-        ->assertSee('href="'.route('storefront.services.index').'#additional-services"', false);
+        ->assertSee('href="'.route('storefront.services.index').'#service-interior-cleaning"', false);
 });
 
 test('the current Russian preview section uses the same accessible navigation state', function (): void {
