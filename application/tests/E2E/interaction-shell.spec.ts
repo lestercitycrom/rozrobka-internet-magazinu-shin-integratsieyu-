@@ -78,9 +78,9 @@ test('semantic hover variants remain flat and dimensionally stable', async ({ pa
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One desktop state contract is sufficient');
 
     await page.goto('/');
-    await stableHover(page, page.getByTestId('header-booking'));
-    await stableActive(page, page.getByTestId('header-booking'));
-    await expectDisabledState(page.getByTestId('header-booking'));
+    await stableHover(page, page.getByTestId('header-call'));
+    await stableActive(page, page.getByTestId('header-call'));
+    await expectDisabledState(page.getByTestId('header-call'));
     await stableHover(page, page.locator('.et-v3-text-link').first());
     await stableActive(page, page.locator('.et-v3-text-link').first());
     await stableHover(page, page.getByTestId('footer-booking'));
@@ -119,9 +119,9 @@ test('real keyboard traversal uses one contextual focus outline and preserves su
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    const headerBooking = page.getByTestId('header-booking');
-    await tabTo(page, headerBooking);
-    const lightFocus = await headerBooking.evaluate((element) => {
+    const headerCall = page.getByTestId('header-call');
+    await tabTo(page, headerCall);
+    const lightFocus = await headerCall.evaluate((element) => {
         const style = getComputedStyle(element);
         return { width: style.outlineWidth, color: style.outlineColor, shadow: style.boxShadow };
     });
@@ -130,10 +130,15 @@ test('real keyboard traversal uses one contextual focus outline and preserves su
     expect(lightFocus.shadow).toBe('none');
 
     await page.goto('/');
-    const serviceParent = page.locator('.et-nav__item').first().locator(':scope > a');
+    const serviceParent = page.locator('.et-nav__item').first().locator('.et-nav__trigger > a');
     await tabTo(page, serviceParent);
+    const serviceToggle = page.locator('.et-nav__item').first().locator('[data-mega-menu-toggle]');
     const firstSubmenuLink = page.locator('.et-nav__item').first().locator('.et-nav__submenu a').first();
     await expect(firstSubmenuLink).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(serviceToggle).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(serviceToggle).toHaveAttribute('aria-expanded', 'true');
     await page.keyboard.press('Tab');
     await expect(firstSubmenuLink).toBeFocused();
     await expect(firstSubmenuLink).toBeVisible();
@@ -230,7 +235,10 @@ test('mobile standalone actions and compact footer keep every destination reacha
         await expect(toggles.first()).toBeVisible();
 
         const collapsedHeight = await footer.evaluate((element) => element.getBoundingClientRect().height);
-        expect(collapsedHeight).toBeLessThan(Math.min(680, page.viewportSize()!.height * .85));
+        // The customer-required company description remains visible above the
+        // collapsed link groups, so short phone viewports legitimately need
+        // slightly more than the former pre-description 85% allowance.
+        expect(collapsedHeight).toBeLessThan(Math.min(680, page.viewportSize()!.height * .95));
 
         for (const toggle of await toggles.all()) {
             const toggleHeight = await toggle.evaluate((element) => element.getBoundingClientRect().height);

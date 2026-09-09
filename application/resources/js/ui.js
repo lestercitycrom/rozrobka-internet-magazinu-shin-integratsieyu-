@@ -46,6 +46,85 @@ const initStickyHeader = () => {
     update();
 };
 
+const initDesktopMegaMenu = () => {
+    const desktop = window.matchMedia('(min-width: 1181px)');
+
+    all('[data-mega-menu]').forEach((root) => {
+        const toggle = one('[data-mega-menu-toggle]', root);
+        const panel = one('[data-mega-menu-panel]', root);
+        if (!toggle || !panel) return;
+        let pinnedOpen = false;
+
+        const setOpen = (open, { restoreFocus = false } = {}) => {
+            if (restoreFocus) toggle.focus();
+            root.classList.toggle('is-open', open);
+            setExpanded(toggle, open);
+            panel.setAttribute('aria-hidden', String(!open));
+        };
+
+        toggle.addEventListener('click', () => {
+            pinnedOpen = !pinnedOpen;
+            setOpen(pinnedOpen);
+        });
+        root.addEventListener('mouseenter', () => { if (desktop.matches) setOpen(true); });
+        root.addEventListener('mouseleave', () => {
+            if (desktop.matches && !pinnedOpen && !root.matches(':focus-within')) setOpen(false);
+        });
+        root.addEventListener('focusin', () => { if (desktop.matches) setOpen(true); });
+        root.addEventListener('focusout', () => window.requestAnimationFrame(() => {
+            if (!pinnedOpen && !root.matches(':focus-within')) setOpen(false);
+        }));
+        root.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || !root.classList.contains('is-open')) return;
+            event.preventDefault();
+            pinnedOpen = false;
+            setOpen(false, { restoreFocus: true });
+        });
+        document.addEventListener('pointerdown', (event) => {
+            if (event.target instanceof Node && !root.contains(event.target)) {
+                pinnedOpen = false;
+                setOpen(false);
+            }
+        });
+        desktop.addEventListener('change', () => {
+            pinnedOpen = false;
+            setOpen(false);
+        });
+    });
+};
+
+const initHeaderCatalogSearch = () => {
+    all('[data-catalog-search]').forEach((root) => {
+        const toggle = one('[data-catalog-search-toggle]', root);
+        const panel = one('[data-catalog-search-panel]', root);
+        if (!toggle || !panel) return;
+        let focusTimer;
+
+        const setOpen = (open, { restoreFocus = false } = {}) => {
+            window.clearTimeout(focusTimer);
+            root.classList.toggle('is-open', open);
+            setExpanded(toggle, open);
+            panel.setAttribute('aria-hidden', String(!open));
+            if (open) {
+                focusTimer = window.setTimeout(() => {
+                    if (root.classList.contains('is-open')) one('input', panel)?.focus();
+                }, 170);
+            }
+            if (restoreFocus) toggle.focus();
+        };
+
+        toggle.addEventListener('click', () => setOpen(!root.classList.contains('is-open')));
+        root.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || !root.classList.contains('is-open')) return;
+            event.preventDefault();
+            setOpen(false, { restoreFocus: true });
+        });
+        document.addEventListener('pointerdown', (event) => {
+            if (event.target instanceof Node && !root.contains(event.target)) setOpen(false);
+        });
+    });
+};
+
 const initFooterGroups = () => {
     const footer = one('[data-footer-groups]');
     if (!footer) return;
@@ -432,6 +511,8 @@ const initAdminSidebar = () => {
 
 initMobileMenu();
 initStickyHeader();
+initDesktopMegaMenu();
+initHeaderCatalogSearch();
 initFooterGroups();
 initProductionFilters();
 initTabs();

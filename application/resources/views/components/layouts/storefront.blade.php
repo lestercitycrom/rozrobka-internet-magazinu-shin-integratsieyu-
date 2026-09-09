@@ -95,6 +95,7 @@
             request()->routeIs($routePrefix.'fitment.*'), request()->routeIs($routePrefix.'products.*') => 'store',
             request()->routeIs($routePrefix.'cart.*'), request()->routeIs($routePrefix.'checkout.*'),
             request()->routeIs($routePrefix.'orders.*') => 'cart',
+            request()->routeIs($routePrefix.'pricing.*') => 'pricing',
             request()->routeIs($routePrefix.'content.show') && $contentSlug === 'om-oss' => 'about',
             request()->routeIs($routePrefix.'content.show') && $contentSlug === 'kontakt' => 'contact',
             default => null,
@@ -105,20 +106,75 @@
         $seasonalHref = route($routePrefix.'seo-services.show', 'dekkskift-tromso');
         $hotelHref = route($routePrefix.'seo-services.show', 'dekkhotell-tromso');
         $seasonalRequestRoute = $routePrefix.'requests.create';
+        $pricingHref = route($routePrefix.'pricing.index');
+        $offersHref = route($routePrefix.'home').'#aktuelle-tilbud';
+        $serviceDestination = static function (string $slug, string $fallbackAnchor) use ($headerServices, $routePrefix, $servicesHref): string {
+            $service = $headerServices->firstWhere('slug', $slug);
+            if ($service) {
+                return route(
+                    $routePrefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'),
+                    $service->canonicalPath ?: $service->slug,
+                );
+            }
+
+            return $servicesHref.'#'.$fallbackAnchor;
+        };
+        $isCurrentDestination = static function (string $href): bool {
+            $target = parse_url($href);
+            if (($target['path'] ?? '/') !== request()->getPathInfo() || isset($target['fragment'])) {
+                return false;
+            }
+            parse_str($target['query'] ?? '', $requiredQuery);
+
+            return collect($requiredQuery)->every(
+                static fn ($value, $key): bool => (string) request()->query((string) $key) === (string) $value,
+            );
+        };
+        $serviceGroups = [
+            [
+                'label' => __('pro.nav.tyres_wheels_group'),
+                'children' => [
+                    ['href' => route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']), 'label' => __('pro.nav.home_service')],
+                    ['href' => route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']), 'label' => __('pro.nav.workshop_service')],
+                    ['href' => $hotelHref, 'label' => __('pro.nav.hotel')],
+                    ['href' => $serviceDestination('omlegging-balansering', 'service-mounting-balancing'), 'label' => __('pro.nav.mounting_balancing')],
+                    ['href' => $serviceDestination('dekkreparasjon', 'service-puncture-repair'), 'label' => __('pro.nav.puncture_repair')],
+                    ['href' => $serviceDestination('tpms-sensor', 'service-tpms'), 'label' => __('pro.nav.tpms')],
+                    ['href' => $serviceDestination('tesla-og-elbil', 'service-tesla-ev'), 'label' => __('pro.nav.tesla_ev')],
+                    ['href' => $serviceDestination('bobil-og-varebil', 'service-motorhome-van'), 'label' => __('pro.nav.motorhome_van')],
+                ],
+            ],
+            [
+                'label' => __('pro.nav.car_services_group'),
+                'children' => [
+                    ['href' => $serviceDestination('oljeskift', 'service-oil-change'), 'label' => __('pro.nav.oil_change')],
+                    ['href' => $serviceDestination('interiorrens', 'service-interior-cleaning'), 'label' => __('pro.nav.interior_cleaning')],
+                    ['href' => $serviceDestination('polering-lakkorrigering', 'service-polishing-paint'), 'label' => __('pro.nav.polishing_paint')],
+                    ['href' => $serviceDestination('bilbatteri', 'service-battery'), 'label' => __('pro.nav.battery')],
+                    ['href' => $serviceDestination('lyspaerer-viskerblad', 'service-lights-wipers'), 'label' => __('pro.nav.lights_wipers')],
+                    ['href' => $serviceDestination('utelasing-bil', 'service-lockout'), 'label' => __('pro.nav.lockout')],
+                ],
+            ],
+        ];
+        $serviceGroups = collect($serviceGroups)->map(static function (array $group) use ($isCurrentDestination): array {
+            $group['children'] = collect($group['children'])->map(static function (array $child) use ($isCurrentDestination): array {
+                $child['active'] = $isCurrentDestination($child['href']);
+
+                return $child;
+            })->all();
+
+            return $group;
+        })->all();
         $navigationItems = [
             [
                 'section' => 'services',
                 'href' => $servicesHref,
                 'label' => __('pro.nav.services'),
-                'children' => [
-                    ['href' => $seasonalHref, 'label' => __('pro.nav.seasonal')],
-                    ['href' => route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']), 'label' => __('pro.nav.home_service')],
-                    ['href' => route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']), 'label' => __('pro.nav.workshop_service')],
-                    ['href' => $hotelHref, 'label' => __('pro.nav.hotel')],
-                    ['href' => $servicesHref.'#additional-services', 'label' => __('pro.nav.additional_services')],
-                ],
+                'groups' => $serviceGroups,
             ],
             ['section' => 'store', 'href' => $storeHref, 'label' => $storeNavigationLabel],
+            ['section' => 'pricing', 'href' => $pricingHref, 'label' => __('pro.nav.prices')],
+            ['section' => 'offers', 'href' => $offersHref, 'label' => __('pro.nav.offers')],
         ];
         if (isset($contentPages['om-oss'])) {
             $navigationItems[] = ['section' => 'about', 'href' => route($routePrefix.'content.show', 'om-oss'), 'label' => __('pro.nav.about')];
@@ -204,13 +260,26 @@
 
             <nav class="et-nav" aria-label="{{ __('storefront.main_navigation') }}" data-testid="desktop-navigation">
                 @foreach ($navigationItems as $navigationItem)
-                    @if (! empty($navigationItem['children']))
-                        <div class="et-nav__item">
-                            <a class="min-h-11" href="{{ $navigationItem['href'] }}" aria-haspopup="true" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
-                            <div class="et-nav__submenu" aria-label="{{ $navigationItem['label'] }}">
-                                @foreach ($navigationItem['children'] as $child)
-                                    <a class="min-h-11" href="{{ $child['href'] }}">{{ $child['label'] }}</a>
-                                @endforeach
+                    @if (! empty($navigationItem['groups']))
+                        <div class="et-nav__item et-nav__item--mega" data-mega-menu>
+                            <span class="et-nav__trigger">
+                                <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                                <button type="button" aria-label="{{ $navigationItem['label'] }}" aria-expanded="false" aria-controls="services-mega-menu" data-mega-menu-toggle><span aria-hidden="true"></span></button>
+                            </span>
+                            <div class="et-nav__submenu et-nav__submenu--mega" id="services-mega-menu" aria-label="{{ $navigationItem['label'] }}" aria-hidden="true" data-mega-menu-panel>
+                                <a class="et-nav__all-services min-h-11" href="{{ $navigationItem['href'] }}">{{ __('pro.nav.all_services') }} <x-icon name="arrow" :size="17" /></a>
+                                <div class="et-nav__mega-grid">
+                                    @foreach ($navigationItem['groups'] as $group)
+                                        <section aria-labelledby="services-mega-group-{{ $loop->index }}">
+                                            <h2 id="services-mega-group-{{ $loop->index }}">{{ $group['label'] }}</h2>
+                                            <ul>
+                                                @foreach ($group['children'] as $child)
+                                                    <li><a class="min-h-11" href="{{ $child['href'] }}" @if($child['active']) aria-current="page" @endif>{{ $child['label'] }}</a></li>
+                                                @endforeach
+                                            </ul>
+                                        </section>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     @else
@@ -220,7 +289,20 @@
             </nav>
 
             <div class="et-header__actions">
-                <a class="et-btn et-btn--primary min-h-11" href="{{ $bookingUrl }}" data-testid="header-booking">{{ __('pro.nav.booking') }}</a>
+                <div class="et-catalog-search" data-catalog-search>
+                    <button class="et-catalog-search__toggle min-h-11" type="button" aria-label="{{ __('pro.nav.catalog_search_open') }}" aria-expanded="false" aria-controls="header-catalog-search" data-catalog-search-toggle><x-icon name="search" :size="20" /></button>
+                    <div class="et-catalog-search__panel" id="header-catalog-search" aria-hidden="true" data-catalog-search-panel>
+                        <form method="GET" action="{{ route($routePrefix.'tires.index') }}">
+                            <label for="header-catalog-query">{{ __('pro.nav.catalog_search') }}</label>
+                            <div>
+                                <input id="header-catalog-query" name="q" type="search" autocomplete="off" placeholder="{{ __('pro.nav.catalog_search_placeholder') }}" list="header-catalog-suggestions" aria-controls="header-catalog-suggestions" data-catalog-autocomplete="{{ route($routePrefix.'tires.suggestions') }}">
+                                <button type="submit">{{ __('pro.nav.catalog_search_submit') }}</button>
+                            </div>
+                            <datalist id="header-catalog-suggestions"></datalist>
+                        </form>
+                    </div>
+                </div>
+                <a class="et-btn et-btn--primary min-h-11" href="tel:{{ $phoneHref }}" data-testid="header-call"><x-icon name="phone" :size="17" />{{ __('pro.nav.call') }}</a>
                 <a class="et-cart min-h-11" href="{{ route($routePrefix.'cart.index') }}" aria-label="{{ __('pro.nav.cart') }}: {{ $cartCount }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="header-cart">
                     <x-icon name="cart" :size="22" />
                     <span class="et-cart__count">{{ $cartCount }}</span>
@@ -232,13 +314,16 @@
         <div class="et-mobile-menu" data-mobile-menu>
             <nav class="et-container" aria-label="{{ __('storefront.quick_links') }}" data-testid="mobile-navigation">
                 @foreach ($navigationItems as $navigationItem)
-                    @if (! empty($navigationItem['children']))
+                    @if (! empty($navigationItem['groups']))
                         <details class="et-mobile-menu__group">
                             <summary class="min-h-11" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</summary>
                             <div class="et-mobile-menu__children">
                                 <a class="min-h-11" href="{{ $navigationItem['href'] }}">{{ __('pro.nav.all_services') }}</a>
-                                @foreach ($navigationItem['children'] as $child)
-                                    <a class="min-h-11" href="{{ $child['href'] }}">{{ $child['label'] }}</a>
+                                @foreach ($navigationItem['groups'] as $group)
+                                    <p>{{ $group['label'] }}</p>
+                                    @foreach ($group['children'] as $child)
+                                        <a class="min-h-11" href="{{ $child['href'] }}" @if($child['active']) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                    @endforeach
                                 @endforeach
                             </div>
                         </details>
@@ -246,7 +331,12 @@
                         <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
                     @endif
                 @endforeach
-                <a class="min-h-11" href="{{ $bookingUrl }}" data-testid="mobile-booking-link">{{ __('pro.nav.booking') }}</a>
+                <form class="et-mobile-menu__search" method="GET" action="{{ route($routePrefix.'tires.index') }}">
+                    <label for="mobile-catalog-query">{{ __('pro.nav.catalog_search') }}</label>
+                    <div><input id="mobile-catalog-query" name="q" type="search" autocomplete="off" placeholder="{{ __('pro.nav.catalog_search_placeholder') }}" list="mobile-catalog-suggestions" aria-controls="mobile-catalog-suggestions" data-catalog-autocomplete="{{ route($routePrefix.'tires.suggestions') }}"><button type="submit" aria-label="{{ __('pro.nav.catalog_search_submit') }}"><x-icon name="search" :size="19" /></button></div>
+                    <datalist id="mobile-catalog-suggestions"></datalist>
+                </form>
+                <a class="min-h-11" href="tel:{{ $phoneHref }}" data-testid="mobile-call-link">{{ __('pro.nav.call') }}</a>
                 <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link">{{ __('pro.nav.cart') }} ({{ $cartCount }})</a>
             </nav>
         </div>
@@ -257,16 +347,15 @@
     <footer class="et-footer" data-footer-groups>
         <div class="et-container et-footer__main">
             <div class="et-footer__brand">
-                <div class="et-footer__logo-lockup">
+                <div class="et-footer__logo-plate">
                     <img class="et-footer__logo" src="/brand/easytire-logo.png" width="900" height="243" alt="EasyTire">
-                    <span>EasyTire · Tromsø</span>
                 </div>
                 <p>{{ __('pro.footer.text') }}</p>
                 <div class="et-footer__contact">
                     <a href="tel:{{ $phoneHref }}">{{ $phoneDisplay }}</a>
                     <a href="mailto:{{ $contactEmail }}">{{ $contactEmail }}</a>
                     <a href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ $businessAddress }}</a>
-                    <span>{{ config('storefront.legal_name') }} · org.nr. {{ config('storefront.organisation_number') }} MVA</span>
+                    <span>EasyTask AS · Org.nr. 934 860 187 MVA</span>
                 </div>
                 <a class="et-btn et-btn--ghost et-btn--small" href="{{ $bookingUrl }}" data-testid="footer-booking">{{ __('pro.nav.booking') }}</a>
             </div>
@@ -275,11 +364,14 @@
                 <button class="et-footer__toggle" type="button" aria-expanded="true" aria-controls="footer-services-links" data-footer-toggle data-testid="footer-services-toggle">{{ __('pro.footer.services') }}</button>
                 <h2>{{ __('pro.footer.services') }}</h2>
                 <ul id="footer-services-links" data-footer-links>
-                    @foreach ($headerServices->take(3) as $service)
-                        <li><a href="{{ route($routePrefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ $service->title }}</a></li>
-                    @endforeach
-                    <li><a href="{{ route($routePrefix.'services.index') }}">{{ __('pro.footer.all_services') }}</a></li>
-                    <li><a href="{{ route($routePrefix.'pricing.index') }}">{{ __('public_pricing.kicker') }}</a></li>
+                    <li><a href="{{ route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']) }}">{{ __('pro.nav.home_service') }}</a></li>
+                    <li><a href="{{ $hotelHref }}">{{ __('pro.nav.hotel') }}</a></li>
+                    <li><a href="{{ route($seasonalRequestRoute, ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']) }}">{{ __('pro.nav.workshop_service') }}</a></li>
+                    <li><a href="{{ $serviceDestination('oljeskift', 'service-oil-change') }}">{{ __('pro.nav.oil_change') }}</a></li>
+                    <li><a href="{{ $servicesHref }}#bilpleie">{{ __('pro.footer.car_care') }}</a></li>
+                    <li><a href="{{ $serviceDestination('tesla-og-elbil', 'service-tesla-ev') }}">{{ __('pro.nav.tesla_ev') }}</a></li>
+                    <li><a href="{{ $servicesHref }}">{{ __('pro.footer.all_services') }}</a></li>
+                    <li><a href="{{ $pricingHref }}">{{ __('pro.nav.prices') }}</a></li>
                 </ul>
             </div>
 
@@ -290,6 +382,7 @@
                     <li><a href="{{ route($routePrefix.'store.index') }}">{{ __('pro.footer.find_car') }}</a></li>
                     <li><a href="{{ route($routePrefix.'tires.index') }}">{{ __('pro.footer.tires') }}</a></li>
                     <li><a href="{{ route($routePrefix.'wheels.index') }}">{{ __('pro.footer.wheels') }}</a></li>
+                    <li><a href="{{ route($routePrefix.'requests.create', ['slug' => 'dekk-felg-og-hjulpakker']) }}">{{ __('pro.footer.packages') }}</a></li>
                     <li><a href="{{ route($routePrefix.'cart.index') }}">{{ __('pro.nav.cart') }}</a></li>
                 </ul>
             </div>
@@ -303,7 +396,7 @@
                             <li><a href="{{ route($routePrefix.'content.show', $slug) }}">{{ __('legal.'.$label) }}</a></li>
                         @endif
                     @endforeach
-                    <li><a href="/dokumenter/angreskjema-easytire.pdf">{{ __('commerce.withdrawal_form') }}</a></li>
+                    <li><a href="/dokumenter/angreskjema-easytire.pdf">{{ __('pro.footer.withdrawal') }}</a></li>
                 </ul>
             </div>
         </div>

@@ -52,7 +52,8 @@ test('storefront and admin consume one shared design foundation', function (): v
     expect($layout)
         ->toContain('<meta name="theme-color" content="#101010">')
         ->toContain('data-site-header')
-        ->toContain('et-footer__logo-lockup')
+        ->toContain('et-footer__logo-plate')
+        ->not->toContain('et-footer__logo-lockup')
         ->toContain('data-footer-groups')
         ->toContain('data-footer-toggle')
         ->toContain('data-footer-links');

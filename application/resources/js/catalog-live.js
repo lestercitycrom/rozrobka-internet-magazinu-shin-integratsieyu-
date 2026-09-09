@@ -214,6 +214,8 @@ const loadCatalog = async (target, historyMode, { closeMobileFilters = false, pr
     }
 };
 
+initializeCatalogAutocomplete();
+
 const root = currentRoot();
 if (root) bindCatalog(root);
 

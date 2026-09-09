@@ -37,7 +37,8 @@ final class FrontendV2ContractTest extends TestCase
         self::assertIsString($layout);
         self::assertStringContainsString("Schema::hasTable('service_pages')", $layout);
         self::assertStringContainsString('PublishedServicePageReadService::class', $layout);
-        self::assertStringContainsString('$headerServices->take(3)', $layout);
+        self::assertStringContainsString('$headerServices->firstWhere', $layout);
+        self::assertStringContainsString('$serviceDestination', $layout);
         self::assertStringContainsString("route(\$routePrefix.'services.index')", $layout);
         self::assertStringContainsString('catch (\\Throwable)', $layout);
     }

@@ -1,6 +1,10 @@
 @php
     $finderId = $idPrefix ?? 'vehicle-finder';
     $showStoreLink = $showStoreLink ?? true;
+    $dimensionOptions = config('storefront.tyre_dimensions', ['widths' => [], 'aspects' => [], 'rims' => []]);
+    $selectedWidth = request()->query('width');
+    $selectedAspect = request()->query('aspect');
+    $selectedRim = request()->query('rim');
 @endphp
 
 <div class="et-quick-finder" data-tabs data-testid="quick-finder">
@@ -36,11 +40,11 @@
 
     <div class="et-quick-finder__panel" id="{{ $finderId }}-size-panel" role="tabpanel" aria-labelledby="{{ $finderId }}-size-tab" hidden>
         <form method="GET" action="{{ route($routePrefix.'tires.index') }}" class="et-quick-finder__size">
-            <label><span>{{ __('pro.home.finder_width') }}</span><input name="width" type="number" min="100" max="400" inputmode="numeric" placeholder="205" required></label>
+            <label for="{{ $finderId }}-width"><span>{{ __('pro.home.finder_width') }}</span><select id="{{ $finderId }}-width" name="width" required data-testid="finder-width"><option value="">{{ __('pro.home.finder_select_placeholder') }}</option>@foreach ($dimensionOptions['widths'] as $value)<option value="{{ $value }}" @selected((string) $selectedWidth === (string) $value)>{{ $value }}</option>@endforeach</select></label>
             <span aria-hidden="true">/</span>
-            <label><span>{{ __('pro.home.finder_aspect') }}</span><input name="aspect" type="number" min="20" max="100" inputmode="numeric" placeholder="55" required></label>
+            <label for="{{ $finderId }}-aspect"><span>{{ __('pro.home.finder_aspect') }}</span><select id="{{ $finderId }}-aspect" name="aspect" required data-testid="finder-aspect"><option value="">{{ __('pro.home.finder_select_placeholder') }}</option>@foreach ($dimensionOptions['aspects'] as $value)<option value="{{ $value }}" @selected((string) $selectedAspect === (string) $value)>{{ $value }}</option>@endforeach</select></label>
             <span aria-hidden="true">R</span>
-            <label><span>{{ __('pro.home.finder_rim') }}</span><input name="rim" type="number" min="10" max="30" inputmode="numeric" placeholder="16" required></label>
+            <label for="{{ $finderId }}-rim"><span>{{ __('pro.home.finder_rim') }}</span><select id="{{ $finderId }}-rim" name="rim" required data-testid="finder-rim"><option value="">{{ __('pro.home.finder_select_placeholder') }}</option>@foreach ($dimensionOptions['rims'] as $value)<option value="{{ $value }}" @selected((string) $selectedRim === (string) $value)>{{ $value }}</option>@endforeach</select></label>
             <button type="submit">{{ __('pro.home.finder_size_submit') }} <x-icon name="arrow" :size="18" /></button>
         </form>
     </div>

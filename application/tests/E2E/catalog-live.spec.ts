@@ -86,7 +86,7 @@ test('autocomplete remains available and focused after live search updates the r
     await expect(page.locator('#catalog-suggestions option')).not.toHaveCount(0);
     await expect(search).toBeFocused();
     await expect.poll(() => page.evaluate(() =>
-        (window as Window & { __catalogSearchNode?: Element }).__catalogSearchNode === document.querySelector('input[name="q"]')
+        (window as Window & { __catalogSearchNode?: Element }).__catalogSearchNode === document.querySelector('[data-catalog-live-form] input[name="q"]')
     )).toBe(true);
 });
 

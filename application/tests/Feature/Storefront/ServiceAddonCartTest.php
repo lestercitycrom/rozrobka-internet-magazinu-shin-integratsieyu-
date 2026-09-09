@@ -64,7 +64,7 @@ test('cart exposes only active priced applicable services in Norwegian and Russi
         ->assertSee('Synlig tjeneste')
         ->assertDontSee('Kun felg')
         ->assertDontSee('Uten pris')
-        ->assertDontSee('Montering');
+        ->assertDontSee('data-service-code="mounting"', false);
 
     config()->set('storefront.ru_preview_enabled', true);
     $this->get('/ru/handlekurv')
