@@ -1482,20 +1482,12 @@
     transition: max-height var(--et-motion-standard), opacity var(--et-motion-standard);
 }
 
-.et-v3-promotion:hover .et-v3-promotion__details,
-.et-v3-promotion:focus-within .et-v3-promotion__details,
 .et-v3-promotion__details.is-open {
     max-height: 13rem;
     opacity: 1;
 }
 
 @media (hover: none), (max-width: 767px) {
-    .et-v3-promotion:hover .et-v3-promotion__details,
-    .et-v3-promotion:focus-within .et-v3-promotion__details {
-        max-height: 0;
-        opacity: 0;
-    }
-
     .et-v3-promotion .et-v3-promotion__details.is-open {
         max-height: 13rem;
         opacity: 1;

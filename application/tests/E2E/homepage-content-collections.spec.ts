@@ -45,10 +45,22 @@ test('offers and both independently managed service collections render in NB and
 
     const firstOffer = promotions.getByTestId('homepage-promotion').first();
     const disclosure = firstOffer.locator('[data-promotion-disclosure]');
+    const details = firstOffer.locator('.et-v3-promotion__details');
     await expect(firstOffer.locator('.et-v3-promotion__short')).toBeVisible();
     await expect(firstOffer.locator('.et-v3-promotion__cta')).toBeVisible();
+    await expect(details).toHaveAttribute('aria-hidden', 'true');
+    await expect.poll(async () => details.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { maxHeight: style.maxHeight, opacity: style.opacity };
+    })).toEqual({ maxHeight: '0px', opacity: '0' });
+    await firstOffer.hover();
+    await expect(details).toHaveAttribute('aria-hidden', 'true');
+    await expect.poll(async () => details.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { maxHeight: style.maxHeight, opacity: style.opacity };
+    })).toEqual({ maxHeight: '0px', opacity: '0' });
     await disclosure.click();
-    await expect(firstOffer.locator('.et-v3-promotion__details')).toBeVisible();
+    await expect(details).toBeVisible();
     await expectNoGlobalOverflow(page);
 
     if (process.env.CAPTURE_VISUALS === '1' && testInfo.project.name === 'buyer-ru-preview') {
