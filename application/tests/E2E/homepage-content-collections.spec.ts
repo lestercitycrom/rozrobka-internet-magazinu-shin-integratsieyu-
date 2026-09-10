@@ -46,6 +46,7 @@ test('offers and both independently managed service collections render in NB and
     const firstOffer = promotions.getByTestId('homepage-promotion').first();
     const disclosure = firstOffer.locator('[data-promotion-disclosure]');
     const details = firstOffer.locator('.et-v3-promotion__details');
+    const initialCardHeight = (await firstOffer.boundingBox())?.height;
     await expect(firstOffer.locator('.et-v3-promotion__short')).toBeVisible();
     await expect(firstOffer.locator('.et-v3-promotion__cta')).toBeVisible();
     await expect(details).toHaveAttribute('aria-hidden', 'true');
@@ -55,12 +56,20 @@ test('offers and both independently managed service collections render in NB and
     })).toEqual({ maxHeight: '0px', opacity: '0' });
     await firstOffer.hover();
     await expect(details).toHaveAttribute('aria-hidden', 'true');
+    const supportsHover = await page.evaluate(() => window.matchMedia('(hover: hover)').matches);
     await expect.poll(async () => details.evaluate((element) => {
         const style = getComputedStyle(element);
-        return { maxHeight: style.maxHeight, opacity: style.opacity };
-    })).toEqual({ maxHeight: '0px', opacity: '0' });
+        return { maxHeight: style.maxHeight, opacity: Number(style.opacity) };
+    })).toEqual(supportsHover ? { maxHeight: '208px', opacity: 1 } : { maxHeight: '0px', opacity: 0 });
+    if (supportsHover) {
+        expect((await firstOffer.boundingBox())?.height).toBeCloseTo(initialCardHeight ?? 0, 2);
+    }
     await disclosure.click();
+    await expect(details).toHaveAttribute('aria-hidden', 'false');
     await expect(details).toBeVisible();
+    if (supportsHover) {
+        expect((await firstOffer.boundingBox())?.height).toBeCloseTo(initialCardHeight ?? 0, 2);
+    }
     await expectNoGlobalOverflow(page);
 
     if (process.env.CAPTURE_VISUALS === '1' && testInfo.project.name === 'buyer-ru-preview') {
