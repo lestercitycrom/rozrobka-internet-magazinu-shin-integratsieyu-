@@ -7,14 +7,19 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
+    'content_key',
+    'manifest_hash',
     'sort_order',
     'publication_status',
     'title_nb',
+    'short_body_nb',
     'body_nb',
     'cta_label_nb',
     'title_ru',
+    'short_body_ru',
     'body_ru',
     'cta_label_ru',
     'cta_url',
@@ -22,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class HomepagePromotion extends Model
 {
+    use SoftDeletes;
+
     protected function casts(): array
     {
         return [

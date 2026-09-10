@@ -35,18 +35,20 @@ test('approved homepage composition stays coherent at the priority desktop and m
 
         const firstPromotion = page.getByTestId('homepage-promotion').first();
         const promotionDetails = firstPromotion.locator('.et-v3-promotion__details');
+        const promotionDisclosure = firstPromotion.locator('[data-promotion-disclosure]');
         await expect(firstPromotion).toBeVisible();
 
         if (viewport.width > 767) {
             await page.mouse.move(0, 0);
-            await firstPromotion.blur();
             await expect(promotionDetails).not.toBeVisible();
             await firstPromotion.hover();
             await expect(promotionDetails).toBeVisible();
             await page.mouse.move(0, 0);
-            await firstPromotion.focus();
+            await promotionDisclosure.focus();
             await expect(promotionDetails).toBeVisible();
         } else {
+            await expect(promotionDetails).not.toBeVisible();
+            await promotionDisclosure.click();
             await expect(promotionDetails).toBeVisible();
         }
 

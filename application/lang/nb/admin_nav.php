@@ -11,6 +11,7 @@ return [
     'service_requests' => 'Tjenesteforespørsler',
     'content' => 'Innholdssider',
     'homepage_promotions' => 'Forsidetilbud',
+    'homepage_service_collections' => 'Forsidetjenester',
     'homepage_reviews' => 'Kundeomtaler',
     'homepage_ratings' => 'Omtalesammendrag',
     'homepage_partners' => 'Bedriftspartnere',

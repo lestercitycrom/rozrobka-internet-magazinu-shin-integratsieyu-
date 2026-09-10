@@ -2,9 +2,9 @@
 
 - Parent: [#44 — Implement customer homepage and navigation revision](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44)
 - Issue: [#46 — Make customer offers and both homepage service collections fully admin-managed](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/46)
-- State: `in-progress`
+- State: `pm-review`
 - Branch: `codex/issue-46-homepage-content-collections`
-- PR: pending initial implementation commit; Draft until the exact-head engineering gates pass.
+- PR: [#49 — Manage customer offers and homepage service collections](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/49) (Ready for exact-SHA PM review)
 - Exact accepted base: `bae15d829383d0dcf74a93f3127a029bdf63af5a`
 - Scope: four persisted editable offers with accessible manual navigation, separate short/detail copy, and two independently editable ordered homepage service collections with admin persistence, tests and compact evidence.
 - Runtime boundary: local/CI synthetic only. No staging deployment/write, NDI, Dintero, notification, Notion, Telegram or customer submission is authorised.

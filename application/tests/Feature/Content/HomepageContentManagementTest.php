@@ -24,13 +24,14 @@ test('homepage seed publishes the current offer and source-backed customer revie
         ->assertSee('data-testid="business-contact-card"', false);
 });
 
-test('homepage follows the approved compact conversion order without duplicate story or trust blocks', function (): void {
+test('homepage keeps the stable offer anchor in the approved conversion order without duplicate story or trust blocks', function (): void {
     $response = $this->get('/')->assertOk();
 
     $response
         ->assertSeeInOrder([
             'class="et-v3-hero"',
             'data-testid="home-dekkhotell"',
+            'data-testid="homepage-promotions"',
             'data-testid="home-process"',
             'data-testid="home-prices"',
         ], false)
@@ -40,13 +41,15 @@ test('homepage follows the approved compact conversion order without duplicate s
     expect(substr_count($response->getContent(), 'et-v3-hero__primary-action'))->toBe(1);
 });
 
-test('homepage keeps draft promotions and all empty reviews out of public output while retaining the honest B2B contact CTA', function (): void {
+test('homepage keeps draft promotions out of public cards while retaining the useful empty offer state', function (): void {
     HomepagePromotion::create(homepagePromotionPayload(['publication_status' => ContentPageStatus::Draft, 'title_nb' => 'Ikke publisert tilbud']));
 
     $this->get('/')
         ->assertOk()
         ->assertSee('data-testid="business-contact-card"', false)
-        ->assertDontSee('data-testid="homepage-promotions"', false)
+        ->assertSee('data-testid="homepage-promotions"', false)
+        ->assertSee('data-testid="homepage-promotions-empty"', false)
+        ->assertDontSee('data-testid="homepage-promotion"', false)
         ->assertDontSee('data-testid="homepage-reviews"', false)
         ->assertDontSee('Ikke publisert tilbud');
 });
@@ -118,6 +121,34 @@ test('promotions accept only active image assets and safely lose their media whe
     expect($promotion->fresh()->load('mediaAsset')->mediaAsset)->toBeNull();
 });
 
+test('homepage offers render zero through five records with controls only above the desktop maximum', function (): void {
+    foreach (range(0, 5) as $count) {
+        HomepagePromotion::query()->forceDelete();
+        foreach (range(1, $count) as $position) {
+            if ($count === 0) {
+                break;
+            }
+
+            HomepagePromotion::query()->create(homepagePromotionPayload([
+                'sort_order' => $position,
+                'title_nb' => 'Tilbud '.$position,
+                'title_ru' => 'Предложение '.$position,
+            ]));
+        }
+
+        $response = $this->get('/')->assertOk();
+        expect(substr_count($response->getContent(), 'data-testid="homepage-promotion"'))->toBe($count);
+        if ($count === 0) {
+            $response->assertSee('data-testid="homepage-promotions-empty"', false);
+        }
+        if ($count <= 3) {
+            $response->assertDontSee('data-promotion-previous', false);
+        } else {
+            $response->assertSee('data-promotion-previous', false)->assertSee('data-promotion-next', false);
+        }
+    }
+});
+
 function homepagePromotionMedia(User $admin, string $name, string $mime, bool $active): MediaAsset
 {
     return MediaAsset::query()->create([
@@ -141,9 +172,11 @@ function homepagePromotionPayload(array $overrides = []): array
         'sort_order' => 1,
         'publication_status' => ContentPageStatus::Published,
         'title_nb' => 'Dekkhotell ved sesongskift',
+        'short_body_nb' => 'Kort forklaring av tilbudet.',
         'body_nb' => 'Avklar innhold og vilkår med EasyTire.',
         'cta_label_nb' => 'Se tjenester',
         'title_ru' => 'Хранение при сезонной замене',
+        'short_body_ru' => 'Краткое описание предложения.',
         'body_ru' => 'Условия согласует EasyTire.',
         'cta_label_ru' => 'Посмотреть услуги',
         'cta_url' => '/tjenester',

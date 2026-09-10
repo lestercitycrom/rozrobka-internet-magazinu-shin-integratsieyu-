@@ -60,7 +60,7 @@ test('storefront and admin consume one shared design foundation', function (): v
 
     $storefront = file_get_contents(resource_path('css/storefront-v3.css'));
     $contracts = file_get_contents(resource_path('css/storefront-contracts.css'));
-    $home = file_get_contents(resource_path('views/welcome.blade.php'));
+    $promotionPartial = file_get_contents(resource_path('views/storefront/_homepage-promotions.blade.php'));
 
     expect(substr_count($storefront, '.et-v3-process-strip {'))->toBe(1)
         ->and($storefront)->toContain('.et-v3-promotion-grid:has(> .et-v3-promotion:nth-child(2):last-child)')
@@ -72,9 +72,9 @@ test('storefront and admin consume one shared design foundation', function (): v
         ->toContain("[aria-disabled='true']")
         ->toContain('.storefront .et-footer.is-enhanced .et-footer__toggle')
         ->toContain('@media (hover: none), (max-width: 767px)')
-        ->and($home)
+        ->and($promotionPartial)
         ->toContain('class="et-v3-promotion__details"')
-        ->toContain('tabindex="0"')
+        ->toContain('data-promotion-disclosure')
         ->and($contracts)->toContain('.et-admin-body')
         ->and($contracts)->toContain('--radius-2xl: var(--et-radius-sharp);');
 });

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\HomepageBusinessPartnerController;
 use App\Http\Controllers\Admin\HomepagePromotionController;
 use App\Http\Controllers\Admin\HomepageRatingSummaryController;
 use App\Http\Controllers\Admin\HomepageReviewController;
+use App\Http\Controllers\Admin\HomepageServiceCardController;
 use App\Http\Controllers\Admin\Identity\AdminLoginController;
 use App\Http\Controllers\Admin\Identity\AdminSessionController;
 use App\Http\Controllers\Admin\ImportRunController;
@@ -83,6 +84,17 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::delete('/booking-calendar/blackouts/{blackout}', [BookingCalendarController::class, 'destroyBlackout'])->name('booking-calendar.blackouts.destroy');
         Route::resource('content-pages', ContentPageController::class)->except('show');
         Route::resource('homepage-promotions', HomepagePromotionController::class)->except('show');
+        Route::prefix('homepage-service-collections/{collection}')
+            ->whereIn('collection', ['additional', 'wheels'])
+            ->name('homepage-service-collections.')
+            ->group(function (): void {
+                Route::get('/', [HomepageServiceCardController::class, 'index'])->name('index');
+                Route::get('/create', [HomepageServiceCardController::class, 'create'])->name('create');
+                Route::post('/', [HomepageServiceCardController::class, 'store'])->name('store');
+                Route::get('/{homepageServiceCard}/edit', [HomepageServiceCardController::class, 'edit'])->name('edit');
+                Route::put('/{homepageServiceCard}', [HomepageServiceCardController::class, 'update'])->name('update');
+                Route::delete('/{homepageServiceCard}', [HomepageServiceCardController::class, 'destroy'])->name('destroy');
+            });
         Route::resource('homepage-reviews', HomepageReviewController::class)->except('show');
         Route::resource('homepage-rating-summaries', HomepageRatingSummaryController::class)->except('show');
         Route::resource('homepage-business-partners', HomepageBusinessPartnerController::class)->except('show');

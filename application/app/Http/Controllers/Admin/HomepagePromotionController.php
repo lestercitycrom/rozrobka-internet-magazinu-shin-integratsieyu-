@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Modules\Content\Enums\ContentPageStatus;
 use App\Modules\Content\Models\HomepagePromotion;
 use App\Modules\Content\Models\MediaAsset;
+use App\Support\PublicEditorialUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -37,7 +38,7 @@ final class HomepagePromotionController
 
     public function update(Request $request, HomepagePromotion $homepagePromotion): RedirectResponse
     {
-        $homepagePromotion->update($this->validated($request));
+        $homepagePromotion->update([...$this->validated($request), 'manifest_hash' => null]);
 
         return redirect()->route('admin.homepage-promotions.edit', $homepagePromotion)->with('status', __('admin.homepage_promotions.saved'));
     }
@@ -52,25 +53,24 @@ final class HomepagePromotionController
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $published = $request->input('publication_status') === ContentPageStatus::Published->value;
+        $validated = $request->validate([
             'sort_order' => ['required', 'integer', 'min:0', 'max:65535'],
             'publication_status' => ['required', Rule::enum(ContentPageStatus::class)],
             'title_nb' => ['required', 'string', 'max:255'],
-            'body_nb' => ['nullable', 'string', 'max:5000'],
-            'cta_label_nb' => ['nullable', 'string', 'max:120'],
+            'short_body_nb' => [Rule::requiredIf($published), 'nullable', 'string', 'max:1000'],
+            'body_nb' => [Rule::requiredIf($published), 'nullable', 'string', 'max:5000'],
+            'cta_label_nb' => [Rule::requiredIf($published), 'nullable', 'string', 'max:120'],
             'title_ru' => ['required', 'string', 'max:255'],
-            'body_ru' => ['nullable', 'string', 'max:5000'],
-            'cta_label_ru' => ['nullable', 'string', 'max:120'],
-            'cta_url' => ['nullable', 'string', 'max:2048', function (string $attribute, mixed $value, \Closure $fail): void {
+            'short_body_ru' => [Rule::requiredIf($published), 'nullable', 'string', 'max:1000'],
+            'body_ru' => [Rule::requiredIf($published), 'nullable', 'string', 'max:5000'],
+            'cta_label_ru' => [Rule::requiredIf($published), 'nullable', 'string', 'max:120'],
+            'cta_url' => [Rule::requiredIf($published), 'nullable', 'string', 'max:2048', function (string $attribute, mixed $value, \Closure $fail): void {
                 if ($value === null || trim((string) $value) === '') {
                     return;
                 }
 
-                $url = trim((string) $value);
-                $validRelativeUrl = str_starts_with($url, '/') && ! str_starts_with($url, '//');
-                $scheme = parse_url($url, PHP_URL_SCHEME);
-                $validExternalUrl = in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false;
-                if (! $validRelativeUrl && ! $validExternalUrl) {
+                if (! PublicEditorialUrl::isValid($value)) {
                     $fail(__('admin.homepage_promotions.invalid_url'));
                 }
             }],
@@ -90,6 +90,12 @@ final class HomepagePromotionController
                 }
             }],
         ]);
+
+        if (filled($validated['cta_url'] ?? null)) {
+            $validated['cta_url'] = trim($validated['cta_url']);
+        }
+
+        return $validated;
     }
 
     private function form(HomepagePromotion $promotion)
