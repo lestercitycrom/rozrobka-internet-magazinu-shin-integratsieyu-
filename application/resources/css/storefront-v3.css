@@ -1479,7 +1479,7 @@
     max-height: 0;
     overflow: hidden;
     opacity: 0;
-    transition: max-height var(--et-motion-standard), opacity var(--et-motion-standard);
+    transition: opacity var(--et-motion-standard);
 }
 
 .et-v3-promotion__details.is-open {

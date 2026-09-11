@@ -557,20 +557,11 @@ const initPromotionDisclosures = () => {
         let ambientSuppressed = false;
 
         const setOpen = (open) => {
-            const wasOpen = button.getAttribute('aria-expanded') === 'true';
-            const collapsedHeight = card.getBoundingClientRect().height;
             button.setAttribute('aria-expanded', String(open));
             panel.setAttribute('aria-hidden', String(!open));
             panel.setAttribute('tabindex', open ? '0' : '-1');
             panel.classList.toggle('is-open', open);
-            if (!open || hoverCapable.matches) {
-                card.style.removeProperty('min-height');
-            } else if (!wasOpen) {
-                const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-                const maximumVisibleDetails = rootFontSize * 13;
-                const visibleDetails = Math.min(panel.scrollHeight, maximumVisibleDetails);
-                card.style.minHeight = `${Math.ceil(collapsedHeight + visibleDetails + 4)}px`;
-            }
+            card.style.removeProperty('min-height');
             if (!open) panel.scrollTop = 0;
         };
 

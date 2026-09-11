@@ -18,12 +18,20 @@ async function expectContained(
     outer: import('@playwright/test').Locator,
     inner: import('@playwright/test').Locator,
 ): Promise<void> {
-    const outerBox = await outer.boundingBox();
-    const innerBox = await inner.boundingBox();
-    expect(outerBox).not.toBeNull();
-    expect(innerBox).not.toBeNull();
-    expect((innerBox?.x ?? 0) + (innerBox?.width ?? 0)).toBeLessThanOrEqual((outerBox?.x ?? 0) + (outerBox?.width ?? 0) + 2);
-    expect((innerBox?.y ?? 0) + (innerBox?.height ?? 0)).toBeLessThanOrEqual((outerBox?.y ?? 0) + (outerBox?.height ?? 0) + 2);
+    const outerElement = await outer.elementHandle();
+    if (!outerElement) throw new Error('Expected containment parent to exist.');
+    const geometry = await inner.evaluate((innerElement, outerNode) => {
+        const outerBox = (outerNode as Element).getBoundingClientRect();
+        const innerBox = innerElement.getBoundingClientRect();
+
+        return {
+            horizontalEnd: innerBox.right - outerBox.right,
+            verticalEnd: innerBox.bottom - outerBox.bottom,
+        };
+    }, outerElement);
+    await outerElement.dispose();
+    expect(geometry.horizontalEnd).toBeLessThanOrEqual(2);
+    expect(geometry.verticalEnd).toBeLessThanOrEqual(2);
 }
 
 test('offers and both independently managed service collections render in NB and RU', async ({ page }, testInfo) => {
