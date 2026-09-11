@@ -92,7 +92,6 @@
     [$homeStoreImage, $homeStoreImageAlt] = $sectionImage('homeStoreMedia', '/brand/workshop.webp', __('pro.content.workshop_image_alt'));
     [$hotelImage, $hotelImageAlt] = $sectionImage('hotelMedia', '/brand/dekkhotell.webp', __('pro.home.hotel_image_alt'));
     [$mobileImage, $mobileImageAlt] = $sectionImage('mobileMedia', '/brand/mobile-service.webp', __('pro.home.hero_image_alt'));
-    $promotionFallbackImages = [$homeStoreImage, $hotelImage, $mobileImage];
     $storedSocialLinks = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->socialLinks();
     $socialLinks = collect([
         ['label' => __('pro.home.social_facebook'), 'url' => $storedSocialLinks['facebook_url']],
@@ -104,6 +103,11 @@
     $homepageRatingSummaries = collect();
     $homepageBusinessPartners = collect();
     $homepagePriceGroups = collect();
+    $homepageServiceCollectionsInitialized = false;
+    $homepageServiceCollections = collect([
+        \App\Modules\Content\Enums\HomepageServiceCollection::Additional->value => collect(),
+        \App\Modules\Content\Enums\HomepageServiceCollection::Wheels->value => collect(),
+    ]);
     try {
         if (\Illuminate\Support\Facades\Schema::hasTable('homepage_promotions')) {
             $homepagePromotions = \App\Modules\Content\Models\HomepagePromotion::query()->published()->with('mediaAsset')->orderBy('sort_order')->orderBy('id')->get();
@@ -132,16 +136,42 @@
                 ->map(fn ($prices) => $prices->sortBy('price_minor')->first())
                 ->take(3);
         }
+        if (\Illuminate\Support\Facades\Schema::hasTable('homepage_service_cards')) {
+            $homepageServiceCollectionsInitialized = \App\Modules\Content\Models\HomepageServiceCard::query()->withTrashed()->exists();
+            foreach (\App\Modules\Content\Enums\HomepageServiceCollection::cases() as $collection) {
+                $homepageServiceCollections[$collection->value] = \App\Modules\Content\Models\HomepageServiceCard::query()
+                    ->publishedFor($collection)
+                    ->with(['servicePage.mediaAssignments.asset', 'mediaAsset'])
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->get();
+            }
+        }
     } catch (\Throwable) {
         $homepagePromotions = collect();
         $homepageReviews = collect();
         $homepageRatingSummaries = collect();
         $homepageBusinessPartners = collect();
         $homepagePriceGroups = collect();
+        $homepageServiceCollectionsInitialized = false;
+        $homepageServiceCollections = collect([
+            \App\Modules\Content\Enums\HomepageServiceCollection::Additional->value => collect(),
+            \App\Modules\Content\Enums\HomepageServiceCollection::Wheels->value => collect(),
+        ]);
     }
     $homepagePromotions = $homepagePromotions->filter(
         fn ($promotion) => filled($promotion->getAttribute('title_'.$homepageLocale))
             && filled($promotion->getAttribute('body_'.$homepageLocale))
+            && filled($promotion->getAttribute('cta_label_'.$homepageLocale))
+            && \App\Support\PublicEditorialUrl::isValid($promotion->cta_url)
+    );
+    $homepageServiceCollections = $homepageServiceCollections->map(
+        fn ($cards) => $cards->filter(
+            fn ($card) => filled($card->getAttribute('title_'.$homepageLocale))
+                && filled($card->getAttribute('description_'.$homepageLocale))
+                && filled($card->getAttribute('cta_label_'.$homepageLocale))
+                && ($card->servicePage !== null || \App\Support\PublicEditorialUrl::isValid($card->cta_url))
+        )->values()
     );
     $homepageReviews = $homepageReviews->filter(
         fn ($review) => filled($review->getAttribute('quote_'.$homepageLocale))
@@ -163,6 +193,7 @@
         }
 
         $slug = mb_strtolower((string) data_get($service, 'slug'));
+
         return match (true) {
             str_contains($slug, 'hotell') => '/brand/dekkhotell.webp',
             str_contains($slug, 'mobil') => '/brand/hero-mobile.webp',
@@ -170,6 +201,39 @@
             str_contains($slug, 'tesla'), str_contains($slug, 'elbil') => '/brand/mobile-service.webp',
             default => $index % 2 === 0 ? '/brand/workshop-alt.webp' : '/brand/exterior.webp',
         };
+    };
+    $promotionUrl = static fn ($promotion): ?string => \App\Support\PublicEditorialUrl::localized($promotion->cta_url, $homepageLocale);
+    $serviceCardUrl = static function ($card) use ($routePrefix, $homepageLocale): ?string {
+        $override = \App\Support\PublicEditorialUrl::localized($card->cta_url, $homepageLocale);
+        if ($override !== null) {
+            return $override;
+        }
+
+        $service = $card->servicePage;
+        if ($service === null) {
+            return null;
+        }
+
+        return route(
+            $routePrefix.($service->canonical_path ? 'seo-services.show' : 'services.show'),
+            $service->canonical_path ?: $service->slug,
+        );
+    };
+    $serviceCardMedia = static function ($card) use ($homepageLocale): ?array {
+        $asset = $card->mediaAsset;
+        if ($asset === null && $card->servicePage !== null) {
+            $asset = $card->servicePage->mediaAssignments
+                ->first(fn ($assignment) => $assignment->role === 'hero' && $assignment->asset?->is_active)
+                ?->asset;
+        }
+        if ($asset === null) {
+            return null;
+        }
+
+        return [
+            'url' => \Illuminate\Support\Facades\Storage::disk($asset->disk)->url($asset->path),
+            'alt' => $asset->getAttribute('alt_'.$homepageLocale) ?: '',
+        ];
     };
 @endphp
 
@@ -227,6 +291,50 @@
         </div>
     </section>
 
+    @include('storefront._homepage-promotions')
+
+    @include('storefront._homepage-service-collection', [
+        'cards' => $homepageServiceCollections[\App\Modules\Content\Enums\HomepageServiceCollection::Additional->value],
+        'collectionKey' => \App\Modules\Content\Enums\HomepageServiceCollection::Additional->value,
+        'headingId' => 'home-additional-services-title',
+        'testId' => 'homepage-additional-services',
+        'kicker' => __('pro.home.additional_services_kicker'),
+        'heading' => __('pro.home.additional_services_title'),
+        'description' => __('pro.home.additional_services_text'),
+    ])
+
+    @if (! $homepageServiceCollectionsInitialized && $homepageServiceCollections->flatten(1)->isEmpty() && $serviceCollection->isNotEmpty())
+        <section class="et-v3-section et-v3-section--services" aria-labelledby="home-services-title" data-testid="services-section">
+            <div class="et-container">
+                <div class="et-v3-section-head">
+                    <div>
+                        <p class="et-eyebrow">{{ __('pro.home.services_kicker') }}</p>
+                        <h2 class="et-h2" id="home-services-title">{{ __('pro.home.services_title') }}</h2>
+                        <p class="et-lead">{{ __('pro.home.services_text') }}</p>
+                    </div>
+                    <a class="et-v3-text-link" href="{{ route($routePrefix.'services.index') }}">{{ __('pro.home.services_all') }} <x-icon name="arrow" :size="18" /></a>
+                </div>
+
+                <div class="et-v3-service-grid">
+                    @foreach ($serviceCollection->take(6) as $index => $service)
+                        <article @class(['et-v3-service', 'et-v3-service--feature' => $index < 2])>
+                            @if ($index < 2)
+                                <img src="{{ $serviceImage($service, $index) }}" width="1200" height="900" loading="lazy" alt="">
+                                <span class="et-v3-service__shade" aria-hidden="true"></span>
+                            @endif
+                            <div class="et-v3-service__content">
+                                <span class="et-v3-service__number">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                <h3>{{ $service->title }}</h3>
+                                @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
+                                <a href="{{ $serviceUrl($service) }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     <section class="et-v3-process-strip" aria-labelledby="home-process-title" data-testid="home-process">
         <div class="et-container et-v3-process-strip__inner">
             <div class="et-v3-process-strip__head">
@@ -272,78 +380,15 @@
         </div>
     </section>
 
-    <span class="et-section-anchor" id="aktuelle-tilbud" aria-hidden="true"></span>
-    @if ($homepagePromotions->isNotEmpty())
-        <section class="et-v3-notices" aria-labelledby="home-promotions-title" data-testid="homepage-promotions">
-            <div class="et-container">
-                <div class="et-v3-section-head et-v3-section-head--compact">
-                    <div><p class="et-eyebrow">{{ __('pro.home.promotions_kicker') }}</p><h2 class="et-h3" id="home-promotions-title">{{ __('pro.home.promotions_title') }}</h2></div>
-                </div>
-                <div class="et-v3-promotion-grid">
-                    @foreach ($homepagePromotions as $promotion)
-                        @php
-                            $title = $promotion->getAttribute('title_'.$homepageLocale);
-                            $body = $promotion->getAttribute('body_'.$homepageLocale);
-                            $ctaLabel = $promotion->getAttribute('cta_label_'.$homepageLocale) ?: __('pro.home.promotion_link_fallback');
-                            $ctaUrl = $promotion->cta_url;
-                            $externalPromotion = is_string($ctaUrl) && str_starts_with($ctaUrl, 'http');
-                            $promotionAsset = $promotion->mediaAsset;
-                            $promotionImage = $promotionAsset
-                                ? \Illuminate\Support\Facades\Storage::disk($promotionAsset->disk)->url($promotionAsset->path)
-                                : $promotionFallbackImages[$loop->index % count($promotionFallbackImages)];
-                            $promotionAlt = $promotionAsset?->getAttribute('alt_'.$homepageLocale) ?: '';
-                        @endphp
-                        <article class="et-v3-promotion" data-testid="homepage-promotion" tabindex="0">
-                            <img src="{{ $promotionImage }}" width="1200" height="900" loading="lazy" alt="{{ $promotionAlt }}">
-                            <span class="et-v3-promotion__shade" aria-hidden="true"></span>
-                            <div class="et-v3-promotion__content">
-                                <span class="et-v3-promotion__number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                                <h3>{{ $title }}</h3>
-                                <div class="et-v3-promotion__details">
-                                    <p>{{ $body }}</p>
-                                    @if ($ctaUrl)<a href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>@endif
-                                </div>
-                            </div>
-                        </article>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-    @endif
-
-    @if ($serviceCollection->isNotEmpty())
-    <section class="et-v3-section et-v3-section--services" aria-labelledby="home-services-title" data-testid="services-section">
-        <div class="et-container">
-            <div class="et-v3-section-head">
-                <div>
-                    <p class="et-eyebrow">{{ __('pro.home.services_kicker') }}</p>
-                    <h2 class="et-h2" id="home-services-title">{{ __('pro.home.services_title') }}</h2>
-                    <p class="et-lead">{{ __('pro.home.services_text') }}</p>
-                </div>
-                <a class="et-v3-text-link" href="{{ route($routePrefix.'services.index') }}">{{ __('pro.home.services_all') }} <x-icon name="arrow" :size="18" /></a>
-            </div>
-
-            <div class="et-v3-service-grid">
-                @forelse ($serviceCollection->take(6) as $index => $service)
-                    <article @class(['et-v3-service', 'et-v3-service--feature' => $index < 2])>
-                        @if ($index < 2)
-                            <img src="{{ $serviceImage($service, $index) }}" width="1200" height="900" loading="lazy" alt="">
-                            <span class="et-v3-service__shade" aria-hidden="true"></span>
-                        @endif
-                        <div class="et-v3-service__content">
-                            <span class="et-v3-service__number">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                            <h3>{{ $service->title }}</h3>
-                            @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
-                            <a href="{{ $serviceUrl($service) }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
-                        </div>
-                    </article>
-                @empty
-                    <article class="et-card et-card--flat"><div class="et-card__body"><p class="et-copy">{{ __('pro.home.services_empty') }}</p></div></article>
-                @endforelse
-            </div>
-        </div>
-    </section>
-    @endif
+    @include('storefront._homepage-service-collection', [
+        'cards' => $homepageServiceCollections[\App\Modules\Content\Enums\HomepageServiceCollection::Wheels->value],
+        'collectionKey' => \App\Modules\Content\Enums\HomepageServiceCollection::Wheels->value,
+        'headingId' => 'home-wheel-services-title',
+        'testId' => 'homepage-wheel-services',
+        'kicker' => __('pro.home.wheel_services_kicker'),
+        'heading' => __('pro.home.wheel_services_title'),
+        'description' => __('pro.home.wheel_services_text'),
+    ])
 
     <section class="et-v3-section et-v3-section--white" aria-labelledby="home-store-title" data-testid="catalog-foundation">
         <div class="et-container et-v3-store">

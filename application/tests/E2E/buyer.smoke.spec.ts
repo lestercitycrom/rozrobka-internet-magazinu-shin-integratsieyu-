@@ -29,7 +29,7 @@ test('Norwegian storefront, catalog and product use stable scoped targets', asyn
     await expect(page).toHaveTitle('EasyTire | Dekk og felg i Tromsø');
     await expect(page.locator('html')).toHaveAttribute('lang', 'nb');
     await expect(page.getByRole('heading', { level: 1, name: 'Vi skifter hjul der bilen står.' })).toBeVisible();
-    await expect(page.getByTestId('services-section')).toBeVisible();
+    await expect(page.getByTestId('homepage-additional-services')).toBeVisible();
     const catalogFoundation = page.getByTestId('catalog-foundation');
     await expect(catalogFoundation.getByRole('heading', { level: 2, name: 'Dekk og felg som passer hverdagen din' })).toBeVisible();
     await expect(catalogFoundation.getByRole('tab', { name: 'Manuell størrelse', exact: true })).toBeVisible();

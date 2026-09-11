@@ -14,6 +14,7 @@
             ['key' => 'public_service_prices', 'route' => 'public-service-prices.index', 'patterns' => ['admin.public-service-prices.*']],
             ['key' => 'content', 'route' => 'content-pages.index', 'patterns' => ['admin.content-pages.*']],
             ['key' => 'homepage_promotions', 'route' => 'homepage-promotions.index', 'patterns' => ['admin.homepage-promotions.*']],
+            ['key' => 'homepage_service_collections', 'route' => 'homepage-service-collections.index', 'parameters' => ['collection' => 'additional'], 'patterns' => ['admin.homepage-service-collections.*']],
             ['key' => 'homepage_reviews', 'route' => 'homepage-reviews.index', 'patterns' => ['admin.homepage-reviews.*']],
             ['key' => 'homepage_ratings', 'route' => 'homepage-rating-summaries.index', 'patterns' => ['admin.homepage-rating-summaries.*']],
             ['key' => 'homepage_partners', 'route' => 'homepage-business-partners.index', 'patterns' => ['admin.homepage-business-partners.*']],
@@ -36,7 +37,7 @@
         <div class="et-admin-nav__label">{{ $groupLabel }}</div>
         @foreach ($items as $item)
             @php($active = collect($item['patterns'])->contains(fn ($pattern) => request()->routeIs($pattern)))
-            <a href="{{ route('admin.'.$item['route']) }}" data-testid="admin-nav-{{ $item['key'] }}" @if($active) aria-current="page" @endif>
+            <a href="{{ route('admin.'.$item['route'], $item['parameters'] ?? []) }}" data-testid="admin-nav-{{ $item['key'] }}" @if($active) aria-current="page" @endif>
                 <span>{{ __('admin_nav.'.$item['key']) }}</span>
             </a>
         @endforeach

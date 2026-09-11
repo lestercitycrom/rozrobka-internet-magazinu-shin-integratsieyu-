@@ -24,10 +24,10 @@
             </section>
             @foreach (['nb' => __('admin.homepage_promotions.locale_nb'), 'ru' => __('admin.homepage_promotions.locale_ru')] as $locale => $localeLabel)
                 <section class="easytire-card space-y-5 rounded-2xl p-5 sm:p-6"><h2 class="text-lg font-black">{{ $localeLabel }}</h2>
-                    @foreach (['title' => 'text', 'body' => 'textarea', 'cta_label' => 'text'] as $name => $type)
+                    @foreach (['title' => 'text', 'short_body' => 'textarea', 'body' => 'textarea', 'cta_label' => 'text'] as $name => $type)
                         @php($field = $name.'_'.$locale)
                         <label class="block text-sm font-bold" for="promotion-{{ $field }}">{{ __('admin.homepage_promotions.'.($name === 'title' ? 'field_title' : $name)) }}
-                            @if ($type === 'textarea')<textarea id="promotion-{{ $field }}" name="{{ $field }}" rows="4" class="easytire-input mt-2 w-full rounded-lg p-3">{{ old($field, $promotion->{$field}) }}</textarea>
+                            @if ($type === 'textarea')<textarea id="promotion-{{ $field }}" name="{{ $field }}" rows="{{ $name === 'body' ? 5 : 3 }}" class="easytire-input mt-2 w-full rounded-lg p-3">{{ old($field, $promotion->{$field}) }}</textarea>
                             @else<input id="promotion-{{ $field }}" @required($name === 'title') name="{{ $field }}" value="{{ old($field, $promotion->{$field}) }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">@endif
                         </label>
                     @endforeach

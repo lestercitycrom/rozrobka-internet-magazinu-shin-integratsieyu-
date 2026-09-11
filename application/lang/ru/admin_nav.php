@@ -9,6 +9,7 @@ return [
     'services' => 'Страницы услуг',
     'content' => 'Страницы содержимого',
     'homepage_promotions' => 'Предложения главной',
+    'homepage_service_collections' => 'Услуги на главной',
     'homepage_reviews' => 'Отзывы клиентов',
     'homepage_ratings' => 'Сводка рейтингов',
     'homepage_partners' => 'B2B-партнёры',

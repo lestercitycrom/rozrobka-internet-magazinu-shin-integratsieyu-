@@ -41,6 +41,7 @@ class E2eStorefrontSeeder extends Seeder
             SeoServicePageSeeder::class,
             CustomerWordingCorrectionSeeder::class,
             HomepageContentSeeder::class,
+            CustomerHomepageCollectionsSeeder::class,
             PublicServicePriceSeeder::class,
             ServiceAddonSeeder::class,
             E2eBookingCalendarSeeder::class,

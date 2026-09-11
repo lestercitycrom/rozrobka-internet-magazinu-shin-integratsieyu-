@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             ServiceAddonSeeder::class,
             SeoServicePageSeeder::class,
             CustomerWordingCorrectionSeeder::class,
+            CustomerHomepageCollectionsSeeder::class,
         ]);
     }
 }

@@ -478,6 +478,143 @@ const initRequestErrorFocus = () => {
     });
 };
 
+const initPromotionCarousels = () => {
+    all('[data-promotion-carousel]').forEach((root) => {
+        const track = one('[data-promotion-track]', root);
+        const cards = track ? all('[data-testid="homepage-promotion"]', track) : [];
+        const section = root.closest('[data-testid="homepage-promotions"]');
+        const previous = section ? one('[data-promotion-previous]', section) : null;
+        const next = section ? one('[data-promotion-next]', section) : null;
+        const status = one('[data-promotion-status]', root);
+        if (!track || cards.length <= 3 || !previous || !next) return;
+
+        let firstVisible = 0;
+        let resizeFrame = 0;
+        const visibleCount = () => {
+            if (window.matchMedia('(min-width: 1121px)').matches) return 3;
+            if (window.matchMedia('(min-width: 768px)').matches) return 2;
+            return 1;
+        };
+        const render = () => {
+            const visible = visibleCount();
+            const maximum = Math.max(0, cards.length - visible);
+            firstVisible = Math.min(Math.max(0, firstVisible), maximum);
+            root.style.setProperty('--cards-visible', String(visible));
+
+            const firstCard = cards[0];
+            const computedTrack = window.getComputedStyle(track);
+            const gap = Number.parseFloat(computedTrack.columnGap || computedTrack.gap || '0') || 0;
+            const step = firstCard.getBoundingClientRect().width + gap;
+            track.style.transform = `translate3d(-${firstVisible * step}px, 0, 0)`;
+            previous.disabled = firstVisible === 0;
+            next.disabled = firstVisible === maximum;
+
+            cards.forEach((card, index) => {
+                const visibleNow = index >= firstVisible && index < firstVisible + visible;
+                card.toggleAttribute('inert', !visibleNow);
+                card.setAttribute('aria-hidden', String(!visibleNow));
+            });
+
+            if (status) {
+                const range = visible === 1
+                    ? String(firstVisible + 1)
+                    : `${firstVisible + 1}–${Math.min(firstVisible + visible, cards.length)}`;
+                status.textContent = (status.dataset.statusTemplate || '')
+                    .replace('__CURRENT__', range)
+                    .replace('__TOTAL__', String(cards.length));
+            }
+        };
+
+        previous.addEventListener('click', () => {
+            firstVisible -= 1;
+            render();
+        });
+        next.addEventListener('click', () => {
+            firstVisible += 1;
+            render();
+        });
+        window.addEventListener('resize', () => {
+            window.cancelAnimationFrame(resizeFrame);
+            resizeFrame = window.requestAnimationFrame(render);
+        }, { passive: true });
+
+        root.classList.add('is-enhanced');
+        render();
+    });
+};
+
+const initPromotionDisclosures = () => {
+    all('[data-promotion-disclosure]').forEach((button) => {
+        const panelId = button.getAttribute('aria-controls');
+        const panel = panelId ? document.getElementById(panelId) : null;
+        const card = button.closest('[data-testid="homepage-promotion"]');
+        if (!panel || !card) return;
+
+        const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)');
+        let hovering = false;
+        let focused = false;
+        let pinnedOpen = false;
+        let ambientSuppressed = false;
+
+        const setOpen = (open) => {
+            button.setAttribute('aria-expanded', String(open));
+            panel.setAttribute('aria-hidden', String(!open));
+            panel.setAttribute('tabindex', open ? '0' : '-1');
+            panel.classList.toggle('is-open', open);
+            card.style.removeProperty('min-height');
+            if (!open) panel.scrollTop = 0;
+        };
+
+        const render = () => setOpen(pinnedOpen || (!ambientSuppressed && (hovering || focused)));
+
+        card.addEventListener('pointerenter', (event) => {
+            if (!hoverCapable.matches || event.pointerType === 'touch') return;
+            hovering = true;
+            ambientSuppressed = false;
+            render();
+        });
+        card.addEventListener('pointerleave', () => {
+            hovering = false;
+            if (!focused) ambientSuppressed = false;
+            render();
+        });
+        card.addEventListener('focusin', () => {
+            if (!focused && !hovering) ambientSuppressed = false;
+            focused = true;
+            render();
+        });
+        card.addEventListener('focusout', () => window.requestAnimationFrame(() => {
+            focused = card.matches(':focus-within');
+            if (!focused && !hovering) ambientSuppressed = false;
+            render();
+        }));
+        button.addEventListener('click', () => {
+            if (pinnedOpen) {
+                pinnedOpen = false;
+                ambientSuppressed = true;
+            } else {
+                pinnedOpen = true;
+                ambientSuppressed = false;
+            }
+            render();
+        });
+        card.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || button.getAttribute('aria-expanded') !== 'true') return;
+            event.preventDefault();
+            pinnedOpen = false;
+            ambientSuppressed = true;
+            setOpen(false);
+            button.focus();
+        });
+        hoverCapable.addEventListener('change', () => {
+            hovering = false;
+            if (!focused) ambientSuppressed = false;
+            render();
+        });
+        setOpen(false);
+    });
+};
+
 const initAdminSidebar = () => {
     const sidebar = one('[data-admin-sidebar]');
     const overlay = one('[data-admin-overlay]');
@@ -522,4 +659,6 @@ initTabs();
 initBookingFlow();
 initConditionalAddress();
 initRequestErrorFocus();
+initPromotionCarousels();
+initPromotionDisclosures();
 initAdminSidebar();
