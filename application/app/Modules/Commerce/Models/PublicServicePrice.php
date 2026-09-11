@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable([
     'code', 'category_code', 'category_title_nb', 'category_title_ru',
     'title_nb', 'title_ru', 'description_nb', 'description_ru',
-    'price_minor', 'currency', 'is_active', 'sort_order',
+    'price_minor', 'currency', 'is_active', 'sort_order', 'manifest_hash',
 ])]
 class PublicServicePrice extends Model
 {

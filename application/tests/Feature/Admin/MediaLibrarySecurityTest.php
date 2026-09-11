@@ -41,6 +41,21 @@ test('a valid raster image uploads to a randomized public media path', function 
     Storage::disk('public')->assertExists($asset->path);
 });
 
+test('an optimized homepage mp4 uploads as video without being treated as an image', function (): void {
+    Storage::fake('public');
+    $admin = User::factory()->operations()->create();
+    $mp4 = new UploadedFile(base_path('tests/Fixtures/one-frame.mp4'), '003-muzik.mp4', 'video/mp4', null, true);
+
+    $this->actingAs($admin)->post('/admin/media', ['image' => $mp4])->assertRedirect();
+
+    $asset = MediaAsset::query()->firstOrFail();
+    expect($asset->mime)->toBe('video/mp4')
+        ->and($asset->width)->toBe(0)
+        ->and($asset->height)->toBe(0)
+        ->and($asset->path)->toStartWith('media/');
+    Storage::disk('public')->assertExists($asset->path);
+});
+
 test('an assigned asset cannot be deleted', function (): void {
     Storage::fake('public');
     $admin = User::factory()->operations()->create();
@@ -58,7 +73,7 @@ test('supplier-managed media is visible but has no delete control', function ():
     Storage::disk('public')->put($path, 'fixture');
     MediaAsset::create(['disk' => 'public', 'path' => $path, 'original_name' => 'supplier.png', 'mime' => 'image/png', 'byte_size' => 7, 'width' => 1, 'height' => 1, 'sha256' => hash('sha256', $path), 'uploader_id' => null]);
 
-    $this->actingAs($admin)->get('/admin/media')->assertOk()->assertSee('Administrert av NDI')->assertDontSee('action="'.route('admin.media.destroy', 1).'"', false);
+    $this->actingAs($admin)->get('/admin/media')->assertOk()->assertSee(__('media_ui.supplier_managed'))->assertDontSee('action="'.route('admin.media.destroy', 1).'"', false);
 });
 
 test('an unassigned asset delete removes its public storage object', function (): void {

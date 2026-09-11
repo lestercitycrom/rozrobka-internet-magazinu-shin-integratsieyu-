@@ -25,12 +25,14 @@ final class MediaAssetController extends Controller
 
     public function store(Request $r)
     {
-        $r->validate(['image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'], 'alt_nb' => ['nullable', 'string', 'max:255'], 'alt_ru' => ['nullable', 'string', 'max:255']]);
+        $r->validate(['image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,mp4,webm', 'max:25600'], 'alt_nb' => ['nullable', 'string', 'max:255'], 'alt_ru' => ['nullable', 'string', 'max:255']]);
         $f = $r->file('image');
         $mime = $f->getMimeType();
-        abort_unless(in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true), 422);
-        [$w,$h] = getimagesize($f->getRealPath()) ?: [0, 0];
-        abort_if($w < 1 || $h < 1, 422);
+        $imageMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        $videoMimes = ['video/mp4', 'video/webm'];
+        abort_unless(in_array($mime, [...$imageMimes, ...$videoMimes], true), 422);
+        [$w, $h] = in_array($mime, $imageMimes, true) ? (getimagesize($f->getRealPath()) ?: [0, 0]) : [0, 0];
+        abort_if(in_array($mime, $imageMimes, true) && ($w < 1 || $h < 1), 422);
         $path = 'media/'.Str::random(40).'.'.$f->extension();
         Storage::disk('public')->putFileAs('media', $f, basename($path));
         MediaAsset::create(['disk' => 'public', 'path' => $path, 'original_name' => $f->getClientOriginalName(), 'mime' => $mime, 'byte_size' => $f->getSize(), 'width' => $w, 'height' => $h, 'sha256' => hash_file('sha256', $f->getRealPath()), 'alt_nb' => $r->input('alt_nb'), 'alt_ru' => $r->input('alt_ru'), 'uploader_id' => $r->user()->id]);

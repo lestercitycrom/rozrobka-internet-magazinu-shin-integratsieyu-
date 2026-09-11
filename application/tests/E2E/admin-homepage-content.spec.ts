@@ -4,6 +4,7 @@ import path from 'node:path';
 import { ensureAdminLocale, expectNoGlobalOverflow, loginAdmin } from './helpers';
 
 const evidenceDirectory = path.resolve(process.cwd(), '..', 'evidence', 'issue-46');
+const compositionEvidenceDirectory = path.resolve(process.cwd(), '..', 'evidence', 'issue-47');
 const requiredViewports = [
     { width: 1920, height: 1080 },
     { width: 1440, height: 1000 },
@@ -135,5 +136,37 @@ test('homepage content administration stays usable in NB and RU at every require
                 await page.screenshot({ path: path.join(evidenceDirectory, 'admin-promotion-form-320-nb.png'), fullPage: true });
             }
         }
+    }
+});
+
+test('administrator can manage the final homepage copy and video assignment at 1024x768', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await loginAdmin(page);
+    await page.goto('/admin/storefront-settings');
+
+    for (const selector of [
+        '#mobile_details_title_nb', '#mobile_details_body_1_nb', '#mobile_details_body_2_nb',
+        '#process_cta_nb', '#business_cta_nb', '#business_partners_heading_nb', '#contact_map_note_nb',
+        '#mobile_details_title_ru', '#process_cta_ru', '#business_cta_ru', '#business_partners_heading_ru', '#contact_map_note_ru',
+        '#hotel_video_media_asset_id',
+    ]) {
+        await expect(page.locator(selector)).toBeVisible();
+    }
+    await expect(page.locator('#hotel_video_media_asset_id')).toHaveValue(/.+/);
+    await expect(page.locator('#hotel_video_media_asset_id option:checked')).toContainText('e2e-homepage-loop.mp4');
+    await expect(page.locator('#mobile_details_title_nb')).toHaveValue('Dekkhotell uten stress');
+    await expect(page.locator('#process_cta_ru')).toHaveValue('Заказать сейчас!');
+    await expectNoGlobalOverflow(page);
+
+    await page.goto('/admin/media');
+    await expect(page.locator('input[type="file"][name="image"]')).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp,video/mp4,video/webm');
+    await expect(page.locator('video[src*="homepage-loop.mp4"]')).toBeVisible();
+    await expectNoGlobalOverflow(page);
+
+    if (process.env.CAPTURE_ISSUE_47 === '1') {
+        mkdirSync(compositionEvidenceDirectory, { recursive: true });
+        await page.screenshot({ path: path.join(compositionEvidenceDirectory, 'admin-media-video-1024x768.png'), fullPage: true });
+        await page.goto('/admin/storefront-settings');
+        await page.screenshot({ path: path.join(compositionEvidenceDirectory, 'admin-homepage-settings-1024x768.png'), fullPage: true });
     }
 });

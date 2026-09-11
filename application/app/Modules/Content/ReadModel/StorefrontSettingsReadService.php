@@ -15,7 +15,7 @@ final class StorefrontSettingsReadService
         }
 
         try {
-            return StorefrontSettings::query()->with(['heroMedia', 'homeStoreMedia', 'storyMedia', 'hotelMedia', 'mobileMedia'])->find(1);
+            return StorefrontSettings::query()->with(['heroMedia', 'homeStoreMedia', 'storyMedia', 'hotelMedia', 'mobileMedia', 'hotelVideoMedia'])->find(1);
         } catch (\Throwable) {
             return null;
         }

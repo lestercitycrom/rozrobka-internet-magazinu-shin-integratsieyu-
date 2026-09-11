@@ -15,10 +15,10 @@ test('storefront style is consistent across home, catalog and mobile controls', 
         expect(await radiusInPixels(booking)).toBe(2);
     }
 
-    const chooser = page.getByTestId('catalog-foundation');
-    await expect(chooser).toBeVisible();
-    const chooserRadius = await radiusInPixels(chooser.locator('.et-v3-store').first());
-    expect(chooserRadius).toBe(2);
+    const logistics = page.getByTestId('home-dekkhotell');
+    await expect(logistics).toBeVisible();
+    expect(await radiusInPixels(logistics.locator('.et-v3-logistics-card').first())).toBe(0);
+    await expect(page.getByTestId('catalog-foundation')).toHaveCount(0);
 
     await page.goto('/dekk');
     const filters = await ensureCatalogFiltersVisible(page);

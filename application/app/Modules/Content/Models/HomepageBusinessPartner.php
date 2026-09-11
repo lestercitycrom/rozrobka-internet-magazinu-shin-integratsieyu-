@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
     'name',
@@ -15,9 +16,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'website_url',
     'sort_order',
     'publication_status',
+    'content_key',
+    'manifest_hash',
 ])]
 final class HomepageBusinessPartner extends Model
 {
+    use SoftDeletes;
+
     protected function casts(): array
     {
         return [

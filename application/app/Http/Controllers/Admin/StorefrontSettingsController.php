@@ -13,8 +13,9 @@ final class StorefrontSettingsController
     public function edit(): View
     {
         return view('admin.storefront-settings.edit', [
-            'settings' => StorefrontSettings::query()->with(['heroMedia', 'homeStoreMedia', 'storyMedia', 'hotelMedia', 'mobileMedia'])->find(1) ?? new StorefrontSettings,
-            'assets' => MediaAsset::query()->where('is_active', true)->orderByDesc('created_at')->get(),
+            'settings' => StorefrontSettings::query()->with(['heroMedia', 'homeStoreMedia', 'storyMedia', 'hotelMedia', 'mobileMedia', 'hotelVideoMedia'])->find(1) ?? new StorefrontSettings,
+            'assets' => MediaAsset::query()->where('is_active', true)->whereIn('mime', ['image/jpeg', 'image/png', 'image/webp'])->orderByDesc('created_at')->get(),
+            'videoAssets' => MediaAsset::query()->where('is_active', true)->whereIn('mime', ['video/mp4', 'video/webm'])->orderByDesc('created_at')->get(),
             'defaults' => $this->defaults(),
         ]);
     }
@@ -73,12 +74,18 @@ final class StorefrontSettingsController
             "process_2_title_{$locale}" => $project('process_2_title'), "process_2_text_{$locale}" => $project('process_2_text'),
             "process_3_title_{$locale}" => $project('process_3_title'), "process_3_text_{$locale}" => $project('process_3_text'),
             "process_4_title_{$locale}" => $project('process_4_title'), "process_4_text_{$locale}" => $project('process_4_text'),
+            "process_cta_{$locale}" => $locale === 'ru' ? 'Заказать сейчас!' : 'Bestill nå!',
             "story_kicker_{$locale}" => $pro('story_kicker'), "story_title_{$locale}" => $pro('story_title'), "story_text_{$locale}" => $pro('story_text'), "story_quote_{$locale}" => $pro('story_quote'),
             "business_kicker_{$locale}" => $pro('business_kicker'), "business_title_{$locale}" => $project('business_title'), "business_text_{$locale}" => $project('business_text'), "business_proof_{$locale}" => $project('business_proof'),
+            "business_cta_{$locale}" => $locale === 'ru' ? 'Запросить предложение' : 'Be om et tilbud', "business_partners_heading_{$locale}" => $locale === 'ru' ? 'Некоторые компании, которым мы помогаем' : 'Noen av bedriftene vi hjelper',
             "logistics_kicker_{$locale}" => $pro('hero_proof_hotel').' · '.$pro('hero_proof_mobile'), "logistics_title_{$locale}" => $pro('location_title'),
             "hotel_kicker_{$locale}" => $pro('hotel_kicker'), "hotel_title_{$locale}" => $pro('hotel_title'), "hotel_text_{$locale}" => $pro('hotel_text'), "hotel_cta_{$locale}" => $pro('hotel_link'),
             "mobile_kicker_{$locale}" => $pro('mobile_kicker'), "mobile_title_{$locale}" => $pro('mobile_title'), "mobile_text_{$locale}" => $pro('mobile_text'), "mobile_cta_{$locale}" => $pro('mobile_link'),
+            "mobile_details_title_{$locale}" => $locale === 'ru' ? 'Шинный отель без хлопот' : 'Dekkhotell uten stress',
+            "mobile_details_body_1_{$locale}" => $locale === 'ru' ? 'С шинным отелем EasyTire вам не придётся самостоятельно поднимать, перевозить или хранить колёса. Когда наступит время сезонной замены, мы привезём нужный комплект к вашему автомобилю, заменим колёса на месте и заберём второй комплект обратно в шинный отель.' : 'Med dekkhotell hos EasyTire slipper du å løfte, frakte eller oppbevare hjulene selv. Når det er tid for sesongskifte, tar vi med riktig hjulsett til bilen din, skifter hjulene på stedet og tar med det andre settet tilbake til dekkhotellet.',
+            "mobile_details_body_2_{$locale}" => $locale === 'ru' ? 'Если шины изношены, мы можем заказать и установить новые, пока колёса находятся у нас. К следующей сезонной замене они будут готовы.' : 'Er dekkene utslitt, kan vi skaffe og montere nye dekk mens hjulene står hos oss. De er da klare til neste dekkskift.',
             "contact_kicker_{$locale}" => $pro('contact_kicker'), "contact_title_{$locale}" => $pro('contact_title'), "contact_text_{$locale}" => $pro('contact_text'),
+            "contact_map_note_{$locale}" => $locale === 'ru' ? 'Google Maps показывает правильный въезд через Ringvegen 202.' : 'Google Maps viser riktig innkjøring via Ringvegen 202.',
         ];
     }
 }

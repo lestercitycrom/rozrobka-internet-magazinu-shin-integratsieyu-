@@ -12,6 +12,7 @@ use App\Modules\Commerce\Enums\ServiceAddonBillingMode;
 use App\Modules\Commerce\Models\ServiceAddon;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\MediaAssignment;
+use App\Modules\Content\Models\StorefrontSettings;
 use App\Modules\NdiApi\NdiSandboxCatalogManager;
 use App\Modules\Orders\Enums\FulfilmentMethod;
 use App\Modules\Orders\Enums\NdiOrderStatus;
@@ -43,9 +44,11 @@ class E2eStorefrontSeeder extends Seeder
             HomepageContentSeeder::class,
             CustomerHomepageCollectionsSeeder::class,
             PublicServicePriceSeeder::class,
+            CustomerHomepageCompositionSeeder::class,
             ServiceAddonSeeder::class,
             E2eBookingCalendarSeeder::class,
         ]);
+        $this->seedHomepageVideoFixture();
 
         if (config('ndi_api.sandbox.enabled')) {
             app(NdiSandboxCatalogManager::class)->refresh();
@@ -209,6 +212,24 @@ class E2eStorefrontSeeder extends Seeder
             'authorized_at' => now(),
             'authorization_expires_at' => now()->addDays(7),
         ]);
+    }
+
+    private function seedHomepageVideoFixture(): void
+    {
+        $sourcePath = base_path('tests/Fixtures/homepage-loop.mp4');
+        $bytes = is_file($sourcePath) ? file_get_contents($sourcePath) : false;
+        if ($bytes === false) {
+            throw new LogicException('E2E homepage video fixture is unavailable.');
+        }
+
+        $path = 'media/homepage/e2e/homepage-loop.mp4';
+        Storage::disk('public')->put($path, $bytes);
+        $asset = MediaAsset::query()->updateOrCreate(['path' => $path], [
+            'disk' => 'public', 'original_name' => 'e2e-homepage-loop.mp4', 'mime' => 'video/mp4',
+            'byte_size' => strlen($bytes), 'width' => 640, 'height' => 426, 'sha256' => hash('sha256', $bytes),
+            'alt_nb' => null, 'alt_ru' => null, 'uploader_id' => null, 'is_active' => true,
+        ]);
+        StorefrontSettings::query()->whereKey(1)->update(['hotel_video_media_asset_id' => $asset->id]);
     }
 
     private function seedDemoProductMedia(SupplierSku $sku): void

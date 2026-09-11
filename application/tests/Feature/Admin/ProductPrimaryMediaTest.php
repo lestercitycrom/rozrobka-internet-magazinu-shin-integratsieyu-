@@ -30,11 +30,13 @@ test('admin attaches replaces and detaches product primary media', function () {
     $this->actingAs($admin)->delete('/admin/media/hero/product/'.$product->id)->assertRedirect();
     expect($product->fresh()->mediaAssignments()->count())->toBe(0);
 });
-test('inactive and missing media or invalid target are rejected', function () {
+test('inactive missing and non-image media or invalid targets are rejected', function () {
     $admin = User::factory()->operations()->create();
     $product = mediaProduct();
     $inactive = mediaFor($admin, ['is_active' => false]);
+    $video = mediaFor($admin, ['original_name' => 'homepage.mp4', 'mime' => 'video/mp4', 'width' => 0, 'height' => 0]);
     $this->actingAs($admin)->post('/admin/media/hero/product/'.$product->id, ['media_asset_id' => $inactive->id])->assertSessionHasErrors('media_asset_id');
+    $this->actingAs($admin)->post('/admin/media/hero/product/'.$product->id, ['media_asset_id' => $video->id])->assertSessionHasErrors('media_asset_id');
     $this->actingAs($admin)->post('/admin/media/hero/product/'.$product->id, ['media_asset_id' => 'missing'])->assertSessionHasErrors('media_asset_id');
     $this->actingAs($admin)->post('/admin/media/hero/nope/'.$product->id, ['media_asset_id' => $inactive->id])->assertNotFound();
 });

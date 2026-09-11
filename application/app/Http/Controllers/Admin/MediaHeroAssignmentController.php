@@ -14,7 +14,9 @@ final class MediaHeroAssignmentController extends Controller
 {
     public function store(Request $r, string $type, int $id)
     {
-        $d = $r->validate(['media_asset_id' => ['required', Rule::exists('media_assets', 'id')->where('is_active', true)]]);
+        $d = $r->validate(['media_asset_id' => ['required', Rule::exists('media_assets', 'id')->where(
+            static fn ($query) => $query->where('is_active', true)->where('mime', 'like', 'image/%'),
+        )]]);
         $model = $this->model($type, $id);
         $model->mediaAssignments()->updateOrCreate(['role' => $type === 'product' ? 'primary' : 'hero'], ['media_asset_id' => $d['media_asset_id']]);
 

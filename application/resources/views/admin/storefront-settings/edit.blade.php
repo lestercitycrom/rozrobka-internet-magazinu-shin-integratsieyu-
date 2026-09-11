@@ -8,9 +8,9 @@
             ];
         };
         $editorialSections = [
-            'process' => ['process_kicker', 'process_title', 'process_1_title', 'process_1_text', 'process_2_title', 'process_2_text', 'process_3_title', 'process_3_text', 'process_4_title', 'process_4_text'],
-            'logistics' => ['logistics_kicker', 'logistics_title', 'hotel_kicker', 'hotel_title', 'hotel_text', 'hotel_cta', 'mobile_kicker', 'mobile_title', 'mobile_text', 'mobile_cta'],
-            'contact_copy' => ['contact_kicker', 'contact_title', 'contact_text', 'business_kicker', 'business_title', 'business_text'],
+            'process' => ['process_kicker', 'process_title', 'process_lead', 'process_1_title', 'process_1_text', 'process_2_title', 'process_2_text', 'process_3_title', 'process_3_text', 'process_4_title', 'process_4_text', 'process_cta'],
+            'logistics' => ['logistics_kicker', 'logistics_title', 'hotel_kicker', 'hotel_title', 'hotel_text', 'hotel_cta', 'mobile_kicker', 'mobile_title', 'mobile_text', 'mobile_cta', 'mobile_details_title', 'mobile_details_body_1', 'mobile_details_body_2'],
+            'contact_copy' => ['contact_kicker', 'contact_title', 'contact_text', 'contact_map_note', 'business_kicker', 'business_title', 'business_text', 'business_cta', 'business_partners_heading'],
         ];
         $editorialLabel = static function (string $field): string {
             if (preg_match('/^process_([1-4])_(title|text)$/', $field, $matches) === 1) {
@@ -19,7 +19,7 @@
 
             return __('storefront_settings.'.$field);
         };
-        $isLongEditorial = static fn (string $field): bool => str_ends_with($field, '_text') || in_array($field, ['process_lead', 'story_quote'], true);
+        $isLongEditorial = static fn (string $field): bool => str_ends_with($field, '_text') || str_contains($field, '_body_') || in_array($field, ['process_lead', 'story_quote'], true);
     @endphp
 
     <div class="mx-auto max-w-5xl space-y-8">
@@ -160,6 +160,14 @@
                                 </select>
                             </label>
                         @endforeach
+                        <label class="block text-sm font-bold" for="hotel_video_media_asset_id">{{ __('storefront_settings.hotel_video_media') }}
+                            <select id="hotel_video_media_asset_id" name="hotel_video_media_asset_id" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
+                                <option value="">{{ __('storefront_settings.default_hotel_video_media') }}</option>
+                                @foreach ($videoAssets as $asset)
+                                    <option value="{{ $asset->id }}" @selected(old('hotel_video_media_asset_id', $settings->hotel_video_media_asset_id) === $asset->id)>{{ $asset->original_name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
                     </div>
                 </div>
             </section>

@@ -30,22 +30,11 @@ test('Norwegian storefront, catalog and product use stable scoped targets', asyn
     await expect(page.locator('html')).toHaveAttribute('lang', 'nb');
     await expect(page.getByRole('heading', { level: 1, name: 'Vi skifter hjul der bilen står.' })).toBeVisible();
     await expect(page.getByTestId('homepage-additional-services')).toBeVisible();
-    const catalogFoundation = page.getByTestId('catalog-foundation');
-    await expect(catalogFoundation.getByRole('heading', { level: 2, name: 'Dekk og felg som passer hverdagen din' })).toBeVisible();
-    await expect(catalogFoundation.getByRole('tab', { name: 'Manuell størrelse', exact: true })).toBeVisible();
+    const heroFinder = page.getByTestId('home-hero').getByTestId('quick-finder');
+    await expect(heroFinder).toBeVisible();
+    await expect(heroFinder.getByRole('tab')).toHaveCount(2);
+    await expect(page.getByTestId('catalog-foundation')).toHaveCount(0);
     await expectNoGlobalOverflow(page);
-
-    await catalogFoundation.getByRole('tab', { name: 'Manuell størrelse', exact: true }).click();
-    const tireFoundationLink = catalogFoundation.locator('[role="tabpanel"] a[href$="/dekk"]');
-    await expect(tireFoundationLink).toHaveCount(1);
-    await expect(tireFoundationLink).toBeVisible();
-    await expect(tireFoundationLink).toHaveCSS('transform', 'none');
-    if (!isMobileProject(testInfo.project.name)) {
-        const before = await tireFoundationLink.boundingBox();
-        await tireFoundationLink.hover();
-        await expect(tireFoundationLink).toHaveCSS('transform', 'none');
-        expect(await tireFoundationLink.boundingBox()).toEqual(before);
-    }
 
     await page.goto('/dekk');
     const form = await ensureCatalogFiltersVisible(page);

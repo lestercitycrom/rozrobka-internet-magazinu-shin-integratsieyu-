@@ -36,7 +36,10 @@ final class PublicServicePriceController
 
     public function update(Request $request, PublicServicePrice $publicServicePrice): RedirectResponse
     {
-        $publicServicePrice->update($this->validated($request, $publicServicePrice));
+        $publicServicePrice->update([
+            ...$this->validated($request, $publicServicePrice),
+            'manifest_hash' => null,
+        ]);
 
         return redirect()->route('admin.public-service-prices.edit', $publicServicePrice)->with('status', __('public_service_prices.saved'));
     }

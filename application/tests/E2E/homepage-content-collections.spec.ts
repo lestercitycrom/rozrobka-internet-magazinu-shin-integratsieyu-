@@ -90,7 +90,7 @@ test('offers and both independently managed service collections render in NB and
     await expect.poll(async () => details.evaluate((element) => {
         const style = getComputedStyle(element);
         return { maxHeight: style.maxHeight, opacity: Number(style.opacity) };
-    })).toEqual(supportsHover ? { maxHeight: '208px', opacity: 1 } : { maxHeight: '0px', opacity: 0 });
+    })).toEqual(supportsHover ? { maxHeight: '176px', opacity: 1 } : { maxHeight: '0px', opacity: 0 });
     if (supportsHover) {
         expect((await firstOffer.boundingBox())?.height).toBeCloseTo(initialCardHeight ?? 0, 2);
     }

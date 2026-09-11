@@ -92,6 +92,10 @@
     [$homeStoreImage, $homeStoreImageAlt] = $sectionImage('homeStoreMedia', '/brand/workshop.webp', __('pro.content.workshop_image_alt'));
     [$hotelImage, $hotelImageAlt] = $sectionImage('hotelMedia', '/brand/dekkhotell.webp', __('pro.home.hotel_image_alt'));
     [$mobileImage, $mobileImageAlt] = $sectionImage('mobileMedia', '/brand/mobile-service.webp', __('pro.home.hero_image_alt'));
+    $hotelVideoAsset = $storefrontSettings?->hotelVideoMedia;
+    $hotelVideoUrl = $hotelVideoAsset
+        ? \Illuminate\Support\Facades\Storage::disk($hotelVideoAsset->disk)->url($hotelVideoAsset->path)
+        : null;
     $storedSocialLinks = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->socialLinks();
     $socialLinks = collect([
         ['label' => __('pro.home.social_facebook'), 'url' => $storedSocialLinks['facebook_url']],
@@ -268,28 +272,48 @@
     <section class="et-v3-section et-v3-section--white et-v3-logistics" aria-labelledby="home-logistics-title" data-testid="home-dekkhotell">
         <div class="et-container">
             <div class="et-v3-section-head et-v3-section-head--compact"><div><p class="et-eyebrow">{{ $storefrontValue('logistics_kicker_'.$homepageLocale, __('pro.home.hero_proof_hotel').' · '.__('pro.home.hero_proof_mobile')) }}</p><h2 class="et-h2" id="home-logistics-title">{{ $storefrontValue('logistics_title_'.$homepageLocale, __('pro.home.dekkhotell_section_title')) }}</h2></div></div>
-            <div class="et-v3-editorial-grid">
-                <article class="et-v3-editorial">
+            <div class="et-v3-logistics-grid">
+                <article class="et-v3-logistics-card et-v3-logistics-card--image">
                     <img src="{{ $hotelImage }}" width="1000" height="1200" loading="eager" alt="{{ $hotelImageAlt }}">
-                    <div>
+                    <div class="et-v3-logistics-card__content">
                         <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('hotel_kicker_'.$homepageLocale, __('pro.home.hotel_kicker')) }}</p>
                         <h3>{{ $storefrontValue('hotel_title_'.$homepageLocale, __('pro.home.hotel_title')) }}</h3>
                         <p>{{ $storefrontValue('hotel_text_'.$homepageLocale, __('pro.home.hotel_text')) }}</p>
                         <a href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}">{{ $storefrontValue('hotel_cta_'.$homepageLocale, __('pro.home.hotel_link')) }} <x-icon name="arrow" :size="18" /></a>
                     </div>
                 </article>
-                <article class="et-v3-editorial">
-                    <img src="{{ $mobileImage }}" width="1200" height="900" loading="eager" alt="{{ $mobileImageAlt }}">
-                    <div>
-                        <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('mobile_kicker_'.$homepageLocale, __('pro.home.mobile_kicker')) }}</p>
+                <article class="et-v3-logistics-card et-v3-logistics-card--video">
+                    <div class="et-v3-logistics-media" data-homepage-video>
+                        <img class="et-v3-logistics-media__poster" src="{{ $mobileImage }}" width="1200" height="900" loading="eager" alt="{{ $mobileImageAlt }}">
+                        @if ($hotelVideoUrl)
+                            <video class="et-v3-logistics-media__video" src="{{ $hotelVideoUrl }}" poster="{{ $mobileImage }}" autoplay muted loop playsinline preload="metadata" aria-label="{{ __('project.home.hotel_video_label') }}" data-homepage-video-element></video>
+                            <button class="et-v3-logistics-media__control" type="button" aria-pressed="false" data-homepage-video-control data-pause-label="{{ __('project.home.video_pause') }}" data-play-label="{{ __('project.home.video_play') }}">{{ __('project.home.video_pause') }}</button>
+                        @endif
+                    </div>
+                    <div class="et-v3-logistics-card__content">
+                        <p class="et-eyebrow">{{ $storefrontValue('mobile_kicker_'.$homepageLocale, __('pro.home.mobile_kicker')) }}</p>
                         <h3>{{ $storefrontValue('mobile_title_'.$homepageLocale, __('pro.home.mobile_title')) }}</h3>
                         <p>{{ $storefrontValue('mobile_text_'.$homepageLocale, __('pro.home.mobile_text')) }}</p>
-                        <a href="{{ $bookingUrl }}?fulfilment=mobile">{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }} <x-icon name="arrow" :size="18" /></a>
+                        <button class="et-v3-text-link" type="button" aria-haspopup="dialog" data-dekkhotell-dialog-open>{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }} <x-icon name="arrow" :size="18" /></button>
+                        <noscript>
+                            <details class="et-v3-logistics-noscript"><summary>{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }}</summary><h4>{{ $storefrontValue('mobile_details_title_'.$homepageLocale, __('pro.home.dekkhotell_section_title')) }}</h4><p>{{ $storefrontValue('mobile_details_body_1_'.$homepageLocale, '') }}</p><p>{{ $storefrontValue('mobile_details_body_2_'.$homepageLocale, '') }}</p></details>
+                        </noscript>
                     </div>
                 </article>
             </div>
         </div>
     </section>
+
+    <dialog class="et-v3-dialog" aria-labelledby="dekkhotell-dialog-title" data-dekkhotell-dialog>
+        <div class="et-v3-dialog__surface">
+            <button class="et-v3-dialog__close" type="button" aria-label="{{ __('project.home.dialog_close') }}" data-dekkhotell-dialog-close>×</button>
+            <p class="et-eyebrow">{{ $storefrontValue('logistics_kicker_'.$homepageLocale, __('pro.home.hotel_kicker')) }}</p>
+            <h2 id="dekkhotell-dialog-title">{{ $storefrontValue('mobile_details_title_'.$homepageLocale, __('pro.home.dekkhotell_section_title')) }}</h2>
+            <p>{{ $storefrontValue('mobile_details_body_1_'.$homepageLocale, '') }}</p>
+            <p>{{ $storefrontValue('mobile_details_body_2_'.$homepageLocale, '') }}</p>
+            <a class="et-btn et-btn--primary" href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}">{{ $storefrontValue('hotel_cta_'.$homepageLocale, __('pro.home.hotel_link')) }}</a>
+        </div>
+    </dialog>
 
     @include('storefront._homepage-promotions')
 
@@ -344,18 +368,19 @@
             </div>
             <div class="et-v3-process">
                 @foreach ([
-                    ['search', $storefrontValue('process_1_title_'.$homepageLocale, __('project.home.process_1_title')), $storefrontValue('process_1_text_'.$homepageLocale, __('project.home.process_1_text'))],
-                    ['calendar', $storefrontValue('process_2_title_'.$homepageLocale, __('project.home.process_2_title')), $storefrontValue('process_2_text_'.$homepageLocale, __('project.home.process_2_text'))],
-                    ['tire', $storefrontValue('process_3_title_'.$homepageLocale, __('project.home.process_3_title')), $storefrontValue('process_3_text_'.$homepageLocale, __('project.home.process_3_text'))],
-                    ['check', $storefrontValue('process_4_title_'.$homepageLocale, __('project.home.process_4_title')), $storefrontValue('process_4_text_'.$homepageLocale, __('project.home.process_4_text'))],
+                    ['calendar-location', $storefrontValue('process_1_title_'.$homepageLocale, __('project.home.process_1_title')), $storefrontValue('process_1_text_'.$homepageLocale, __('project.home.process_1_text'))],
+                    ['calendar-check', $storefrontValue('process_2_title_'.$homepageLocale, __('project.home.process_2_title')), $storefrontValue('process_2_text_'.$homepageLocale, __('project.home.process_2_text'))],
+                    ['mobile-wrench', $storefrontValue('process_3_title_'.$homepageLocale, __('project.home.process_3_title')), $storefrontValue('process_3_text_'.$homepageLocale, __('project.home.process_3_text'))],
+                    ['payment-check', $storefrontValue('process_4_title_'.$homepageLocale, __('project.home.process_4_title')), $storefrontValue('process_4_text_'.$homepageLocale, __('project.home.process_4_text'))],
                 ] as $index => [$stepIcon, $stepTitle, $stepText])
                     <article class="et-v3-process__step">
-                        <span class="et-v3-process__icon"><x-icon :name="$stepIcon" :size="24" /></span>
-                        <small>{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</small>
+                        <span class="et-v3-process__icon"><x-icon :name="$stepIcon" :size="58" /></span>
+                        <small>{{ $index + 1 }}</small>
                         <div><h3>{{ $stepTitle }}</h3><p>{{ $stepText }}</p></div>
                     </article>
                 @endforeach
             </div>
+            <a class="et-btn et-btn--primary et-v3-process-strip__cta" href="{{ $bookingUrl }}?fulfilment=mobile">{{ $storefrontValue('process_cta_'.$homepageLocale, __('project.home.process_cta')) }} <x-icon name="arrow" :size="18" /></a>
         </div>
     </section>
 
@@ -369,7 +394,7 @@
                 @forelse ($homepagePriceGroups as $price)
                     <a href="{{ route($routePrefix.'pricing.index') }}">
                         <span>{{ $price->localized('category_title', $homepageLocale) }}</span>
-                        <strong><small>{{ __('pro.home.price_from') }}</small> {{ number_format($price->price_minor / 100, 0, ',', ' ') }} {{ $price->currency }}</strong>
+                        <strong><small>{{ __('pro.home.price_from') }}</small> {{ number_format($price->price_minor / 100, 0, ',', ' ') }} kr</strong>
                         <x-icon name="arrow" :size="18" />
                     </a>
                 @empty
@@ -389,51 +414,6 @@
         'heading' => __('pro.home.wheel_services_title'),
         'description' => __('pro.home.wheel_services_text'),
     ])
-
-    <section class="et-v3-section et-v3-section--white" aria-labelledby="home-store-title" data-testid="catalog-foundation">
-        <div class="et-container et-v3-store">
-            <div class="et-v3-store__media">
-                <img src="{{ $homeStoreImage }}" width="1500" height="1000" loading="lazy" alt="{{ $homeStoreImageAlt }}">
-                <div class="et-v3-store__caption">
-                    <p class="et-eyebrow et-eyebrow--light">{{ __('pro.home.store_kicker') }}</p>
-                    <h2 class="et-h2" id="home-store-title">{{ __('pro.home.store_title') }}</h2>
-                    <p>{{ __('pro.home.store_text') }}</p>
-                </div>
-            </div>
-
-            <div class="et-v3-store__tools" data-tabs>
-                <p class="et-eyebrow">{{ __('pro.home.start_here') }}</p>
-                <h3>{{ __('pro.home.search_registration') }}</h3>
-                    <div class="et-search-tabs" role="tablist" aria-label="{{ __('pro.home.store_title') }}">
-                        <button id="home-tab-registration" type="button" role="tab" aria-selected="true" aria-controls="home-panel-registration">{{ __('pro.home.tab_registration') }}</button>
-                        <button id="home-tab-manual" type="button" role="tab" aria-selected="false" aria-controls="home-panel-manual" tabindex="-1">{{ __('pro.home.tab_manual') }}</button>
-                    </div>
-
-                    <div id="home-panel-registration" role="tabpanel" aria-labelledby="home-tab-registration">
-                        <form method="POST" action="{{ route($routePrefix.'store.lookup') }}">
-                            @csrf
-                            <label class="et-label" for="home-registration">{{ __('pro.home.registration_label') }}</label>
-                            <div class="et-reg-search">
-                                <div class="et-reg-input">
-                                    <input class="et-input" id="home-registration" name="registration" required maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="{{ __('pro.home.registration_placeholder') }}">
-                                </div>
-                                <button class="et-btn et-btn--primary" type="submit">{{ __('pro.home.registration_submit') }} <x-icon name="arrow" :size="18" /></button>
-                            </div>
-                            <p class="et-help">{{ __('pro.home.registration_help') }}</p>
-                        </form>
-                    </div>
-
-                    <div id="home-panel-manual" role="tabpanel" aria-labelledby="home-tab-manual" hidden>
-                        <p class="et-copy">{{ __('pro.home.manual_text') }}</p>
-                        <div class="et-shop-links">
-                            <a class="et-shop-link" href="{{ route($routePrefix.'tires.index') }}"><strong>{{ __('pro.home.manual_tires') }}</strong><small>{{ __('storefront.width') }} · {{ __('storefront.aspect') }} · {{ __('storefront.rim') }}</small></a>
-                            <a class="et-shop-link" href="{{ route($routePrefix.'wheels.index') }}"><strong>{{ __('pro.home.manual_wheels') }}</strong><small>{{ __('storefront.diameter') }} · {{ __('storefront.pcd') }} · {{ __('storefront.offset') }}</small></a>
-                            <a class="et-shop-link" href="{{ route($routePrefix.'store.index') }}"><strong>{{ __('fitment.nav') }}</strong><small>{{ __('fitment.notice') }}</small></a>
-                        </div>
-                    </div>
-            </div>
-        </div>
-    </section>
 
     @if ($homepageReviews->isNotEmpty() || $homepageRatingSummaries->isNotEmpty())
         <section class="et-v3-section et-v3-section--soft" aria-labelledby="home-reviews-title" data-testid="homepage-reviews">
@@ -478,14 +458,15 @@
     @endif
 
     <section class="et-v3-contact" aria-labelledby="home-contact-title">
-        <div class="et-container et-v3-contact__grid">
-            <div class="et-v3-contact__content">
+        <div class="et-container">
+            <div class="et-v3-contact__grid">
+              <div class="et-v3-contact__content">
                 <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('contact_kicker_'.$homepageLocale, __('pro.home.contact_kicker')) }}</p>
                 <h2 class="et-h2" id="home-contact-title">{{ $storefrontValue('contact_title_'.$homepageLocale, __('pro.home.contact_title')) }}</h2>
                 <p class="et-lead et-lead--light">{{ $storefrontValue('contact_text_'.$homepageLocale, __('pro.home.contact_text')) }}</p>
                 <a class="et-v3-contact__line" href="tel:{{ $phoneHref }}"><x-icon name="phone" :size="22" /><span><small>{{ __('pro.content.phone') }}</small><strong>{{ $phoneDisplay }}</strong></span></a>
                 <a class="et-v3-contact__line" href="mailto:{{ $contactEmail }}"><span class="et-v3-contact__at">@</span><span><small>{{ __('pro.content.email') }}</small><strong>{{ $contactEmail }}</strong></span></a>
-                <a class="et-v3-contact__line" href="{{ $mapUrl }}" target="_blank" rel="noopener"><x-icon name="location" :size="22" /><span><small>{{ __('pro.content.address') }}</small><strong>{{ $businessAddress }}</strong><em>{{ __('project.contact.map_pin_note', ['address' => $mapPinAddress]) }}</em></span></a>
+                <a class="et-v3-contact__line" href="{{ $mapUrl }}" target="_blank" rel="noopener"><x-icon name="location" :size="22" /><span><small>{{ __('pro.content.address') }}</small><strong>{{ $businessAddress }}</strong><em>{{ $storefrontValue('contact_map_note_'.$homepageLocale, __('project.contact.map_pin_note', ['address' => $mapPinAddress])) }}</em></span></a>
                 @if ($socialLinks->isNotEmpty())
                     <nav class="et-v3-socials" aria-label="{{ __('pro.home.social_label') }}" data-testid="homepage-social-links">
                         @foreach ($socialLinks as $social)
@@ -493,13 +474,37 @@
                         @endforeach
                     </nav>
                 @endif
-                <article class="et-v3-contact__business" data-testid="business-contact-card">
-                    <div><small>{{ $storefrontValue('business_kicker_'.$homepageLocale, __('pro.home.business_kicker')) }}</small><strong>{{ $storefrontValue('business_title_'.$homepageLocale, __('project.home.business_title')) }}</strong><p>{{ $storefrontValue('business_text_'.$homepageLocale, __('project.home.business_text')) }}</p></div>
-                    <a href="{{ $contactUrl }}">{{ __('project.home.business_link') }} <x-icon name="arrow" :size="16" /></a>
-                </article>
+              </div>
+              <div class="et-map" data-map-card data-testid="map-card">
+                @if ($mapEmbedUrl !== null)
+                    <iframe class="et-map__frame" src="{{ $mapEmbedUrl }}" title="{{ __('pro.content.map_ready_title') }}" referrerpolicy="no-referrer-when-downgrade" allowfullscreen data-testid="map-iframe"></iframe>
+                    <div class="et-map__loaded">
+                        <h3 class="et-h3">{{ __('pro.content.map_ready_title') }}</h3>
+                        <p>{{ __('pro.content.map_ready_text') }}</p>
+                        <a class="et-btn et-btn--primary" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.content.map_link') }}</a>
+                    </div>
+                @else
+                    <div class="et-map__card">
+                        <div class="et-map__pin" aria-hidden="true"><x-icon name="location" :size="24" /></div>
+                        <h3 class="et-h3">{{ __('pro.content.map_title') }}</h3>
+                        <p>{{ __('pro.content.map_privacy') }}</p>
+                        <a class="et-btn et-btn--primary et-btn--full" href="{{ $mapUrl }}" target="_blank" rel="noopener" data-testid="map-external-only">{{ __('pro.content.map_options') }}</a>
+                        <a class="et-btn et-btn--link" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.home.map') }}</a>
+                    </div>
+                @endif
+              </div>
+            </div>
+
+            <article class="et-v3-contact__business" data-testid="business-contact-card">
+                <div class="et-v3-contact__business-copy">
+                    <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('business_kicker_'.$homepageLocale, __('pro.home.business_kicker')) }}</p>
+                    <h3>{{ $storefrontValue('business_title_'.$homepageLocale, __('project.home.business_title')) }}</h3>
+                    <p>{{ $storefrontValue('business_text_'.$homepageLocale, __('project.home.business_text')) }}</p>
+                    <a class="et-btn et-btn--primary" href="{{ $contactUrl }}">{{ $storefrontValue('business_cta_'.$homepageLocale, __('project.home.business_link')) }} <x-icon name="arrow" :size="16" /></a>
+                </div>
                 @if ($homepageBusinessPartners->isNotEmpty())
                     <div class="et-v3-partners et-v3-partners--contact" data-testid="homepage-business-partners">
-                        <p>{{ __('pro.home.partners_label') }}</p>
+                        <h4>{{ $storefrontValue('business_partners_heading_'.$homepageLocale, __('pro.home.partners_label')) }}</h4>
                         <div>
                             @foreach ($homepageBusinessPartners as $partner)
                                 @php
@@ -517,25 +522,7 @@
                         </div>
                     </div>
                 @endif
-            </div>
-            <div class="et-map" data-map-card data-testid="map-card">
-                @if ($mapEmbedUrl !== null)
-                    <iframe class="et-map__frame" src="{{ $mapEmbedUrl }}" title="{{ __('pro.content.map_ready_title') }}" referrerpolicy="no-referrer-when-downgrade" allowfullscreen data-testid="map-iframe"></iframe>
-                    <div class="et-map__loaded">
-                        <h3 class="et-h3">{{ __('pro.content.map_ready_title') }}</h3>
-                        <p>{{ __('pro.content.map_ready_text') }}</p>
-                        <a class="et-btn et-btn--primary" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.content.map_link') }}</a>
-                    </div>
-                @else
-                    <div class="et-map__card">
-                        <div class="et-map__pin" aria-hidden="true"><x-icon name="location" :size="24" /></div>
-                        <h3 class="et-h3">{{ __('pro.content.map_title') }}</h3>
-                        <p>{{ __('pro.content.map_privacy') }}</p>
-                        <a class="et-btn et-btn--primary et-btn--full" href="{{ $mapUrl }}" target="_blank" rel="noopener" data-testid="map-external-only">{{ __('pro.content.map_options') }}</a>
-                        <a class="et-btn et-btn--link" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.home.map') }}</a>
-                    </div>
-                @endif
-            </div>
+            </article>
         </div>
     </section>
 </x-layouts.storefront>

@@ -21,8 +21,9 @@ class ExampleTest extends TestCase
 
         $response->assertOk()
             ->assertSee('EasyTire | Dekk og felg i Tromsø', false)
-            ->assertSee('Dekk og felg som passer hverdagen din')
-            ->assertSee('Velg kategori og filtrer deg frem')
+            ->assertSee(__('pro.home.hero_title'))
+            ->assertSee('data-testid="quick-finder"', false)
+            ->assertSee(__('pro.home.finder_registration_tab'))
             ->assertSee('Dekkskift hjemme hos deg')
             ->assertSee('lang="nb"', false);
     }

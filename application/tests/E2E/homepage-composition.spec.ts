@@ -1,0 +1,155 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { expect, test } from '@playwright/test';
+import { expectNoGlobalOverflow, isRussianProject, localePrefix } from './helpers';
+
+const evidenceRoot = path.resolve(process.cwd(), '..', 'evidence', 'issue-47');
+
+const composition = [
+    '[data-testid="home-hero"]',
+    '[data-testid="home-dekkhotell"]',
+    '[data-testid="homepage-promotions"]',
+    '[data-testid="homepage-additional-services"]',
+    '[data-testid="home-process"]',
+    '[data-testid="home-prices"]',
+    '[data-testid="homepage-wheel-services"]',
+    '[data-testid="homepage-reviews"]',
+    '.et-v3-contact',
+    '.et-footer',
+];
+
+const viewports = [
+    { width: 1920, height: 1080 },
+    { width: 1440, height: 900 },
+    { width: 1366, height: 768 },
+    { width: 1280, height: 800 },
+    { width: 800, height: 900 },
+    { width: 390, height: 844 },
+    { width: 320, height: 800 },
+];
+
+test('customer-approved homepage composition, copy and local partner media render in both QA locales', async ({ page }, testInfo) => {
+    const prefix = localePrefix(testInfo.project.name);
+    const russian = isRussianProject(testInfo.project.name);
+    await page.goto(prefix || '/');
+
+    const positions = await page.evaluate((selectors) => selectors.map((selector) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        return { selector, top: element?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY };
+    }), composition);
+    positions.forEach(({ top, selector }) => expect(top, `${selector} must exist`).toBeLessThan(Number.POSITIVE_INFINITY));
+    for (let index = 1; index < positions.length; index += 1) {
+        expect(positions[index].top, `${positions[index].selector} must follow ${positions[index - 1].selector}`).toBeGreaterThan(positions[index - 1].top);
+    }
+
+    await expect(page.getByTestId('catalog-foundation')).toHaveCount(0);
+    await expect(page.getByTestId('home-dekkhotell')).toContainText(russian ? 'Шинный отель без хлопот' : 'Dekkhotell uten stress');
+    await expect(page.getByTestId('home-process')).toContainText(russian ? 'Оплатите после выполнения' : 'Betal etterpå');
+    await expect(page.getByTestId('home-process')).toContainText(russian ? 'Заказать сейчас!' : 'Bestill nå!');
+    await expect(page.getByTestId('home-prices')).toContainText('700 kr');
+    await expect(page.getByTestId('business-contact-card')).toContainText(russian ? 'Локальный партнёр для компаний с автопарком' : 'En lokal partner for bedrifter med bilpark');
+    await expect(page.locator('.et-v3-contact__line').filter({ hasText: 'Ringvegen 200' })).toContainText('Ringvegen 202');
+
+    const partners = page.getByTestId('homepage-business-partners');
+    await expect(partners.locator('a')).toHaveCount(4);
+    await partners.scrollIntoViewIfNeeded();
+    for (const [name, href] of [
+        ['Nordic Spas', 'https://www.nordicspas.no/'],
+        ['Element NOR', 'https://elementnor.no/'],
+        ['Carsoe', 'https://carsoe.com/'],
+        ['Avis', 'https://www.avis.no/'],
+    ]) {
+        const partner = partners.locator(`a[aria-label="${name}"]`);
+        await expect(partner).toHaveAttribute('href', href);
+        const image = partner.locator('img');
+        await expect(image).toBeVisible();
+        await expect.poll(
+            () => image.evaluate((node: HTMLImageElement) => node.naturalWidth),
+            { message: `${name} logo must load from local storage` },
+        ).toBeGreaterThan(0);
+        await expect(image).toHaveAttribute('src', /^\/storage\/media\/homepage\/issue-47\//);
+    }
+    await expectNoGlobalOverflow(page);
+});
+
+test('homepage detail dialog is keyboard operable and returns focus', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'The native dialog contract only needs one browser pass');
+    await page.goto('/');
+    const opener = page.locator('[data-dekkhotell-dialog-open]');
+    const dialog = page.locator('[data-dekkhotell-dialog]');
+    await opener.focus();
+    await page.keyboard.press('Enter');
+    await expect(dialog).toHaveJSProperty('open', true);
+    await expect(dialog).toContainText('Med dekkhotell hos EasyTire slipper du å løfte, frakte eller oppbevare hjulene selv.');
+    await expect(dialog.locator('[data-dekkhotell-dialog-close]')).toBeFocused();
+    for (let index = 0; index < 5; index += 1) {
+        await page.keyboard.press('Tab');
+        expect(await dialog.evaluate((element) => element === document.activeElement || element.contains(document.activeElement))).toBeTruthy();
+    }
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveJSProperty('open', false);
+    await expect(opener).toBeFocused();
+});
+
+test('homepage video autoplays muted, can be paused and respects reduced motion', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic media pass is sufficient');
+    await page.goto('/');
+    const video = page.locator('[data-homepage-video-element]');
+    const control = page.locator('[data-homepage-video-control]');
+    await expect(video).toBeVisible();
+    await expect(video).toHaveJSProperty('muted', true);
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeFalsy();
+    await control.click();
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeTruthy();
+    await expect(control).toHaveAttribute('aria-pressed', 'true');
+    await control.click();
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeFalsy();
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.reload();
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => ({ paused: node.paused, currentTime: node.currentTime })))
+        .toEqual({ paused: true, currentTime: 0 });
+    await expect(control).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('homepage video failure keeps the poster and copy usable', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic media failure pass is sufficient');
+    await page.route('**/storage/media/homepage/e2e/homepage-loop.mp4', (route) => route.abort('failed'));
+    await page.goto('/');
+    const root = page.locator('[data-homepage-video]');
+    await expect(root).toHaveClass(/has-video-error/);
+    await expect(root.locator('.et-v3-logistics-media__poster')).toBeVisible();
+    await expect(root.locator('[data-homepage-video-element]')).toBeHidden();
+    await expect(root.locator('[data-homepage-video-control]')).toBeHidden();
+    await expect(page.getByTestId('home-dekkhotell')).toContainText('Vi ordner hele hjulskiftet.');
+});
+
+test('homepage cards keep the intended 4/2/1 responsive structure at the acceptance widths', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
+    test.setTimeout(180_000);
+    const measurements: Record<string, unknown>[] = [];
+    if (process.env.CAPTURE_ISSUE_47 === '1') await mkdir(evidenceRoot, { recursive: true });
+
+    for (const viewport of viewports) {
+        await page.setViewportSize(viewport);
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        const steps = page.locator('.et-v3-process__step');
+        const processGrid = page.locator('.et-v3-process');
+        const partnerGrid = page.getByTestId('homepage-business-partners').locator(':scope > div');
+        await expect(steps).toHaveCount(4);
+        await expectNoGlobalOverflow(page);
+        const columns = await processGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
+        expect(columns).toBe(viewport.width <= 640 ? 1 : viewport.width <= 900 ? 2 : 4);
+        expect(await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length)).toBe(2);
+        const stepHeights = await steps.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().height)));
+        expect(Math.max(...stepHeights) - Math.min(...stepHeights)).toBeLessThanOrEqual(1);
+        measurements.push({ viewport, columns, stepHeights });
+
+        if (process.env.CAPTURE_ISSUE_47 === '1') {
+            await page.screenshot({ path: path.join(evidenceRoot, `homepage-${viewport.width}x${viewport.height}.jpg`), type: 'jpeg', quality: 82, fullPage: true });
+        }
+    }
+    if (process.env.CAPTURE_ISSUE_47 === '1') {
+        await writeFile(path.join(evidenceRoot, 'homepage-layout.json'), `${JSON.stringify(measurements, null, 2)}\n`);
+    }
+});
