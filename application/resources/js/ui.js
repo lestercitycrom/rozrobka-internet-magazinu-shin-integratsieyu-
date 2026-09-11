@@ -547,18 +547,78 @@ const initPromotionDisclosures = () => {
     all('[data-promotion-disclosure]').forEach((button) => {
         const panelId = button.getAttribute('aria-controls');
         const panel = panelId ? document.getElementById(panelId) : null;
-        if (!panel) return;
+        const card = button.closest('[data-testid="homepage-promotion"]');
+        if (!panel || !card) return;
+
+        const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)');
+        let hovering = false;
+        let focused = false;
+        let pinnedOpen = false;
+        let ambientSuppressed = false;
 
         const setOpen = (open) => {
+            const wasOpen = button.getAttribute('aria-expanded') === 'true';
+            const collapsedHeight = card.getBoundingClientRect().height;
             button.setAttribute('aria-expanded', String(open));
             panel.setAttribute('aria-hidden', String(!open));
+            panel.setAttribute('tabindex', open ? '0' : '-1');
             panel.classList.toggle('is-open', open);
+            if (!open || hoverCapable.matches) {
+                card.style.removeProperty('min-height');
+            } else if (!wasOpen) {
+                const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+                const maximumVisibleDetails = rootFontSize * 13;
+                const visibleDetails = Math.min(panel.scrollHeight, maximumVisibleDetails);
+                card.style.minHeight = `${Math.ceil(collapsedHeight + visibleDetails + 4)}px`;
+            }
+            if (!open) panel.scrollTop = 0;
         };
-        button.addEventListener('click', () => setOpen(button.getAttribute('aria-expanded') !== 'true'));
-        button.addEventListener('keydown', (event) => {
+
+        const render = () => setOpen(pinnedOpen || (!ambientSuppressed && (hovering || focused)));
+
+        card.addEventListener('pointerenter', (event) => {
+            if (!hoverCapable.matches || event.pointerType === 'touch') return;
+            hovering = true;
+            ambientSuppressed = false;
+            render();
+        });
+        card.addEventListener('pointerleave', () => {
+            hovering = false;
+            if (!focused) ambientSuppressed = false;
+            render();
+        });
+        card.addEventListener('focusin', () => {
+            if (!focused && !hovering) ambientSuppressed = false;
+            focused = true;
+            render();
+        });
+        card.addEventListener('focusout', () => window.requestAnimationFrame(() => {
+            focused = card.matches(':focus-within');
+            if (!focused && !hovering) ambientSuppressed = false;
+            render();
+        }));
+        button.addEventListener('click', () => {
+            if (pinnedOpen) {
+                pinnedOpen = false;
+                ambientSuppressed = true;
+            } else {
+                pinnedOpen = true;
+                ambientSuppressed = false;
+            }
+            render();
+        });
+        card.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape' || button.getAttribute('aria-expanded') !== 'true') return;
             event.preventDefault();
+            pinnedOpen = false;
+            ambientSuppressed = true;
             setOpen(false);
+            button.focus();
+        });
+        hoverCapable.addEventListener('change', () => {
+            hovering = false;
+            if (!focused) ambientSuppressed = false;
+            render();
         });
         setOpen(false);
     });

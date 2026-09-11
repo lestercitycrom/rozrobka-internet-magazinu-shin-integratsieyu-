@@ -5,6 +5,27 @@ import { expectNoGlobalOverflow, localePrefix } from './helpers';
 
 const evidenceDirectory = path.resolve(process.cwd(), '..', 'evidence', 'issue-46');
 
+async function tabTo(page: import('@playwright/test').Page, target: import('@playwright/test').Locator): Promise<void> {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+        await page.keyboard.press('Tab');
+        if (await target.evaluate((element) => document.activeElement === element)) return;
+    }
+
+    throw new Error('Promotion disclosure was not reached through real Tab traversal.');
+}
+
+async function expectContained(
+    outer: import('@playwright/test').Locator,
+    inner: import('@playwright/test').Locator,
+): Promise<void> {
+    const outerBox = await outer.boundingBox();
+    const innerBox = await inner.boundingBox();
+    expect(outerBox).not.toBeNull();
+    expect(innerBox).not.toBeNull();
+    expect((innerBox?.x ?? 0) + (innerBox?.width ?? 0)).toBeLessThanOrEqual((outerBox?.x ?? 0) + (outerBox?.width ?? 0) + 2);
+    expect((innerBox?.y ?? 0) + (innerBox?.height ?? 0)).toBeLessThanOrEqual((outerBox?.y ?? 0) + (outerBox?.height ?? 0) + 2);
+}
+
 test('offers and both independently managed service collections render in NB and RU', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     await page.goto(prefix || '/');
@@ -55,8 +76,9 @@ test('offers and both independently managed service collections render in NB and
         return { maxHeight: style.maxHeight, opacity: style.opacity };
     })).toEqual({ maxHeight: '0px', opacity: '0' });
     await firstOffer.hover();
-    await expect(details).toHaveAttribute('aria-hidden', 'true');
-    const supportsHover = await page.evaluate(() => window.matchMedia('(hover: hover)').matches);
+    const supportsHover = await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)').matches);
+    await expect(details).toHaveAttribute('aria-hidden', supportsHover ? 'false' : 'true');
+    await expect(disclosure).toHaveAttribute('aria-expanded', supportsHover ? 'true' : 'false');
     await expect.poll(async () => details.evaluate((element) => {
         const style = getComputedStyle(element);
         return { maxHeight: style.maxHeight, opacity: Number(style.opacity) };
@@ -70,6 +92,10 @@ test('offers and both independently managed service collections render in NB and
     if (supportsHover) {
         expect((await firstOffer.boundingBox())?.height).toBeCloseTo(initialCardHeight ?? 0, 2);
     }
+    await page.keyboard.press('Escape');
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+    await expect(details).toHaveAttribute('aria-hidden', 'true');
+    await expect(details).not.toHaveClass(/is-open/);
     await expectNoGlobalOverflow(page);
 
     if (process.env.CAPTURE_VISUALS === '1' && testInfo.project.name === 'buyer-ru-preview') {
@@ -79,6 +105,111 @@ test('offers and both independently managed service collections render in NB and
         await page.getByTestId('homepage-promotions').screenshot({ path: path.join(evidenceDirectory, 'customer-home-1440-ru-promotions.png') });
         await page.getByTestId('homepage-additional-services').screenshot({ path: path.join(evidenceDirectory, 'customer-home-1440-ru-additional-services.png') });
         await page.getByTestId('homepage-wheel-services').screenshot({ path: path.join(evidenceDirectory, 'customer-home-1440-ru-wheel-services.png') });
+    }
+});
+
+test('long NB and RU offer conditions remain reachable by keyboard and touch at desktop 390 and 320', async ({ page }, testInfo) => {
+    test.skip(!['buyer-desktop', 'buyer-mobile', 'buyer-mobile-320'].includes(testInfo.project.name), 'Covered by one desktop and both required mobile profiles');
+
+    for (const route of ['/', '/ru']) {
+        await page.goto(route);
+        const card = page.getByTestId('homepage-promotion').first();
+        const disclosure = card.locator('[data-promotion-disclosure]');
+        const details = card.locator('[data-promotion-details]');
+        const cta = card.locator('.et-v3-promotion__cta');
+        const finalMarker = route === '/' ? 'SLUTTEN AV ALLE VILKÅR' : 'КОНЕЦ ВСЕХ УСЛОВИЙ';
+        const sentence = route === '/'
+            ? 'Alle vilkår skal kunne leses uten at teksten blir avkortet.'
+            : 'Все условия должны читаться полностью и без обрезания текста.';
+        await details.locator('p').evaluate((element, text) => {
+            element.textContent = text;
+        }, `${Array(32).fill(sentence).join(' ')} ${finalMarker}`);
+
+        await page.locator('[data-promotion-next]').focus();
+        await tabTo(page, disclosure);
+        await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+        await expect(details).toHaveAttribute('aria-hidden', 'false');
+        await page.keyboard.press('Tab');
+        await expect(details).toBeFocused();
+        await page.keyboard.press('End');
+        await expect.poll(async () => details.evaluate((element) =>
+            element.scrollTop + element.clientHeight >= element.scrollHeight - 2
+        )).toBe(true);
+        await expect(details.locator('p')).toContainText(finalMarker);
+        await expect(cta).toBeVisible();
+        await expectContained(card, cta);
+        if (process.env.CAPTURE_VISUALS === '1' && (
+            (testInfo.project.name === 'buyer-desktop' && route === '/')
+            || (testInfo.project.name === 'buyer-mobile-320' && route === '/ru')
+        )) {
+            mkdirSync(evidenceDirectory, { recursive: true });
+            const locale = route === '/' ? 'nb' : 'ru';
+            await card.screenshot({
+                path: path.join(evidenceDirectory, `customer-home-${testInfo.project.name === 'buyer-desktop' ? '1440' : '320'}-${locale}-long-conditions.png`),
+            });
+        }
+
+        await page.keyboard.press('Shift+Tab');
+        await expect(disclosure).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+        await expect(details).toHaveAttribute('aria-hidden', 'true');
+        await expect(details).not.toHaveClass(/is-open/);
+
+        if (testInfo.project.name.includes('mobile')) {
+            // Exercise touch independently from the preceding keyboard path.
+            // Real touch users do not retain the synthetic keyboard focus used
+            // above, and blurring also lets the focusout frame settle first.
+            await disclosure.blur();
+            await expect(disclosure).not.toBeFocused();
+            await disclosure.tap();
+        } else {
+            await page.keyboard.press('Enter');
+        }
+        await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+        await expect(details).toHaveAttribute('aria-hidden', 'false');
+        await details.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+        await expect.poll(async () => details.evaluate((element) =>
+            element.scrollTop + element.clientHeight >= element.scrollHeight - 2
+        )).toBe(true);
+        await expectContained(card, cta);
+        await expectNoGlobalOverflow(page);
+    }
+});
+
+test('exactly two offers form one readable column at 390 and 320 in NB and RU', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic DOM cardinality probe covers the CSS cascade');
+
+    for (const route of ['/', '/ru']) {
+        for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 844 }]) {
+            await page.setViewportSize(viewport);
+            await page.goto(route);
+            const carousel = page.locator('[data-promotion-carousel]');
+            const track = carousel.locator('[data-promotion-track]');
+            await track.getByTestId('homepage-promotion').evaluateAll((cards) => {
+                cards.slice(2).forEach((card) => card.remove());
+            });
+            await carousel.evaluate((element) => {
+                element.classList.remove('is-enhanced');
+                element.setAttribute('data-total', '2');
+                const trackElement = element.querySelector<HTMLElement>('[data-promotion-track]');
+                trackElement?.style.removeProperty('transform');
+            });
+
+            const cards = track.getByTestId('homepage-promotion');
+            await expect(cards).toHaveCount(2);
+            const first = await cards.nth(0).boundingBox();
+            const second = await cards.nth(1).boundingBox();
+            expect(first).not.toBeNull();
+            expect(second).not.toBeNull();
+            expect(second?.y ?? 0).toBeGreaterThan((first?.y ?? 0) + (first?.height ?? 0));
+            expect(second?.x ?? 0).toBeCloseTo(first?.x ?? 0, 1);
+            for (const card of [cards.nth(0), cards.nth(1)]) {
+                await expectContained(track, card);
+                await expectContained(card, card.locator('.et-v3-promotion__cta'));
+            }
+            await expectNoGlobalOverflow(page);
+        }
     }
 });
 
@@ -132,7 +263,7 @@ test('homepage collections retain a coherent responsive layout at required inter
         await expect(page.getByTestId('homepage-wheel-services')).toBeVisible();
         await expectNoGlobalOverflow(page);
 
-        if (process.env.CAPTURE_VISUALS === '1') {
+        if (process.env.CAPTURE_VISUALS === '1' && [1440, 390, 320].includes(viewport.width)) {
             mkdirSync(evidenceDirectory, { recursive: true });
             await page.addStyleTag({ content: '.skip-link, .et-topbar, [data-site-header] { visibility: hidden !important; }' });
             await page.getByTestId('homepage-promotions').screenshot({ path: path.join(evidenceDirectory, `customer-home-${viewport.width}-nb-promotions.png`) });

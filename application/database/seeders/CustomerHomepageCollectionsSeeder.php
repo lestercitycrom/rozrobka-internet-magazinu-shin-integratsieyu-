@@ -9,6 +9,7 @@ use App\Modules\Content\Models\HomepageServiceCard;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\ServicePage;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use LogicException;
 
@@ -16,8 +17,8 @@ use LogicException;
  * Deterministic Issue #46 content manifest.
  *
  * Existing manifest rows, including soft-deleted rows, are never recreated or
- * overwritten. The one legacy workshop offer is upgraded only while it still
- * matches the previous repository fixture exactly.
+ * overwritten. The legacy workshop offer receives a stable key, while any
+ * operator-owned differences are preserved instead of being replaced.
  */
 final class CustomerHomepageCollectionsSeeder extends Seeder
 {
@@ -65,18 +66,64 @@ final class CustomerHomepageCollectionsSeeder extends Seeder
 
         if ($promotion['content_key'] === 'issue-46-offer-workshop-wheel-change') {
             $legacy = HomepagePromotion::query()
+                ->withTrashed()
                 ->whereNull('content_key')
-                ->where('cta_url', '/dekkskift-tromso')
+                ->where(function ($query): void {
+                    $query
+                        ->where('cta_url', '/dekkskift-tromso')
+                        ->orWhere('title_nb', 'Dekkskift på verksted fra 550 kr')
+                        ->orWhere('body_nb', 'Pris etter felgdiameter: til og med R15 fra 550 kr, R16–18 fra 600 kr og R19 eller større fra 650 kr.')
+                        ->orWhere('title_ru', 'Замена колёс в мастерской от 550 крон')
+                        ->orWhere('body_ru', 'Цена зависит от диаметра: до R15 — от 550 крон, R16–18 — от 600 крон, R19 и больше — от 650 крон.');
+                })
                 ->first();
 
+            if ($legacy === null) {
+                $unownedPromotions = HomepagePromotion::query()
+                    ->withTrashed()
+                    ->whereNull('content_key')
+                    ->orderBy('id')
+                    ->limit(2)
+                    ->get();
+
+                if ($unownedPromotions->count() === 1) {
+                    // A fully edited legacy offer may no longer contain any of
+                    // the original fixture strings. A sole unowned row is still
+                    // safe to adopt because its public/operator fields are kept.
+                    $legacy = $unownedPromotions->first();
+                } elseif ($unownedPromotions->count() > 1) {
+                    // Never guess between multiple operator-owned records and
+                    // never add a possibly duplicate workshop offer beside them.
+                    Log::warning('Issue #46 workshop promotion adoption is ambiguous; default offer was not created.', [
+                        'unowned_promotion_ids' => $unownedPromotions->pluck('id')->all(),
+                    ]);
+
+                    return;
+                }
+            }
+
             if ($legacy !== null) {
-                $matchesRepositoryFixture = $legacy->title_nb === 'Dekkskift på verksted fra 550 kr'
-                    && $legacy->body_nb === 'Pris etter felgdiameter: til og med R15 fra 550 kr, R16–18 fra 600 kr og R19 eller større fra 650 kr.'
-                    && $legacy->title_ru === 'Замена колёс в мастерской от 550 крон';
+                $conflictingFields = collect($this->legacyWorkshopBaseline())
+                    ->filter(function (mixed $expected, string $field) use ($legacy): bool {
+                        $actual = $legacy->getAttribute($field);
+                        if ($actual instanceof \BackedEnum) {
+                            $actual = $actual->value;
+                        }
+
+                        return $actual !== $expected;
+                    })
+                    ->keys()
+                    ->values()
+                    ->all();
 
                 $legacy->content_key = $promotion['content_key'];
-                if ($matchesRepositoryFixture) {
+                if ($conflictingFields === []) {
                     $legacy->fill($promotion);
+                } else {
+                    Log::warning('Issue #46 workshop promotion adoption preserved operator-owned fields.', [
+                        'promotion_id' => $legacy->getKey(),
+                        'conflicting_fields' => $conflictingFields,
+                    ]);
                 }
                 $legacy->save();
 
@@ -85,6 +132,25 @@ final class CustomerHomepageCollectionsSeeder extends Seeder
         }
 
         HomepagePromotion::query()->create($promotion);
+    }
+
+    /** @return array<string, mixed> */
+    private function legacyWorkshopBaseline(): array
+    {
+        return [
+            'sort_order' => 10,
+            'publication_status' => ContentPageStatus::Published->value,
+            'title_nb' => 'Dekkskift på verksted fra 550 kr',
+            'short_body_nb' => null,
+            'body_nb' => 'Pris etter felgdiameter: til og med R15 fra 550 kr, R16–18 fra 600 kr og R19 eller større fra 650 kr.',
+            'cta_label_nb' => 'Se dekkskift',
+            'title_ru' => 'Замена колёс в мастерской от 550 крон',
+            'short_body_ru' => null,
+            'body_ru' => 'Цена зависит от диаметра: до R15 — от 550 крон, R16–18 — от 600 крон, R19 и больше — от 650 крон.',
+            'cta_label_ru' => 'Открыть услугу',
+            'cta_url' => '/dekkskift-tromso',
+            'media_asset_id' => null,
+        ];
     }
 
     /** @return array<string, string> */
@@ -182,8 +248,8 @@ final class CustomerHomepageCollectionsSeeder extends Seeder
 
         return [
             $this->card('additional-oil-change', HomepageServiceCollection::Additional, 10, 'oljeskift', 'Oljeskift', 'Oljeskift på verkstedet eller hjemme hos deg. Vi bruker olje og filter som passer bilen din.', 'Les mer', 'Замена масла', 'Замена масла в мастерской или у вас. Используем масло и фильтр, подходящие вашему автомобилю.', 'Подробнее', null, $assets['workshop'], $published),
-            $this->card('additional-interior-cleaning', HomepageServiceCollection::Additional, 20, null, 'Interiørrens', 'Fra enkel innvendig vask til grundig interiørrens av hele bilen.', 'Les mer', 'Химчистка салона', 'От простой уборки салона до глубокой химчистки всего автомобиля.', 'Подробнее', '/kontakt', $assets['exterior'], $published),
-            $this->card('additional-polishing-paint', HomepageServiceCollection::Additional, 30, null, 'Polering og lakkorrigering', 'Polering og lakkorrigering som gir lakken tilbake glans og en jevnere overflate.', 'Les mer', 'Полировка и коррекция лакокрасочного покрытия', 'Полировка и коррекция, которые возвращают покрытию блеск и делают поверхность ровнее.', 'Подробнее', '/kontakt', $assets['workshop-alt'], $published),
+            $this->card('additional-interior-cleaning', HomepageServiceCollection::Additional, 20, null, 'Interiørrens', 'Fra enkel innvendig vask til grundig interiørrens av hele bilen.', 'Les mer', 'Химчистка салона', 'От простой уборки салона до глубокой химчистки всего автомобиля.', 'Подробнее', '/tjenester#service-interior-cleaning', $assets['exterior'], $published),
+            $this->card('additional-polishing-paint', HomepageServiceCollection::Additional, 30, null, 'Polering og lakkorrigering', 'Polering og lakkorrigering som gir lakken tilbake glans og en jevnere overflate.', 'Les mer', 'Полировка и коррекция лакокрасочного покрытия', 'Полировка и коррекция, которые возвращают покрытию блеск и делают поверхность ровнее.', 'Подробнее', '/tjenester#service-polishing-paint', $assets['workshop-alt'], $published),
             $this->card('additional-lockout', HomepageServiceCollection::Additional, 40, null, 'Utelåsing – åpning av bil', 'Har du låst nøklene inne i bilen? Vi kommer til deg og hjelper deg med å åpne bildøren på en skånsom måte.', 'Bestill hjelp', 'Открытие заблокированного автомобиля', 'Оставили ключи внутри? Мы приедем и поможем аккуратно открыть дверь автомобиля.', 'Заказать помощь', '/kontakt', $assets['mobile-service'], $published),
             $this->card('additional-lights-wipers', HomepageServiceCollection::Additional, 50, 'lyspaerer-viskerblad', 'Bytte av lyspærer og vindusviskere', 'Vi bytter lyspærer og vindusviskere raskt og enkelt.', 'Les mer', 'Замена ламп и стеклоочистителей', 'Быстро и просто заменим автомобильные лампы и стеклоочистители.', 'Подробнее', null, $assets['workshop-alt'], $published),
             $this->card('additional-battery', HomepageServiceCollection::Additional, 60, 'bilbatteri', 'Batteritest og batteribytte', 'Vi kontrollerer batteriet og kan skaffe og bytte det ved behov.', 'Les mer', 'Проверка и замена аккумулятора', 'Проверим аккумулятор и при необходимости подберём и заменим его.', 'Подробнее', null, $assets['exterior'], $published),
@@ -193,7 +259,7 @@ final class CustomerHomepageCollectionsSeeder extends Seeder
             $this->card('wheels-workshop-change', HomepageServiceCollection::Wheels, 30, 'mobilt-dekkskift', 'Dekkskift på verksted', 'Bestill tid og få hjulene skiftet på verkstedet vårt i Ringvegen 200.', 'Les mer', 'Замена колёс в мастерской', 'Запишитесь на замену колёс в нашей мастерской по адресу Ringvegen 200.', 'Подробнее', '/tjenester/mobilt-dekkskift/foresporsel?fulfilment=workshop', $assets['workshop-alt'], $published),
             $this->card('wheels-products', HomepageServiceCollection::Wheels, 40, null, 'Dekk, felg og hjulpakker', 'Finn dekk, felger eller komplette hjulpakker som passer bilen din.', 'Se produkter', 'Шины, диски и колёсные комплекты', 'Найдите подходящие автомобилю шины, диски или готовые колёсные комплекты.', 'Посмотреть товары', '/dekk-og-felger', $assets['workshop'], $published),
             $this->card('wheels-tesla-ev', HomepageServiceCollection::Wheels, 50, 'tesla-og-elbil', 'Dekkskift for Tesla og elbil', 'Dekkskift for Tesla og andre elbiler med riktig utstyr og riktige løftepunkter.', 'Les mer', 'Замена колёс для Tesla и электромобилей', 'Меняем колёса на Tesla и других электромобилях с подходящим оборудованием и правильными точками подъёма.', 'Подробнее', null, $assets['mobile-service'], $published),
-            $this->card('wheels-motorhome-van', HomepageServiceCollection::Wheels, 60, null, 'Bobil og varebil', 'Hjulskift for varebiler og bobiler med egnet utstyr.', 'Les mer', 'Автодома и фургоны', 'Замена колёс на фургонах и автодомах с использованием подходящего оборудования.', 'Подробнее', '/tjenester#service-motorhome-van', $assets['exterior'], $published),
+            $this->card('wheels-motorhome-van', HomepageServiceCollection::Wheels, 60, 'bobil-og-varebil', 'Bobil og varebil', 'Hjulskift for varebiler og bobiler med egnet utstyr.', 'Les mer', 'Автодома и фургоны', 'Замена колёс на фургонах и автодомах с использованием подходящего оборудования.', 'Подробнее', null, $assets['exterior'], $published),
         ];
     }
 

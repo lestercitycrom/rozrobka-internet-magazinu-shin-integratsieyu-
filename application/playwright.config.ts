@@ -37,8 +37,8 @@ export default defineConfig({
         },
         {
             name: 'buyer-mobile-320',
-            use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
-            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|interaction-shell|map-overflow|product-detail|project-content|storefront-style)\.spec\.ts/,
+            use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 320, height: 844 } },
+            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|homepage-content-collections|interaction-shell|map-overflow|product-detail|project-content|storefront-style)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',
@@ -58,11 +58,17 @@ export default defineConfig({
         {
             name: 'admin-desktop',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(admin\.smoke|admin-homepage-content)\.spec\.ts/,
+            testMatch: /admin\.smoke\.spec\.ts/,
+        },
+        {
+            name: 'admin-homepage-content',
+            dependencies: ['admin-desktop'],
+            use: { ...devices['Desktop Chrome'] },
+            testMatch: /admin-homepage-content\.spec\.ts/,
         },
         {
             name: 'admin-mobile-390',
-            dependencies: ['admin-desktop'],
+            dependencies: ['admin-homepage-content'],
             use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
             testMatch: /admin\.p0\.spec\.ts/,
         },

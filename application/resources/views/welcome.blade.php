@@ -103,6 +103,7 @@
     $homepageRatingSummaries = collect();
     $homepageBusinessPartners = collect();
     $homepagePriceGroups = collect();
+    $homepageServiceCollectionsInitialized = false;
     $homepageServiceCollections = collect([
         \App\Modules\Content\Enums\HomepageServiceCollection::Additional->value => collect(),
         \App\Modules\Content\Enums\HomepageServiceCollection::Wheels->value => collect(),
@@ -136,6 +137,7 @@
                 ->take(3);
         }
         if (\Illuminate\Support\Facades\Schema::hasTable('homepage_service_cards')) {
+            $homepageServiceCollectionsInitialized = \App\Modules\Content\Models\HomepageServiceCard::query()->withTrashed()->exists();
             foreach (\App\Modules\Content\Enums\HomepageServiceCollection::cases() as $collection) {
                 $homepageServiceCollections[$collection->value] = \App\Modules\Content\Models\HomepageServiceCard::query()
                     ->publishedFor($collection)
@@ -151,6 +153,7 @@
         $homepageRatingSummaries = collect();
         $homepageBusinessPartners = collect();
         $homepagePriceGroups = collect();
+        $homepageServiceCollectionsInitialized = false;
         $homepageServiceCollections = collect([
             \App\Modules\Content\Enums\HomepageServiceCollection::Additional->value => collect(),
             \App\Modules\Content\Enums\HomepageServiceCollection::Wheels->value => collect(),
@@ -158,7 +161,6 @@
     }
     $homepagePromotions = $homepagePromotions->filter(
         fn ($promotion) => filled($promotion->getAttribute('title_'.$homepageLocale))
-            && filled($promotion->getAttribute('short_body_'.$homepageLocale))
             && filled($promotion->getAttribute('body_'.$homepageLocale))
             && filled($promotion->getAttribute('cta_label_'.$homepageLocale))
             && \App\Support\PublicEditorialUrl::isValid($promotion->cta_url)
@@ -301,7 +303,7 @@
         'description' => __('pro.home.additional_services_text'),
     ])
 
-    @if ($homepageServiceCollections->flatten(1)->isEmpty() && $serviceCollection->isNotEmpty())
+    @if (! $homepageServiceCollectionsInitialized && $homepageServiceCollections->flatten(1)->isEmpty() && $serviceCollection->isNotEmpty())
         <section class="et-v3-section et-v3-section--services" aria-labelledby="home-services-title" data-testid="services-section">
             <div class="et-container">
                 <div class="et-v3-section-head">

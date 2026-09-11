@@ -5,21 +5,25 @@ use App\Modules\Content\Enums\ContentPageStatus;
 use App\Modules\Content\Models\HomepagePromotion;
 use App\Modules\Content\Models\HomepageReview;
 use App\Modules\Content\Models\MediaAsset;
+use Database\Seeders\CustomerHomepageCollectionsSeeder;
 use Database\Seeders\HomepageContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-test('homepage seed publishes the current offer and source-backed customer reviews', function (): void {
+test('homepage seeders publish the current offers and source-backed customer reviews', function (): void {
+    Storage::fake('public');
     $this->seed(HomepageContentSeeder::class);
+    $this->seed(CustomerHomepageCollectionsSeeder::class);
 
-    expect(HomepagePromotion::query()->published()->count())->toBe(1)
+    expect(HomepagePromotion::query()->published()->count())->toBe(4)
         ->and(HomepageReview::query()->published()->count())->toBe(3);
 
     $this->get('/')
         ->assertOk()
-        ->assertSee('Dekkskift på verksted fra 550 kr')
+        ->assertSee('Dekkskift på verksted – kun fra 550 kr')
         ->assertSee('Solveig Lundin')
         ->assertSee('data-testid="business-contact-card"', false);
 });

@@ -40,6 +40,65 @@ test('homepage service collections render zero one two six and seven cards witho
     }
 });
 
+test('legacy fallback is used only before managed collections have ever been initialized', function (): void {
+    $service = ServicePage::query()->create([
+        'slug' => 'legacy-homepage-service',
+        'sort_order' => 1,
+        'publication_status' => ServicePagePublicationStatus::Published,
+        'title_nb' => 'Eldre tjenestekort',
+        'title_ru' => 'Старая карточка услуги',
+    ]);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('data-testid="services-section"', false)
+        ->assertSee('Eldre tjenestekort');
+
+    $card = HomepageServiceCard::query()->create(homepageServiceCardPayload([
+        'service_page_id' => $service->id,
+        'cta_url' => null,
+    ]));
+    $card->update(['publication_status' => ContentPageStatus::Draft]);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertDontSee('data-testid="services-section"', false)
+        ->assertDontSee('data-testid="homepage-additional-services"', false);
+
+    config()->set('storefront.ru_preview_enabled', true);
+    $this->get('/ru')
+        ->assertOk()
+        ->assertDontSee('data-testid="services-section"', false)
+        ->assertDontSee('Старая карточка услуги');
+
+    $card->delete();
+    $this->get('/')
+        ->assertOk()
+        ->assertDontSee('data-testid="services-section"', false);
+    expect(ServicePage::query()->whereKey($service->id)->exists())->toBeTrue();
+});
+
+test('one populated managed collection does not revive the legacy block for the empty collection', function (): void {
+    ServicePage::query()->create([
+        'slug' => 'published-global-service',
+        'sort_order' => 1,
+        'publication_status' => ServicePagePublicationStatus::Published,
+        'title_nb' => 'Global tjeneste',
+        'title_ru' => 'Глобальная услуга',
+    ]);
+    HomepageServiceCard::query()->create(homepageServiceCardPayload([
+        'collection' => HomepageServiceCollection::Additional,
+        'title_nb' => 'Kun tillegg',
+        'title_ru' => 'Только дополнительная услуга',
+    ]));
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('data-testid="homepage-additional-services"', false)
+        ->assertDontSee('data-testid="homepage-wheel-services"', false)
+        ->assertDontSee('data-testid="services-section"', false);
+});
+
 test('homepage service cards are independently ordered localized and fail closed when unpublished', function (): void {
     HomepageServiceCard::query()->create(homepageServiceCardPayload([
         'collection' => HomepageServiceCollection::Additional,

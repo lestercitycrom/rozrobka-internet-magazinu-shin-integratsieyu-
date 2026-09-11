@@ -60,19 +60,23 @@ test('storefront and admin consume one shared design foundation', function (): v
 
     $storefront = file_get_contents(resource_path('css/storefront-v3.css'));
     $contracts = file_get_contents(resource_path('css/storefront-contracts.css'));
+    $ui = file_get_contents(resource_path('js/ui.js'));
     $promotionPartial = file_get_contents(resource_path('views/storefront/_homepage-promotions.blade.php'));
 
     expect(substr_count($storefront, '.et-v3-process-strip {'))->toBe(1)
         ->and($storefront)->toContain('.et-v3-promotion-grid:has(> .et-v3-promotion:nth-child(2):last-child)')
         ->and($storefront)->not->toContain('var(--et-color-brand-rgb)')
         ->and($storefront)
-        ->toContain('.et-v3-promotion:hover .et-v3-promotion__details')
-        ->toContain('.et-v3-promotion:focus-within .et-v3-promotion__details')
+        ->not->toContain('.et-v3-promotion:hover .et-v3-promotion__details')
+        ->not->toContain('.et-v3-promotion:focus-within .et-v3-promotion__details')
         ->toContain('.et-v3-promotion__details.is-open')
+        ->toContain('overflow-y: auto;')
         ->toContain('.storefront .et-btn--outline:hover')
         ->toContain("[aria-disabled='true']")
         ->toContain('.storefront .et-footer.is-enhanced .et-footer__toggle')
-        ->toContain('@media (hover: none), (max-width: 767px)')
+        ->and($ui)
+        ->toContain('(hover: hover) and (pointer: fine) and (min-width: 768px)')
+        ->toContain("panel.classList.toggle('is-open', open)")
         ->and($promotionPartial)
         ->toContain('class="et-v3-promotion__details"')
         ->toContain('data-promotion-disclosure')

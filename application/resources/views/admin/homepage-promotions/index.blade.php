@@ -10,7 +10,7 @@
 
         <p class="rounded-xl border border-easytire-border bg-easytire-surface p-4 text-sm text-easytire-muted">{{ __('admin.homepage_promotions.empty_hint') }}</p>
 
-        <div class="w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-easytire-border bg-easytire-panel md:max-w-full">
+        <div class="hidden w-full overflow-hidden rounded-2xl border border-easytire-border bg-easytire-panel md:block">
             <div class="w-full min-w-0 overflow-x-auto overscroll-x-contain" tabindex="0" role="region" aria-label="{{ __('admin.homepage_promotions.table_label') }}">
                 <table class="w-full min-w-[42rem] text-left text-sm">
                     <thead class="bg-easytire-brand-soft"><tr><th class="p-4" scope="col">{{ __('admin.homepage_promotions.order') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_promotions.title_nb') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_promotions.media') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_promotions.status') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_promotions.actions') }}</th></tr></thead>
@@ -23,6 +23,22 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+        <div class="et-admin-mobile-records md:hidden" data-testid="homepage-promotions-mobile-list">
+            @forelse ($promotions as $promotion)
+                <article class="et-admin-mobile-record">
+                    <div class="et-admin-mobile-record__head">
+                        <strong>{{ $promotion->title_nb }}</strong>
+                        <a class="et-admin-mobile-record__action" href="{{ route('admin.homepage-promotions.edit', $promotion) }}">{{ __('admin.homepage_promotions.edit') }}</a>
+                    </div>
+                    <dl>
+                        <div><dt>{{ __('admin.homepage_promotions.order') }}</dt><dd>{{ $promotion->sort_order }}</dd></div>
+                        <div><dt>{{ __('admin.homepage_promotions.status') }}</dt><dd><span class="et-admin-status et-admin-status--{{ $promotion->publication_status->value === 'published' ? 'success' : 'neutral' }}">{{ __('content_ui.status_'.$promotion->publication_status->value) }}</span></dd></div>
+                    </dl>
+                </article>
+            @empty
+                <p class="et-admin-mobile-record">{{ __('admin.homepage_promotions.empty') }}</p>
+            @endforelse
         </div>
         {{ $promotions->links() }}
     </div>

@@ -18,7 +18,7 @@
         @if (session('status'))<p class="border-l-4 border-easytire-brand bg-easytire-brand-soft p-4 text-sm font-bold" role="status">{{ session('status') }}</p>@endif
 
         <p class="border border-easytire-border bg-easytire-surface p-4 text-sm text-easytire-muted">{{ __('admin.homepage_service_cards.order_hint') }}</p>
-        <div class="w-full max-w-[calc(100vw-2rem)] overflow-hidden border border-easytire-border bg-easytire-panel md:max-w-full">
+        <div class="hidden w-full overflow-hidden border border-easytire-border bg-easytire-panel md:block">
             <div class="w-full min-w-0 overflow-x-auto overscroll-x-contain" tabindex="0" role="region" aria-label="{{ __('admin.homepage_service_cards.table_label') }}">
                 <table class="w-full min-w-[48rem] text-left text-sm">
                     <thead class="bg-easytire-brand-soft"><tr><th class="p-4" scope="col">{{ __('admin.homepage_service_cards.order') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_service_cards.card') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_service_cards.service') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_service_cards.media') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_service_cards.status') }}</th><th class="p-4" scope="col">{{ __('admin.homepage_service_cards.actions') }}</th></tr></thead>
@@ -38,6 +38,23 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+        <div class="et-admin-mobile-records md:hidden" data-testid="homepage-service-cards-mobile-list">
+            @forelse ($cards as $card)
+                <article class="et-admin-mobile-record" data-testid="homepage-service-card-mobile-record">
+                    <div class="et-admin-mobile-record__head">
+                        <strong>{{ $card->title_nb }}</strong>
+                        <a class="et-admin-mobile-record__action" href="{{ route('admin.homepage-service-collections.edit', [$collection->value, $card]) }}">{{ __('admin.homepage_service_cards.edit') }}</a>
+                    </div>
+                    <dl>
+                        <div><dt>{{ __('admin.homepage_service_cards.order') }}</dt><dd>{{ $card->sort_order }}</dd></div>
+                        <div><dt>{{ __('admin.homepage_service_cards.status') }}</dt><dd><span class="et-admin-status et-admin-status--{{ $card->publication_status->value === 'published' ? 'success' : 'neutral' }}">{{ __('content_ui.status_'.$card->publication_status->value) }}</span></dd></div>
+                        <div><dt>{{ __('admin.homepage_service_cards.service') }}</dt><dd>{{ $card->servicePage?->title_nb ?: __('admin.homepage_service_cards.custom_destination') }}</dd></div>
+                    </dl>
+                </article>
+            @empty
+                <p class="et-admin-mobile-record">{{ __('admin.homepage_service_cards.empty') }}</p>
+            @endforelse
         </div>
         {{ $cards->links() }}
     </div>

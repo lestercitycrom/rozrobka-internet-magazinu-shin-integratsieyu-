@@ -4,6 +4,10 @@
  * Keep this layer scoped to .et-admin-body so the public storefront remains
  * owned by storefront-v3.css and storefront-contracts.css.
  */
+.et-admin-document {
+    overflow-x: hidden;
+}
+
 .et-admin-body {
     --et-admin-canvas: #f2efe9;
     --et-admin-panel: #fff;
@@ -16,6 +20,7 @@
     background: var(--et-admin-canvas);
     color: var(--et-color-text);
     font-family: var(--et-font-body);
+    overflow-x: hidden;
 }
 
 .et-admin-body .et-admin-shell {
@@ -96,7 +101,7 @@
 }
 
 .et-admin-body .et-admin-main {
-    overflow-x: clip;
+    overflow-x: hidden;
 }
 
 .et-admin-body .et-admin-content {
