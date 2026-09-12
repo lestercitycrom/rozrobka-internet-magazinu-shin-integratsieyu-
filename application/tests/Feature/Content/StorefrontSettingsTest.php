@@ -126,6 +126,20 @@ test('storefront settings reject unsafe CTA links and inactive media', function 
     ])->assertSessionHasErrors(['hero_primary_url', 'hero_media_asset_id', 'map_embed_url']);
 });
 
+test('storefront settings keep image and dekkhotell video assignments type safe', function (): void {
+    $admin = User::factory()->operations()->create();
+    $video = MediaAsset::query()->create([
+        'id' => (string) Str::ulid(), 'disk' => 'public', 'path' => 'content/dekkhotell.mp4', 'original_name' => 'dekkhotell.mp4',
+        'mime' => 'video/mp4', 'byte_size' => 100, 'width' => 0, 'height' => 0, 'sha256' => hash('sha256', 'dekkhotell-video'),
+        'uploader_id' => $admin->id, 'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)->put('/admin/storefront-settings', ['hotel_video_media_asset_id' => $video->id])->assertRedirect('/admin/storefront-settings');
+    expect(StorefrontSettings::query()->findOrFail(1)->hotel_video_media_asset_id)->toBe($video->id);
+
+    $this->actingAs($admin)->put('/admin/storefront-settings', ['hero_media_asset_id' => $video->id])->assertSessionHasErrors('hero_media_asset_id');
+});
+
 test('administrator can save only safe public social links and the read model has confirmed social fallbacks', function (): void {
     $admin = User::factory()->operations()->create();
 

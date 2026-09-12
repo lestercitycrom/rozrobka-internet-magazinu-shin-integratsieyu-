@@ -29,7 +29,6 @@
                                 $storedShortBody = $promotion->getAttribute('short_body_'.$homepageLocale);
                                 $body = $promotion->getAttribute('body_'.$homepageLocale);
                                 $hasSeparateDetails = filled($storedShortBody);
-                                $shortBody = $hasSeparateDetails ? $storedShortBody : $body;
                                 $ctaLabel = $promotion->getAttribute('cta_label_'.$homepageLocale);
                                 $ctaUrl = $promotionUrl($promotion);
                                 $externalPromotion = \App\Support\PublicEditorialUrl::isExternal($ctaUrl);
@@ -49,12 +48,12 @@
                                 <div class="et-v3-promotion__content">
                                     <span class="et-v3-promotion__number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                                     <h3>{{ $title }}</h3>
-                                    <p class="et-v3-promotion__short">{{ $shortBody }}</p>
                                     @if ($hasSeparateDetails)
-                                        @php($detailsId = 'promotion-details-'.$promotion->id)
-                                        <button class="et-v3-promotion__disclosure" type="button" aria-expanded="false" aria-controls="{{ $detailsId }}" data-promotion-disclosure>{{ __('pro.home.promotion_details') }} <x-icon name="arrow" :size="16" /></button>
-                                        <div class="et-v3-promotion__details" id="{{ $detailsId }}" role="region" aria-label="{{ __('pro.home.promotion_details') }}: {{ $title }}" aria-hidden="true" tabindex="-1" data-promotion-details><p>{{ $body }}</p></div>
+                                        <p class="et-v3-promotion__short" tabindex="0">{{ $storedShortBody }}</p>
                                     @endif
+                                    @php($detailsId = 'promotion-details-'.$promotion->id)
+                                    <button class="et-v3-promotion__disclosure" type="button" aria-expanded="false" aria-controls="{{ $detailsId }}" data-promotion-disclosure>{{ __('pro.home.promotion_details') }} <x-icon name="arrow" :size="16" /></button>
+                                    <div class="et-v3-promotion__details" id="{{ $detailsId }}" role="region" aria-label="{{ __('pro.home.promotion_details') }}: {{ $title }}" aria-hidden="true" tabindex="-1" data-promotion-details><p>{{ $body }}</p></div>
                                     <a class="et-v3-promotion__cta" href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>
                                 </div>
                             </article>

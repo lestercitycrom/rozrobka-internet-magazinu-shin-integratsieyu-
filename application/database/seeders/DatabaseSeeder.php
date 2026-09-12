@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             SeoServicePageSeeder::class,
             CustomerWordingCorrectionSeeder::class,
             CustomerHomepageCollectionsSeeder::class,
+            CustomerHomepageCompositionSeeder::class,
         ]);
     }
 }

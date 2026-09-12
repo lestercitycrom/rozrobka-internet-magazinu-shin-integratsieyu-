@@ -38,7 +38,7 @@ final class CatalogController
             'mediaAssignments.asset',
         ]);
 
-        $mediaAssets = MediaAsset::query()->where('is_active', true)->latest()->get();
+        $mediaAssets = MediaAsset::query()->where('is_active', true)->where('mime', 'like', 'image/%')->latest()->get();
         $mediaContexts = MediaAssignment::query()
             ->whereIn('media_asset_id', $mediaAssets->modelKeys())
             ->where('assignable_type', Product::class)

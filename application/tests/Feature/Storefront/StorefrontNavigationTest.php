@@ -13,7 +13,8 @@ test('vehicle lookup is discoverable through the Norwegian canonical store landi
         ->assertOk()
         ->assertSee('href="'.route('storefront.store.index').'"', false)
         ->assertSee(__('fitment.nav'))
-        ->assertSee(__('fitment.home_cta'));
+        ->assertSee('data-testid="quick-finder"', false)
+        ->assertSee(__('pro.home.finder_registration_tab'));
 });
 
 test('vehicle lookup is discoverable through the private Russian store preview', function (): void {

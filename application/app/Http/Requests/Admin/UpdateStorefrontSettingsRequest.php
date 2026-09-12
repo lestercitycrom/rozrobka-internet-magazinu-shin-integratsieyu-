@@ -27,11 +27,12 @@ final class UpdateStorefrontSettingsRequest extends FormRequest
             'hero_primary_label_ru' => $localizedShort, 'hero_secondary_label_ru' => $localizedShort,
             'hero_primary_url' => ['nullable', 'string', 'max:2048', $this->safeLink()],
             'hero_secondary_url' => ['nullable', 'string', 'max:2048', $this->safeLink()],
-            'hero_media_asset_id' => ['nullable', Rule::exists('media_assets', 'id')->where('is_active', true)],
-            'home_store_media_asset_id' => ['nullable', Rule::exists('media_assets', 'id')->where('is_active', true)],
-            'story_media_asset_id' => ['nullable', Rule::exists('media_assets', 'id')->where('is_active', true)],
-            'hotel_media_asset_id' => ['nullable', Rule::exists('media_assets', 'id')->where('is_active', true)],
-            'mobile_media_asset_id' => ['nullable', Rule::exists('media_assets', 'id')->where('is_active', true)],
+            'hero_media_asset_id' => $this->mediaRule(['image/jpeg', 'image/png', 'image/webp']),
+            'home_store_media_asset_id' => $this->mediaRule(['image/jpeg', 'image/png', 'image/webp']),
+            'story_media_asset_id' => $this->mediaRule(['image/jpeg', 'image/png', 'image/webp']),
+            'hotel_media_asset_id' => $this->mediaRule(['image/jpeg', 'image/png', 'image/webp']),
+            'mobile_media_asset_id' => $this->mediaRule(['image/jpeg', 'image/png', 'image/webp']),
+            'hotel_video_media_asset_id' => $this->mediaRule(['video/mp4', 'video/webm']),
             'phone_display' => ['nullable', 'string', 'max:80'],
             'phone_href' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9][0-9 ()-]*$/'],
             'email' => ['nullable', 'email:rfc', 'max:255'],
@@ -83,6 +84,17 @@ final class UpdateStorefrontSettingsRequest extends FormRequest
         };
     }
 
+    /** @param list<string> $mimes @return array<int, mixed> */
+    private function mediaRule(array $mimes): array
+    {
+        return [
+            'nullable',
+            Rule::exists('media_assets', 'id')->where(
+                static fn ($query) => $query->where('is_active', true)->whereIn('mime', $mimes),
+            ),
+        ];
+    }
+
     /** @param array<int, mixed> $short @param array<int, mixed> $long @return array<string, array<int, mixed>> */
     private function storeCopyRules(string $locale, array $short, array $long): array
     {
@@ -102,10 +114,10 @@ final class UpdateStorefrontSettingsRequest extends FormRequest
     private function homeContentRules(string $locale, array $short, array $long): array
     {
         $rules = [];
-        foreach (['chooser_kicker', 'chooser_title', 'chooser_mobile_title', 'chooser_workshop_title', 'chooser_store_kicker', 'chooser_store_title', 'trust_1', 'trust_2', 'trust_3', 'process_kicker', 'process_title', 'process_1_title', 'process_2_title', 'process_3_title', 'process_4_title', 'story_kicker', 'story_title', 'business_kicker', 'business_title', 'business_proof', 'logistics_kicker', 'logistics_title', 'hotel_kicker', 'hotel_title', 'hotel_cta', 'mobile_kicker', 'mobile_title', 'mobile_cta', 'contact_kicker', 'contact_title'] as $field) {
+        foreach (['chooser_kicker', 'chooser_title', 'chooser_mobile_title', 'chooser_workshop_title', 'chooser_store_kicker', 'chooser_store_title', 'trust_1', 'trust_2', 'trust_3', 'process_kicker', 'process_title', 'process_1_title', 'process_2_title', 'process_3_title', 'process_4_title', 'process_cta', 'story_kicker', 'story_title', 'business_kicker', 'business_title', 'business_proof', 'business_cta', 'business_partners_heading', 'logistics_kicker', 'logistics_title', 'hotel_kicker', 'hotel_title', 'hotel_cta', 'mobile_kicker', 'mobile_title', 'mobile_cta', 'mobile_details_title', 'contact_kicker', 'contact_title'] as $field) {
             $rules["{$field}_{$locale}"] = $short;
         }
-        foreach (['chooser_mobile_text', 'chooser_workshop_text', 'process_lead', 'process_1_text', 'process_2_text', 'process_3_text', 'process_4_text', 'story_text', 'story_quote', 'business_text', 'hotel_text', 'mobile_text', 'contact_text'] as $field) {
+        foreach (['chooser_mobile_text', 'chooser_workshop_text', 'process_lead', 'process_1_text', 'process_2_text', 'process_3_text', 'process_4_text', 'story_text', 'story_quote', 'business_text', 'hotel_text', 'mobile_text', 'mobile_details_body_1', 'mobile_details_body_2', 'contact_text', 'contact_map_note'] as $field) {
             $rules["{$field}_{$locale}"] = $long;
         }
 

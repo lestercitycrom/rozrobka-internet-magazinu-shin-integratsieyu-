@@ -51,6 +51,25 @@
             <rect x="4" y="5.5" width="16" height="14" rx="1" stroke="currentColor" stroke-width="1.7"/>
             <path d="M8 3.5v4M16 3.5v4M4 10h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
             @break
+        @case('calendar-location')
+            <rect x="3" y="4.5" width="14" height="15" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M6.5 2.8v3.5M13.5 2.8v3.5M3 8.5h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <path d="M21 15.5c0 2.2-3.1 4.9-3.1 4.9s-3.1-2.7-3.1-4.9a3.1 3.1 0 1 1 6.2 0Z" fill="white" stroke="currentColor" stroke-width="1.6"/>
+            <circle cx="17.9" cy="15.5" r=".85" fill="currentColor"/>
+            @break
+        @case('calendar-check')
+            <rect x="3" y="4.5" width="18" height="16" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M7 2.8v3.5M17 2.8v3.5M3 8.5h18m-13 6 2.4 2.3 5.2-5.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            @break
+        @case('mobile-wrench')
+            <path d="M2.5 15V8.5h11v6.5h-11Zm11-4h3l3 3v1h-6v-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle cx="6.5" cy="17.2" r="2" stroke="currentColor" stroke-width="1.6"/><circle cx="16.8" cy="17.2" r="2" stroke="currentColor" stroke-width="1.6"/>
+            <path d="m17.4 3.4-2.8 2.8 3.2 3.2 2.8-2.8a3.5 3.5 0 0 0-3.2-3.2Zm-2.8 2.8-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            @break
+        @case('payment-check')
+            <rect x="2.5" y="5" width="19" height="14" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M2.5 9h19M6 14h4m3.5 1 2 2 3.7-4.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            @break
         @case('phone')
             <path d="M8.1 3.5 10 7.8 7.7 9.5c1.25 2.75 3.05 4.55 5.8 5.8l1.7-2.3 4.3 1.9-.7 4c-.15.9-.95 1.55-1.85 1.5C9.6 20 4 14.4 3.6 7.05c-.05-.9.6-1.7 1.5-1.85l3-.7Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
             @break

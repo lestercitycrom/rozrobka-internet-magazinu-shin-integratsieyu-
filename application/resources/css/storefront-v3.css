@@ -1651,12 +1651,6 @@
     color: #fff;
 }
 
-.et-v3-process-strip {
-    border-block: 1px solid var(--v3-line);
-    padding-block: clamp(3.25rem, 6vw, 4.75rem);
-    background: #f3f0ea;
-}
-
 .et-v3-process-strip__inner {
     display: grid;
     grid-template-columns: minmax(220px, .72fr) minmax(0, 2.28fr);
@@ -4789,6 +4783,479 @@
     .storefront .et-product-card__buy {
         padding-inline: .4rem;
         font-size: .64rem;
+    }
+}
+
+/* Issue #47: final customer-approved homepage composition. */
+.et-v3-logistics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.25rem, 2.4vw, 2rem);
+}
+
+.et-v3-logistics-card {
+    position: relative;
+    min-width: 0;
+    min-height: 590px;
+    overflow: hidden;
+    border: 1px solid var(--v3-line);
+    background: #fff;
+}
+
+.et-v3-logistics-card--image {
+    display: flex;
+    align-items: end;
+    color: #fff;
+}
+
+.et-v3-logistics-card--image::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgb(6 6 7 / .96), rgb(6 6 7 / .08) 72%);
+    content: "";
+}
+
+.et-v3-logistics-card--image > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.et-v3-logistics-card--video {
+    display: grid;
+    grid-template-rows: minmax(300px, 1.1fr) auto;
+    background: var(--v3-soft);
+}
+
+.et-v3-logistics-media {
+    position: relative;
+    min-height: 300px;
+    overflow: hidden;
+    background: #161618;
+}
+
+.et-v3-logistics-media__poster,
+.et-v3-logistics-media__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.et-v3-logistics-media__video {
+    z-index: 1;
+}
+
+.et-v3-logistics-media__control {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 2;
+    min-height: 44px;
+    border: 1px solid rgb(255 255 255 / .52);
+    padding: .65rem .85rem;
+    background: rgb(8 8 9 / .82);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 850;
+}
+
+.et-v3-logistics-card__content {
+    position: relative;
+    z-index: 1;
+    padding: clamp(1.6rem, 3.5vw, 2.6rem);
+}
+
+.et-v3-logistics-card__content h3 {
+    max-width: 18ch;
+    margin: .65rem 0 0;
+    font-family: var(--et-font-display);
+    font-size: clamp(2rem, 3.2vw, 3.3rem);
+    font-weight: 850;
+    letter-spacing: -.05em;
+    line-height: .98;
+}
+
+.et-v3-logistics-card__content > p:not(.et-eyebrow) {
+    max-width: 58ch;
+    margin: .9rem 0 0;
+    color: var(--v3-muted);
+    line-height: 1.6;
+}
+
+.et-v3-logistics-card--image .et-v3-logistics-card__content > p:not(.et-eyebrow) {
+    color: rgb(255 255 255 / .72);
+}
+
+.et-v3-logistics-card__content > a,
+.et-v3-logistics-card__content > button {
+    margin-top: 1.25rem;
+}
+
+.et-v3-logistics-card--image a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    gap: .5rem;
+    border-bottom: 2px solid var(--v3-red);
+    color: #fff;
+    font-size: .84rem;
+    font-weight: 850;
+}
+
+.et-v3-logistics-card .et-v3-text-link {
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+}
+
+.et-v3-logistics-noscript {
+    margin-top: 1rem;
+    line-height: 1.6;
+}
+
+.et-v3-dialog {
+    width: min(calc(100% - 2rem), 720px);
+    max-height: min(760px, calc(100dvh - 2rem));
+    overflow: auto;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--v3-ink);
+    box-shadow: 0 28px 90px rgb(0 0 0 / .4);
+}
+
+.et-v3-dialog::backdrop {
+    background: rgb(0 0 0 / .68);
+    backdrop-filter: blur(3px);
+}
+
+.et-v3-dialog__surface {
+    position: relative;
+    border-top: 5px solid var(--v3-red);
+    padding: clamp(1.5rem, 5vw, 3.5rem);
+    background: #fff;
+}
+
+.et-v3-dialog__surface h2 {
+    max-width: 15ch;
+    margin: .7rem 0 0;
+    font-family: var(--et-font-display);
+    font-size: clamp(2.3rem, 6vw, 4.4rem);
+    letter-spacing: -.055em;
+    line-height: .94;
+}
+
+.et-v3-dialog__surface > p:not(.et-eyebrow) {
+    max-width: 62ch;
+    margin: 1.25rem 0 0;
+    color: var(--v3-muted);
+    line-height: 1.7;
+}
+
+.et-v3-dialog__surface > .et-btn {
+    margin-top: 1.75rem;
+}
+
+.et-v3-dialog__close {
+    position: sticky;
+    top: 1rem;
+    z-index: 1;
+    display: grid;
+    width: 48px;
+    height: 48px;
+    float: right;
+    place-items: center;
+    border: 1px solid var(--v3-line);
+    background: #fff;
+    color: var(--v3-ink);
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.et-v3-process-strip {
+    border-block: 1px solid var(--v3-line);
+    padding-block: clamp(4.5rem, 8vw, 7rem);
+    background: #f1efea;
+}
+
+.et-v3-process-strip__inner {
+    display: block;
+}
+
+.et-v3-process-strip__head {
+    max-width: 760px;
+}
+
+.et-v3-process-strip__title {
+    max-width: 14ch;
+    font-size: clamp(2.8rem, 5vw, 5rem);
+}
+
+.et-v3-process-strip__lead {
+    max-width: 58ch;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.et-v3-process {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 1.5rem);
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+.et-v3-process__step {
+    position: relative;
+    display: flex;
+    min-height: 320px;
+    flex-direction: column;
+    gap: 0;
+    border-top: 4px solid var(--v3-ink);
+    padding: clamp(1.4rem, 2.5vw, 2rem);
+    background: #fff;
+}
+
+.et-v3-process__icon {
+    display: block;
+    width: 64px;
+    height: 64px;
+    color: var(--v3-ink);
+}
+
+.et-v3-process__icon .et-icon {
+    width: 58px;
+    height: 58px;
+}
+
+.et-v3-process__step > small {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--v3-red);
+    color: #fff;
+    font-size: .78rem;
+    letter-spacing: 0;
+}
+
+.et-v3-process__step > div {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    grid-column: auto;
+    justify-content: end;
+    padding-top: 2.5rem;
+}
+
+.et-v3-process__step h3 {
+    font-size: clamp(1.55rem, 2vw, 2rem);
+}
+
+.et-v3-process__step p {
+    margin-top: .75rem;
+    font-size: .9rem;
+    line-height: 1.6;
+}
+
+.et-v3-process-strip__cta {
+    margin-top: 2rem;
+}
+
+.et-v3-promotion,
+.et-v3-promotion:only-child {
+    min-height: 520px;
+}
+
+.et-v3-promotion__short {
+    min-height: 0;
+    max-height: 7rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.et-v3-promotion__details.is-open {
+    max-height: 11rem;
+}
+
+@media (hover: hover) and (min-width: 768px) {
+    .et-v3-promotion,
+    .et-v3-promotion:only-child {
+        height: clamp(560px, 42vw, 600px);
+        min-height: 0;
+    }
+}
+
+.et-v3-contact__business {
+    grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+    align-items: stretch;
+    gap: clamp(2rem, 5vw, 5rem);
+    margin-top: clamp(3rem, 6vw, 5rem);
+    border-left-width: 1px;
+    padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.et-v3-contact__business-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.et-v3-contact__business-copy h3 {
+    max-width: 17ch;
+    margin: .65rem 0 0;
+    font-family: var(--et-font-display);
+    font-size: clamp(2rem, 3.6vw, 3.6rem);
+    letter-spacing: -.05em;
+    line-height: .98;
+}
+
+.et-v3-contact__business-copy > p:not(.et-eyebrow) {
+    max-width: 58ch;
+    margin: 1rem 0 0;
+    color: rgb(255 255 255 / .68);
+    line-height: 1.65;
+}
+
+.et-v3-contact__business-copy .et-btn {
+    margin-top: 1.5rem;
+}
+
+.et-v3-partners--contact {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.et-v3-partners--contact > h4 {
+    margin: 0;
+    color: rgb(255 255 255 / .72);
+    font-size: .78rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.et-v3-partners--contact > div {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 1rem;
+    background: rgb(255 255 255 / .16);
+}
+
+.et-v3-partners--contact a,
+.et-v3-partners--contact span {
+    min-width: 0;
+    min-height: 108px;
+    padding: 1.2rem;
+    background: #fff;
+}
+
+.et-v3-partners--contact img {
+    width: auto;
+    max-width: min(100%, 180px);
+    height: 58px;
+    filter: none;
+}
+
+@media (max-width: 900px) {
+    .et-v3-logistics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .et-v3-logistics-card {
+        min-height: 520px;
+    }
+
+    .et-v3-process {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .et-v3-contact__business {
+        grid-template-columns: 1fr;
+    }
+
+    .et-v3-partners--contact > div {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .et-v3-logistics-card {
+        min-height: 0;
+    }
+
+    .et-v3-logistics-card--image {
+        min-height: 540px;
+    }
+
+    .et-v3-logistics-card--video {
+        grid-template-rows: 260px auto;
+    }
+
+    .et-v3-logistics-media {
+        min-height: 260px;
+    }
+
+    .et-v3-logistics-card__content h3 {
+        font-size: 2.35rem;
+    }
+
+    .et-v3-dialog {
+        width: calc(100% - 1rem);
+        max-height: calc(100dvh - 1rem);
+    }
+
+    .et-v3-dialog__surface {
+        min-height: 100%;
+        padding: 1.25rem;
+    }
+
+    .et-v3-process {
+        grid-template-columns: 1fr;
+    }
+
+    .et-v3-process__step {
+        min-height: 270px;
+    }
+
+    .et-v3-process__step > div {
+        grid-column: auto;
+    }
+
+    .et-v3-contact__business {
+        padding: 1.4rem;
+    }
+
+    .et-v3-partners--contact a,
+    .et-v3-partners--contact span {
+        min-height: 88px;
+        padding: .8rem;
+    }
+
+    .et-v3-partners--contact img {
+        height: 44px;
+    }
+}
+
+@media (max-width: 420px) {
+    .et-v3-partners--contact > div {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .et-v3-logistics-media__video {
+        animation: none;
     }
 }
 

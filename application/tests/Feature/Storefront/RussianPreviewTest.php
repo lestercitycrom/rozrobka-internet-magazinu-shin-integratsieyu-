@@ -18,8 +18,11 @@ test('russian preview cannot be enabled in production', function (): void {
 
 test('enabled russian preview is translated and marked noindex', function (): void {
     config()->set('storefront.ru_preview_enabled', true);
-    $this->get('/ru')->assertOk()->assertSee('Шины и диски для вашего ритма жизни')->assertSee('noindex,nofollow', false)->assertSee('rel="canonical"', false)->assertSee('lang="ru"', false);
-    $this->get('/')->assertOk()->assertSee('Dekk og felg som passer hverdagen din')->assertDontSee('Шины и диски для вашего ритма жизни');
+    $russianHeroTitle = __('pro.home.hero_title', [], 'ru');
+    $norwegianHeroTitle = __('pro.home.hero_title', [], 'nb');
+
+    $this->get('/ru')->assertOk()->assertSee($russianHeroTitle)->assertSee('noindex,nofollow', false)->assertSee('rel="canonical"', false)->assertSee('lang="ru"', false);
+    $this->get('/')->assertOk()->assertSee($norwegianHeroTitle)->assertDontSee($russianHeroTitle);
 });
 
 test('russian preview 4xx is localized and preserves preview SEO guardrails', function (): void {

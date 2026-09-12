@@ -39,7 +39,10 @@ final class HomepageBusinessPartnerController
 
     public function update(Request $request, HomepageBusinessPartner $homepageBusinessPartner): RedirectResponse
     {
-        $homepageBusinessPartner->update($this->validated($request));
+        $homepageBusinessPartner->update([
+            ...$this->validated($request),
+            'manifest_hash' => null,
+        ]);
 
         return redirect()->route('admin.homepage-business-partners.edit', $homepageBusinessPartner)
             ->with('status', __('admin.homepage_partners.saved'));
@@ -57,7 +60,7 @@ final class HomepageBusinessPartnerController
     {
         return view('admin.homepage-business-partners.form', [
             'partner' => $partner,
-            'assets' => MediaAsset::query()->where('is_active', true)->orderBy('original_name')->get(),
+            'assets' => MediaAsset::query()->where('is_active', true)->where('mime', 'like', 'image/%')->orderBy('original_name')->get(),
             'statuses' => ContentPageStatus::cases(),
         ]);
     }
@@ -77,7 +80,9 @@ final class HomepageBusinessPartnerController
             'media_asset_id' => [
                 $published ? 'required' : 'nullable',
                 'nullable',
-                Rule::exists('media_assets', 'id')->where('is_active', true),
+                Rule::exists('media_assets', 'id')->where(
+                    static fn ($query) => $query->where('is_active', true)->where('mime', 'like', 'image/%'),
+                ),
             ],
             'website_url' => ['nullable', 'string', 'max:2048', $urlRule],
             'sort_order' => ['required', 'integer', 'min:0', 'max:65535'],

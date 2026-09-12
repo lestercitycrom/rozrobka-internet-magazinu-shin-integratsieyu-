@@ -615,6 +615,97 @@ const initPromotionDisclosures = () => {
     });
 };
 
+const initDekkhotellDialog = () => {
+    const dialog = one('[data-dekkhotell-dialog]');
+    const openers = all('[data-dekkhotell-dialog-open]');
+    if (typeof HTMLDialogElement === 'undefined' || !(dialog instanceof HTMLDialogElement) || openers.length === 0) return;
+
+    let returnFocus = null;
+    const close = () => {
+        if (dialog.open) dialog.close();
+    };
+
+    openers.forEach((button) => button.addEventListener('click', () => {
+        returnFocus = button;
+        dialog.showModal();
+        one('[data-dekkhotell-dialog-close]', dialog)?.focus();
+    }));
+    all('[data-dekkhotell-dialog-close]', dialog).forEach((button) => button.addEventListener('click', close));
+    dialog.addEventListener('keydown', (event) => {
+        if (event.key !== 'Tab') return;
+        const focusable = all('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', dialog)
+            .filter((element) => element instanceof HTMLElement && !element.hidden);
+        if (focusable.length === 0) {
+            event.preventDefault();
+            dialog.focus();
+            return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+    dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) close();
+    });
+    dialog.addEventListener('close', () => {
+        if (returnFocus instanceof HTMLElement) returnFocus.focus();
+    });
+};
+
+const initHomepageVideos = () => {
+    all('[data-homepage-video]').forEach((root) => {
+        const video = one('[data-homepage-video-element]', root);
+        const control = one('[data-homepage-video-control]', root);
+        if (!(video instanceof HTMLVideoElement) || !(control instanceof HTMLButtonElement)) return;
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const render = () => {
+            const paused = video.paused;
+            const label = paused ? control.dataset.playLabel : control.dataset.pauseLabel;
+            control.textContent = label || '';
+            control.setAttribute('aria-label', label || '');
+            control.setAttribute('aria-pressed', String(paused));
+        };
+        const failSafe = () => {
+            video.hidden = true;
+            control.hidden = true;
+            root.classList.add('has-video-error');
+        };
+        const respectMotionPreference = () => {
+            if (reducedMotion.matches) {
+                video.pause();
+                video.currentTime = 0;
+            } else {
+                video.play().catch(() => {
+                    if (video.error) failSafe();
+                    else render();
+                });
+            }
+            render();
+        };
+
+        control.addEventListener('click', () => {
+            if (video.paused) video.play().catch(failSafe);
+            else video.pause();
+        });
+        video.addEventListener('play', render);
+        video.addEventListener('pause', render);
+        video.addEventListener('error', failSafe);
+        reducedMotion.addEventListener('change', respectMotionPreference);
+        if (video.error) {
+            failSafe();
+            return;
+        }
+        respectMotionPreference();
+    });
+};
+
 const initAdminSidebar = () => {
     const sidebar = one('[data-admin-sidebar]');
     const overlay = one('[data-admin-overlay]');
@@ -661,4 +752,6 @@ initConditionalAddress();
 initRequestErrorFocus();
 initPromotionCarousels();
 initPromotionDisclosures();
+initDekkhotellDialog();
+initHomepageVideos();
 initAdminSidebar();

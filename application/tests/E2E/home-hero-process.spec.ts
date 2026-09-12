@@ -141,7 +141,7 @@ test('home hero keeps the approved media focal regions clear at every required v
     }
 });
 
-test('home process stays compact and editorial without a mechanical connector', async ({ page }, testInfo) => {
+test('home process renders four substantial customer steps without a mechanical connector', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
     test.setTimeout(120_000);
 
@@ -163,8 +163,13 @@ test('home process stays compact and editorial without a mechanical connector', 
 
         const processBox = await processStrip.boundingBox();
         expect(processBox).not.toBeNull();
-        expect(processBox!.height).toBeLessThan(viewport.width <= 390 ? 930 : 430);
-        measurements.push({ viewport, processStrip: processBox, steps: await steps.count() });
+        const stepBoxes = await steps.evaluateAll((elements) => elements.map((element) => {
+            const box = element.getBoundingClientRect();
+            return { x: box.x, y: box.y, width: box.width, height: box.height };
+        }));
+        expect(Math.min(...stepBoxes.map(({ height }) => height))).toBeGreaterThanOrEqual(viewport.width <= 640 ? 270 : 320);
+        expect(new Set(stepBoxes.map(({ y }) => Math.round(y))).size).toBe(viewport.width <= 640 ? 4 : 1);
+        measurements.push({ viewport, processStrip: processBox, steps: stepBoxes });
         await expectNoGlobalOverflow(page);
 
         if (process.env.CAPTURE_ISSUE_30 === '1') {

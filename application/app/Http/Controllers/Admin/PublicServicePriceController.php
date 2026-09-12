@@ -36,7 +36,20 @@ final class PublicServicePriceController
 
     public function update(Request $request, PublicServicePrice $publicServicePrice): RedirectResponse
     {
-        $publicServicePrice->update($this->validated($request, $publicServicePrice));
+        $validated = $this->validated($request, $publicServicePrice);
+        $manifest = $publicServicePrice->customer_homepage_composition_manifest;
+        if (is_array($manifest) && ($manifest['state'] ?? null) === 'applied' && is_array($manifest['changes']['price_minor'] ?? null)) {
+            $manifest['changes']['price_minor']['operator_owned'] = true;
+        }
+
+        $publicServicePrice->fill([
+            ...$validated,
+            'manifest_hash' => null,
+        ]);
+        if (is_array($manifest)) {
+            $publicServicePrice->customer_homepage_composition_manifest = $manifest;
+        }
+        $publicServicePrice->save();
 
         return redirect()->route('admin.public-service-prices.edit', $publicServicePrice)->with('status', __('public_service_prices.saved'));
     }
