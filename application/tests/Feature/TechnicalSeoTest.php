@@ -32,6 +32,14 @@ test('dynamic production robots keeps public pages indexable while protecting pr
         ->not->toContain("Disallow: /\n");
 });
 
+test('tracked staging nginx config keeps robots blocked across application rollbacks', function (): void {
+    $config = file_get_contents(base_path('../deploy/staging-easytire.nginx.conf'));
+
+    expect($config)
+        ->toContain('location = /robots.txt')
+        ->toContain('return 200 "User-agent: *\\nDisallow: /\\n";');
+});
+
 test('missing public pages render a branded norwegian error page', function (): void {
     $this->get('/missing-page')->assertNotFound()->assertSee('EasyTire')->assertSee('Vi finner ikke siden');
 });

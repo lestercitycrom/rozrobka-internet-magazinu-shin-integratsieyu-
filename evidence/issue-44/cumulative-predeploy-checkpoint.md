@@ -4,126 +4,200 @@ Date: 2026-09-13
 Runtime authorisation: none
 Deployment decision: not requested by this checkpoint
 
-## Exact revisions
+## Exact revisions and review boundary
 
 - Accepted cumulative application base: `7d7c6c4ad58dca8cd651e7b88bcee2bcaa7eed92`.
 - QA/correction branch: `codex/issue-44-cumulative-release-acceptance`.
 - Draft review: PR #51.
-- Staging application revision read back before this pass: `f70f358f06af384364973951eaab8d4fac2b2203`.
-- Immediate retained rollback revision: `ee512d723e78a65a89bfdee4268c3a779f632b33`.
-- Older retained rollback revision: `01a931d432b32a5a0633d1b508256b225387d429`.
-- Final QA head: the exact commit containing this checkpoint is recorded in the PR `ENGINEER UPDATE` (a committed document cannot embed its own resulting commit hash).
+- PM-reviewed head superseded by these corrections: `93dfa12a7eb50217c11719b69ef2746d69415e46`.
+- Current staging application revision: `f70f358f06af384364973951eaab8d4fac2b2203`.
+- First and second retained fallback revisions: `ee512d723e78a65a89bfdee4268c3a779f632b33` and `01a931d432b32a5a0633d1b508256b225387d429`.
+- The proposed corrected head is the exact commit named in the next PR `ENGINEER UPDATE`; this committed file cannot contain its own resulting hash.
 
-## Cumulative QA result
+PR metadata must distinguish the accepted base, the superseded reviewed head, the proposed corrected head, the later squash/merge SHA, and the independently read-back runtime SHA. None of these values is interchangeable.
 
-The remaining PM acceptance gaps are now covered:
+## PM correction 1 — one admin-ownership boundary
 
-- a natural full settings-form save/reload with every unrelated control enabled;
-- NB/RU admin controls at 1024, 390 and 320 through real keyboard traversal;
-- Dekkhotell reverse Shift+Tab, Escape/focus return, real 390/320 touch, mobile CTA reachability, and a native no-JavaScript fallback;
-- native-resolution poster-only evidence at 1440/390/320 in NB/RU;
-- the accepted Issue #45–#47 evidence for V45 viewport families, long short copy, legacy body-only copy, video failure, partner layout, customer navigation and the final homepage composition.
+The older Issue #45 navigation seeder previously ran before the Issue #47 field journal. An administrator could deliberately return one hero language to the exact pre-release copy and a later general seed would treat it as untouched legacy data. Its independent rollback had the symmetrical problem.
 
-Results are indexed in `evidence/issue-44/README.md`. No new P1/P2 application or visual defect remains after the two bounded corrections below.
+The corrected cumulative path is now:
 
-## Bounded corrections found by predeploy QA
+1. `CustomerHomepageCollectionsSeeder`;
+2. `CustomerHomepageCompositionSeeder`, which applies and journals recognized NB/RU hero values;
+3. `CustomerNavigationRevisionSeeder`, which defers to that journal and only adopts an exact legacy field missing from an early applied #47 journal;
+4. reverse rollback through `RollbackCustomerHomepageReleaseSeeder`, with the #45 rollback explicitly deferring whenever the #47 journal exists.
 
-### 1. Staging robots response
+`DatabaseSeeder` delegates #45–#47 to `CustomerHomepageReleaseSeeder`, so its order is identical to the protected deployment path. A `rolled_back` journal is never silently re-applied. No second ownership column, manifest or destructive data reset was introduced.
 
-The live staging domain currently returns a crawlable body (`Disallow:` with no path). A tracked static `public/robots.txt` is served before the environment-aware Laravel route, so the correct non-production `Disallow: /` response is bypassed.
+The ordered application tests cover:
 
-Correction in PR #51:
+- full seed, authenticated one-language admin edit to the exact old literal, and repeated full seed;
+- apply, authenticated edit away and back to the applied value, complete reverse-order rollback twice, and attempted re-apply;
+- absent-row and exact-legacy-row apply/rollback behaviour;
+- compatibility adoption into an existing applied journal that lacks only the hero entry;
+- preservation of the other language and an unrelated field.
 
-- remove the conflicting static file;
-- retain the environment-aware route;
-- add a regression that requires the static file to be absent and the non-production response to contain `Disallow: /`.
+Final local verification after the corrections: Pint passed; both deployment shell files passed `bash -n`; Pest passed `474` tests with `1` expected platform skip and `4,439` assertions. The earlier `artisan test` attempt after the workstation reboot is not counted because its child process ignored the temporary-directory override; the same complete suite was rerun directly through Pest with the intended writable temp directory and passed.
 
-Production behaviour remains environment-aware. The post-deploy acceptance must read the real response body, not only status 200.
+## PM correction 2 — protected, scoped deployment
 
-### 2. Issue #45 content seeder wiring
+The repository hook no longer calls the general `DatabaseSeeder`. It invokes only:
 
-The deployment hook invokes the general `DatabaseSeeder`, while the accepted guarded navigation-copy seeder was only documented as an explicit command. Before this correction, a current empty staging settings table would render the new translation fallback after Issue #47 created its settings row, but the exact corrected values would not be persisted. The repeatable deployment path was also incomplete for any environment that already carried the exact legacy persisted hero values, because those stored values override the fallback.
+```text
+Database\Seeders\CustomerHomepageReleaseSeeder
+```
 
-Correction in PR #51:
+The reverse operation is one equally narrow command:
 
-- invoke `CustomerNavigationRevisionSeeder` immediately after the legacy homepage content seed;
-- make the Issue #47 composition manifest persist the corrected NB/RU values when it creates a previously absent settings row, recording `null -> corrected value` for guarded rollback;
-- prove through the full production-seed path that both a missing row and exact legacy NB/RU values end with the exact persisted and rendered copy;
-- prove that a repeat run preserves an administrator edit made in only one language;
-- retain the seeder's exact-old-value guard, idempotence, and operator-edit preservation.
+```text
+Database\Seeders\RollbackCustomerHomepageReleaseSeeder
+```
 
-## Fresh redacted staging read-back
+If a hook fails before the backup/migration boundary, its incomplete release directory is removed. Once database mutation begins, the failed release is retained so the reviewed rollback seeder remains available for scoped recovery. A full database restore is exceptional and requires separate recovery approval.
 
-| Area | Read-only result | Release implication |
-|---|---|---|
-| Current release | `f70f358f06af384364973951eaab8d4fac2b2203` | Candidate is not deployed. |
-| Candidate migrations | The Issue #46 and #47 migrations/columns/tables are absent. | Expected; the protected hook must apply them before activation. |
-| Database/cache | Reachable; both configured for database-backed operation. | Basic dependency check passed. |
-| Jobs/failed jobs/outbox | 0 / 0 / 0 pending or failed. | There is no work to drain, but zero work does not make the services healthy. |
-| Queue worker | Inactive; heartbeat stale. | Runtime blocker before acceptance. Diagnose the repeated stop before recovery. |
-| Scheduler | Timer failed/stale; last service execution itself exited successfully. | Runtime blocker before acceptance. Determine the resource/start failure and prove repeated healthy ticks. |
-| NDI | Last import is far beyond the freshness window; live write/read gates and sandbox API gates are disabled. | Correct fail-closed storefront behaviour must remain. Do not publish stale stock. |
-| Payments | Commerce gate disabled; Dintero configured in test environment. | No payment test or real payment is authorised by #44. |
-| Notifications | Customer delivery, Notion and Telegram disabled; mail uses a non-delivery transport. | Must remain disabled for this staging release. |
-| Disk | About 8.9 GiB available, 77% used; health threshold currently passes. | Sufficient for one release, but retain only according to the approved release/backup policy. |
-| Inodes | About 81% free. | No inode pressure. |
-| HTTP smoke | Homepage, admin login and robots endpoint return 200. | Robots body is still wrong until the correction is deployed and verified. |
+Four release directories exist before deployment. The hook retains five, so one candidate does not prune any current fallback. Fourteen completed database snapshots exist before deployment; the hook now retains twenty so the protected pre-migration snapshot and bounded retry snapshots do not prune the current set. Cleanup is a later reviewed operation, not part of acceptance.
 
-The queue and scheduler state is a runtime blocker, not an application-test failure. The final deployment gate must include cause-based recovery and post-recovery heartbeats; a blind one-off restart is insufficient.
+Installed and candidate hook state from the read-only comparison:
 
-## Exact content effect on the current staging snapshot
+- installed hook SHA-256: `5a397815006c354269e5d83d9f23712b33391ba947840cef5f5761143b8c3477`;
+- installed hook still contains the general `db:seed --force` command;
+- candidate hook SHA-256: `06d00dd3d5d5f802aa819b2b57014973b5b3d3c79b1db295b361cf6965c1c178`;
+- guard installer SHA-256: `2f2186d10afc7d982b03421ae3562ad30aef36aa1c6cfa11c0d3da950ec730bf`;
+- the candidate changes only the scoped seeder, failed-release recovery retention and bounded snapshot retention; both candidate hashes must be re-read from the exact accepted merge artifact before transfer.
 
-The hook takes a database backup, runs the two additive migrations, and then runs `DatabaseSeeder` before atomically activating the new application revision.
+The installed hook therefore must not be assumed to update itself when `main` is pushed. After exact-head acceptance and merge, but before the protected push, the accepted deploy artifacts must be transferred separately and installed only under the runtime gate described below.
 
-Expected scoped result:
+## Staging robots protection, including rollback
 
-1. Issue #45: because staging currently has no settings row, the guarded navigation seeder initially has no persisted value to change. The Issue #47 composition manifest then creates the row, stores the exact corrected NB/RU hero copy and journals the original `null` values. If an environment already has the exact legacy text, the navigation seeder updates only that language; unrelated/operator text is preserved. Repeat runs do not overwrite a later one-language administrator edit.
-2. Issue #46: the single existing workshop promotion is adopted under its stable key. Its current title/body and related operator differences are preserved, so it remains operator-owned (`manifest_hash = null`) and is not duplicated. Three other offers are created, giving four total offers. Twelve managed service cards and five local homepage media assets are created.
-3. Issue #47: one settings row is created and only blank/recognized legacy composition fields are filled; four partner rows and four local logo assets are created; the base `hotel-r15` amount changes from 750 to 700 NOK with a field-level journal; the exact missing video remains unassigned and the approved poster remains visible; Snapchat remains omitted because no confirmed destination exists.
-4. A repeat `DatabaseSeeder` run is idempotent. Later administrator edits are not reclassified as untouched manifest data.
+Removing the candidate application's static `public/robots.txt` fixes the new release, but the primary rollback revision still contains the permissive static file. A plain symlink rollback followed by an HTTP 200 check would therefore be insufficient.
 
-Synthetic proof: 25 focused seed/apply/repeat/operator-edit/rollback tests pass with 158 assertions. The final full Laravel/Pest matrix passes 466 tests with 1 expected skip and 4,405 assertions; the accepted broader suite also covers the public NB/RU result. A pre-existing catalogue assertion was made order-independent by checking gross/net price values by their tax-mode keys; no application pricing behaviour changed.
+Two tracked safeguards are included:
 
-## Apply plan after an explicit `STAGING_DEPLOY_APPROVED`
+- the fresh-bootstrap nginx configuration owns an exact `/robots.txt` response with `Disallow: /`;
+- `deploy/install-accepted-staging-guards.sh` derives a candidate from the installed Certbot-managed vhost, requires exact pre-change hook and vhost hashes, inserts exactly one robots location, validates with `nginx -t`, reloads nginx, and restores both files if validation or reload fails.
 
-1. Freeze administrative content edits for the short staging window and record the exact accepted PR head and current staging/rollback revisions.
-2. Resolve the queue-worker and scheduler failure by cause, then prove fresh repeated heartbeats, zero failed jobs, and an empty or intentionally drained outbox. Stop if they become unhealthy again.
-3. Confirm the deployment hook can create and verify its encrypted pre-migration database backup. Stop on any backup failure.
-4. Merge only the exact PM-accepted PR head into `origin/main`; verify the resulting exact main SHA and successful GitHub quality gates.
-5. Push that exact main SHA through the protected staging remote once. The hook performs locked dependency installation, production build, Laravel tests, backup, forced migrations, general guarded seed, cache compilation, and atomic release activation.
-6. Read back the active revision and verify `/`, `/admin/login`, `/robots.txt` body, NB/RU homepage composition, poster-only Dekkhotell, content counts, 700 NOK base hotel price, and the preserved legacy workshop offer.
-7. Re-check database/cache, queue and scheduler heartbeats, jobs/failed jobs/outbox, disk/inodes, NDI freshness, and every disabled integration gate. No payment, NDI order/inquiry, notification, or real customer submission is part of this acceptance.
+Installed vhost SHA-256 at read-back: `425b07ce47c2934e7ce42c2b9d9cd0ea2fd72db372abece537affe64c8569b26`. The tracked fresh-bootstrap file is not copied wholesale over the Certbot-managed vhost.
+The tracked fresh-bootstrap vhost SHA-256 is `3a35967c66ab0d331e564d4e63a4c1260a6e01f1d2a4179b72c1c8198ef60851`.
 
-Stop before or during the hook on any revision mismatch, backup failure, failed test/build/migration/seed, unexpected content conflict, or runtime-health regression. Do not manually force the symlink or bypass the hook.
+No hook, nginx or runtime file was changed during this checkpoint.
 
-## Rollback plan
+## Timestamped worker and scheduler diagnosis
 
-If failure happens before activation, the previous application revision remains active. If migrations or seeds have already changed the shared database, stop traffic-changing work and use the verified pre-migration backup under an explicit recovery approval; never use blind destructive migration rollback.
+Read-only capture time: `2026-09-12T23:23:57Z`.
 
-If live acceptance fails after activation:
+| Unit | Effective state and transition | Last/next trigger | Result |
+|---|---|---|---|
+| Queue worker | enabled, inactive/dead since `2026-09-06 10:49:52 UTC`; last active from `10:40:06` to `10:49:52`; `NRestarts=50` | not timer-driven | last main process exited `0`; unit result `success` |
+| Scheduler timer | enabled, failed since `2026-09-06 10:50:00 UTC` | last trigger `2026-09-06 10:49:00 UTC`; next trigger `n/a` | `resources` |
+| Scheduler service | static, inactive/dead; last ran `2026-09-06 10:49:00–10:49:01 UTC` | invoked by the timer | last main process exited `0`; unit result `success` |
 
-1. keep integrations disabled and prevent new real submissions;
-2. run the guarded rollback seeders from the accepted release in reverse content order:
-   - `RollbackCustomerHomepageCompositionSeeder`;
-   - `RollbackCustomerHomepageCollectionsSeeder`;
-   - `RollbackCustomerNavigationRevisionSeeder`;
-3. verify that untouched Issue #46/#47 rows are drafted, the owned 700 NOK change is restored, unchanged owned settings are restored, and all later operator edits plus media remain intact;
-4. atomically return to the retained previous application release;
-5. leave additive schema in place unless a separate reviewed database recovery authorises restoring the verified backup;
-6. re-run the complete redacted health and HTTP read-back.
+The effective installed units match the tracked command lines and restrictions. Unit-specific and system journal queries for the transition window return no retained entries. Consequently, the old queue restart chain and timer `resources` result are facts, but their root cause is **not recoverable from retained evidence**. No OOM, application exception or systemd rate-limit cause is claimed without a log.
 
-The rollback seeders are intentionally non-destructive: they do not delete customer/operator content or media and do not overwrite later administrator changes.
+## Effective runtime gates and scheduler consequences
 
-## Explicit non-code decisions/materials
+The same read-only application capture reports:
 
-- Exact `003 muzik.mp4`: not supplied; poster fallback is accepted for staging, but the original media requirement remains open.
+- database queue and database cache; heartbeats required;
+- jobs `0`, failed jobs `0`, outbox pending/failed `0/0`, media pending/failed `0/0`;
+- payments disabled; Dintero selected, configured for test, callback signature protection configured;
+- NDI live inquiry/order/fulfilment and C1 test mode disabled;
+- NDI sandbox catalogue/inquiry/order disabled;
+- NDI inbox configured and readable; three visible XLSX files, each already represented by a `succeeded` receipt;
+- Notion, Telegram and customer-email delivery disabled; mail transport `log`;
+- scheduler and queue heartbeat timestamps both stopped at `2026-09-06T10:49:01+00:00`.
+
+The installed timer has `Persistent=true`. Clearing and starting it may immediately run one missed scheduler activation; it does not replay every missed minute. At the current application revision that activation evaluates:
+
+- outbox every minute (currently empty; external destinations disabled);
+- media sync hourly (currently no pending media);
+- inbox sync every ten minutes (configured; the three current XLSX fingerprints are already succeeded, but any newly arrived stable file would be imported);
+- sandbox catalogue hourly (condition false);
+- scheduler heartbeat and queued worker heartbeat every minute.
+
+Therefore a fresh pre-start read-back of gates, queue counts and inbox receipts is mandatory. Any new stable unreceipted inbox file, queued customer work, enabled external destination, or changed revision is a stop condition.
+
+## Controlled service recovery — not executed
+
+Preconditions:
+
+1. no deployment in progress and runtime revision still equals `f70f358f06af384364973951eaab8d4fac2b2203`;
+2. payments, NDI API/sandbox writes, Notion, Telegram and customer delivery remain disabled;
+3. jobs, failed jobs, outbox pending/failed and media pending/failed remain zero;
+4. all visible inbox XLSX files still have terminal successful receipts;
+5. installed unit definitions still match the accepted definitions;
+6. a separate runtime gate explicitly authorises service recovery.
+
+Managed-unit actions, performed once under that gate:
+
+```bash
+sudo systemctl reset-failed easytire-queue.service easytire-schedule.timer
+sudo systemctl start easytire-queue.service
+sudo systemctl start easytire-schedule.timer
+```
+
+At approximately T+0, T+70 seconds and T+140 seconds, record:
+
+```bash
+date -u
+systemctl show easytire-queue.service easytire-schedule.timer easytire-schedule.service \
+  --property=Id,ActiveState,SubState,Result,NRestarts,ExecMainStatus,LastTriggerUSec,NextElapseUSecRealtime
+sudo -u <DEPLOY_USER> /usr/bin/php <APP_ROOT>/current/application/artisan easytire:health --no-ansi
+journalctl -u easytire-queue.service -u easytire-schedule.timer -u easytire-schedule.service \
+  --since '<RECOVERY_START_UTC>' --no-pager -o short-iso-precise
+```
+
+Acceptance requires three healthy observations, at least two new scheduler ticks, fresh queue and scheduler heartbeats, zero failed work, and no unexpected integration activity. On any failure or unexpected queue/inbox change, stop immediately and preserve the new evidence:
+
+```bash
+sudo systemctl stop easytire-schedule.timer easytire-queue.service
+systemctl status easytire-queue.service easytire-schedule.timer easytire-schedule.service --no-pager
+journalctl -u easytire-queue.service -u easytire-schedule.timer -u easytire-schedule.service \
+  --since '<RECOVERY_START_UTC>' --no-pager -o short-iso-precise
+```
+
+Do not use `enable`, `restart`, queue retry, queue flush, inbox import, sandbox refresh or reset commands in this recovery pass.
+
+## Ordered release recipe
+
+1. **Read-only preparation:** repeat revision, unit, queue, inbox, gate, disk, release and backup counts. Stop on drift from the preconditions above.
+2. **Code acceptance:** PM reviews the exact proposed PR head and final green CI. Only the PM-approved exact head may be merged. The engineer does not merge midway.
+3. **Merge identity:** record the resulting `origin/main` merge SHA and prove its reachable history contains the accepted head/content.
+4. **Separate runtime gate:** obtain one explicit approval covering guard installation, controlled service recovery and one deployment of that exact merged SHA. Code acceptance alone grants no runtime write.
+5. **Install accepted guards:** transfer only `deploy/post-receive` and `deploy/install-accepted-staging-guards.sh` from the exact merge artifact, verify their hashes, then run:
+
+   ```bash
+   sudo bash <ACCEPTED_DEPLOY_DIR>/install-accepted-staging-guards.sh \
+     <HOOK_TARGET> <NGINX_VHOST> \
+     5a397815006c354269e5d83d9f23712b33391ba947840cef5f5761143b8c3477 \
+     425b07ce47c2934e7ce42c2b9d9cd0ea2fd72db372abece537affe64c8569b26
+   ```
+
+   Read back the installed hook hash, `nginx -t`, the active vhost hash and the HTTPS robots body. Stop if it is not exactly `User-agent: *` plus `Disallow: /`.
+6. **Recover managed services:** execute the controlled recovery above and require the complete repeated-tick window.
+7. **Protected deploy:** push the one exact merged `main` SHA once. The accepted hook performs locked build/tests, encrypted backup, additive migrations, only `CustomerHomepageReleaseSeeder`, cache compilation and atomic activation.
+8. **Live read-back:** verify active SHA, `/`, `/admin/login`, exact robots body, NB/RU homepage, poster-only Dekkhotell, four offers, twelve managed service cards, four partners, 700 NOK base hotel price, and preservation of the existing workshop offer.
+9. **Operational read-back:** repeat DB/cache, three heartbeat observations, queue/outbox/media counts, NDI freshness, inbox receipts, disk/inodes and every disabled integration gate.
+
+## Scoped recovery and rollback
+
+Primary rollback target: `f70f358f06af384364973951eaab8d4fac2b2203`, but only if its revision, directory and basic HTTP/application checks remain fresh at the runtime gate. Retain `ee512d723e78a65a89bfdee4268c3a779f632b33`, `01a931d432b32a5a0633d1b508256b225387d429`, all fourteen existing snapshots and the new pre-migration snapshot through acceptance.
+
+**Failure before database mutation:** the hook removes the incomplete candidate; current remains unchanged.
+
+**Failure after migration/seed begins but before activation:** current still serves the previous revision and the failed candidate is retained. Keep integrations and managed services stopped, inspect the recorded release marker and run the candidate's guarded `RollbackCustomerHomepageReleaseSeeder`. Verify field journals, row publication states and the 700 -> 750 owned price reversal. Leave additive schema in place. Use the verified pre-migration database snapshot only if scoped recovery cannot restore consistency and a separate destructive recovery approval is granted.
+
+**Failure after activation or live acceptance:** stop the timer and worker, keep integrations disabled, run the active candidate's guarded `RollbackCustomerHomepageReleaseSeeder`, verify operator-owned values are preserved, atomically return the application link to the verified primary rollback release, recycle the queue worker onto the old code, and repeat HTTP/health read-back. The nginx-owned robots response remains `Disallow: /` even though the rollback release contains an old static file.
+
+Do not delete a failed candidate, fallback release, database snapshot or installer-created configuration backup until PM live acceptance is complete.
+
+## Visual and external-material boundary
+
+The native 1440 poster crop was reviewed directly, rather than only as a scaled full-page thumbnail. Its NB display face is present in the bundled build manifest and visibly rendered; the inspected headline has no clipping or glyph fallback. The compact line breaks are intentional to the card width. This does **not** claim final aesthetic approval of the entire live site: staging still runs the old revision, and final visual acceptance remains part of post-deploy read-back.
+
+- Exact `003 muzik.mp4`: not supplied; the accepted poster remains the staging fallback and the original media requirement stays open.
 - Snapchat: no confirmed username/URL; no link is published.
-- September offer dates contain day/month copy but no year or database schedule. For the 2026 staging review they are displayed as supplied. Before production, the owner/customer must confirm the intended year/recurrence and the manual publish/unpublish date; the system must not invent annual recurrence.
+- September offer dates still need owner confirmation of year/recurrence before production.
 
 ## Gate recommendation
 
-Application QA can proceed to exact-head PM review after commit, push and green CI. Staging deployment must remain unapproved until:
-
-- the PM accepts the exact corrected head;
-- queue/scheduler cause and recovery plan are accepted;
-- a one-time `STAGING_DEPLOY_APPROVED` is issued.
+The corrected head may return to exact-SHA PM review after formatting, one final local test pass, commit, push and one final green CI run. No staging deployment, merge, unit start, nginx edit, queue action, integration call or real submission is authorised by this checkpoint.

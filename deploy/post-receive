@@ -26,7 +26,16 @@ while read -r oldrev newrev refname; do
     [[ "$release" == "$RELEASES/"* && ! -e "$release" ]] || fail 'Invalid release target.'
 
     mkdir -p "$release"
-    trap 'rm -rf -- "$release"' ERR
+    database_marker="$release/.database-mutation-started"
+    on_release_error() {
+        if [[ ! -e "$database_marker" ]]; then
+            rm -rf -- "$release"
+            log 'Failed pre-database release was removed.'
+        else
+            log 'Failed release was retained for scoped content recovery.'
+        fi
+    }
+    trap on_release_error ERR
     GIT_WORK_TREE="$release" git checkout --force "$newrev" -- .
     printf '%s\n' "$newrev" > "$release/REVISION"
     app="$release/application"
@@ -51,8 +60,9 @@ while read -r oldrev newrev refname; do
         npm run build
         php artisan test
         php artisan easytire:backup:mysql --no-interaction
+        : > "$database_marker"
         php artisan migrate --force --no-interaction
-        php artisan db:seed --force --no-interaction
+        php artisan db:seed --class='Database\Seeders\CustomerHomepageReleaseSeeder' --force --no-interaction
         php artisan config:cache
         php artisan route:cache
         php artisan view:cache
@@ -71,7 +81,10 @@ while read -r oldrev newrev refname; do
 
     (
         cd "$app"
-        php artisan easytire:backup:prune --no-interaction
+        # The cumulative release starts with 14 retained snapshots. Keep room
+        # for the protected pre-migration backup and bounded recovery retries;
+        # cleanup is a separate, reviewed operation after acceptance.
+        php artisan easytire:backup:prune --keep=20 --no-interaction
     ) || log 'Backup retention cleanup failed; completed backups were left intact.'
 
     mapfile -t old_releases < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | awk 'NR > 5 {print $2}')

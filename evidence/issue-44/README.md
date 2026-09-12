@@ -12,6 +12,10 @@ This directory is the final focused evidence supplement for the customer homepag
 | Real touch open/close and mobile dialog readability | Touch-enabled 390 and 320 projects use `tap()`, prove `pointerType=touch`, make the final CTA reachable, close by touch, and return focus. | Full Playwright result; `tests/E2E/issue-44-release-qa.spec.ts` |
 | No-JavaScript details fallback | A JavaScript-disabled context opens the native `details` disclosure and reads both paragraphs at 390/320 in NB/RU without overflow. | `tests/E2E/issue-44-release-qa.spec.ts` |
 | Approved poster-only fallback while the exact video is absent | No video element/control is rendered; the approved poster, copy and CTA remain readable at 1440/390/320 in NB/RU. | `homepage-poster-only-*.jpg`, `poster-only-dekkhotell-*.png`, `poster-only-measurements.json` |
+| One ownership boundary across #45/#47 | Ordered apply/admin-edit/repeat/complete-rollback/reapply tests preserve exact-old and exact-applied operator choices per field and per language. | `tests/Feature/Content/CustomerHomepageCompositionSeederTest.php` |
+| Narrow protected apply and rollback | The hook invokes only the cumulative release seeder; reverse order is represented by one guarded rollback seeder. | `database/seeders/CustomerHomepageReleaseSeeder.php`, `database/seeders/RollbackCustomerHomepageReleaseSeeder.php`, `tests/Architecture/DeploymentContractTest.php` |
+| Rollback-safe staging robots and runtime guard installation | Nginx owns the staging response independently of the active application release; the installer validates exact preconditions and restores both files on failure. | `deploy/staging-easytire.nginx.conf`, `deploy/install-accepted-staging-guards.sh`, `tests/Feature/TechnicalSeoTest.php` |
+| Worker/scheduler diagnostics and bounded recovery | Timestamped unit transitions, effective gates, `Persistent=true` consequences, exact start/stop actions and the three-observation acceptance window. | `cumulative-predeploy-checkpoint.md` |
 
 The focused Dekkhotell element images are intentionally captured after scrolling the section into view, so the fixed header can appear above the element boundary on narrow captures. The full-page `homepage-poster-only-*.jpg` files record the natural document composition and are the authoritative visual context.
 
@@ -23,10 +27,10 @@ The focused Dekkhotell element images are intentionally captured after scrolling
 
 ## Verification result
 
-- Final Laravel/Pest matrix: 466 passed, 1 skipped, 4,405 assertions.
+- Final Laravel/Pest matrix after the release corrections: 474 passed, 1 skipped, 4,439 assertions.
 - Full Playwright matrix: 202 passed, 83 intentional project-scoped skips, 0 failed in 6.1 minutes.
 - A repeated full Playwright run after the first bounded corrections produced the same 202/83/0 result in 4.7 minutes. The final journal-backed hero correction changes only production seeding and is covered by the final PHP feature matrix below.
-- Focused content apply/repeat/operator-edit/rollback matrix after the final seed-wiring correction: 25 passed, 158 assertions.
+- Focused content/apply/repeat/operator-edit/rollback, SEO and deployment-contract matrix after the final seed-wiring correction: 37 passed, 213 assertions.
 - Production Vite build: passed.
 - Pint: passed with an explicit writable PHP temporary directory required by this Windows host.
 - One pre-existing catalogue assertion was made order-independent: it now verifies gross/net prices by tax-mode key instead of relying on an unspecified SQL row order. Production pricing behaviour was not changed.
