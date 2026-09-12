@@ -1,14 +1,13 @@
 # Current task
 
-- Parent: [#44 — Implement customer homepage and navigation revision](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44)
-- Issue: [#47 — Complete customer homepage composition, Dekkhotell, process and contact content](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/47)
-- State: `pm-review`
-- Branch: `codex/issue-47-customer-homepage-composition`
-- PR: [#50 — `[TASK-47] Complete customer homepage composition`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/50) (`Closes #47`)
-- Exact accepted base: `92b2c5a9178ec913ac056e286a5e7c76b73973f5`
-- Scope: final #44 homepage composition; Dekkhotell content/media/dialog; four-step home-visit process; guarded 700 kr hotel starting price; contact/BEDRIFT/social/business-partner content; V46-TEXT-01; full tests and compact evidence.
-- Known prerequisites to verify: exact `003 muzik.mp4`, configured Snapchat destination and verified Nordic Spas logo/source. Missing assets remain explicit and do not block safe fallbacks or unrelated work.
-- Runtime boundary: local/CI synthetic only. No staging deployment/write, server migration/seeding, NDI, Dintero, payments, notifications, Notion, Telegram or real customer submission is authorised.
-- Review gate: implementation and local verification are complete; publish one ENGINEER UPDATE on the exact final SHA, mark PR #50 Ready and stop for PM review.
+- Issue: [#44 — Implement customer homepage and navigation revision](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44)
+- State: `in-progress`
+- Branch: `codex/issue-44-cumulative-release-acceptance`
+- PR: pending — one Draft PR titled `[TASK-44] Accept cumulative customer homepage release` (`Closes #44`).
+- Exact accepted application candidate/base: `7d7c6c4ad58dca8cd651e7b88bcee2bcaa7eed92`.
+- Scope: cumulative local/CI release QA, focused missing public/admin interaction and viewport coverage, fresh read-only staging preflight, and one exact content/apply/rollback plan.
+- Known pending materials: exact `003 muzik.mp4` and a confirmed Snapchat destination. The staging review must use the poster fallback and omit Snapchat until supplied or explicitly deferred.
+- Runtime boundary: local/CI synthetic QA and read-only staging inspection only. No staging write/deploy, server migration/seeding, queue mutation, NDI, Dintero, payments, notifications, Notion, Telegram or real customer submission is authorised.
+- Review gate: return one cumulative predeploy checkpoint and keep the QA PR Draft for exact-SHA PM review.
 
-Issue #47 and its PM comments are the full task. This file is only a pointer.
+Issue #44 comment `5647155781` is the full start gate. This file is only a pointer.
