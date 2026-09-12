@@ -40,6 +40,7 @@ final class CustomerHomepageCompositionSeeder extends Seeder
         $settings = StorefrontSettings::query()->find(1) ?? new StorefrontSettings(['id' => 1]);
 
         $desired = [
+            'hero_text_nb' => 'Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.',
             'logistics_kicker_nb' => 'DEKKHOTELL',
             'logistics_title_nb' => 'Dekkhotell uten stress',
             'hotel_kicker_nb' => 'DEKKHOTELL',
@@ -75,6 +76,7 @@ final class CustomerHomepageCompositionSeeder extends Seeder
             'business_cta_nb' => 'Be om et tilbud',
             'business_partners_heading_nb' => 'Noen av bedriftene vi hjelper',
 
+            'hero_text_ru' => 'Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.',
             'logistics_kicker_ru' => 'ШИННЫЙ ОТЕЛЬ',
             'logistics_title_ru' => 'Шинный отель без хлопот',
             'hotel_kicker_ru' => 'ШИННЫЙ ОТЕЛЬ',
@@ -138,6 +140,7 @@ final class CustomerHomepageCompositionSeeder extends Seeder
     private function priorSettingsValues(): array
     {
         return [
+            'hero_text_nb' => ['Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.'],
             'logistics_kicker_nb' => ['Dekkhotell · Dekkskift hjemme hos deg'], 'logistics_title_nb' => ['Dekkhotell', 'Hvor passer det best?'],
             'hotel_kicker_nb' => ['Dekkhotell'], 'hotel_title_nb' => ['Lagring koblet til sesongskiftet.'], 'hotel_text_nb' => ['Se tjenesten for betingelser. Pris og vilkår bekreftes av EasyTire før avtalen inngås.'],
             'mobile_kicker_nb' => ['Hjemme hos deg'], 'mobile_title_nb' => ['Vi kommer dit bilen står.'], 'mobile_text_nb' => ['Velg dekkskift hjemme hos deg og oppgi adressen. Tid og gjennomføring bekreftes av EasyTire.'], 'mobile_cta_nb' => ['Start en forespørsel'],
@@ -148,6 +151,7 @@ final class CustomerHomepageCompositionSeeder extends Seeder
             'process_4_title_nb' => ['Betal etter utført arbeid'], 'process_4_text_nb' => ['Betaling skjer etter at arbeidet er utført og den endelige prisen er avklart.'],
             'contact_kicker_nb' => ['Kontakt'], 'contact_title_nb' => ['Trenger du et menneske først?'], 'contact_text_nb' => ['Ring, send e-post eller åpne det eksakte EasyTire-punktet i Google Maps.'],
             'business_kicker_nb' => ['Bedrift'], 'business_title_nb' => ['En lokal partner for bilparken.'], 'business_text_nb' => ['EasyTire samarbeider med lokale bedrifter og tilpasser hjulservice, lagring og oppfølging til bilparken.'],
+            'hero_text_ru' => ['Закажите выезд домой, на работу или приезжайте в мастерскую. EasyTire упростит сезонную замену и подтвердит детали до визита.'],
             'logistics_kicker_ru' => ['Хранение колёс · Выездной сервис в Тромсё'], 'logistics_title_ru' => ['Хранение колёс', 'Где удобнее?'],
             'hotel_kicker_ru' => ['Хранение колёс'], 'hotel_title_ru' => ['Хранение вместе с сезонной заменой.'], 'hotel_text_ru' => ['Условия и стоимость EasyTire подтверждает до заключения соглашения.'], 'hotel_cta_ru' => ['О хранении колёс'],
             'mobile_kicker_ru' => ['Выездной сервис'], 'mobile_title_ru' => ['Приедем туда, где стоит автомобиль.'], 'mobile_text_ru' => ['Выберите выездную услугу и укажите адрес. Время и проведение работ подтверждает EasyTire.'], 'mobile_cta_ru' => ['Начать заявку'],

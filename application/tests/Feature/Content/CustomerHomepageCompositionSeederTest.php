@@ -168,6 +168,12 @@ test('admin ownership survives a return to the release value and blocks rollback
 test('homepage renders the final approved order copy links logos and hidden Russian preview', function (): void {
     $this->seed(DatabaseSeeder::class);
 
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)
+        ->toBe('Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.')
+        ->and($settings->hero_text_ru)
+        ->toBe('Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.');
+
     $response = $this->get('/')->assertOk();
     $response
         ->assertSeeInOrder([
@@ -182,6 +188,7 @@ test('homepage renders the final approved order copy links logos and hidden Russ
             'class="et-v3-contact"',
         ], false)
         ->assertDontSee('data-testid="catalog-foundation"', false)
+        ->assertSee('Bestill dekkskift hjemme, på jobb eller på verksted.')
         ->assertSee('Dekkhotell uten stress')
         ->assertSee('Vi kommer til deg')
         ->assertSee('700 kr')
@@ -196,8 +203,46 @@ test('homepage renders the final approved order copy links logos and hidden Russ
     config()->set('storefront.ru_preview_enabled', true);
     $this->get('/ru')
         ->assertOk()
+        ->assertSee('Закажите замену колёс дома, на работе или в мастерской.')
         ->assertSee('Шинный отель без хлопот')
         ->assertSee('Мы приедем к вам')
         ->assertSee('Google Maps показывает правильный въезд через Ringvegen 202.')
         ->assertDontSee('data-testid="catalog-foundation"', false);
+});
+
+test('full production seed applies the guarded navigation correction to exact legacy settings', function (): void {
+    StorefrontSettings::query()->create([
+        'id' => 1,
+        'hero_text_nb' => 'Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.',
+        'hero_text_ru' => 'Закажите выезд домой, на работу или приезжайте в мастерскую. EasyTire упростит сезонную замену и подтвердит детали до визита.',
+    ]);
+
+    $this->seed(DatabaseSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)
+        ->toBe('Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.')
+        ->and($settings->hero_text_ru)
+        ->toBe('Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.');
+});
+
+test('full production seed repeats without overwriting an administrator edit in only one language', function (): void {
+    $this->seed(DatabaseSeeder::class);
+    $admin = User::factory()->operations()->create();
+
+    $this->actingAs($admin)->put('/admin/storefront-settings', [
+        'hero_text_nb' => 'Operatørens egen norske hero-tekst.',
+    ])->assertRedirect();
+
+    $this->seed(DatabaseSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)
+        ->toBe('Operatørens egen norske hero-tekst.')
+        ->and($settings->hero_text_ru)
+        ->toBe('Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.')
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_nb']['operator_owned'])
+        ->toBeTrue()
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_ru']['operator_owned'] ?? false)
+        ->toBeFalse();
 });

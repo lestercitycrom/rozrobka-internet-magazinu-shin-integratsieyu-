@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ContentPageSeeder::class,
             HomepageContentSeeder::class,
+            CustomerNavigationRevisionSeeder::class,
             PublicServicePriceSeeder::class,
             ServiceAddonSeeder::class,
             SeoServicePageSeeder::class,

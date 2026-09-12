@@ -1,0 +1,80 @@
+[
+  {
+    "locale": "nb",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "hotel": {
+      "top": 98,
+      "width": 1440,
+      "height": 877.296875
+    },
+    "videoAssigned": false
+  },
+  {
+    "locale": "nb",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "hotel": {
+      "top": -213.46875,
+      "width": 390,
+      "height": 1369.21875
+    },
+    "videoAssigned": false
+  },
+  {
+    "locale": "nb",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "hotel": {
+      "top": -245.140625,
+      "width": 320,
+      "height": 1387.40625
+    },
+    "videoAssigned": false
+  },
+  {
+    "locale": "ru",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "hotel": {
+      "top": 6.90625,
+      "width": 1440,
+      "height": 984.65625
+    },
+    "videoAssigned": false
+  },
+  {
+    "locale": "ru",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "hotel": {
+      "top": -265.515625,
+      "width": 390,
+      "height": 1472.828125
+    },
+    "videoAssigned": false
+  },
+  {
+    "locale": "ru",
+    "viewport": {
+      "width": 320,
+      "height": 800
+    },
+    "hotel": {
+      "top": -329.15625,
+      "width": 320,
+      "height": 1557.265625
+    },
+    "videoAssigned": false
+  }
+]
