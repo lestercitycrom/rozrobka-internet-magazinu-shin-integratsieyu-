@@ -28,6 +28,15 @@ const viewports = [
     { width: 320, height: 800 },
 ];
 
+async function tabToFromPageStart(page: import('@playwright/test').Page, selector: string, maximumTabs = 100): Promise<void> {
+    for (let index = 0; index < maximumTabs; index += 1) {
+        await page.keyboard.press('Tab');
+        if (await page.locator(selector).evaluate((element) => element === document.activeElement)) return;
+    }
+
+    throw new Error(`Keyboard focus did not reach ${selector} from the document start.`);
+}
+
 test('customer-approved homepage composition, copy and local partner media render in both QA locales', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     const russian = isRussianProject(testInfo.project.name);
@@ -73,14 +82,18 @@ test('customer-approved homepage composition, copy and local partner media rende
 });
 
 test('homepage detail dialog is keyboard operable and returns focus', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'buyer-desktop', 'The native dialog contract only needs one browser pass');
-    await page.goto('/');
+    const prefix = localePrefix(testInfo.project.name);
+    const russian = isRussianProject(testInfo.project.name);
+    await page.goto(prefix || '/');
     const opener = page.locator('[data-dekkhotell-dialog-open]');
     const dialog = page.locator('[data-dekkhotell-dialog]');
-    await opener.focus();
+    await tabToFromPageStart(page, '[data-dekkhotell-dialog-open]');
+    await expect(opener).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(dialog).toHaveJSProperty('open', true);
-    await expect(dialog).toContainText('Med dekkhotell hos EasyTire slipper du å løfte, frakte eller oppbevare hjulene selv.');
+    await expect(dialog).toContainText(russian
+        ? 'С шинным отелем EasyTire вам не придётся самостоятельно поднимать, перевозить или хранить колёса.'
+        : 'Med dekkhotell hos EasyTire slipper du å løfte, frakte eller oppbevare hjulene selv.');
     await expect(dialog.locator('[data-dekkhotell-dialog-close]')).toBeFocused();
     for (let index = 0; index < 5; index += 1) {
         await page.keyboard.press('Tab');
@@ -114,10 +127,10 @@ test('homepage video autoplays muted, can be paused and respects reduced motion'
 
 test('homepage video failure keeps the poster and copy usable', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic media failure pass is sufficient');
-    await page.route('**/storage/media/homepage/e2e/homepage-loop.mp4', (route) => route.abort('failed'));
+    await page.route('**/homepage-loop.mp4*', (route) => route.abort('connectionfailed'));
     await page.goto('/');
     const root = page.locator('[data-homepage-video]');
-    await expect(root).toHaveClass(/has-video-error/);
+    await expect(root).toHaveClass(/has-video-error/, { timeout: 10_000 });
     await expect(root.locator('.et-v3-logistics-media__poster')).toBeVisible();
     await expect(root.locator('[data-homepage-video-element]')).toBeHidden();
     await expect(root.locator('[data-homepage-video-control]')).toBeHidden();
@@ -140,13 +153,17 @@ test('homepage cards keep the intended 4/2/1 responsive structure at the accepta
         await expectNoGlobalOverflow(page);
         const columns = await processGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
         expect(columns).toBe(viewport.width <= 640 ? 1 : viewport.width <= 900 ? 2 : 4);
-        expect(await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length)).toBe(2);
+        const partnerColumns = await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
+        expect(partnerColumns).toBe(viewport.width <= 420 ? 1 : viewport.width <= 900 ? 2 : 4);
         const stepHeights = await steps.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().height)));
         expect(Math.max(...stepHeights) - Math.min(...stepHeights)).toBeLessThanOrEqual(1);
-        measurements.push({ viewport, columns, stepHeights });
+        measurements.push({ viewport, columns, partnerColumns, stepHeights });
 
         if (process.env.CAPTURE_ISSUE_47 === '1') {
             await page.screenshot({ path: path.join(evidenceRoot, `homepage-${viewport.width}x${viewport.height}.jpg`), type: 'jpeg', quality: 82, fullPage: true });
+            if ([1440, 390, 320].includes(viewport.width)) {
+                await page.getByTestId('business-contact-card').screenshot({ path: path.join(evidenceRoot, `business-partners-${viewport.width}.png`) });
+            }
         }
     }
     if (process.env.CAPTURE_ISSUE_47 === '1') {

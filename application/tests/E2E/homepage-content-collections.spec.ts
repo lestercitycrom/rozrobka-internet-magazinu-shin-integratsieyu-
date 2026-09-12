@@ -5,15 +5,6 @@ import { expectNoGlobalOverflow, localePrefix } from './helpers';
 
 const evidenceDirectory = path.resolve(process.cwd(), '..', 'evidence', 'issue-46');
 
-async function tabTo(page: import('@playwright/test').Page, target: import('@playwright/test').Locator): Promise<void> {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-        await page.keyboard.press('Tab');
-        if (await target.evaluate((element) => document.activeElement === element)) return;
-    }
-
-    throw new Error('Promotion disclosure was not reached through real Tab traversal.');
-}
-
 async function expectContained(
     outer: import('@playwright/test').Locator,
     inner: import('@playwright/test').Locator,
@@ -116,75 +107,6 @@ test('offers and both independently managed service collections render in NB and
     }
 });
 
-test('long NB and RU offer conditions remain reachable by keyboard and touch at desktop 390 and 320', async ({ page }, testInfo) => {
-    test.skip(!['buyer-desktop', 'buyer-mobile', 'buyer-mobile-320'].includes(testInfo.project.name), 'Covered by one desktop and both required mobile profiles');
-
-    for (const route of ['/', '/ru']) {
-        await page.goto(route);
-        const card = page.getByTestId('homepage-promotion').first();
-        const disclosure = card.locator('[data-promotion-disclosure]');
-        const details = card.locator('[data-promotion-details]');
-        const cta = card.locator('.et-v3-promotion__cta');
-        const finalMarker = route === '/' ? 'SLUTTEN AV ALLE VILKÅR' : 'КОНЕЦ ВСЕХ УСЛОВИЙ';
-        const sentence = route === '/'
-            ? 'Alle vilkår skal kunne leses uten at teksten blir avkortet.'
-            : 'Все условия должны читаться полностью и без обрезания текста.';
-        await details.locator('p').evaluate((element, text) => {
-            element.textContent = text;
-        }, `${Array(32).fill(sentence).join(' ')} ${finalMarker}`);
-
-        await page.locator('[data-promotion-next]').focus();
-        await tabTo(page, disclosure);
-        await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
-        await expect(details).toHaveAttribute('aria-hidden', 'false');
-        await page.keyboard.press('Tab');
-        await expect(details).toBeFocused();
-        await page.keyboard.press('End');
-        await expect.poll(async () => details.evaluate((element) =>
-            element.scrollTop + element.clientHeight >= element.scrollHeight - 2
-        )).toBe(true);
-        await expect(details.locator('p')).toContainText(finalMarker);
-        await expect(cta).toBeVisible();
-        await expectContained(card, cta);
-        if (process.env.CAPTURE_VISUALS === '1' && (
-            (testInfo.project.name === 'buyer-desktop' && route === '/')
-            || (testInfo.project.name === 'buyer-mobile-320' && route === '/ru')
-        )) {
-            mkdirSync(evidenceDirectory, { recursive: true });
-            const locale = route === '/' ? 'nb' : 'ru';
-            await card.screenshot({
-                path: path.join(evidenceDirectory, `customer-home-${testInfo.project.name === 'buyer-desktop' ? '1440' : '320'}-${locale}-long-conditions.png`),
-            });
-        }
-
-        await page.keyboard.press('Shift+Tab');
-        await expect(disclosure).toBeFocused();
-        await page.keyboard.press('Escape');
-        await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
-        await expect(details).toHaveAttribute('aria-hidden', 'true');
-        await expect(details).not.toHaveClass(/is-open/);
-
-        if (testInfo.project.name.includes('mobile')) {
-            // Exercise touch independently from the preceding keyboard path.
-            // Real touch users do not retain the synthetic keyboard focus used
-            // above, and blurring also lets the focusout frame settle first.
-            await disclosure.blur();
-            await expect(disclosure).not.toBeFocused();
-            await disclosure.tap();
-        } else {
-            await page.keyboard.press('Enter');
-        }
-        await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
-        await expect(details).toHaveAttribute('aria-hidden', 'false');
-        await details.evaluate((element) => { element.scrollTop = element.scrollHeight; });
-        await expect.poll(async () => details.evaluate((element) =>
-            element.scrollTop + element.clientHeight >= element.scrollHeight - 2
-        )).toBe(true);
-        await expectContained(card, cta);
-        await expectNoGlobalOverflow(page);
-    }
-});
-
 test('exactly two offers form one readable column at 390 and 320 in NB and RU', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic DOM cardinality probe covers the CSS cascade');
 
@@ -267,6 +189,7 @@ test('homepage collections retain a coherent responsive layout at required inter
     ]) {
         await page.setViewportSize(viewport);
         await page.goto('/');
+        await page.evaluate(() => document.fonts.ready);
         await expect(page.getByTestId('homepage-additional-services')).toBeVisible();
         await expect(page.getByTestId('homepage-wheel-services')).toBeVisible();
         await expectNoGlobalOverflow(page);

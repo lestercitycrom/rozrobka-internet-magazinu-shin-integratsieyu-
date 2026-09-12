@@ -19,6 +19,7 @@ class PublicServicePrice extends Model
             'price_minor' => 'integer',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'customer_homepage_composition_manifest' => 'array',
         ];
     }
 

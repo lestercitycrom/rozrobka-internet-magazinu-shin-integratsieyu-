@@ -682,7 +682,10 @@ const initHomepageVideos = () => {
                 video.pause();
                 video.currentTime = 0;
             } else {
-                video.play().catch(render);
+                video.play().catch(() => {
+                    if (video.error) failSafe();
+                    else render();
+                });
             }
             render();
         };
@@ -695,6 +698,10 @@ const initHomepageVideos = () => {
         video.addEventListener('pause', render);
         video.addEventListener('error', failSafe);
         reducedMotion.addEventListener('change', respectMotionPreference);
+        if (video.error) {
+            failSafe();
+            return;
+        }
         respectMotionPreference();
     });
 };

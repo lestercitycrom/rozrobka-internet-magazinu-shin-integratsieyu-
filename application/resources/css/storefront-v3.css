@@ -5146,7 +5146,7 @@
 
 .et-v3-partners--contact > div {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1px;
     margin-top: 1rem;
     background: rgb(255 255 255 / .16);
@@ -5182,6 +5182,10 @@
 
     .et-v3-contact__business {
         grid-template-columns: 1fr;
+    }
+
+    .et-v3-partners--contact > div {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -5240,6 +5244,12 @@
 
     .et-v3-partners--contact img {
         height: 44px;
+    }
+}
+
+@media (max-width: 420px) {
+    .et-v3-partners--contact > div {
+        grid-template-columns: 1fr;
     }
 }
 

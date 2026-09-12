@@ -22,7 +22,26 @@ final class StorefrontSettingsController
 
     public function update(UpdateStorefrontSettingsRequest $request): RedirectResponse
     {
-        StorefrontSettings::query()->updateOrCreate(['id' => 1], $request->validated());
+        $settings = StorefrontSettings::query()->find(1) ?? new StorefrontSettings(['id' => 1]);
+        $validated = $request->validated();
+        $manifest = $settings->customer_homepage_composition_manifest;
+
+        if (is_array($manifest) && ($manifest['state'] ?? null) === 'applied') {
+            $changes = $manifest['changes'] ?? [];
+            foreach ($changes as $field => &$change) {
+                if (is_array($change) && array_key_exists($field, $validated) && $settings->getAttribute($field) !== $validated[$field]) {
+                    $change['operator_owned'] = true;
+                }
+            }
+            unset($change);
+            $manifest['changes'] = $changes;
+        }
+
+        $settings->fill($validated);
+        if (is_array($manifest)) {
+            $settings->customer_homepage_composition_manifest = $manifest;
+        }
+        $settings->save();
 
         return redirect()->route('admin.storefront-settings.edit')->with('status', __('storefront_settings.saved'));
     }

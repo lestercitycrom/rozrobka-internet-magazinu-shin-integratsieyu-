@@ -26,6 +26,15 @@ async function tabTo(page, selector: string, maximumTabs = 12): Promise<void> {
     throw new Error(`Keyboard focus did not reach ${selector}`);
 }
 
+async function tabForwardTo(page, selector: string, maximumTabs = 220): Promise<void> {
+    for (let index = 0; index < maximumTabs; index += 1) {
+        await page.keyboard.press('Tab');
+        if (await page.locator(selector).evaluate((element) => element === document.activeElement)) return;
+    }
+
+    throw new Error(`Keyboard focus did not reach ${selector}.`);
+}
+
 test('administrator manages one homepage service card while collections remain independent', async ({ page }) => {
     await loginAdmin(page);
     await page.goto('/admin/homepage-service-collections/additional');
@@ -157,6 +166,50 @@ test('administrator can manage the final homepage copy and video assignment at 1
     await expect(page.locator('#mobile_details_title_nb')).toHaveValue('Dekkhotell uten stress');
     await expect(page.locator('#process_cta_ru')).toHaveValue('Заказать сейчас!');
     await expectNoGlobalOverflow(page);
+
+    await tabForwardTo(page, '#mobile_details_title_nb');
+    await expect(page.locator('#mobile_details_title_nb')).toBeFocused();
+    await tabForwardTo(page, '#hotel_video_media_asset_id');
+    await expect(page.locator('#hotel_video_media_asset_id')).toBeFocused();
+
+    const imageAssetId = await page.locator('#hero_media_asset_id option').evaluateAll((options) =>
+        options.map((option) => (option as HTMLOptionElement).value).find(Boolean) ?? '',
+    );
+    expect(imageAssetId).not.toBe('');
+    await page.locator('#hotel_video_media_asset_id').evaluate((select, invalidId) => {
+        const option = document.createElement('option');
+        option.value = String(invalidId);
+        option.textContent = 'Injected image assignment';
+        select.append(option);
+    }, imageAssetId);
+    await page.locator('#hotel_video_media_asset_id').selectOption(imageAssetId);
+    await page.locator('form[data-dirty-form]').locator('input, textarea, select').evaluateAll((controls) => {
+        const submitted = new Set(['_token', '_method', 'hotel_video_media_asset_id']);
+        controls.forEach((control) => {
+            const element = control as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+            if (!submitted.has(element.name)) element.disabled = true;
+        });
+    });
+    await page.getByRole('button', { name: /lagre|сохранить/i }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/storefront-settings$/);
+
+    await page.reload();
+    const marker = `E2E partneroverskrift ${Date.now()}`;
+    await page.locator('#business_partners_heading_nb').fill(marker);
+    await page.locator('form[data-dirty-form]').locator('input, textarea, select').evaluateAll((controls) => {
+        const submitted = new Set(['_token', '_method', 'business_partners_heading_nb']);
+        controls.forEach((control) => {
+            const element = control as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+            if (!submitted.has(element.name)) element.disabled = true;
+        });
+    });
+    await page.getByRole('button', { name: /lagre|сохранить/i }).click();
+    await expect(page.locator('p[role="status"]')).toContainText(/lagret|сохран/i);
+    await expect(page.locator('#business_partners_heading_nb')).toHaveValue(marker);
+    await page.reload();
+    await expect(page.locator('#business_partners_heading_nb')).toHaveValue(marker);
+    await expect(page.locator('#hotel_video_media_asset_id option:checked')).toContainText('e2e-homepage-loop.mp4');
 
     await page.goto('/admin/media');
     await expect(page.locator('input[type="file"][name="image"]')).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp,video/mp4,video/webm');

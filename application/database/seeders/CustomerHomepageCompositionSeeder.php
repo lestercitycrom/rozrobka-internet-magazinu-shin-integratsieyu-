@@ -20,6 +20,8 @@ final class CustomerHomepageCompositionSeeder extends Seeder
 {
     public const HOTEL_PRICE_MANIFEST = '12df3aa5a8f640785557d9a901f79b9aa7a38718a9957913dc026f243d0bc55b';
 
+    public const RELEASE = 'issue-47-v1';
+
     public function run(): void
     {
         DB::transaction(function (): void {
@@ -109,14 +111,26 @@ final class CustomerHomepageCompositionSeeder extends Seeder
             'business_partners_heading_ru' => 'Некоторые компании, которым мы помогаем',
         ];
 
+        $manifest = $settings->customer_homepage_composition_manifest;
+        if (is_array($manifest) && ($manifest['release'] ?? null) === self::RELEASE) {
+            return;
+        }
+
         $prior = $this->priorSettingsValues();
+        $changes = [];
         foreach ($desired as $field => $value) {
             $current = $settings->getAttribute($field);
-            if ($current === $value || blank($current) || in_array($current, $prior[$field] ?? [], true)) {
+            if ($current !== $value && (blank($current) || in_array($current, $prior[$field] ?? [], true))) {
+                $changes[$field] = ['original' => $current, 'applied' => $value];
                 $settings->setAttribute($field, $value);
             }
         }
 
+        $settings->setAttribute('customer_homepage_composition_manifest', [
+            'release' => self::RELEASE,
+            'state' => 'applied',
+            'changes' => $changes,
+        ]);
         $settings->save();
     }
 
@@ -154,9 +168,24 @@ final class CustomerHomepageCompositionSeeder extends Seeder
             return;
         }
 
-        if ($price->price_minor === 75000 && $price->manifest_hash === null) {
-            $price->update(['price_minor' => 70000, 'manifest_hash' => self::HOTEL_PRICE_MANIFEST]);
+        $manifest = $price->customer_homepage_composition_manifest;
+        if (is_array($manifest) && ($manifest['release'] ?? null) === self::RELEASE) {
+            return;
         }
+
+        $changes = [];
+        if ($price->price_minor === 75000) {
+            $changes['price_minor'] = ['original' => 75000, 'applied' => 70000];
+            $price->price_minor = 70000;
+            $price->manifest_hash = self::HOTEL_PRICE_MANIFEST;
+        }
+
+        $price->customer_homepage_composition_manifest = [
+            'release' => self::RELEASE,
+            'state' => 'applied',
+            'changes' => $changes,
+        ];
+        $price->save();
     }
 
     /** @return array<string, string> */

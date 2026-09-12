@@ -33,6 +33,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 final class StorefrontSettings extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'customer_homepage_composition_manifest' => 'array',
+        ];
+    }
+
     public function heroMedia(): BelongsTo
     {
         return $this->belongsTo(MediaAsset::class, 'hero_media_asset_id')->where('is_active', true);

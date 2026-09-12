@@ -11,8 +11,8 @@
 | Element NOR | Official site: <https://elementnor.no/> | Local `element-nor.png`, SHA-256 `2DB172E6EC06CAC2EEF55499C572EE1F374C614B297B59A9FF73AA8C3771ABA4` |
 | Carsoe | Official site: <https://carsoe.com/> | Local `carsoe.png`, SHA-256 `D01DF4F4C4BC56603B12B32E9FDAA2292B9268346387D404917DEF0B0950AD1A` |
 | Avis | Official Norwegian site: <https://www.avis.no/> | Local `avis.png`, SHA-256 `F60946E4E0812DD1F1A67894F9E33A78D44244D0392058BB590E318FF594536D` |
-| Snapchat | Existing approved storefront setting only | No guessed account or new social network was added |
-| Long promotion conditions inherited from Issue #46 | PM carry-over V46-TEXT-01 in Issue #47 | Stable desktop card height; separate scrollable short/details regions keep all text and CTA reachable; legacy records without short copy expose their full body through disclosure |
+| Snapchat | Customer requested the channel, but no confirmed profile URL or username exists in the supplied Telegram export, `docs/files`, SEO workbook or accepted settings | No URL is guessed or published; the existing validated admin field remains ready for a confirmed public URL |
+| Long promotion conditions inherited from Issue #46 | PM carry-over V46-TEXT-01 in Issue #47 | Stable desktop card height; stored DB fixtures prove that separate scrollable short/details regions keep the final sentence and CTA reachable at 1440/390/320 in NB/RU; legacy records without short copy expose their full body through disclosure |
 
 External partner files were downloaded for local hosting and verified as
 decodable PNG assets on 2026-09-12. Public rendering uses no image hotlinks.

@@ -9,7 +9,7 @@ const e2eDatabaseForPhp = e2eDatabase.replace(/\\/g, '\\\\').replace(/'/g, "\\'"
 const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 const phpTempDirectory = (process.env.PLAYWRIGHT_PHP_TEMP_DIR ?? `${process.cwd()}/storage/framework/playwright-tmp`).replace(/\\/g, '/');
 const phpTempDirectoryForPhp = phpTempDirectory.replace(/'/g, "\\'");
-const phpCommand = `"${phpBinary}" -d "sys_temp_dir=${phpTempDirectory}"`;
+const phpCommand = `"${phpBinary}" -d "sys_temp_dir=${phpTempDirectory}" -d "upload_tmp_dir=${phpTempDirectory}"`;
 const buyerSpecs = /(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|home-hero-process|homepage-feedback|homepage-content-collections|homepage-composition|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
 
 export default defineConfig({
@@ -65,6 +65,12 @@ export default defineConfig({
             dependencies: ['admin-desktop'],
             use: { ...devices['Desktop Chrome'] },
             testMatch: /admin-homepage-content\.spec\.ts/,
+        },
+        {
+            name: 'homepage-content-edge-cases',
+            dependencies: ['buyer-desktop', 'buyer-mobile', 'buyer-mobile-320', 'buyer-ru-preview', 'admin-homepage-content'],
+            use: { ...devices['Desktop Chrome'] },
+            testMatch: /homepage-content-edge-cases\.spec\.ts/,
         },
         {
             name: 'admin-mobile-390',
