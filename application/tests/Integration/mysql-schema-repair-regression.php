@@ -17,6 +17,7 @@ $app->make(Kernel::class)->bootstrap();
 const SCHEMA_REPAIR_PREREQUISITE = '2026_09_12_000050_widen_storefront_settings_url_columns';
 const SCHEMA_REPAIR_COMPOSITION = '2026_09_12_000100_add_customer_homepage_composition_fields';
 const STAGING_MYSQL_SQL_MODE = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+const STAGING_PRE_FAILURE_SCHEMA_SHA256 = '3d5af63006437507b182eb5f1bce9309561ba385d8bfa63728d85002aeefd72f';
 
 function schemaRepairAssert(bool $condition, string $message, mixed $actual = null): void
 {
@@ -83,6 +84,63 @@ function schemaRepairAssertBaselineShape(): void
         strtolower((string) ($status['Row_format'] ?? '')) === 'dynamic',
         'The regression requires the same Dynamic row format as staging.',
         $status['Row_format'] ?? null,
+    );
+}
+
+/**
+ * The staging table evolved through an older migration history where these
+ * short Norwegian labels already existed as VARCHAR(255). The current clean
+ * migration creates them as TEXT, so the incident is reproducible only after
+ * restoring the exact metadata-only historical shape captured from staging.
+ */
+function schemaRepairApplyHistoricalStagingShape(): void
+{
+    $historicalVarchars = [
+        'chooser_kicker_nb',
+        'chooser_title_nb',
+        'chooser_mobile_title_nb',
+        'chooser_workshop_title_nb',
+        'chooser_store_kicker_nb',
+        'chooser_store_title_nb',
+        'trust_1_nb',
+        'trust_2_nb',
+        'trust_3_nb',
+        'process_kicker_nb',
+        'process_title_nb',
+    ];
+
+    foreach ($historicalVarchars as $column) {
+        DB::statement(
+            "ALTER TABLE `storefront_settings` MODIFY `{$column}` VARCHAR(255) CHARACTER SET `utf8mb4` COLLATE `utf8mb4_unicode_ci` NULL DEFAULT NULL"
+        );
+    }
+
+    $rows = DB::select(
+        <<<'SQL'
+            SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT,
+                   CHARACTER_SET_NAME, COLLATION_NAME, EXTRA, GENERATION_EXPRESSION
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'storefront_settings'
+            ORDER BY ORDINAL_POSITION
+            SQL,
+    );
+    $profile = array_map(static function (object $row): array {
+        return array_map(
+            static fn ($value): string => $value === null ? '<NULL>' : (string) $value,
+            (array) $row,
+        );
+    }, $rows);
+    $canonical = json_encode(
+        $profile,
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+    );
+    $actualHash = hash('sha256', $canonical);
+
+    schemaRepairAssert(
+        $actualHash === STAGING_PRE_FAILURE_SCHEMA_SHA256,
+        'The metadata-only incident fixture does not match the captured staging pre-failure schema.',
+        $actualHash,
     );
 }
 
@@ -342,6 +400,7 @@ function schemaRepairAssertCurrentPartialState(): void
 function schemaRepairScenarioLegacyPartialRecovery(): array
 {
     schemaRepairFreshBaseline();
+    schemaRepairApplyHistoricalStagingShape();
     $beforeUrls = schemaRepairUrlMetadata();
     $fixtures = schemaRepairInsertFixtures();
     $counts = schemaRepairTableCounts();
