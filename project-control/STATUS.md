@@ -1,6 +1,6 @@
 # EasyTire status
 
-Updated: 2026-09-04
+Updated: 2026-09-13
 Accepted release: `ee512d723e78a65a89bfdee4268c3a779f632b33`
 Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
@@ -8,8 +8,8 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 | Environment | State | Canonical evidence |
 |---|---|---|
-| GitHub `main` | Cumulative storefront and authenticated-admin visual remediation accepted and merged | `f70f358f06af384364973951eaab8d4fac2b2203` / PR #42 |
-| Staging | Exact cumulative release deployed; engineer live acceptance complete, pending final PM review | <https://staging-easytire.bethub.fun>, server `REVISION` read-back and Issue #34 evidence |
+| GitHub `main` | Customer homepage application candidate plus accepted deployment storage isolation | `fc695b63f3721e98ac665b4c0e505f313592afbd`; application candidate `8ea1a65cb34f7786764c520d6662fe86201d310d` / PR #52 |
+| Staging | Previous application remains active after one protected candidate failed during a partially applied MySQL migration | <https://staging-easytire.bethub.fun>, active `f70f358f06af384364973951eaab8d4fac2b2203`; Issue #44 runtime evidence |
 | Production | Not authorised | Separate production review and runtime decision required |
 
 ## Runtime gates
@@ -33,6 +33,8 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 - `docs/access.md`, `.env`, private customer materials and runtime credentials are excluded from Git.
 
 ## Current work
+
+- Active schema remediation: Issue #44 gate comment `5650254216`, branch `codex/issue-44-mysql-schema-repair`. The isolated code/CI task repairs MySQL error 1118 and partial-DDL recovery; staging replay and all runtime mutations remain unauthorised until a new exact-SHA gate.
 
 - Active initiative: [Issue #9](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9), audit-first website conformity and later bounded remediation.
 - Accepted audit: [Issue #10](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10) / PR #17, merged as `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736`.
