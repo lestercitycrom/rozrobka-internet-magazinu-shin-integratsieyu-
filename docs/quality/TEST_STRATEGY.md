@@ -204,6 +204,7 @@ Security suite на каждом PR включает: authorization/policy tests
 |---|---|---|
 | Каждый PR | форматирование/static analysis, unit, feature, migration test, security suite, NDI/adapter contract tests, Chromium E2E smoke | падение любой P0-проверки блокирует merge |
 | Изменение адаптера/схемы | contract fixture diff, integration suite, migration backward/forward check | нужен review владельца интеграции |
+| Изменение MySQL-схемы с восстановлением после частичного DDL | исполняемый regression на настоящем MySQL, clean/update/partial/repeat/conflict и сохранность синтетических данных | SQLite и проверка SQL-строк не заменяют MySQL gate |
 | Nightly | полный integration suite с MySQL/Redis, конкурентные jobs, полные browser matrix, axe, visual regression | создаётся issue/alert, P0 не игнорируется |
 | Release candidate | full E2E, ручной smoke/a11y, sandbox payment, staging read-only NDI Inquiry при разрешении, backup/rollback rehearsal | все P0 pass; P1 приняты письменно или исправлены |
 | Deploy | migration с backup/rollback plan, production read-only smoke, мониторинг ошибок/очереди | release owner подтверждает результат |
