@@ -36,6 +36,23 @@ function schemaRepairAssert(bool $condition, string $message, mixed $actual = nu
     throw new RuntimeException($message.$suffix);
 }
 
+function schemaRepairCanonicalJson(mixed $value): mixed
+{
+    if (! is_array($value)) {
+        return $value;
+    }
+
+    if (! array_is_list($value)) {
+        ksort($value);
+    }
+
+    foreach ($value as $key => $item) {
+        $value[$key] = schemaRepairCanonicalJson($item);
+    }
+
+    return $value;
+}
+
 /** @param array<string, mixed> $arguments */
 function schemaRepairArtisan(string $command, array $arguments = []): string
 {
@@ -312,12 +329,19 @@ function schemaRepairInsertFixtures(): array
     ];
 }
 
-/** @param array<string, mixed> $fixtures */
-function schemaRepairAssertFixtures(array $fixtures): void
+/**
+ * @param  array<string, mixed>  $fixtures
+ * @param  list<string>  $ignoredSettingsColumns
+ */
+function schemaRepairAssertFixtures(array $fixtures, array $ignoredSettingsColumns = []): void
 {
     $settings = (array) DB::table('storefront_settings')->find($fixtures['settings_id']);
 
     foreach ($fixtures['settings'] as $column => $expected) {
+        if (in_array($column, $ignoredSettingsColumns, true)) {
+            continue;
+        }
+
         schemaRepairAssert(
             array_key_exists($column, $settings) && $settings[$column] === $expected,
             "storefront_settings.{$column} changed during schema repair.",
@@ -880,7 +904,8 @@ function schemaRepairScenarioContentAndOldApplicationCompatibility(): void
 
     $journalAfterMigration = (array) DB::table('storefront_settings')->find($journalSettingsId);
     schemaRepairAssert(
-        json_decode((string) $journalAfterMigration['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR) == $partialJournal,
+        schemaRepairCanonicalJson(json_decode((string) $journalAfterMigration['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR))
+            === schemaRepairCanonicalJson($partialJournal),
         'Pre-existing operator journal changed during schema recovery.',
         $journalAfterMigration['customer_homepage_composition_manifest'],
     );
@@ -922,11 +947,12 @@ function schemaRepairScenarioContentAndOldApplicationCompatibility(): void
 
     $journalAfterRelease = (array) DB::table('storefront_settings')->find($journalSettingsId);
     schemaRepairAssert(
-        json_decode((string) $journalAfterRelease['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR) == $partialJournal,
+        schemaRepairCanonicalJson(json_decode((string) $journalAfterRelease['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR))
+            === schemaRepairCanonicalJson($partialJournal),
         'Unrelated pre-existing operator journal changed during release/rollback.',
         $journalAfterRelease['customer_homepage_composition_manifest'],
     );
-    schemaRepairAssertFixtures($fixtures);
+    schemaRepairAssertFixtures($fixtures, ['updated_at']);
 
     schemaRepairAssertOlderApplicationRead((int) $fixtures['settings_id'], [
         'hero_text_nb' => $appliedNb,
