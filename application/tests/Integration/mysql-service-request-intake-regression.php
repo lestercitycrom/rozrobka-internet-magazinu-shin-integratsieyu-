@@ -124,7 +124,7 @@ try {
 
     /** @var BookingCalendar $calendar */
     $calendar = app(BookingCalendar::class);
-    $date = now($calendar->timezone())->addDay()->startOfDay();
+    $date = $calendar->localDate(now($calendar->timezone())->addDay()->format('Y-m-d'));
     BookingScheduleInterval::query()->create([
         'weekday' => $date->isoWeekday(),
         'location' => 'workshop',
