@@ -1,7 +1,8 @@
 # EasyTire GitHub workflow
 
-Version: 1.1  
-Adopted: 2026-08-22  
+Version: 1.1
+Adopted: 2026-08-22
+Updated: 2026-09-13
 Based on: `UNIVERSAL_GITHUB_COLLABORATION_PROTOCOL_V1.md`
 
 This profile keeps the useful parts of the universal protocol and removes process that does not help the owner, PM or engineer make a safer decision.
@@ -102,7 +103,7 @@ Do not create timestamped handoff folders, duplicate final reports or ZIP archiv
 ## 5. Work cycle
 
 1. PM creates a complete Issue and marks it `ready`.
-2. Owner tells the engineer: `Создан Issue #N. Приступай строго по нему.`
+2. Owner tells the engineer: `Создан Issue #N. Приступай строго по нему.`, unless the active Issue or a standing recorded decision already authorises immediate continuation.
 3. Engineer posts `ENGINEER STARTED`, creates the branch and Draft PR.
 4. Questions and scope decisions go to the Issue; implementation evidence goes to the PR.
 5. Engineer posts `ENGINEER UPDATE` and marks the PR ready.
@@ -113,6 +114,8 @@ Do not create timestamped handoff folders, duplicate final reports or ZIP archiv
 10. Merge closes the Issue. Runtime enablement still requires its own recorded gate decision.
 
 Workflow labels are intentionally limited to `ready`, `in-progress`, `pm-review`, and `blocked`.
+
+Routine in-scope engineering operations do not create owner acknowledgement gates. Once an Issue or standing decision authorises the work, the engineer may post required Issue/PR reports and cross-links, create the named branch/PR, push commits, run proportionate local/CI checks, and return review fixes without asking the owner to approve each publication or repository action. This does not authorise a wider scope, an unreviewed merge, deployment, real-data mutation, or an external side effect. The standing EasyTire decision is recorded in [Issue #44 comment 5654897537](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5654897537).
 
 ## 6. Standard comments
 
