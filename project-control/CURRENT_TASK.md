@@ -3,7 +3,7 @@
 - Issue: [#44 — Implement customer homepage and navigation revision](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44)
 - State: `in-progress`
 - Branch: `codex/issue-44-mysql-schema-repair`
-- PR: pending (new PR relates to #44 and must not close it before release acceptance).
+- PR: [#53 — `[TASK-44] Recover partial homepage schema migration on MySQL`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/53) (Draft; relates to #44 and must not close it before release acceptance).
 - Exact base: `fc695b63f3721e98ac665b4c0e505f313592afbd`.
 - Scope: repair MySQL error 1118 with a prerequisite conversion of four legacy URL columns to `TEXT`, make the homepage composition migration resumable and fail-closed, and prove fresh/update/partial/repeat/conflict paths on real MySQL 8.
 - Known pending materials: exact `003 muzik.mp4` and a confirmed Snapchat destination. The staging review must use the poster fallback and omit Snapchat until supplied or explicitly deferred.

@@ -1,7 +1,7 @@
 # Current review
 
 - Issue: [#44 — Implement customer homepage and navigation revision](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44)
-- PR: pending for branch `codex/issue-44-mysql-schema-repair`.
+- PR: [#53 — `[TASK-44] Recover partial homepage schema migration on MySQL`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/53) (Draft).
 - Exact base: `fc695b63f3721e98ac665b4c0e505f313592afbd`.
 - State: `in-progress`
 - PM gate: review the exact schema-repair PR head, the four-column prerequisite, resumable/fail-closed composition migration, real MySQL 8 regression, CI result and protected recovery plan.
