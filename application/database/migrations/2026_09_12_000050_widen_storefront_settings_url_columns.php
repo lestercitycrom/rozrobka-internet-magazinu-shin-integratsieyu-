@@ -49,9 +49,9 @@ return new class extends Migration
         $type = strtolower((string) $definition['type']);
         $typeName = strtolower((string) $definition['type_name']);
 
-        if ($typeName === 'text') {
-            $this->assertNullableWithoutDefault($column, $definition);
+        $this->assertOrdinaryNullableWithoutDefault($column, $definition);
 
+        if ($typeName === 'text') {
             return;
         }
 
@@ -62,7 +62,6 @@ return new class extends Migration
                 );
             }
 
-            $this->assertNullableWithoutDefault($column, $definition);
             $metadata = DB::selectOne(
                 <<<'SQL'
                     SELECT CHARACTER_SET_NAME AS character_set_name, COLLATION_NAME AS collation_name
@@ -86,11 +85,17 @@ return new class extends Migration
                 );
             }
 
+            $comment = $definition['comment'];
+            $commentClause = $comment === null
+                ? ''
+                : ' COMMENT '.DB::connection()->getPdo()->quote((string) $comment);
+
             DB::statement(sprintf(
-                'ALTER TABLE `storefront_settings` MODIFY `%s` TEXT CHARACTER SET `%s` COLLATE `%s` NULL DEFAULT NULL',
+                'ALTER TABLE `storefront_settings` MODIFY `%s` TEXT CHARACTER SET `%s` COLLATE `%s` NULL DEFAULT NULL%s',
                 $column,
                 $characterSet,
                 $collation,
+                $commentClause,
             ));
         } else {
             if (! in_array($typeName, ['varchar', 'string'], true)) {
@@ -98,8 +103,6 @@ return new class extends Migration
                     "Cannot widen storefront_settings.{$column}: expected a string column, got {$type}."
                 );
             }
-
-            $this->assertNullableWithoutDefault($column, $definition);
 
             Schema::table('storefront_settings', function (Blueprint $table) use ($column): void {
                 $table->text($column)->nullable()->change();
@@ -116,7 +119,13 @@ return new class extends Migration
             );
         }
 
-        $this->assertNullableWithoutDefault($column, $updated);
+        $this->assertOrdinaryNullableWithoutDefault($column, $updated);
+
+        if ($updated['comment'] !== $definition['comment']) {
+            throw new RuntimeException(
+                "Failed to widen storefront_settings.{$column}: column comment changed."
+            );
+        }
     }
 
     /**
@@ -136,11 +145,16 @@ return new class extends Migration
     /**
      * @param  array{nullable: bool, default: mixed}  $definition
      */
-    private function assertNullableWithoutDefault(string $column, array $definition): void
+    private function assertOrdinaryNullableWithoutDefault(string $column, array $definition): void
     {
-        if (! $definition['nullable'] || $definition['default'] !== null) {
+        if (
+            ! $definition['nullable']
+            || $definition['default'] !== null
+            || $definition['auto_increment']
+            || $definition['generation'] !== null
+        ) {
             throw new RuntimeException(
-                "Cannot widen storefront_settings.{$column}: nullable/default semantics do not match the expected nullable DEFAULT NULL definition."
+                "Cannot widen storefront_settings.{$column}: expected an ordinary nullable DEFAULT NULL column without auto-increment or generation."
             );
         }
     }

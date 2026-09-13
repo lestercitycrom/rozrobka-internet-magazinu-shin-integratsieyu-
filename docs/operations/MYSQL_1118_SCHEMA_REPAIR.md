@@ -6,8 +6,8 @@ The homepage composition release can encounter MySQL error `1118` while adding i
 
 The forward repair is intentionally narrow:
 
-1. `2026_09_12_000050_widen_storefront_settings_url_columns.php` converts only `hero_primary_url`, `hero_secondary_url`, `map_url`, and `map_embed_url` from nullable `VARCHAR(2048)` to nullable `TEXT`, preserving data, character set, collation and `DEFAULT NULL` semantics.
-2. `2026_09_12_000100_add_customer_homepage_composition_fields.php` then verifies or adds each column separately and verifies the hotel-video foreign key and partner `content_key` unique index independently.
+1. `2026_09_12_000050_widen_storefront_settings_url_columns.php` converts only `hero_primary_url`, `hero_secondary_url`, `map_url`, and `map_embed_url` from nullable `VARCHAR(2048)` to nullable `TEXT`, preserving data, character set, collation, column comments and `DEFAULT NULL` semantics. Generated or otherwise special definitions fail closed, including an already-`TEXT` generated column.
+2. `2026_09_12_000100_add_customer_homepage_composition_fields.php` then verifies or adds each column separately. Its hotel-video constraint must reference `media_assets(id)` in the current database with `ON UPDATE RESTRICT`/`NO ACTION` and `ON DELETE SET NULL`. Its partner key must have exactly one visible, full-column, single-part unique `BTREE` index; prefix, expression, composite, invisible and non-`BTREE` variants stop without being replaced.
 
 The application still validates those four URL values at a maximum of 2,048 characters. The storage change does not expand the public or admin input contract.
 
@@ -18,8 +18,9 @@ The ordinary Laravel migrator is the only supported writer. It is safe to run th
 - a clean database;
 - a database containing the pre-composition schema;
 - the known partial state where the first 11 composition additions and hotel-video foreign key exist but the final five Russian fields and the later partner/price changes do not;
-- a compatible interruption between later per-column or constraint steps;
-- an older environment where the later composition migration is already recorded and the newly introduced prerequisite is still pending.
+- a compatible interruption between later per-column or constraint steps, including an existing video column with its foreign key still missing;
+- a partial URL conversion where two of the four target fields are already correct `TEXT` columns;
+- an older environment where the complete composition schema genuinely exists and its migration is recorded while the newly introduced prerequisite is still pending.
 
 Existing compatible definitions are preserved. A column, foreign key or unique index with conflicting semantics stops the migration with an explicit error instead of being silently accepted. Migration ledger rows are written only by Laravel after a migration finishes; do not edit the `migrations` table manually.
 
@@ -29,9 +30,12 @@ GitHub Actions runs `tests/Integration/mysql-schema-repair-regression.php` again
 
 - reproduces the original error `1118` with the unmodified migration fixture and the complete pre-repair schema;
 - proves clean installation and ordinary update paths;
-- recovers from the known partial schema and a later interrupted step;
-- verifies idempotent repeat execution and fail-closed conflicting definitions;
-- preserves synthetic `NULL`, empty, 2,048-character, multibyte, settings, partner, price and audit/outbox data;
+- recovers from the known partial schema, a later interrupted step and a half-completed URL conversion;
+- proves that an already-correct `TEXT` column is a no-op and a nonempty `VARCHAR` comment survives conversion;
+- verifies idempotent repeat execution and fail-closed generated-column, foreign-key and unique-index conflicts using real MySQL metadata, without silently replacing an incompatible index;
+- preserves synthetic `NULL`, empty, 2,048-character, multibyte, settings, release journal, partner, price and audit/outbox data;
+- runs the unchanged scoped homepage release twice, an operator edit and guarded rollback, then proves operator-owned and unrelated values remain intact;
+- boots the retained pre-change application `f70f358f06af384364973951eaab8d4fac2b2203` against the additive/widened schema and verifies that it can still read existing settings;
 - records MySQL version, SQL mode, database character set/collation and final row format in the CI log.
 
 ## Deployment and recovery boundary

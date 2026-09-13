@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -208,20 +209,35 @@ return new class extends Migration
             ));
         }
 
-        $compatible = array_filter($foreignKeys, static fn (array $foreignKey): bool => $foreignKey['foreign_table'] === 'media_assets'
-            && $foreignKey['foreign_columns'] === ['id']
-            && strtolower((string) $foreignKey['on_delete']) === 'set null'
-        );
+        $database = strtolower((string) Schema::getConnection()->getDatabaseName());
+        $driver = Schema::getConnection()->getDriverName();
+        $compatible = array_filter($foreignKeys, static function (array $foreignKey) use ($database, $driver): bool {
+            $foreignSchema = strtolower((string) ($foreignKey['foreign_schema'] ?? ''));
+            $onUpdate = strtolower((string) ($foreignKey['on_update'] ?? ''));
+            $sameDatabase = $driver !== 'mysql' || $foreignSchema === $database;
+
+            return $sameDatabase
+                && $foreignKey['foreign_table'] === 'media_assets'
+                && $foreignKey['foreign_columns'] === ['id']
+                && in_array($onUpdate, ['restrict', 'no action'], true)
+                && strtolower((string) $foreignKey['on_delete']) === 'set null';
+        });
 
         if (count($foreignKeys) !== 1 || count($compatible) !== 1) {
             throw new RuntimeException(
-                'Incompatible foreign key for storefront_settings.hotel_video_media_asset_id: expected media_assets(id) ON DELETE SET NULL.'
+                'Incompatible foreign key for storefront_settings.hotel_video_media_asset_id: expected the current database media_assets(id) with ON UPDATE RESTRICT/NO ACTION and ON DELETE SET NULL.'
             );
         }
     }
 
     private function ensureContentKeyUniqueIndex(): void
     {
+        if (Schema::getConnection()->getDriverName() === 'mysql') {
+            $this->ensureMySqlContentKeyUniqueIndex();
+
+            return;
+        }
+
         $indexes = array_values(array_filter(
             Schema::getIndexes('homepage_business_partners'),
             static fn (array $index): bool => $index['columns'] === ['content_key'],
@@ -249,6 +265,87 @@ return new class extends Migration
                 'Incompatible index for homepage_business_partners.content_key: expected exactly one single-column unique index.'
             );
         }
+    }
+
+    private function ensureMySqlContentKeyUniqueIndex(): void
+    {
+        $indexes = $this->mysqlContentKeyUniqueIndexes();
+
+        if ($indexes === []) {
+            Schema::table('homepage_business_partners', function (Blueprint $table): void {
+                $table->unique('content_key');
+            });
+
+            $indexes = $this->mysqlContentKeyUniqueIndexes();
+        }
+
+        if (count($indexes) !== 1) {
+            throw new RuntimeException(
+                'Incompatible index for homepage_business_partners.content_key: expected exactly one full-column unique BTREE index.'
+            );
+        }
+
+        $parts = array_values($indexes)[0];
+        $part = $parts[0] ?? [];
+        $compatible = count($parts) === 1
+            && (int) ($part['NON_UNIQUE'] ?? 1) === 0
+            && (int) ($part['SEQ_IN_INDEX'] ?? 0) === 1
+            && strtolower((string) ($part['COLUMN_NAME'] ?? '')) === 'content_key'
+            && ($part['SUB_PART'] ?? null) === null
+            && ($part['EXPRESSION'] ?? null) === null
+            && strtolower((string) ($part['INDEX_TYPE'] ?? '')) === 'btree'
+            && strtolower((string) ($part['IS_VISIBLE'] ?? '')) === 'yes';
+
+        if (! $compatible) {
+            throw new RuntimeException(
+                'Incompatible index for homepage_business_partners.content_key: prefix, expression, composite, invisible, or non-BTREE unique indexes do not provide the required full-column uniqueness.'
+            );
+        }
+    }
+
+    /** @return array<string, list<array<string, mixed>>> */
+    private function mysqlContentKeyUniqueIndexes(): array
+    {
+        $rows = DB::select(
+            <<<'SQL'
+                SELECT INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX, COLUMN_NAME,
+                       SUB_PART, EXPRESSION, INDEX_TYPE, IS_VISIBLE
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'homepage_business_partners'
+                  AND INDEX_NAME <> 'PRIMARY'
+                  AND NON_UNIQUE = 0
+                ORDER BY INDEX_NAME, SEQ_IN_INDEX
+                SQL,
+        );
+        $allIndexes = [];
+
+        foreach ($rows as $row) {
+            $part = (array) $row;
+            $name = (string) $part['INDEX_NAME'];
+            $allIndexes[$name][] = $part;
+        }
+
+        return array_filter(
+            $allIndexes,
+            static function (array $parts, string $name): bool {
+                if ($name === 'homepage_business_partners_content_key_unique') {
+                    return true;
+                }
+
+                foreach ($parts as $part) {
+                    $column = strtolower((string) ($part['COLUMN_NAME'] ?? ''));
+                    $expression = strtolower((string) ($part['EXPRESSION'] ?? ''));
+
+                    if ($column === 'content_key' || str_contains($expression, 'content_key')) {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+            ARRAY_FILTER_USE_BOTH,
+        );
     }
 
     /**

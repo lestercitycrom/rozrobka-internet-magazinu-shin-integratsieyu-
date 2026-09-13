@@ -34,7 +34,7 @@ Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
 
 ## Current work
 
-- Active schema remediation: Issue #44 gate comment `5650254216`, branch `codex/issue-44-mysql-schema-repair`. The isolated code/CI task repairs MySQL error 1118 and partial-DDL recovery; staging replay and all runtime mutations remain unauthorised until a new exact-SHA gate.
+- Active schema remediation: Issue #44 continuation comment `5654071478`, branch `codex/issue-44-mysql-schema-repair`, Draft PR #53. The PM requested a stricter second pass at reviewed head `ec9b3e52162ac624c3ba3fa4c16bc2fb51c46f5c`: exact MySQL comments/generated-column, foreign-key/index, interrupted-state, scoped-content rollback and old-application compatibility evidence. Staging replay and all runtime mutations remain unauthorised until a new exact-SHA gate.
 
 - Active initiative: [Issue #9](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9), audit-first website conformity and later bounded remediation.
 - Accepted audit: [Issue #10](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10) / PR #17, merged as `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736`.

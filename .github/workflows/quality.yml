@@ -52,6 +52,8 @@ jobs:
     steps:
       - name: Checkout full repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up PHP with MySQL
         uses: shivammathur/setup-php@v2
@@ -62,6 +64,14 @@ jobs:
 
       - name: Install PHP dependencies
         run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Prepare retained application compatibility fixture
+        working-directory: .
+        run: |
+          mkdir -p "$RUNNER_TEMP/easytire-old-application"
+          git archive f70f358f06af384364973951eaab8d4fac2b2203 application | tar -x -C "$RUNNER_TEMP/easytire-old-application"
+          cp -a "$GITHUB_WORKSPACE/application/vendor" "$RUNNER_TEMP/easytire-old-application/application/vendor"
+          echo "SCHEMA_REPAIR_OLD_APP_PATH=$RUNNER_TEMP/easytire-old-application/application" >> "$GITHUB_ENV"
 
       - name: Run real MySQL migration recovery regression
         run: php tests/Integration/mysql-schema-repair-regression.php
