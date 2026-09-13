@@ -11,7 +11,10 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('easytire:outbox --limit=25')->everyMinute()->withoutOverlapping();
-Schedule::command('ndi:media:sync --limit=25')->hourly()->withoutOverlapping();
+Schedule::command('ndi:media:sync --limit=25')
+    ->hourly()
+    ->when(fn (): bool => (bool) config('ndi.media_sync_enabled', false))
+    ->withoutOverlapping();
 Schedule::command('ndi:inbox:sync --limit=20')
     ->everyTenMinutes()
     ->when(fn (): bool => filled(config('ndi.inbox_path')))

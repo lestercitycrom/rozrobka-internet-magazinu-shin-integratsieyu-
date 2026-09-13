@@ -26,6 +26,13 @@ class SyncNdiProductMedia extends Command
 
         try {
             $summary = $synchronizer->sync((int) $this->option('limit'), (bool) $this->option('force'));
+
+            if (($summary['disabled'] ?? false) === true) {
+                $this->components->info('NDI product media synchronization is disabled.');
+
+                return self::SUCCESS;
+            }
+
             $this->table(['Downloaded', 'Failed', 'Assigned'], [[$summary['downloaded'], $summary['failed'], $summary['assigned']]]);
 
             return $summary['failed'] > 0 ? self::FAILURE : self::SUCCESS;

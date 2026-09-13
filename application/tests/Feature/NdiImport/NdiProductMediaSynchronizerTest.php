@@ -13,6 +13,7 @@ use App\Modules\NdiImport\NdiCatalogPublisher;
 use App\Modules\NdiImport\NdiMediaUrl;
 use App\Modules\NdiImport\NdiProductMediaSynchronizer;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,108 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     Storage::fake('public');
     config()->set('ndi.media_hosts', ['files.ndias.com']);
+    config()->set('ndi.media_sync_enabled', true);
+});
+
+test('supplier media synchronization returns an explicit disabled result', function (): void {
+    config()->set('ndi.media_sync_enabled', false);
+
+    expect(config('ndi.media_sync_enabled'))->toBeFalse();
+});
+
+test('disabled direct synchronization does not mutate a downloaded source due for refresh', function (bool $force): void {
+    config()->set('ndi.media_sync_enabled', false);
+
+    $bytes = ndiPngBytes(20, 20);
+    $sha256 = hash('sha256', $bytes);
+    $path = 'media/ndi/'.$sha256.'.png';
+    Storage::disk('public')->put($path, $bytes);
+    $asset = MediaAsset::create([
+        'disk' => 'public', 'path' => $path, 'original_name' => 'existing.png', 'mime' => 'image/png',
+        'byte_size' => strlen($bytes), 'width' => 20, 'height' => 20, 'sha256' => $sha256,
+        'uploader_id' => null, 'is_active' => true,
+    ]);
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $source->update([
+        'media_asset_id' => $asset->id,
+        'status' => 'downloaded',
+        'attempt_count' => 3,
+        'downloaded_at' => now()->subDays(8),
+    ]);
+    $assignment = MediaAssignment::create([
+        'media_asset_id' => $asset->id,
+        'assignable_type' => Product::class,
+        'assignable_id' => $source->product_id,
+        'role' => 'primary',
+    ]);
+    $sourceBefore = $source->fresh()->getAttributes();
+    $assetBefore = $asset->fresh()->getAttributes();
+    $assignmentBefore = $assignment->fresh()->getAttributes();
+    $filesBefore = Storage::disk('public')->allFiles();
+    Http::fake();
+
+    $summary = app(NdiProductMediaSynchronizer::class)->sync(25, $force);
+
+    expect($summary)->toBe(['downloaded' => 0, 'failed' => 0, 'assigned' => 0, 'disabled' => true])
+        ->and($source->fresh()->getAttributes())->toBe($sourceBefore)
+        ->and($asset->fresh()->getAttributes())->toBe($assetBefore)
+        ->and($assignment->fresh()->getAttributes())->toBe($assignmentBefore)
+        ->and(Storage::disk('public')->allFiles())->toBe($filesBefore)
+        ->and(Storage::disk('public')->get($path))->toBe($bytes);
+    Http::assertNothingSent();
+})->with([false, true]);
+
+test('disabled force command reports an honest no-op without supplier mutations', function (): void {
+    config()->set('ndi.media_sync_enabled', false);
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $sourceBefore = $source->fresh()->getAttributes();
+    Http::fake();
+
+    $this->artisan('ndi:media:sync', ['--force' => true])
+        ->expectsOutputToContain('NDI product media synchronization is disabled.')
+        ->assertSuccessful();
+
+    expect($source->fresh()->getAttributes())->toBe($sourceBefore)
+        ->and(MediaAsset::query()->count())->toBe(0)
+        ->and(MediaAssignment::query()->count())->toBe(0)
+        ->and(Storage::disk('public')->allFiles())->toBe([]);
+    Http::assertNothingSent();
+});
+
+test('disabled supplier media event is rejected by the scheduler condition', function (): void {
+    config()->set('ndi.media_sync_enabled', false);
+
+    $event = collect(app(Schedule::class)->events())
+        ->first(fn ($event): bool => str_contains((string) $event->command, 'ndi:media:sync'));
+
+    expect($event)->not->toBeNull()
+        ->and($event->filtersPass(app()))->toBeFalse();
+});
+
+test('disabled scheduled synchronization leaves supplier media state untouched', function (): void {
+    config()->set('ndi.media_sync_enabled', false);
+    $source = ndiMediaSource(ndiMediaProduct(), ndiMediaUrl());
+    $sourceBefore = $source->fresh()->getAttributes();
+    Http::fake();
+    $this->travelTo(now()->startOfHour());
+
+    $this->artisan('schedule:run')->assertSuccessful();
+
+    expect($source->fresh()->getAttributes())->toBe($sourceBefore)
+        ->and(MediaAsset::query()->count())->toBe(0)
+        ->and(MediaAssignment::query()->count())->toBe(0)
+        ->and(Storage::disk('public')->allFiles())->toBe([]);
+    Http::assertNothingSent();
+});
+
+test('supplier media event is admitted only after explicit enablement', function (): void {
+    config()->set('ndi.media_sync_enabled', true);
+
+    $event = collect(app(Schedule::class)->events())
+        ->first(fn ($event): bool => str_contains((string) $event->command, 'ndi:media:sync'));
+
+    expect($event)->not->toBeNull()
+        ->and($event->filtersPass(app()))->toBeTrue();
 });
 
 test('it only accepts the documented NDI image endpoint and upgrades it to HTTPS', function (): void {
