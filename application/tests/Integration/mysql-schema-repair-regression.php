@@ -880,7 +880,7 @@ function schemaRepairScenarioContentAndOldApplicationCompatibility(): void
 
     $journalAfterMigration = (array) DB::table('storefront_settings')->find($journalSettingsId);
     schemaRepairAssert(
-        json_decode((string) $journalAfterMigration['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR) === $partialJournal,
+        json_decode((string) $journalAfterMigration['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR) == $partialJournal,
         'Pre-existing operator journal changed during schema recovery.',
         $journalAfterMigration['customer_homepage_composition_manifest'],
     );
@@ -922,7 +922,7 @@ function schemaRepairScenarioContentAndOldApplicationCompatibility(): void
 
     $journalAfterRelease = (array) DB::table('storefront_settings')->find($journalSettingsId);
     schemaRepairAssert(
-        json_decode((string) $journalAfterRelease['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR) === $partialJournal,
+        json_decode((string) $journalAfterRelease['customer_homepage_composition_manifest'], true, flags: JSON_THROW_ON_ERROR) == $partialJournal,
         'Unrelated pre-existing operator journal changed during release/rollback.',
         $journalAfterRelease['customer_homepage_composition_manifest'],
     );
