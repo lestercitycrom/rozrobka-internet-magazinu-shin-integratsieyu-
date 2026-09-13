@@ -17,9 +17,13 @@ final class NdiProductMediaSynchronizer
 {
     public function __construct(private readonly NdiMediaInheritanceReconciler $mediaInheritance) {}
 
-    /** @return array{downloaded: int, failed: int, assigned: int} */
+    /** @return array{downloaded: int, failed: int, assigned: int, disabled?: true} */
     public function sync(int $limit = 25, bool $force = false): array
     {
+        if (! (bool) config('ndi.media_sync_enabled', false)) {
+            return ['downloaded' => 0, 'failed' => 0, 'assigned' => 0, 'disabled' => true];
+        }
+
         $limit = max(1, $limit);
         $this->mediaInheritance->reconcile();
         $summary = ['downloaded' => 0, 'failed' => 0, 'assigned' => $this->reconcileDownloadedSources()];

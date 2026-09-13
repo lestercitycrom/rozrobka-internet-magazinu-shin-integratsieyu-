@@ -22,6 +22,9 @@
 
 ## NDI product media backfill
 
+- Keep `NDI_MEDIA_SYNC_ENABLED=false` unless supplier image synchronization is explicitly approved for that environment. The scheduler, direct command and `--force` command then fail closed before reconciliation, storage or HTTP work.
+- Pending supplier-media rows while this gate is disabled are deferred work, not failed active processing. Preserve their status and audit history; do not clear, retry or mark them downloaded merely to make health counters zero.
+- To perform an approved media backfill, enable the gate only for the bounded maintenance window, complete the checks below, then return it to the environment's approved state.
 - `NDI_PARSER_VERSION` must be `1.1.0` or newer so tire image identifiers are captured from the official workbook.
 - After the release containing product media sources is deployed, run one full `ndi:import` of the three official workbooks. Reusing an already imported bundle is expected because the parser version changed.
 - Run `php artisan ndi:media:sync --limit=50` after that import. The hourly scheduler continues bounded retries and future downloads.

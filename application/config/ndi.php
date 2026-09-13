@@ -7,6 +7,8 @@ return [
     'raw_prefix' => env('NDI_RAW_PREFIX', 'ndi/raw'),
     'catalog_currency' => env('NDI_CATALOG_CURRENCY'),
     'inbox_path' => env('NDI_INBOX_PATH'),
+    // Supplier media work is optional and must be explicitly enabled per environment.
+    'media_sync_enabled' => (bool) env('NDI_MEDIA_SYNC_ENABLED', false),
     'inbox_stable_seconds' => (int) env('NDI_INBOX_STABLE_SECONDS', 120),
     'stock_drop_guard_min_baseline' => (int) env('NDI_STOCK_DROP_GUARD_MIN_BASELINE', 50),
     'inbox_retry_backoff_minutes' => (int) env('NDI_INBOX_RETRY_BACKOFF_MINUTES', 10),

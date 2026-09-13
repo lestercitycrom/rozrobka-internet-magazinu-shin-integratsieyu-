@@ -46,6 +46,7 @@
         <env name="NDI_SANDBOX_INQUIRY_ENABLED" value="false"/>
         <env name="NDI_SANDBOX_ORDER_ENABLED" value="false"/>
         <env name="NDI_FULFILMENT_READ_ENABLED" value="false"/>
+        <env name="NDI_MEDIA_SYNC_ENABLED" value="false"/>
         <env name="NDI_MEDIA_HOSTS" value="example.invalid"/>
         <env name="PAYMENTS_ENABLED" value="false"/>
         <env name="OUTBOX_NOTION_ENABLED" value="false"/>
