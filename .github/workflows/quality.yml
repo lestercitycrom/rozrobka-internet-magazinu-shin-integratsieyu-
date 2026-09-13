@@ -79,7 +79,7 @@ jobs:
       - name: Run service-request intake regression on real MySQL
         run: |
           php artisan migrate:fresh --force
-          php artisan test --compact tests/Feature/Admin/ServiceRequestIntakeTest.php
+          php tests/Integration/mysql-service-request-intake-regression.php
 
   quality:
     name: Application quality
