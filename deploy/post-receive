@@ -40,18 +40,32 @@ while read -r oldrev newrev refname; do
     printf '%s\n' "$newrev" > "$release/REVISION"
     app="$release/application"
     [[ "$app" == "$release/application" && -f "$app/artisan" && -f "$app/composer.json" ]] || fail 'Laravel application is missing from release/application.'
-    cp -- "$SHARED/.env" "$app/.env"
     app_storage="$app/storage"
-    [[ "$app_storage" == "$release/application/storage" && -d "$app_storage" ]] || fail 'Unsafe application storage target.'
-    rm -rf -- "$app_storage"
-    ln -s -- "$SHARED/storage" "$app_storage"
-    [[ ! -e "$app/public/storage" ]] || fail 'Refusing to replace existing public storage path.'
-    ln -s -- "$SHARED/storage/app/public" "$app/public/storage"
+    public_storage="$app/public/storage"
+    [[ "$app_storage" == "$release/application/storage" && -d "$app_storage" && ! -L "$app_storage" ]] || fail 'Candidate-local storage is missing or unsafe.'
+    [[ "$public_storage" == "$release/application/public/storage" && ! -e "$public_storage" && ! -L "$public_storage" ]] || fail 'Candidate public storage path is not isolated.'
     mkdir -p "$app/bootstrap/cache"
     chgrp -R www-data "$app/bootstrap/cache"
     chmod -R g+rwX "$app/bootstrap/cache"
-    chgrp www-data "$app/.env"
-    chmod 640 "$app/.env"
+
+    # Composer and the full test suite must never inherit the persistent staging
+    # database, cache, integrations or media filesystem. Build with an ephemeral
+    # candidate-only environment and the physical storage checked out above.
+    cp -- "$app/.env.example" "$app/.env"
+    test_app_key="$(php -r 'echo "base64:".base64_encode(random_bytes(32));')"
+    sed -i \
+        -e 's/^APP_ENV=.*/APP_ENV=testing/' \
+        -e "s|^APP_KEY=.*|APP_KEY=$test_app_key|" \
+        -e 's/^APP_DEBUG=.*/APP_DEBUG=false/' \
+        -e 's|^APP_URL=.*|APP_URL=http://127.0.0.1|' \
+        -e 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' \
+        -e 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' \
+        -e 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' \
+        -e 's/^CACHE_STORE=.*/CACHE_STORE=array/' \
+        -e 's/^MAIL_MAILER=.*/MAIL_MAILER=array/' \
+        "$app/.env"
+    printf '\nDB_DATABASE=:memory:\nDB_URL=\n' >> "$app/.env"
+    chmod 600 "$app/.env"
 
     (
         cd "$app"
@@ -59,6 +73,19 @@ while read -r oldrev newrev refname; do
         npm ci --no-audit --no-fund
         npm run build
         php artisan test
+
+        # Discard every test-created file before the persistent filesystem and
+        # runtime environment become reachable by any Laravel command.
+        [[ -d "$app_storage" && ! -L "$app_storage" ]] || fail 'Candidate-local storage changed during tests.'
+        [[ ! -e "$public_storage" && ! -L "$public_storage" ]] || fail 'Tests created an unsafe public storage path.'
+        rm -rf -- "$app_storage"
+        ln -s -- "$SHARED/storage" "$app_storage"
+        ln -s -- "$SHARED/storage/app/public" "$public_storage"
+
+        cp -- "$SHARED/.env" "$app/.env"
+        chgrp www-data "$app/.env"
+        chmod 640 "$app/.env"
+        php artisan config:clear --no-interaction
         php artisan easytire:backup:mysql --no-interaction
         : > "$database_marker"
         php artisan migrate --force --no-interaction

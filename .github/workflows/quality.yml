@@ -56,6 +56,10 @@ jobs:
         working-directory: .
         run: php scripts/validate-project-control.php
 
+      - name: Verify deploy storage isolation
+        working-directory: .
+        run: bash deploy/tests/post-receive-storage-isolation.sh
+
       - name: Check PHP formatting
         run: vendor/bin/pint --test
 
