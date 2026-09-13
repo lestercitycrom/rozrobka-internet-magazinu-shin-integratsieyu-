@@ -1,6 +1,6 @@
 # EasyTire permanent decisions
 
-Updated: 2026-08-29
+Updated: 2026-09-13
 
 Only decisions that must survive closed Issues belong here. Implementation detail stays in code/As-Built docs; discussion stays in Issues and PRs.
 
@@ -52,6 +52,11 @@ Only decisions that must survive closed Issues belong here. Implementation detai
 - Owner decision on 2026-08-29: a separate PM is restored, so GOV-003 is active and Mister Red/Codex acts as chief engineer.
 - Website corrections begin only after Issue #10 has traced current customer sources to accepted code, tests and staging; historical hypotheses are not authorised correction scope.
 - Notion work is postponed and excluded from the current website audit/remediation initiative until a new explicit owner decision starts a separate bounded task.
+
+## GOV-009 — Routine engineering publication is pre-authorised
+
+- The standing decision in [Issue #44 comment 5654897537](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5654897537) authorises required Issue/PR reporting, cross-links, named branches/PRs, pushes and proportionate local/CI checks inside an already authorised task without repeated owner acknowledgements.
+- It never widens scope or implicitly authorises merge, deployment, customer-data mutation, production operation or an external integration side effect.
 
 ## COM-001 — Dintero capture follows physical readiness
 
