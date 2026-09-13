@@ -7,9 +7,12 @@ use App\Modules\Content\Models\HomepageBusinessPartner;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\StorefrontSettings;
 use Database\Seeders\CustomerHomepageCompositionSeeder;
+use Database\Seeders\CustomerHomepageReleaseSeeder;
+use Database\Seeders\CustomerNavigationRevisionSeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\PublicServicePriceSeeder;
 use Database\Seeders\RollbackCustomerHomepageCompositionSeeder;
+use Database\Seeders\RollbackCustomerHomepageReleaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 
@@ -168,6 +171,12 @@ test('admin ownership survives a return to the release value and blocks rollback
 test('homepage renders the final approved order copy links logos and hidden Russian preview', function (): void {
     $this->seed(DatabaseSeeder::class);
 
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)
+        ->toBe('Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.')
+        ->and($settings->hero_text_ru)
+        ->toBe('Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.');
+
     $response = $this->get('/')->assertOk();
     $response
         ->assertSeeInOrder([
@@ -182,6 +191,7 @@ test('homepage renders the final approved order copy links logos and hidden Russ
             'class="et-v3-contact"',
         ], false)
         ->assertDontSee('data-testid="catalog-foundation"', false)
+        ->assertSee('Bestill dekkskift hjemme, på jobb eller på verksted.')
         ->assertSee('Dekkhotell uten stress')
         ->assertSee('Vi kommer til deg')
         ->assertSee('700 kr')
@@ -196,8 +206,136 @@ test('homepage renders the final approved order copy links logos and hidden Russ
     config()->set('storefront.ru_preview_enabled', true);
     $this->get('/ru')
         ->assertOk()
+        ->assertSee('Закажите замену колёс дома, на работе или в мастерской.')
         ->assertSee('Шинный отель без хлопот')
         ->assertSee('Мы приедем к вам')
         ->assertSee('Google Maps показывает правильный въезд через Ringvegen 202.')
         ->assertDontSee('data-testid="catalog-foundation"', false);
+});
+
+test('full production seed applies the guarded navigation correction to exact legacy settings', function (): void {
+    StorefrontSettings::query()->create([
+        'id' => 1,
+        'hero_text_nb' => 'Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.',
+        'hero_text_ru' => 'Закажите выезд домой, на работу или приезжайте в мастерскую. EasyTire упростит сезонную замену и подтвердит детали до визита.',
+    ]);
+
+    $this->seed(DatabaseSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)
+        ->toBe('Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.')
+        ->and($settings->hero_text_ru)
+        ->toBe('Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.');
+});
+
+test('full production seed repeats without overwriting an administrator edit in only one language', function (): void {
+    $this->seed(DatabaseSeeder::class);
+    $admin = User::factory()->operations()->create();
+
+    $this->actingAs($admin)->put('/admin/storefront-settings', [
+        'hero_text_nb' => 'Operatørens egen norske hero-tekst.',
+    ])->assertRedirect();
+
+    $this->seed(DatabaseSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)
+        ->toBe('Operatørens egen norske hero-tekst.')
+        ->and($settings->hero_text_ru)
+        ->toBe('Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.')
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_nb']['operator_owned'])
+        ->toBeTrue()
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_ru']['operator_owned'] ?? false)
+        ->toBeFalse();
+});
+
+test('full production seed preserves an administrator choice equal to the exact pre-release hero copy', function (): void {
+    $oldNb = 'Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
+    $appliedRu = 'Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.';
+    $admin = User::factory()->operations()->create();
+
+    $this->seed(DatabaseSeeder::class);
+    $this->actingAs($admin)->put('/admin/storefront-settings', [
+        'hero_text_nb' => $oldNb,
+    ])->assertRedirect();
+
+    $this->seed(DatabaseSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)->toBe($oldNb)
+        ->and($settings->hero_text_ru)->toBe($appliedRu)
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_nb']['operator_owned'])->toBeTrue()
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_ru']['operator_owned'] ?? false)->toBeFalse();
+});
+
+test('complete release rollback preserves an admin return to the applied value and never re-applies untouched fields', function (): void {
+    $oldNb = 'Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
+    $oldRu = 'Закажите выезд домой, на работу или приезжайте в мастерскую. EasyTire упростит сезонную замену и подтвердит детали до визита.';
+    $appliedNb = 'Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
+    $admin = User::factory()->operations()->create();
+    StorefrontSettings::query()->create([
+        'id' => 1,
+        'hero_text_nb' => $oldNb,
+        'hero_text_ru' => $oldRu,
+        'phone_display' => 'Operator-kept unrelated value',
+    ]);
+    $this->seed(PublicServicePriceSeeder::class);
+
+    $this->seed(CustomerHomepageReleaseSeeder::class);
+    $this->actingAs($admin)->put('/admin/storefront-settings', [
+        'hero_text_nb' => 'Operatørens mellomversjon.',
+    ])->assertRedirect();
+    $this->actingAs($admin)->put('/admin/storefront-settings', [
+        'hero_text_nb' => $appliedNb,
+    ])->assertRedirect();
+
+    $this->seed(RollbackCustomerHomepageReleaseSeeder::class);
+    $this->seed(RollbackCustomerHomepageReleaseSeeder::class);
+    $this->seed(CustomerHomepageReleaseSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)->toBe($appliedNb)
+        ->and($settings->hero_text_ru)->toBe($oldRu)
+        ->and($settings->phone_display)->toBe('Operator-kept unrelated value')
+        ->and($settings->customer_homepage_composition_manifest['state'])->toBe('rolled_back')
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_nb']['operator_owned'])->toBeTrue()
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_ru']['operator_owned'] ?? false)->toBeFalse();
+});
+
+test('complete release rollback handles an initially absent settings row without deleting it or reapplying it', function (): void {
+    $this->seed(PublicServicePriceSeeder::class);
+
+    $this->seed(CustomerHomepageReleaseSeeder::class);
+    $this->seed(RollbackCustomerHomepageReleaseSeeder::class);
+    $this->seed(CustomerHomepageReleaseSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)->toBeNull()
+        ->and($settings->hero_text_ru)->toBeNull()
+        ->and($settings->customer_homepage_composition_manifest['state'])->toBe('rolled_back');
+});
+
+test('navigation compatibility adopts an unjournaled exact legacy field into the existing ownership manifest', function (): void {
+    $oldNb = 'Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
+    $appliedNb = 'Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
+    $settings = StorefrontSettings::query()->create([
+        'id' => 1,
+        'hero_text_nb' => $oldNb,
+        'hero_text_ru' => 'Операторский текст сохраняется.',
+    ]);
+    $settings->customer_homepage_composition_manifest = [
+        'release' => CustomerHomepageCompositionSeeder::RELEASE,
+        'state' => 'applied',
+        'changes' => [],
+    ];
+    $settings->save();
+
+    $this->seed(CustomerNavigationRevisionSeeder::class);
+
+    $settings = StorefrontSettings::query()->findOrFail(1);
+    expect($settings->hero_text_nb)->toBe($appliedNb)
+        ->and($settings->hero_text_ru)->toBe('Операторский текст сохраняется.')
+        ->and($settings->customer_homepage_composition_manifest['changes']['hero_text_nb'])
+        ->toBe(['original' => $oldNb, 'applied' => $appliedNb]);
 });

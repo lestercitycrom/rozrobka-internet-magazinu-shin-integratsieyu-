@@ -32,6 +32,14 @@ final class RollbackCustomerNavigationRevisionSeeder extends Seeder
             return;
         }
 
+        $manifest = $settings->customer_homepage_composition_manifest;
+        if (is_array($manifest) && ($manifest['release'] ?? null) === CustomerHomepageCompositionSeeder::RELEASE) {
+            // #47 is the authoritative field-level journal for the cumulative
+            // release. Its rollback has already restored every untouched field
+            // and preserved every operator-owned field; do not second-guess it.
+            return;
+        }
+
         foreach (self::CHANGES as $field => $change) {
             if ($settings->getAttribute($field) === $change['from']) {
                 $settings->setAttribute($field, $change['to']);

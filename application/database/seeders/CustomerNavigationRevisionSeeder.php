@@ -32,10 +32,44 @@ final class CustomerNavigationRevisionSeeder extends Seeder
             return;
         }
 
+        $manifest = $settings->customer_homepage_composition_manifest;
+        $compositionOwnsRelease = is_array($manifest)
+            && ($manifest['release'] ?? null) === CustomerHomepageCompositionSeeder::RELEASE;
+        $manifestChanges = $compositionOwnsRelease && is_array($manifest['changes'] ?? null)
+            ? $manifest['changes']
+            : [];
+
         foreach (self::CHANGES as $field => $change) {
+            if ($compositionOwnsRelease) {
+                // A rolled-back release must never be silently re-applied. If
+                // #47 journaled the field, its operator-owned flag and guarded
+                // rollback are the single source of truth.
+                if (($manifest['state'] ?? null) !== 'applied' || isset($manifestChanges[$field])) {
+                    continue;
+                }
+
+                // Compatibility for an early #47 manifest that did not yet
+                // journal the #45 hero correction. Adopt only the exact legacy
+                // value and append it to the existing ownership journal.
+                if ($settings->getAttribute($field) === $change['from']) {
+                    $settings->setAttribute($field, $change['to']);
+                    $manifestChanges[$field] = [
+                        'original' => $change['from'],
+                        'applied' => $change['to'],
+                    ];
+                }
+
+                continue;
+            }
+
             if ($settings->getAttribute($field) === $change['from']) {
                 $settings->setAttribute($field, $change['to']);
             }
+        }
+
+        if ($compositionOwnsRelease) {
+            $manifest['changes'] = $manifestChanges;
+            $settings->customer_homepage_composition_manifest = $manifest;
         }
 
         if ($settings->isDirty()) {

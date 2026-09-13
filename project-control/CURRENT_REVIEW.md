@@ -1,11 +1,11 @@
 # Current review
 
-- Issue: [#47 — Complete customer homepage composition, Dekkhotell, process and contact content](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/47)
-- PR: [#50 — `[TASK-47] Complete customer homepage composition`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/50).
-- Exact accepted base: `92b2c5a9178ec913ac056e286a5e7c76b73973f5`.
-- State: `pm-review`
-- PM gate: review only after the exact final implementation SHA, required automated checks, source matrix and compact `evidence/issue-47/` package are published.
-- Runtime state: code and synthetic local/CI verification only; staging remains unchanged until the later cumulative #44 deployment gate.
-- Runtime authorisation: none for deployments, integrations, payments, notifications or real customer submissions.
+- Issue: [#44 — Implement customer homepage and navigation revision](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44)
+- PR: [#51 — `[TASK-44] Accept cumulative customer homepage release`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/51) (Draft).
+- Exact accepted application candidate/base: `7d7c6c4ad58dca8cd651e7b88bcee2bcaa7eed92`.
+- State: `in-progress`
+- PM gate: review one cumulative predeploy checkpoint containing focused QA, native-resolution evidence, fresh redacted staging read-back, content effects/conflicts and exact rollback plan.
+- Runtime state: staging remains unchanged while read-only preflight is performed.
+- Runtime authorisation: none for deployments, content writes, integrations, payments, notifications or real customer submissions.
 
-Issue #47 and its PM comments are the full review boundary. This file is only a pointer.
+Issue #44 comment `5647155781` is the full review boundary. This file is only a pointer.

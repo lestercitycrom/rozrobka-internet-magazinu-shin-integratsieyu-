@@ -84,6 +84,24 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
             testMatch: /admin\.p0\.spec\.ts/,
         },
+        {
+            name: 'issue-44-release-desktop',
+            dependencies: ['homepage-content-edge-cases', 'admin-mobile-320'],
+            use: { ...devices['Desktop Chrome'] },
+            testMatch: /issue-44-release-qa\.spec\.ts/,
+        },
+        {
+            name: 'issue-44-release-touch-390',
+            dependencies: ['issue-44-release-desktop'],
+            use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 390, height: 844 } },
+            testMatch: /issue-44-release-qa\.spec\.ts/,
+        },
+        {
+            name: 'issue-44-release-touch-320',
+            dependencies: ['issue-44-release-touch-390'],
+            use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 320, height: 800 } },
+            testMatch: /issue-44-release-qa\.spec\.ts/,
+        },
     ],
     webServer: {
         command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${e2eDatabaseForPhp}') || touch('${e2eDatabaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan e2e:seed-admin && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder && ${phpCommand} artisan storage:link && ${phpCommand} artisan serve --host=127.0.0.1 --port=${serverPort}`,
@@ -91,6 +109,8 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
         env: {
+            TEMP: phpTempDirectory,
+            TMP: phpTempDirectory,
             APP_DEBUG: 'false',
             APP_ENV: 'testing',
             APP_URL: baseURL,

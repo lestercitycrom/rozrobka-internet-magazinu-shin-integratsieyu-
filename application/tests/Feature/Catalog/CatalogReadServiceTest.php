@@ -95,12 +95,12 @@ test('it paginates and hydrates prices and stock in a bounded number of queries'
         ->and(count($queries))->toBeLessThanOrEqual(5);
 
     $priced = app(CatalogReadService::class)->findPublicSku('PAGE-01');
+    $pricesByTaxMode = collect($priced?->prices)->keyBy(fn ($price) => $price->taxMode->value);
     expect($priced?->prices)->toHaveCount(2)
-        ->and($priced?->prices[0]->currency)->toBe('NOK')
-        ->and($priced?->prices[0]->taxMode)->toBe(TaxMode::Gross)
-        ->and($priced?->prices[0]->amount)->toBe('123.4500')
-        ->and($priced?->prices[1]->taxMode)->toBe(TaxMode::Net)
-        ->and($priced?->prices[1]->amount)->toBe('75.0000')
+        ->and($pricesByTaxMode->keys()->all())->toEqualCanonicalizing([TaxMode::Gross->value, TaxMode::Net->value])
+        ->and($pricesByTaxMode->get(TaxMode::Gross->value)?->currency)->toBe('NOK')
+        ->and($pricesByTaxMode->get(TaxMode::Gross->value)?->amount)->toBe('123.4500')
+        ->and($pricesByTaxMode->get(TaxMode::Net->value)?->amount)->toBe('75.0000')
         ->and($priced?->stock->quantity)->toBe(40);
 });
 
