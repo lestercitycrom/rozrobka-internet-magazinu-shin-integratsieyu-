@@ -11,13 +11,13 @@ test('a guest is redirected from the admin dashboard to the admin login', functi
 });
 
 test('dashboard acceptance fixture routes are unavailable by default', function (): void {
-    $this->actingAs(User::factory()->operations()->create())
+    $this->actingAs(User::factory()->owner()->create())
         ->get('/admin/_e2e/dashboard/zero')
         ->assertNotFound();
 });
 
 test('an administrator sees operational dashboard links', function (): void {
-    $this->actingAs(User::factory()->operations()->create())
+    $this->actingAs(User::factory()->owner()->create())
         ->get('/admin')
         ->assertOk()
         ->assertSee(route('admin.catalog.index'), false)
@@ -95,7 +95,7 @@ test('logging out invalidates the authenticated admin session', function (): voi
 });
 
 test('an admin locale is persisted for the user and does not change the public storefront locale', function (): void {
-    $admin = User::factory()->operations()->create(['locale' => 'nb']);
+    $admin = User::factory()->owner()->create(['locale' => 'nb']);
 
     $this->actingAs($admin)
         ->post('/admin/locale', [

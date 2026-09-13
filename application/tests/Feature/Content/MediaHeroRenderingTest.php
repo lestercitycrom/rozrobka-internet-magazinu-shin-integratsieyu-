@@ -42,7 +42,7 @@ function heroPage(string $slug, ContentPageStatus $status = ContentPageStatus::P
 }
 function heroAsset(?string $nb, ?string $ru): MediaAsset
 {
-    $u = User::factory()->operations()->create();
+    $u = User::factory()->owner()->create();
     $path = 'media/hero.png';
     Storage::disk('public')->put($path, 'x');
 

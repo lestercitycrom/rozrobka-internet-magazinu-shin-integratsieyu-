@@ -9,14 +9,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('admins create pricing rules with exact input conversions and scope rules', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $this->actingAs($admin)->post('/admin/pricing-rules', pricingPayload(['source_tax_mode' => 'net', 'markup_percent' => '12.34', 'fixed_markup_nok' => '5.50', 'rounding_nok' => '1.00']))->assertRedirect();
     $rule = PricingRule::firstOrFail();
     expect($rule->source_tax_mode)->toBe(TaxMode::Net)->and($rule->markup_basis_points)->toBe(1234)->and($rule->fixed_markup_minor)->toBe(550)->and($rule->rounding_increment_minor)->toBe(100)->and($rule->scope_key)->toBeNull();
     $this->actingAs($admin)->post('/admin/pricing-rules', pricingPayload(['scope' => 'brand', 'scope_key' => '']))->assertSessionHasErrors('scope_key');
 });
 test('active overlapping rules are rejected but inactive and nonoverlapping rules are allowed', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $payload = pricingPayload(['is_active' => '1', 'starts_at' => '2026-01-01', 'ends_at' => '2026-12-31']);
     $this->actingAs($admin)->post('/admin/pricing-rules', $payload)->assertRedirect();
     $this->actingAs($admin)->post('/admin/pricing-rules', $payload)->assertSessionHasErrors('priority');
@@ -25,7 +25,7 @@ test('active overlapping rules are rejected but inactive and nonoverlapping rule
 });
 
 test('pricing rule source tax mode is required and enum validated', function (array $override): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
 
     $this->actingAs($admin)
         ->post('/admin/pricing-rules', pricingPayload($override))
@@ -42,7 +42,7 @@ test('guests and customers cannot manage pricing rules', function (): void {
 });
 
 test('pricing rule inputs reject negative and excessive adjustments', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
 
     foreach ([
         ['markup_percent' => '-0.01'],
@@ -61,7 +61,7 @@ test('pricing rule inputs reject negative and excessive adjustments', function (
 });
 
 test('pricing safety errors use the administrators Russian locale', function (): void {
-    $admin = User::factory()->operations()->create(['locale' => 'ru']);
+    $admin = User::factory()->owner()->create(['locale' => 'ru']);
 
     $this->actingAs($admin)
         ->post('/admin/pricing-rules', pricingPayload(['rounding_nok' => '0']))
@@ -69,7 +69,7 @@ test('pricing safety errors use the administrators Russian locale', function ():
 });
 
 test('pricing rule screens expose accessible controls and responsive status presentation', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     PricingRule::create(['name' => 'Active retail', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'ndi-file-current', 'currency' => 'NOK', 'markup_basis_points' => 1000, 'fixed_markup_minor' => 0, 'rounding_increment_minor' => 100, 'priority' => 1, 'is_active' => true]);
 
     $this->actingAs($admin)->get('/admin/pricing-rules')

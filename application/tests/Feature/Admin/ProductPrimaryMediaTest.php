@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 test('admin attaches replaces and detaches product primary media', function () {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $product = mediaProduct();
     $one = mediaFor($admin);
     $two = mediaFor($admin);
@@ -31,7 +31,7 @@ test('admin attaches replaces and detaches product primary media', function () {
     expect($product->fresh()->mediaAssignments()->count())->toBe(0);
 });
 test('inactive missing and non-image media or invalid targets are rejected', function () {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $product = mediaProduct();
     $inactive = mediaFor($admin, ['is_active' => false]);
     $video = mediaFor($admin, ['original_name' => 'homepage.mp4', 'mime' => 'video/mp4', 'width' => 0, 'height' => 0]);
@@ -41,7 +41,7 @@ test('inactive missing and non-image media or invalid targets are rejected', fun
     $this->actingAs($admin)->post('/admin/media/hero/nope/'.$product->id, ['media_asset_id' => $inactive->id])->assertNotFound();
 });
 test('detaching supplier media records an explicit suppression for reconciliation', function () {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $product = mediaProduct();
     $asset = mediaFor($admin);
     $supplierId = SupplierSku::query()->where('product_id', $product->id)->value('supplier_id');
@@ -67,13 +67,13 @@ test('detaching supplier media records an explicit suppression for reconciliatio
     expect($source->fresh()->is_suppressed)->toBeFalse();
 });
 test('product media section is localized and handles an empty active library', function () {
-    $admin = User::factory()->operations()->create(['locale' => 'nb']);
+    $admin = User::factory()->owner()->create(['locale' => 'nb']);
     $product = mediaProduct();
     $this->actingAs($admin)->get('/admin/catalog/'.$product->id)->assertOk()->assertSee('Hovedbilde')->assertSee('Ingen aktive mediefiler er tilgjengelige.');
     $this->actingAs($admin->fresh()->forceFill(['locale' => 'ru']))->get('/admin/catalog/'.$product->id)->assertOk()->assertSee('Основное изображение')->assertSee('Нет доступных активных медиафайлов.');
 });
 test('product media chooser shows real previews and factual product context instead of generic file names', function () {
-    $admin = User::factory()->operations()->create(['locale' => 'nb']);
+    $admin = User::factory()->owner()->create(['locale' => 'nb']);
     $product = mediaProduct();
     $asset = mediaFor($admin, [
         'original_name' => str_repeat('hash-', 20).'.png',

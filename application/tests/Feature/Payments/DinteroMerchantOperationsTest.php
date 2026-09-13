@@ -28,7 +28,7 @@ beforeEach(function (): void {
 
 test('partial capture requires documented customer agreement and releases the remaining authorization', function (): void {
     [$order, $attempt] = merchantOperationOrder();
-    $actor = User::factory()->operations()->create();
+    $actor = User::factory()->owner()->create();
     $lineId = 'product-'.$order->items->first()->id;
 
     expect(fn () => app(CaptureAuthorizedPayment::class)->execute(
@@ -78,7 +78,7 @@ test('expired authorization cannot be captured', function (): void {
 
 test('captured lines can be partially and then fully refunded with idempotent audited operations', function (): void {
     [$order] = merchantOperationOrder();
-    $actor = User::factory()->operations()->create();
+    $actor = User::factory()->owner()->create();
     $lineId = 'product-'.$order->items->first()->id;
     app(CaptureAuthorizedPayment::class)->execute(
         $order,

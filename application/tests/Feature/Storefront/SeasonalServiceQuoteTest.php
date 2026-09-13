@@ -86,8 +86,9 @@ test('seasonal request validates the second car and stores server calculated quo
         ->and($stored->quote_min_minor)->toBe(230000)
         ->and($stored->quote_max_minor)->toBe(230000)
         ->and($stored->quote_currency)->toBe('NOK')
-        ->and(OutboxMessage::query()->count())->toBe(2)
-        ->and(OutboxMessage::query()->pluck('type')->all())->toContain('notion.service_request_created', 'telegram.service_request_created')
+        ->and(OutboxMessage::query()->count())->toBe(1)
+        ->and(OutboxMessage::query()->pluck('type')->all())->toContain('telegram.service_request_created')
+        ->and(OutboxMessage::query()->pluck('type')->all())->not->toContain('notion.service_request_created')
         ->and(OutboxMessage::query()->firstOrFail()->getRawOriginal('payload_encrypted'))->not->toContain('buyer@example.test');
 
     $this->post('/tjenester/custom-seasonal/foresporsel', [

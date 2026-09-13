@@ -58,7 +58,7 @@ test('it excludes unpublished and quarantined catalog rows', function (): void {
 test('it filters to an active primary product image without duplicating catalog rows', function (): void {
     $withImage = publicCatalogSku('IMAGE-01');
     publicCatalogSku('IMAGE-02');
-    $uploader = User::factory()->operations()->create();
+    $uploader = User::factory()->owner()->create();
     $asset = MediaAsset::create([
         'disk' => 'public', 'path' => 'media/catalog-read.png', 'original_name' => 'catalog-read.png',
         'mime' => 'image/png', 'byte_size' => 1, 'width' => 1, 'height' => 1,

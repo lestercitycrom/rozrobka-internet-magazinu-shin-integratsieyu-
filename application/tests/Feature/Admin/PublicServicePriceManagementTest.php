@@ -18,7 +18,7 @@ test('public price seed publishes the current price groups in Norwegian and Russ
 });
 
 test('administrator can create edit hide and delete a public service price', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $payload = [
         'code' => 'custom-service',
         'category_code' => 'custom',
@@ -46,7 +46,7 @@ test('administrator can create edit hide and delete a public service price', fun
 });
 
 test('administrator cannot mark a zero service price as published', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $payload = [
         'code' => 'zero-service',
         'category_code' => 'custom',

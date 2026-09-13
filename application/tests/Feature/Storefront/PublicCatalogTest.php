@@ -157,7 +157,7 @@ test('russian preview translates catalog and product copy without Norwegian UI s
 test('primary product media uses lazy card loading, eager detail loading, russian fallback and no image when absent', function (): void {
     config()->set('storefront.ru_preview_enabled', true);
     $sku = storefrontProduct(ProductType::Tire, 'SKU-MEDIA', ['width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00', 'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer']);
-    $asset = MediaAsset::create(['disk' => 'public', 'path' => 'media/test.png', 'original_name' => 'test.png', 'mime' => 'image/png', 'byte_size' => 1, 'width' => 1, 'height' => 1, 'sha256' => str_repeat('b', 64), 'alt_nb' => 'Fallback alt', 'alt_ru' => null, 'uploader_id' => User::factory()->operations()->create()->id, 'is_active' => true]);
+    $asset = MediaAsset::create(['disk' => 'public', 'path' => 'media/test.png', 'original_name' => 'test.png', 'mime' => 'image/png', 'byte_size' => 1, 'width' => 1, 'height' => 1, 'sha256' => str_repeat('b', 64), 'alt_nb' => 'Fallback alt', 'alt_ru' => null, 'uploader_id' => User::factory()->owner()->create()->id, 'is_active' => true]);
     MediaAssignment::create(['media_asset_id' => $asset->id, 'assignable_type' => Product::class, 'assignable_id' => $sku->product_id, 'role' => 'primary']);
     $this->get('/dekk')
         ->assertSee('data-testid="product-primary-media"', false)
@@ -215,7 +215,7 @@ test('catalog has image filter includes only products with an active primary ass
     $inactiveImage = storefrontProduct(ProductType::Tire, 'SKU-INACTIVE-IMAGE', ['width_mm' => '195.00', 'aspect_ratio' => '65.00', 'rim_diameter_in' => '15.00', 'load_index' => '91', 'speed_symbol' => 'T', 'season' => 'Winter']);
     $secondaryImage = storefrontProduct(ProductType::Tire, 'SKU-SECONDARY-IMAGE', ['width_mm' => '225.00', 'aspect_ratio' => '45.00', 'rim_diameter_in' => '18.00', 'load_index' => '95', 'speed_symbol' => 'Y', 'season' => 'Summer']);
     storefrontProduct(ProductType::Tire, 'SKU-FALLBACK-ONLY', ['width_mm' => '215.00', 'aspect_ratio' => '60.00', 'rim_diameter_in' => '17.00', 'load_index' => '94', 'speed_symbol' => 'H', 'season' => 'All season']);
-    $uploader = User::factory()->operations()->create();
+    $uploader = User::factory()->owner()->create();
     $primary = storefrontMediaAsset($uploader, 'primary', true);
     $inactive = storefrontMediaAsset($uploader, 'inactive', false);
     $secondary = storefrontMediaAsset($uploader, 'secondary', true);

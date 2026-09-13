@@ -38,7 +38,7 @@ test('confirmed Facebook and Google aggregate ratings are seeded with localized 
 });
 
 test('public homepage hides draft and unsafe ratings and only renders published partners backed by active media', function (): void {
-    $uploader = User::factory()->operations()->create();
+    $uploader = User::factory()->owner()->create();
     $active = homepageTrustAsset($uploader, 'active', true);
     $inactive = homepageTrustAsset($uploader, 'inactive', false);
 
@@ -76,7 +76,7 @@ test('public homepage hides draft and unsafe ratings and only renders published 
 });
 
 test('administrator manages aggregate ratings while unsafe sources and incomplete published translations are rejected', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $customer = User::factory()->customer()->create();
 
     $this->get('/admin/homepage-rating-summaries')->assertRedirect('/admin/login');
@@ -101,8 +101,8 @@ test('administrator manages aggregate ratings while unsafe sources and incomplet
 });
 
 test('administrator can publish only an active authorized partner asset and Russian admin labels are available', function (): void {
-    $admin = User::factory()->operations()->create();
-    $russianAdmin = User::factory()->operations()->russian()->create();
+    $admin = User::factory()->owner()->create();
+    $russianAdmin = User::factory()->owner()->russian()->create();
     $active = homepageTrustAsset($admin, 'admin-active', true);
     $inactive = homepageTrustAsset($admin, 'admin-inactive', false);
 

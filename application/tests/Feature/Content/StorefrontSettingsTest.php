@@ -44,7 +44,7 @@ test('empty storefront settings preserve the existing public defaults', function
 
 test('administrator can edit typed localized storefront settings and public pages use them', function (): void {
     $this->seed(DatabaseSeeder::class);
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $asset = MediaAsset::query()->create([
         'id' => (string) Str::ulid(), 'disk' => 'public', 'path' => 'content/custom-hero.webp', 'original_name' => 'custom-hero.webp',
         'mime' => 'image/webp', 'byte_size' => 1, 'width' => 1600, 'height' => 900, 'sha256' => hash('sha256', 'custom-hero'),
@@ -97,7 +97,7 @@ test('administrator can edit typed localized storefront settings and public page
 });
 
 test('a subsequently deactivated hero media asset falls back safely', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $asset = MediaAsset::query()->create([
         'id' => (string) Str::ulid(), 'disk' => 'public', 'path' => 'content/deactivated-hero.webp', 'original_name' => 'deactivated-hero.webp',
         'mime' => 'image/webp', 'byte_size' => 1, 'width' => 1600, 'height' => 900, 'sha256' => hash('sha256', 'deactivated-hero'),
@@ -114,7 +114,7 @@ test('a subsequently deactivated hero media asset falls back safely', function (
 });
 
 test('storefront settings reject unsafe CTA links and inactive media', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $inactiveAsset = MediaAsset::query()->create([
         'id' => (string) Str::ulid(), 'disk' => 'public', 'path' => 'content/inactive.webp', 'original_name' => 'inactive.webp',
         'mime' => 'image/webp', 'byte_size' => 1, 'width' => 1, 'height' => 1, 'sha256' => hash('sha256', 'inactive'),
@@ -127,7 +127,7 @@ test('storefront settings reject unsafe CTA links and inactive media', function 
 });
 
 test('storefront settings keep image and dekkhotell video assignments type safe', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $video = MediaAsset::query()->create([
         'id' => (string) Str::ulid(), 'disk' => 'public', 'path' => 'content/dekkhotell.mp4', 'original_name' => 'dekkhotell.mp4',
         'mime' => 'video/mp4', 'byte_size' => 100, 'width' => 0, 'height' => 0, 'sha256' => hash('sha256', 'dekkhotell-video'),
@@ -141,7 +141,7 @@ test('storefront settings keep image and dekkhotell video assignments type safe'
 });
 
 test('administrator can save only safe public social links and the read model has confirmed social fallbacks', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
 
     $this->actingAs($admin)
         ->put('/admin/storefront-settings', [

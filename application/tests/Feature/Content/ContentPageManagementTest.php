@@ -72,7 +72,7 @@ test('merchant review pages expose the seller identity withdrawal form returns a
 });
 
 test('an administrator can create update and delete localized content pages', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $payload = contentPayload('kjopsvilkar');
     $payload['publication_status'] = $payload['publication_status']->value;
 

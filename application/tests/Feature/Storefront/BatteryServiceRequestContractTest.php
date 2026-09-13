@@ -110,7 +110,7 @@ test('valid battery request persists the exact contract once and is visible to a
         ->and($stored->phone)->toBe('939 58 270')
         ->and($stored->email)->toBe('battery-buyer@example.test');
 
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $this->actingAs($admin)->get('/admin/service-requests/'.$stored->id)
         ->assertOk()
         ->assertSee('EV 12345')
@@ -129,7 +129,8 @@ test('battery submission token stays idempotent', function (): void {
         ->and(ServiceRequest::query()->count())->toBe(1)
         ->and(ServiceRequest::query()->sole()->submission_token)->toBe($token)
         ->and(DB::table('service_request_submissions')->count())->toBe(1)
-        ->and(DB::table('outbox_messages')->count())->toBe(2);
+        ->and(DB::table('outbox_messages')->count())->toBe(1)
+        ->and(DB::table('outbox_messages')->value('type'))->toBe('telegram.service_request_created');
 });
 
 test('battery-only requirements do not change generic or mounting contracts', function (): void {
@@ -171,7 +172,7 @@ test('battery validation messages use the hidden Russian QA locale', function ()
 });
 
 test('historical battery requests with missing new contract fields remain readable', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $historical = ServiceRequest::query()->create([
         'reference' => 'SR-HISTORICAL-BATTERY',
         'locale' => 'nb',

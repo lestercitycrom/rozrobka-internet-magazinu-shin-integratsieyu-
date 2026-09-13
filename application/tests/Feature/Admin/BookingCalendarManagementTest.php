@@ -7,8 +7,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('operations administrators manage weekly intervals and blackouts in the custom admin', function (): void {
-    $admin = User::factory()->operations()->create();
+test('owners manage weekly intervals and blackouts in the custom admin', function (): void {
+    $admin = User::factory()->owner()->create();
 
     $this->actingAs($admin)->get('/admin/booking-calendar')
         ->assertOk()->assertSee('Timeplan og kapasitet')->assertSee('data-testid="booking-calendar-unconfigured"', false);
@@ -60,7 +60,7 @@ test('operations administrators manage weekly intervals and blackouts in the cus
 });
 
 test('calendar administration is localized for Russian QA and forbidden to customers', function (): void {
-    $admin = User::factory()->operations()->create(['locale' => 'ru']);
+    $admin = User::factory()->owner()->create(['locale' => 'ru']);
     $customer = User::factory()->customer()->create();
 
     $this->actingAs($admin)->get('/admin/booking-calendar')

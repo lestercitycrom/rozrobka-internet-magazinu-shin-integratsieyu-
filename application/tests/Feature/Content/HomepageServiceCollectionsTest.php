@@ -137,7 +137,7 @@ test('homepage service cards are independently ordered localized and fail closed
 });
 
 test('administrator can create update reorder unpublish and remove a card without deleting its service', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $service = ServicePage::query()->create([
         'slug' => 'managed-service',
         'sort_order' => 1,
@@ -190,7 +190,7 @@ test('administrator can create update reorder unpublish and remove a card withou
 });
 
 test('published cards require complete bilingual content and a safe resolvable destination', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $payload = homepageServiceCardPayload(['content_key' => null]);
     unset($payload['collection']);
 

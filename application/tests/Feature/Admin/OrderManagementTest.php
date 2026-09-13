@@ -19,7 +19,7 @@ test('guests and customers cannot access order administration', function (): voi
 });
 
 test('admin filters orders, sees detail snapshots, and dashboard exposes no customer pii', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $order = adminOrder(['public_reference' => 'ET-FILTER', 'customer_email' => 'person@example.test', 'subtotal_minor' => 300, 'total_minor' => 300]);
     $order->items()->create(['external_sku' => '001', 'product_title' => 'Tyre', 'quantity' => 1, 'unit_price_minor' => 100, 'line_total_minor' => 100, 'currency' => 'NOK', 'product_snapshot' => ['brand' => 'B'], 'pricing_snapshot' => ['rule_name' => 'Rule']]);
     $order->serviceItems()->create(['service_code' => 'mounting', 'title_nb' => 'Montering', 'title_ru' => 'Монтаж', 'applicability' => 'tire', 'billing_mode' => 'per_item', 'quantity' => 1, 'unit_price_minor' => 200, 'line_total_minor' => 200, 'currency' => 'NOK', 'service_snapshot' => ['code' => 'mounting']]);
@@ -29,17 +29,17 @@ test('admin filters orders, sees detail snapshots, and dashboard exposes no cust
 });
 
 test('invalid order filters are rejected safely', function (): void {
-    $this->actingAs(User::factory()->operations()->create())->get('/admin/orders?status=invalid')->assertStatus(422);
+    $this->actingAs(User::factory()->owner()->create())->get('/admin/orders?status=invalid')->assertStatus(422);
 });
 
 test('valid enum order filter is applied', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     adminOrder(['public_reference' => 'ET-VALID']);
     $this->actingAs($admin)->get('/admin/orders?status=pending_review')->assertOk()->assertSee('ET-VALID')->assertSee('Til gjennomgang');
 });
 
 test('admin order detail localizes ordered service snapshots to Russian', function (): void {
-    $admin = User::factory()->operations()->create(['locale' => 'ru']);
+    $admin = User::factory()->owner()->create(['locale' => 'ru']);
     $order = adminOrder();
     $order->serviceItems()->create(['service_code' => 'mounting', 'title_nb' => 'Montering', 'title_ru' => 'Монтаж', 'applicability' => 'tire', 'billing_mode' => 'per_item', 'quantity' => 2, 'unit_price_minor' => 5000, 'line_total_minor' => 10000, 'currency' => 'NOK', 'service_snapshot' => ['code' => 'mounting']]);
 
@@ -47,14 +47,14 @@ test('admin order detail localizes ordered service snapshots to Russian', functi
 });
 
 test('admin can execute an allowed transition and history is retained', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $order = adminOrder();
     $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/transition', ['status' => 'awaiting_payment', 'note' => 'Reviewed'])->assertRedirect();
     expect($order->fresh()->status)->toBe(OrderStatus::AwaitingPayment)->and($order->statusHistory()->count())->toBe(1);
 });
 
 test('cancelled and failed transitions require notes and invalid transitions are rejected', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $order = adminOrder();
     $this->actingAs($admin)->post('/admin/orders/'.$order->id.'/transition', ['status' => 'cancelled'])->assertSessionHasErrors('note');
     expect(fn () => app(TransitionOrder::class)->execute($order, OrderStatus::Fulfilled, $admin, 'no'))

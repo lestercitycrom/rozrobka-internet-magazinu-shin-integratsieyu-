@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 uses(RefreshDatabase::class);
 
 test('an administrator can inspect catalog and safe import audit details', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $supplierId = DB::table('suppliers')->insertGetId(['code' => 'ndi', 'name' => 'NDI', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
     $brandId = DB::table('brands')->insertGetId(['canonical_name' => 'Nord', 'slug' => 'nord', 'created_at' => now(), 'updated_at' => now()]);
     $productId = DB::table('products')->insertGetId(['product_type' => 'tire', 'brand_id' => $brandId, 'model_name' => 'X1', 'title' => 'Nord X1', 'publication_status' => 'draft', 'first_seen_at' => now(), 'created_at' => now(), 'updated_at' => now()]);

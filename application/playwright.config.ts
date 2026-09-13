@@ -10,7 +10,7 @@ const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 const phpTempDirectory = (process.env.PLAYWRIGHT_PHP_TEMP_DIR ?? `${process.cwd()}/storage/framework/playwright-tmp`).replace(/\\/g, '/');
 const phpTempDirectoryForPhp = phpTempDirectory.replace(/'/g, "\\'");
 const phpCommand = `"${phpBinary}" -d "sys_temp_dir=${phpTempDirectory}" -d "upload_tmp_dir=${phpTempDirectory}"`;
-const buyerSpecs = /(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|home-hero-process|homepage-feedback|homepage-content-collections|homepage-composition|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts/;
+const buyerSpecs = /(?:^|[\\/])(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|home-hero-process|homepage-feedback|homepage-content-collections|homepage-composition|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts$/;
 
 export default defineConfig({
     testDir: './tests/E2E',
@@ -43,7 +43,7 @@ export default defineConfig({
         {
             name: 'buyer-ru-preview',
             use: { ...devices['Desktop Chrome'] },
-            testMatch: /(buyer\.ru-preview|checkout\.smoke|catalog-live|customer-navigation|header-navigation|homepage-content-collections|homepage-composition|product-detail|service-requests|map-overflow|project-content)\.spec\.ts/,
+            testMatch: /(?:^|[\\/])(buyer\.ru-preview|checkout\.smoke|catalog-live|customer-navigation|header-navigation|homepage-content-collections|homepage-composition|product-detail|service-requests|map-overflow|project-content)\.spec\.ts$/,
         },
         {
             name: 'buyer-cart-390',
@@ -61,8 +61,20 @@ export default defineConfig({
             testMatch: /admin\.smoke\.spec\.ts/,
         },
         {
-            name: 'admin-homepage-content',
+            name: 'admin-service-requests-desktop',
             dependencies: ['admin-desktop'],
+            use: { ...devices['Desktop Chrome'] },
+            testMatch: /admin\.service-requests\.spec\.ts/,
+        },
+        {
+            name: 'admin-service-requests-mobile-390',
+            dependencies: ['admin-service-requests-desktop'],
+            use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
+            testMatch: /admin\.service-requests\.spec\.ts/,
+        },
+        {
+            name: 'admin-homepage-content',
+            dependencies: ['admin-service-requests-mobile-390'],
             use: { ...devices['Desktop Chrome'] },
             testMatch: /admin-homepage-content\.spec\.ts/,
         },
@@ -104,7 +116,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${e2eDatabaseForPhp}') || touch('${e2eDatabaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan e2e:seed-admin && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder && ${phpCommand} artisan storage:link && ${phpCommand} artisan serve --host=127.0.0.1 --port=${serverPort}`,
+        command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${e2eDatabaseForPhp}') || touch('${e2eDatabaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan e2e:seed-admin && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder && ${phpCommand} artisan storage:link && ${phpCommand} -S 127.0.0.1:${serverPort} -t public tests/E2E/server.php`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

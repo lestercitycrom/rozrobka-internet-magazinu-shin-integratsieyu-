@@ -16,7 +16,7 @@ test('guests are redirected from media administration', function (): void {
 
 test('only administrators can update localized alt text and validation limits it', function (): void {
     Storage::fake('public');
-    $owner = User::factory()->operations()->create();
+    $owner = User::factory()->owner()->create();
     $asset = mediaAsset($owner);
     $this->actingAs(User::factory()->customer()->create())->put('/admin/media/'.$asset->id, ['alt_nb' => 'x'])->assertForbidden();
     $this->actingAs($owner)->put('/admin/media/'.$asset->id, ['alt_nb' => str_repeat('x', 256)])->assertSessionHasErrors('alt_nb');
@@ -25,7 +25,7 @@ test('only administrators can update localized alt text and validation limits it
 });
 
 test('svg uploads are rejected', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $svg = UploadedFile::fake()->create('payload.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>1</script></svg>', 'image/svg+xml');
 
     $this->actingAs($admin)->post('/admin/media', ['image' => $svg])->assertSessionHasErrors('image');
@@ -33,7 +33,7 @@ test('svg uploads are rejected', function (): void {
 
 test('a valid raster image uploads to a randomized public media path', function (): void {
     Storage::fake('public');
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $this->actingAs($admin)->post('/admin/media', ['image' => UploadedFile::fake()->image('photo.png', 24, 16), 'alt_nb' => 'Bilde'])->assertRedirect();
 
     $asset = MediaAsset::firstOrFail();
@@ -43,7 +43,7 @@ test('a valid raster image uploads to a randomized public media path', function 
 
 test('an optimized homepage mp4 uploads as video without being treated as an image', function (): void {
     Storage::fake('public');
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $mp4 = new UploadedFile(base_path('tests/Fixtures/one-frame.mp4'), '003-muzik.mp4', 'video/mp4', null, true);
 
     $this->actingAs($admin)->post('/admin/media', ['image' => $mp4])->assertRedirect();
@@ -58,7 +58,7 @@ test('an optimized homepage mp4 uploads as video without being treated as an ima
 
 test('an assigned asset cannot be deleted', function (): void {
     Storage::fake('public');
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $asset = mediaAsset($admin);
     MediaAssignment::create(['media_asset_id' => $asset->id, 'assignable_type' => 'test', 'assignable_id' => 1, 'role' => 'hero']);
 
@@ -68,7 +68,7 @@ test('an assigned asset cannot be deleted', function (): void {
 
 test('supplier-managed media is visible but has no delete control', function (): void {
     Storage::fake('public');
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $path = 'media/supplier.png';
     Storage::disk('public')->put($path, 'fixture');
     MediaAsset::create(['disk' => 'public', 'path' => $path, 'original_name' => 'supplier.png', 'mime' => 'image/png', 'byte_size' => 7, 'width' => 1, 'height' => 1, 'sha256' => hash('sha256', $path), 'uploader_id' => null]);
@@ -78,7 +78,7 @@ test('supplier-managed media is visible but has no delete control', function ():
 
 test('an unassigned asset delete removes its public storage object', function (): void {
     Storage::fake('public');
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $asset = mediaAsset($admin);
 
     $this->actingAs($admin)->delete('/admin/media/'.$asset->id)->assertRedirect();
