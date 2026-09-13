@@ -20,6 +20,8 @@ ln -s "$RELEASES/old" "$APP_ROOT/current"
 printf 'RUNTIME_SENTINEL=shared-only\nAPP_ENV=staging\n' > "$SHARED/.env"
 printf 'persistent-control\n' > "$SHARED/storage/persistent-control.txt"
 chmod -R ugo+rwX "$SHARED"
+[[ -w "$SHARED/storage/app/public" ]]
+printf 'shared-writable\n' > "$SHARED/storage/app/public/writable-probe.txt"
 
 printf '#!/usr/bin/env php\n' > "$FIXTURE/application/artisan"
 printf '{}\n' > "$FIXTURE/application/composer.json"
@@ -133,6 +135,7 @@ unset FAIL_TESTS
 [[ "$(readlink -f "$APP_ROOT/current")" == "$(readlink -f "$RELEASES/old")" ]]
 [[ "$(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')" == '1' ]]
 [[ "$(cat "$SHARED/storage/persistent-control.txt")" == 'persistent-control' ]]
+[[ "$(cat "$SHARED/storage/app/public/writable-probe.txt")" == 'shared-writable' ]]
 [[ ! -e "$SHARED/storage/app/public/media/homepage/issue-46/test-write.txt" ]]
 ! grep -q 'easytire:backup:mysql' "$LOG"
 ! grep -q 'artisan migrate' "$LOG"
@@ -147,6 +150,7 @@ run_hook "$success_hook" > "$SANDBOX/success.out" 2>&1
 
 [[ "$(cat "$APP_ROOT/current/REVISION")" == "$SHA" ]]
 [[ "$(cat "$SHARED/storage/persistent-control.txt")" == 'persistent-control' ]]
+[[ "$(cat "$SHARED/storage/app/public/writable-probe.txt")" == 'shared-writable' ]]
 [[ ! -e "$SHARED/storage/app/public/media/homepage/issue-46/test-write.txt" ]]
 [[ -L "$APP_ROOT/current/application/storage" ]]
 [[ -L "$APP_ROOT/current/application/public/storage" ]]
