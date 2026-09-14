@@ -108,6 +108,7 @@ test('manual intake accepts the complete mounting service contract', function ()
 
     $this->actingAs($staff)->post('/admin/service-requests', issue57Payload($service, [
         'service_variant' => 'mounting_balancing',
+        'preferred_date' => now()->addDays(2)->format('Y-m-d'),
         'tire_size' => '205/55 R16',
         'wheel_count' => 4,
     ]))->assertRedirect();
@@ -349,14 +350,16 @@ test('manual intake accepts only requestable services and keeps system provenanc
     $this->actingAs($staff)->post('/admin/service-requests', issue57Payload($draft))
         ->assertSessionHasErrors('service_slug');
     $this->actingAs($staff)->post('/admin/service-requests', issue57Payload($valid, ['note' => null]))
-        ->assertSessionHasErrors(['registration_number', 'note']);
+        ->assertSessionHasErrors(['preferred_date', 'registration_number', 'note']);
     $this->actingAs($staff)->post('/admin/service-requests', issue57Payload($valid, [
+        'preferred_date' => now()->addDays(2)->format('Y-m-d'),
         'registration_number' => 'EV12345',
         'note' => 'Bilen starter tregt.',
         'status' => 'closed',
     ]))->assertSessionHasErrors('status');
 
     $this->actingAs($staff)->post('/admin/service-requests', issue57Payload($valid, [
+        'preferred_date' => now()->addDays(2)->format('Y-m-d'),
         'registration_number' => 'EV12345',
         'note' => 'Bilen starter tregt.',
         'source' => 'public',

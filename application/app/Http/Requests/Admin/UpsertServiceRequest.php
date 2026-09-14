@@ -29,6 +29,7 @@ final class UpsertServiceRequest extends FormRequest
         $isSeasonal = $this->isSeasonal($slug);
         $isMounting = $slug === 'omlegging-balansering';
         $isBattery = $slug === 'bilbatteri';
+        $requiresRequestedDate = $isSeasonal || $isMounting || $isBattery;
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
         $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
         $seasonalVehicleTypes = $isSeasonal && $effectiveFulfilment === 'workshop'
@@ -41,6 +42,8 @@ final class UpsertServiceRequest extends FormRequest
         $operationalUpdate = $isCreate || $this->has('service_slug');
         $storedDate = $requestModel?->preferred_date?->format('Y-m-d');
         $dateChanged = $isCreate || ($this->has('preferred_date') && (string) $this->input('preferred_date') !== (string) $storedDate);
+        $dateRequired = $bookingMode === 'exact'
+            || ($requiresRequestedDate && ($isCreate || $serviceChanged || filled($storedDate)));
         $serviceExists = Rule::exists('service_pages', 'slug');
         if ($serviceChanged) {
             $serviceExists->where('publication_status', ServicePagePublicationStatus::Published->value);
@@ -50,31 +53,32 @@ final class UpsertServiceRequest extends FormRequest
             'operational_form' => ['nullable', 'boolean'],
             'submission_token' => [$isCreate ? 'required' : 'nullable', 'uuid'],
             'service_slug' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), 'string', $serviceExists],
-            'service_variant' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
+            'service_variant' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
             'fulfilment' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
             'booking_mode' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in(['manual', 'exact'])],
             'preferred_date' => [
-                $detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'),
+                ...($isCreate ? [] : ['sometimes']),
+                Rule::requiredIf($dateRequired),
                 'nullable',
                 'date',
                 ...($dateChanged ? ['after_or_equal:today'] : []),
             ],
             'preferred_window' => [$detailsLocked ? 'sometimes' : 'nullable', 'string', 'max:64'],
             'booking_slot_key' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
-            'car_count' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
-            'vehicle' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
-            'tire_size' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
-            'vehicle_type' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
-            'vehicle_2' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
+            'car_count' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
+            'vehicle' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
+            'registration_number' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
+            'tire_size' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
+            'vehicle_type' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
+            'rim_band' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
+            'storage_plan' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
+            'vehicle_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
             'registration_number_2' => ['nullable', 'string', 'max:32'],
             'tire_size_2' => ['nullable', 'string', 'max:64'],
-            'vehicle_type_2' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band_2' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan_2' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['none', 'new', 'renew'])],
-            'wheel_count' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
+            'vehicle_type_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
+            'rim_band_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
+            'storage_plan_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['none', 'new', 'renew'])],
+            'wheel_count' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
             'dekkhotell' => ['nullable', 'boolean'],
             'additional_services' => [Rule::prohibitedIf(! $supportsAdditionalServices), 'nullable', 'array', 'max:3'],
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],

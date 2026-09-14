@@ -66,6 +66,9 @@
                                         data-flow="{{ $service->request_flow->value }}"
                                         data-workshop-only="{{ in_array($service->slug, ['omlegging-balansering', 'tpms-sensor'], true) ? '1' : '0' }}"
                                         data-mounting="{{ $service->slug === 'omlegging-balansering' ? '1' : '0' }}"
+                                        data-requires-date="{{ $service->request_flow->value === 'seasonal' || in_array($service->slug, ['omlegging-balansering', 'bilbatteri'], true) ? '1' : '0' }}"
+                                        data-requires-registration="{{ $service->slug === 'bilbatteri' ? '1' : '0' }}"
+                                        data-requires-problem="{{ in_array($service->slug, ['tpms-sensor', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true) ? '1' : '0' }}"
                                         data-supports-addons="{{ in_array($service->slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true) ? '1' : '0' }}"
                                         @selected($currentService === $service->slug)
                                     >{{ app()->getLocale() === 'ru' && filled($service->title_ru) ? $service->title_ru : $service->title_nb }}</option>
@@ -180,6 +183,8 @@
                 const additional = root.querySelector('[data-additional-services]');
                 const mobileOption = root.querySelector('[data-mobile-option]');
                 const address = root.querySelector('input[name="address"]');
+                const registration = general?.querySelector('input[name="registration_number"]');
+                const problem = root.querySelector('textarea[name="note"]');
                 const tireSize = root.querySelector('[data-tire-size]');
                 const wheelCount = root.querySelector('[data-wheel-count]');
                 const carCount = root.querySelector('[data-car-count]');
@@ -191,6 +196,9 @@
                     const selected = service?.selectedOptions[0];
                     const isSeasonal = selected?.dataset.flow === 'seasonal';
                     const isMounting = selected?.dataset.mounting === '1';
+                    const requiresDate = selected?.dataset.requiresDate === '1';
+                    const requiresRegistration = selected?.dataset.requiresRegistration === '1';
+                    const requiresProblem = selected?.dataset.requiresProblem === '1';
                     const supportsAddons = selected?.dataset.supportsAddons === '1';
                     const workshopOnly = selected?.dataset.workshopOnly === '1';
                     if (seasonal) seasonal.hidden = !isSeasonal;
@@ -208,6 +216,9 @@
                     if (workshopOnly && fulfilment?.value === 'mobile') fulfilment.value = 'workshop';
                     if (tireSize) tireSize.required = isMounting;
                     if (wheelCount) wheelCount.required = isMounting;
+                    if (date) date.required = mode?.value === 'exact' || requiresDate;
+                    if (registration) registration.required = requiresRegistration;
+                    if (problem) problem.required = requiresProblem;
                     updateFulfilment();
                     updateCars();
                 };
@@ -253,7 +264,7 @@
                     exact.hidden = !exactMode;
                     manual.querySelectorAll('input').forEach(el => el.disabled = exactMode);
                     slots.disabled = !exactMode;
-                    date.required = exactMode;
+                    date.required = exactMode || service?.selectedOptions[0]?.dataset.requiresDate === '1';
                     if (exactMode) loadSlots();
                 };
                 service?.addEventListener('change', updateService);
