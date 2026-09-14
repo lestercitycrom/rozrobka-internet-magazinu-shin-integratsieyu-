@@ -7,6 +7,7 @@ use App\Modules\Outbox\OutboxPublisher;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -59,7 +60,7 @@ final class ServiceRequestCreator
         return DB::transaction(function () use ($request, $data): ServiceRequest {
             /** @var ServiceRequest $locked */
             $locked = ServiceRequest::query()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
-            $contact = Arr::only($data, ['name', 'email', 'phone', 'address', 'note', 'admin_note', 'status']);
+            $contact = Arr::only($data, ['client_id', 'name', 'email', 'phone', 'address', 'district', 'assigned_van', 'note', 'admin_note', 'status']);
             if (array_key_exists('email', $contact)) {
                 $contact['email'] = filled($contact['email']) ? mb_strtolower(trim((string) $contact['email'])) : null;
             }
@@ -158,7 +159,11 @@ final class ServiceRequestCreator
 
             $operational = $this->preparedOperationalData($data);
             $slot = null;
-            if (! $allowUnconfirmed && ($source !== ServiceRequestSource::Public || filled($operational['vehicles'] ?? null))) {
+            $bookingMode = $data['booking_mode'] ?? null;
+            $legacyExactAttempt = $bookingMode === null
+                && ! $allowUnconfirmed
+                && ($source !== ServiceRequestSource::Public || filled($operational['vehicles'] ?? null));
+            if ($bookingMode === 'exact' || $legacyExactAttempt) {
                 $slot = $this->calendar->claim(
                     $data['booking_slot_key'] ?? null,
                     (string) $operational['fulfilment'],
@@ -178,12 +183,14 @@ final class ServiceRequestCreator
                 'locale' => $locale,
                 'source' => $source,
                 'created_by_user_id' => $actor?->getKey(),
+                'client_id' => $data['client_id'] ?? null,
                 'service_slug' => $slug,
                 'name' => trim((string) $data['name']),
                 'email' => filled($data['email'] ?? null) ? mb_strtolower(trim((string) $data['email'])) : null,
                 'phone' => trim((string) $data['phone']),
                 'phone_normalized' => $this->phones->normalize((string) $data['phone']),
                 'address' => filled($data['address'] ?? null) ? trim((string) $data['address']) : null,
+                'district' => filled($data['district'] ?? null) ? trim((string) $data['district']) : null,
                 'note' => filled($data['note'] ?? null) ? trim((string) $data['note']) : null,
                 'admin_note' => filled($data['admin_note'] ?? null) ? trim((string) $data['admin_note']) : null,
                 'status' => ServiceRequestStatus::New,
@@ -214,18 +221,29 @@ final class ServiceRequestCreator
     {
         $vehicles = $this->vehicles($data);
         $usesStorage = collect($vehicles)->contains(fn (array $vehicle): bool => ($vehicle['storage_plan'] ?? 'none') !== 'none');
+        $usesGeneralStorage = $vehicles === [] && (bool) ($data['dekkhotell'] ?? false);
+        $alreadyStored = $usesGeneralStorage && array_key_exists('dekkhotell_already_stored', $data)
+            ? ($data['dekkhotell_already_stored'] === null ? null : (bool) $data['dekkhotell_already_stored'])
+            : null;
+        $period = $this->preferredPeriod($data);
 
         return [
             'service_slug' => (string) $data['service_slug'],
             'service_variant' => $data['service_variant'] ?? null,
             'fulfilment' => (string) $data['fulfilment'],
+            'assigned_van' => ($data['fulfilment'] ?? null) === 'mobile' ? ($data['assigned_van'] ?? null) : null,
             'preferred_date' => $data['preferred_date'] ?? null,
-            'preferred_window' => filled($data['preferred_window'] ?? null) ? trim((string) $data['preferred_window']) : null,
+            'preferred_window' => $period === null
+                ? (filled($data['preferred_window'] ?? null) ? trim((string) $data['preferred_window']) : null)
+                : $period['label'],
+            'preferred_period_starts_at' => $period['starts_at'] ?? null,
+            'preferred_period_ends_at' => $period['ends_at'] ?? null,
             'vehicle' => $data['vehicle'] ?? null,
             'registration_number' => $data['registration_number'] ?? null,
             'tire_size' => $data['tire_size'] ?? null,
             'wheel_count' => $data['wheel_count'] ?? null,
-            'dekkhotell' => $vehicles === [] ? (bool) ($data['dekkhotell'] ?? false) : $usesStorage,
+            'dekkhotell' => $vehicles === [] ? $usesGeneralStorage : $usesStorage,
+            'dekkhotell_already_stored' => $alreadyStored,
             'additional_services' => $data['additional_services'] ?? null,
             'vehicles' => $vehicles === [] ? null : $vehicles,
         ];
@@ -248,14 +266,20 @@ final class ServiceRequestCreator
             'service_slug' => $request->service_slug,
             'service_variant' => $request->service_variant,
             'fulfilment' => $request->fulfilment,
-            'booking_mode' => $request->booking_slot_key ? 'exact' : 'manual',
+            'assigned_van' => $request->assigned_van,
+            'booking_mode' => $request->booking_slot_key
+                ? 'exact'
+                : ($request->preferred_period_starts_at && $request->preferred_period_ends_at ? 'period' : 'manual'),
             'preferred_date' => $request->preferred_date?->format('Y-m-d'),
             'preferred_window' => $request->preferred_window,
+            'preferred_time_start' => $request->preferred_period_starts_at?->setTimezone($this->calendar->timezone())->format('H:i'),
+            'preferred_time_end' => $request->preferred_period_ends_at?->setTimezone($this->calendar->timezone())->format('H:i'),
             'booking_slot_key' => $request->booking_slot_key,
             'vehicle' => $request->vehicle,
             'registration_number' => $request->registration_number,
             'tire_size' => $request->tire_size,
             'wheel_count' => $request->wheel_count,
+            'dekkhotell_already_stored' => $request->dekkhotell_already_stored,
         ];
 
         $vehicles = $request->vehicles ?? [];
@@ -279,7 +303,7 @@ final class ServiceRequestCreator
 
         $fullForm = (bool) ($data['operational_form'] ?? false);
         if (! array_key_exists('dekkhotell', $data)) {
-            $data['dekkhotell'] = $fullForm ? false : $request->dekkhotell;
+            $data['dekkhotell'] = $request->dekkhotell;
         }
         if (! array_key_exists('additional_services', $data)) {
             $data['additional_services'] = $fullForm ? null : $request->additional_services;
@@ -345,6 +369,8 @@ final class ServiceRequestCreator
         $data['booking_slot_key'] = $slot->key;
         $data['booking_starts_at'] = $slot->startsAt;
         $data['booking_ends_at'] = $slot->endsAt;
+        $data['preferred_period_starts_at'] = null;
+        $data['preferred_period_ends_at'] = null;
 
         return $data;
     }
@@ -355,13 +381,45 @@ final class ServiceRequestCreator
         return [...$data, 'booking_schedule_interval_id' => null, 'booking_slot_key' => null, 'booking_starts_at' => null, 'booking_ends_at' => null];
     }
 
+    /** @param array<string, mixed> $data @return array{starts_at: CarbonImmutable, ends_at: CarbonImmutable, label: string}|null */
+    private function preferredPeriod(array $data): ?array
+    {
+        if (($data['booking_mode'] ?? null) !== 'period') {
+            return null;
+        }
+
+        $date = (string) ($data['preferred_date'] ?? '');
+        $start = (string) ($data['preferred_time_start'] ?? '');
+        $end = (string) ($data['preferred_time_end'] ?? '');
+        if ($date === '' || $start === '' || $end === '') {
+            $messages = [];
+            if ($date === '') {
+                $messages['preferred_date'] = __('service_requests.validation.preferred_date_required');
+            }
+            if ($start === '') {
+                $messages['preferred_time_start'] = __('service_requests.validation.period_start_required');
+            }
+            if ($end === '') {
+                $messages['preferred_time_end'] = __('service_requests.validation.period_end_required');
+            }
+            throw ValidationException::withMessages($messages);
+        }
+        $timezone = $this->calendar->timezone();
+
+        return [
+            'starts_at' => CarbonImmutable::createFromFormat('Y-m-d H:i', "{$date} {$start}", $timezone)->utc(),
+            'ends_at' => CarbonImmutable::createFromFormat('Y-m-d H:i', "{$date} {$end}", $timezone)->utc(),
+            'label' => "{$start}–{$end}",
+        ];
+    }
+
     /** @param array<string, mixed> $data */
     private function assertBookedDetailsUnchanged(ServiceRequest $request, array $data): void
     {
         $protected = [
             'service_slug', 'service_variant', 'fulfilment', 'preferred_date', 'preferred_window',
-            'booking_slot_key', 'vehicle', 'registration_number', 'tire_size', 'wheel_count',
-            'dekkhotell', 'additional_services',
+            'preferred_period_starts_at', 'preferred_period_ends_at', 'booking_slot_key', 'vehicle', 'registration_number', 'tire_size', 'wheel_count',
+            'dekkhotell', 'dekkhotell_already_stored', 'additional_services',
         ];
         foreach ($protected as $key) {
             if (array_key_exists($key, $data)

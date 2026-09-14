@@ -9,6 +9,7 @@ use App\Modules\Content\Models\ServicePage;
 use App\Modules\ServiceBooking\CustomerPhoneNormalizer;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
+use App\Modules\ServiceBooking\Models\Client;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use App\Modules\ServiceBooking\SeasonalQuoteCalculator;
 use App\Modules\ServiceBooking\ServiceRequestCreator;
@@ -41,10 +42,14 @@ class ServiceRequestController extends Controller
             'service' => ['nullable', 'string', Rule::exists('service_pages', 'slug')],
             'fulfilment' => ['nullable', Rule::in(['workshop', 'mobile'])],
             'status' => ['nullable', Rule::in(['new', 'contacted', 'closed', 'cancelled'])],
+            'district' => ['nullable', 'string', 'max:120'],
+            'dekkhotell' => ['nullable', 'boolean'],
+            'assigned_van' => ['nullable', Rule::in(['unassigned', 'van_1', 'van_2'])],
+            'view' => ['nullable', Rule::in(['all', 'new', 'workshop', 'mobile', 'additional'])],
             'new_only' => ['nullable', 'boolean'],
         ]);
 
-        $query = ServiceRequest::query()->with('createdBy')->latest();
+        $query = ServiceRequest::query()->with(['createdBy', 'client'])->latest();
         if (filled($filters['q'] ?? null)) {
             $needle = trim((string) $filters['q']);
             $phoneNeedle = $phones->searchTerm($needle);
@@ -64,7 +69,29 @@ class ServiceRequestController extends Controller
             ->when(filled($filters['service'] ?? null), fn (Builder $query) => $query->where('service_slug', $filters['service']))
             ->when(filled($filters['fulfilment'] ?? null), fn (Builder $query) => $query->where('fulfilment', $filters['fulfilment']))
             ->when(filled($filters['status'] ?? null), fn (Builder $query) => $query->where('status', $filters['status']))
+            ->when(filled($filters['district'] ?? null), fn (Builder $query) => $query->where('district', 'like', '%'.trim((string) $filters['district']).'%'))
+            ->when(isset($filters['dekkhotell']), fn (Builder $query) => $query->where('dekkhotell', $input->boolean('dekkhotell')))
+            ->when(filled($filters['assigned_van'] ?? null), function (Builder $query) use ($filters): void {
+                $query->where('fulfilment', 'mobile');
+                if ($filters['assigned_van'] === 'unassigned') {
+                    $query->whereNull('assigned_van');
+
+                    return;
+                }
+                $query->where('assigned_van', $filters['assigned_van']);
+            })
             ->when($input->boolean('new_only'), fn (Builder $query) => $query->where('status', ServiceRequestStatus::New));
+
+        match ($filters['view'] ?? 'all') {
+            'new' => $query->where('status', ServiceRequestStatus::New),
+            'workshop' => $query->where('fulfilment', 'workshop'),
+            'mobile' => $query->where('fulfilment', 'mobile'),
+            'additional' => $query->where(function (Builder $query): void {
+                $query->whereIn('service_slug', ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'])
+                    ->orWhereJsonLength('additional_services', '>', 0);
+            }),
+            default => null,
+        };
 
         $requests = $query->paginate(25)->withQueryString();
 
@@ -73,16 +100,26 @@ class ServiceRequestController extends Controller
             'filters' => $filters,
             'serviceOptions' => $this->services(includeUnpublished: true),
             'serviceTitles' => $this->serviceTitles($requests->pluck('service_slug')->all()),
+            'activeView' => $filters['view'] ?? 'all',
         ]);
     }
 
-    public function create(SeasonalQuoteCalculator $quotes): View
+    public function create(Request $input, SeasonalQuoteCalculator $quotes): View
     {
+        $client = $input->filled('client')
+            ? Client::query()->findOrFail($input->integer('client'))
+            : null;
         $request = new ServiceRequest([
             'locale' => app()->getLocale(),
             'source' => ServiceRequestSource::AdminManual,
             'status' => ServiceRequestStatus::New,
             'fulfilment' => 'workshop',
+            'client_id' => $client?->getKey(),
+            'name' => $client?->name,
+            'phone' => $client?->phone,
+            'email' => $client?->email,
+            'address' => $client?->address,
+            'district' => $client?->district,
         ]);
 
         return view('admin.requests.form', $this->formData($request, $quotes) + [
@@ -100,7 +137,7 @@ class ServiceRequestController extends Controller
 
     public function show(ServiceRequest $request, ServiceRequestMapLink $maps): View
     {
-        $request->load('createdBy');
+        $request->load(['createdBy', 'client']);
 
         return view('admin.requests.show', [
             'request' => $request,
@@ -111,7 +148,7 @@ class ServiceRequestController extends Controller
 
     public function edit(ServiceRequest $request, SeasonalQuoteCalculator $quotes): View
     {
-        $request->load('createdBy');
+        $request->load(['createdBy', 'client']);
 
         return view('admin.requests.form', $this->formData($request, $quotes));
     }
@@ -127,11 +164,20 @@ class ServiceRequestController extends Controller
     /** @return array<string, mixed> */
     private function formData(ServiceRequest $request, SeasonalQuoteCalculator $quotes): array
     {
+        $clientOptions = Client::query()->orderBy('name')->orderBy('id')->limit(250)->get();
+        if (filled($request->client_id) && ! $clientOptions->contains('id', $request->client_id)) {
+            $selectedClient = Client::query()->find($request->client_id);
+            if ($selectedClient !== null) {
+                $clientOptions->prepend($selectedClient);
+            }
+        }
+
         return [
             'request' => $request,
             'serviceOptions' => $this->services($request->service_slug),
             'seasonalPrices' => $quotes->publicMatrix(),
             'detailsLocked' => filled($request->booking_slot_key),
+            'clientOptions' => $clientOptions,
         ];
     }
 

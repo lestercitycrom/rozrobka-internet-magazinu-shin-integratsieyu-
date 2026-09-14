@@ -22,6 +22,10 @@ test('operations completes the real Russian intake public follow-up and safe his
 
     await expect(page.getByRole('heading', { name: 'Новая заявка' })).toBeVisible();
     await page.locator('[name="service_slug"]').selectOption('bilbatteri');
+    await page.locator('[name="fulfilment"]').selectOption('mobile');
+    await page.locator('[name="address"]').fill('E2E Vanvegen 1');
+    await expect(page.locator('[name="assigned_van"]')).toBeVisible();
+    await page.locator('[name="assigned_van"]').selectOption('van_1');
     await page.locator('[name="booking_mode"]').selectOption('manual');
     await page.locator('[name="preferred_date"]').fill(new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10));
     await page.locator('[name="preferred_window"]').fill('После 14:00');
@@ -44,6 +48,7 @@ test('operations completes the real Russian intake public follow-up and safe his
     const manualReference = (await page.getByRole('heading').filter({ hasText: /^SR-/ }).textContent())?.trim();
     expect(manualReference).toMatch(/^SR-/);
     await expect(page.getByText('Внесено сотрудником')).toBeVisible();
+    await expect(page.getByText('Выездная машина 1', { exact: true })).toBeVisible();
     await expect(page.getByText('Не подтверждено', { exact: true }).first()).toBeVisible();
 
     await page.goto('/admin/service-requests');
@@ -86,6 +91,7 @@ test('operations completes the real Russian intake public follow-up and safe his
     await expect(page.locator('[name="preferred_date"]')).toHaveValue(/\d{4}-\d{2}-\d{2}/);
     await expect(page.locator('[name="tire_size"]:enabled')).toHaveValue('255/45 R19');
     await expect(page.locator('[name="tire_size_2"]:enabled')).toHaveValue('235/55 R18');
+    await expect(page.locator('[name="registration_number"]:enabled')).toHaveJSProperty('required', false);
     await page.locator('[name="name"]').fill(`E2E Historical updated ${suffix}`);
     await page.locator('[name="admin_note"]').fill('Only contact follow-up changed.');
     await page.getByTestId('request-save').click();

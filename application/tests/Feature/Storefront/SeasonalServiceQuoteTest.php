@@ -62,6 +62,7 @@ test('seasonal request validates the second car and stores server calculated quo
         'vehicle_type' => 'passenger',
         'rim_band' => 'r16-r18',
         'storage_plan' => 'renew',
+        'registration_number' => 'EV12345',
         'name' => 'Buyer',
         'email' => 'buyer@example.test',
         'phone' => '90000000',

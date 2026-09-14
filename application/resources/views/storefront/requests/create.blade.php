@@ -19,6 +19,7 @@
         : in_array($serviceSlug, $seasonalSlugs, true);
     $requestedFulfilment = old('fulfilment', request()->query('fulfilment', 'workshop'));
     $requestedFulfilment = in_array($requestedFulfilment, ['workshop', 'mobile'], true) ? $requestedFulfilment : 'workshop';
+    $requestedBookingMode = old('booking_mode', ($scheduleConfigured ?? false) ? 'exact' : 'period');
     $isMountingService = $serviceSlug === 'omlegging-balansering';
     $isBatteryService = $serviceSlug === 'bilbatteri';
     $isWorkshopOnly = in_array($serviceSlug, ['omlegging-balansering', 'tpms-sensor'], true);
@@ -104,10 +105,13 @@
                                         </div>
                                         @error('fulfilment')<p class="et-form-error">{{ $message }}</p>@enderror
                                     </fieldset>
-                                    <div class="et-field et-request-mobile-address" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif>
+                                     <div class="et-field et-request-mobile-address" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif>
                                         <label class="et-label" for="booking-address">{{ __('pro.booking.mobile_address_title') }}</label>
                                         <input class="et-input easytire-input" id="booking-address" name="address" type="text" value="{{ old('address') }}" autocomplete="street-address" @required($requestedFulfilment === 'mobile') aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}">
-                                        @error('address')<p class="et-form-error">{{ $message }}</p>@enderror
+                                         @error('address')<p class="et-form-error">{{ $message }}</p>@enderror
+                                         <label class="et-label" for="booking-district">{{ __('service_requests.district') }}</label>
+                                         <input class="et-input easytire-input" id="booking-district" name="district" type="text" value="{{ old('district') }}" maxlength="120" aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}">
+                                         @error('district')<p class="et-form-error">{{ $message }}</p>@enderror
                                     </div>
                                     <div class="et-step-actions"><span></span><button class="et-btn et-btn--primary" type="button" data-booking-next>{{ __('pro.booking.next') }}</button></div>
                                 </section>
@@ -134,7 +138,7 @@
                                         </div>
                                         <div class="et-field">
                                             <label class="et-label" for="booking-registration-number">{{ __('service_requests.form.registration_number') }}</label>
-                                            <input class="et-input easytire-input" id="booking-registration-number" name="registration_number" value="{{ old('registration_number') }}" autocomplete="off" autocapitalize="characters" aria-describedby="booking-registration-number-hint" aria-invalid="{{ $errors->has('registration_number') ? 'true' : 'false' }}">
+                                            <input class="et-input easytire-input" id="booking-registration-number" name="registration_number" value="{{ old('registration_number') }}" autocomplete="off" autocapitalize="characters" aria-describedby="booking-registration-number-hint" aria-invalid="{{ $errors->has('registration_number') ? 'true' : 'false' }}" data-storage-registration>
                                             <p class="et-help" id="booking-registration-number-hint">{{ __('service_requests.form.registration_number_hint') }}</p>
                                             @error('registration_number')<p class="et-form-error">{{ $message }}</p>@enderror
                                         </div>
@@ -158,7 +162,7 @@
                                         </div>
                                         <div class="et-field et-field--full">
                                             <label class="et-label" for="booking-storage-plan">{{ __('service_requests.form.storage_plan') }}</label>
-                                            <select class="et-select easytire-input" id="booking-storage-plan" name="storage_plan" required data-quote-field>
+                                            <select class="et-select easytire-input" id="booking-storage-plan" name="storage_plan" required data-quote-field data-storage-plan>
                                                 @foreach (['none', 'new', 'renew'] as $plan)<option value="{{ $plan }}" @selected(old('storage_plan', old('dekkhotell') ? 'new' : 'none') === $plan)>{{ __('service_requests.form.storage_'.$plan) }}</option>@endforeach
                                             </select>
                                             <p class="et-help">{{ __('service_requests.form.storage_charge_note') }}</p>
@@ -170,11 +174,11 @@
                                         <legend class="et-label et-seasonal-vehicle__legend">{{ __('service_requests.form.car_2') }}</legend>
                                         <div class="et-form-grid">
                                             <div class="et-field"><label class="et-label" for="booking-vehicle-2">{{ __('service_requests.form.vehicle') }} <span class="et-required">*</span></label><input class="et-input easytire-input" id="booking-vehicle-2" name="vehicle_2" value="{{ old('vehicle_2') }}" @required((int) old('car_count', 1) === 2) autocomplete="off">@error('vehicle_2')<p class="et-form-error">{{ $message }}</p>@enderror</div>
-                                            <div class="et-field"><label class="et-label" for="booking-registration-number-2">{{ __('service_requests.form.registration_number') }}</label><input class="et-input easytire-input" id="booking-registration-number-2" name="registration_number_2" value="{{ old('registration_number_2') }}" autocapitalize="characters"></div>
+                                            <div class="et-field"><label class="et-label" for="booking-registration-number-2">{{ __('service_requests.form.registration_number') }}</label><input class="et-input easytire-input" id="booking-registration-number-2" name="registration_number_2" value="{{ old('registration_number_2') }}" autocapitalize="characters" data-storage-registration></div>
                                             <div class="et-field"><label class="et-label" for="booking-tire-size-2">{{ __('service_requests.form.tire_size') }}</label><input class="et-input easytire-input" id="booking-tire-size-2" name="tire_size_2" value="{{ old('tire_size_2') }}" placeholder="205/55 R16"></div>
                                             <div class="et-field"><label class="et-label" for="booking-vehicle-type-2">{{ __('service_requests.form.vehicle_type') }}</label><select class="et-select easytire-input" id="booking-vehicle-type-2" name="vehicle_type_2" data-quote-field>@foreach (['passenger', 'large_vehicle', 'six_wheels'] as $type)<option value="{{ $type }}" @selected(old('vehicle_type_2', 'passenger') === $type)>{{ __('service_requests.form.'.$type) }}</option>@endforeach</select></div>
                                             <div class="et-field"><label class="et-label" for="booking-rim-band-2">{{ __('service_requests.form.rim_band') }}</label><select class="et-select easytire-input" id="booking-rim-band-2" name="rim_band_2" data-quote-field>@foreach (['unknown', 'r15', 'r16-r18', 'r19'] as $band)<option value="{{ $band }}" @selected(old('rim_band_2', 'unknown') === $band)>{{ __('service_requests.form.rim_'.$band) }}</option>@endforeach</select></div>
-                                            <div class="et-field et-field--full"><label class="et-label" for="booking-storage-plan-2">{{ __('service_requests.form.storage_plan') }}</label><select class="et-select easytire-input" id="booking-storage-plan-2" name="storage_plan_2" data-quote-field>@foreach (['none', 'new', 'renew'] as $plan)<option value="{{ $plan }}" @selected(old('storage_plan_2', 'none') === $plan)>{{ __('service_requests.form.storage_'.$plan) }}</option>@endforeach</select><p class="et-help">{{ __('service_requests.form.storage_charge_note') }}</p></div>
+                                            <div class="et-field et-field--full"><label class="et-label" for="booking-storage-plan-2">{{ __('service_requests.form.storage_plan') }}</label><select class="et-select easytire-input" id="booking-storage-plan-2" name="storage_plan_2" data-quote-field data-storage-plan>@foreach (['none', 'new', 'renew'] as $plan)<option value="{{ $plan }}" @selected(old('storage_plan_2', 'none') === $plan)>{{ __('service_requests.form.storage_'.$plan) }}</option>@endforeach</select><p class="et-help">{{ __('service_requests.form.storage_charge_note') }}</p></div>
                                         </div>
                                     </fieldset>
 
@@ -191,6 +195,13 @@
                                             <input class="et-input easytire-input" id="booking-preferred-date" name="preferred_date" type="date" value="{{ old('preferred_date') }}" min="{{ now()->toDateString() }}" required aria-invalid="{{ $errors->has('preferred_date') ? 'true' : 'false' }}">
                                             @error('preferred_date')<p class="et-form-error">{{ $message }}</p>@enderror
                                         </div>
+                                        <div class="et-field">
+                                            <label class="et-label" for="booking-mode">{{ __('service_requests.booking_mode') }}</label>
+                                            <select class="et-select easytire-input" id="booking-mode" name="booking_mode" required data-public-booking-mode>
+                                                <option value="exact" @disabled(!($scheduleConfigured ?? false)) @selected($requestedBookingMode === 'exact')>{{ __('service_requests.booking_mode_exact') }}</option>
+                                                <option value="period" @selected($requestedBookingMode === 'period')>{{ __('service_requests.booking_mode_period') }}</option>
+                                            </select>
+                                        </div>
                                         <div class="et-field et-field--full" data-booking-availability
                                              data-endpoint="{{ route($prefix.'booking.availability') }}"
                                              data-initial-configured="{{ ($scheduleConfigured ?? false) ? 'true' : 'false' }}"
@@ -201,7 +212,7 @@
                                              data-placeholder="{{ __('booking_calendar.public.choose_time') }}"
                                              data-manual-help="{{ __('booking_calendar.public.manual_help') }}"
                                              data-scheduled-help="{{ __('booking_calendar.public.scheduled_help') }}">
-                                            <div data-booking-slots @if(!($scheduleConfigured ?? false)) hidden @endif>
+                                            <div data-booking-slots @if($requestedBookingMode !== 'exact' || !($scheduleConfigured ?? false)) hidden @endif>
                                                 <label class="et-label" for="booking-slot-key">{{ __('booking_calendar.public.available_time') }}</label>
                                                 <select class="et-select easytire-input" id="booking-slot-key" name="booking_slot_key" data-booking-slot-select data-old-slot="{{ old('booking_slot_key') }}" data-testid="booking-slot-select" @if($scheduleConfigured ?? false) required @else disabled @endif aria-invalid="{{ $errors->has('booking_slot_key') ? 'true' : 'false' }}">
                                                     <option value="">{{ __('booking_calendar.public.choose_time') }}</option>
@@ -210,11 +221,12 @@
                                                 <p class="et-help">{{ __('booking_calendar.public.scheduled_help') }}</p>
                                                 @error('booking_slot_key')<p class="et-form-error">{{ $message }}</p>@enderror
                                             </div>
-                                            <div data-booking-manual @if($scheduleConfigured ?? false) hidden @endif>
-                                                <label class="et-label" for="booking-preferred-window">{{ __('booking_calendar.public.manual_title') }}</label>
-                                                <input class="et-input easytire-input" id="booking-preferred-window" name="preferred_window" type="text" value="{{ old('preferred_window') }}" @if($scheduleConfigured ?? false) disabled @else required @endif aria-invalid="{{ $errors->has('preferred_window') ? 'true' : 'false' }}" data-testid="booking-manual-window">
-                                                <p class="et-help">{{ __('booking_calendar.public.manual_help') }}</p>
-                                                @error('preferred_window')<p class="et-form-error">{{ $message }}</p>@enderror
+                                            <div data-booking-period @if($requestedBookingMode !== 'period') hidden @endif>
+                                                <div class="et-form-grid">
+                                                    <div class="et-field"><label class="et-label" for="booking-period-start">{{ __('service_requests.period_start') }}</label><input class="et-input easytire-input" id="booking-period-start" name="preferred_time_start" type="time" value="{{ old('preferred_time_start') }}" @required($requestedBookingMode === 'period') @disabled($requestedBookingMode !== 'period') aria-invalid="{{ $errors->has('preferred_time_start') ? 'true' : 'false' }}">@error('preferred_time_start')<p class="et-form-error">{{ $message }}</p>@enderror</div>
+                                                    <div class="et-field"><label class="et-label" for="booking-period-end">{{ __('service_requests.period_end') }}</label><input class="et-input easytire-input" id="booking-period-end" name="preferred_time_end" type="time" value="{{ old('preferred_time_end') }}" @required($requestedBookingMode === 'period') @disabled($requestedBookingMode !== 'period') aria-invalid="{{ $errors->has('preferred_time_end') ? 'true' : 'false' }}">@error('preferred_time_end')<p class="et-form-error">{{ $message }}</p>@enderror</div>
+                                                </div>
+                                                <p class="et-help">{{ __('service_requests.period_notice') }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -341,11 +353,14 @@
                                     </select>
                                     @error('fulfilment')<p class="et-form-error">{{ $message }}</p>@enderror
                                 </div>
-                                <div class="et-field" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif>
+                                 <div class="et-field" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif>
                                     <label class="et-label" for="booking-address">{{ __('pro.booking.mobile_address_title') }}</label>
                                     <input class="et-input easytire-input" id="booking-address" name="address" value="{{ old('address') }}" autocomplete="street-address" @required($requestedFulfilment === 'mobile') aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}">
-                                    @error('address')<p class="et-form-error">{{ $message }}</p>@enderror
-                                </div>
+                                     @error('address')<p class="et-form-error">{{ $message }}</p>@enderror
+                                     <label class="et-label" for="booking-district">{{ __('service_requests.district') }}</label>
+                                     <input class="et-input easytire-input" id="booking-district" name="district" value="{{ old('district') }}" maxlength="120" aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}">
+                                     @error('district')<p class="et-form-error">{{ $message }}</p>@enderror
+                                 </div>
                                 <div class="et-field">
                                     <label class="et-label" for="booking-vehicle">{{ __('service_requests.form.vehicle') }}</label>
                                     <input class="et-input easytire-input" id="booking-vehicle" name="vehicle" value="{{ old('vehicle', $prefillVehicle) }}" autocomplete="off" aria-invalid="{{ $errors->has('vehicle') ? 'true' : 'false' }}">

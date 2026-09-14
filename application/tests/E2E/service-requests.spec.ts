@@ -89,6 +89,42 @@ test('seasonal flow retains its entered data when the buyer moves between panels
     await expectNoGlobalOverflow(page);
 });
 
+test('seasonal buyer can request an unconfirmed period with district and dekkhotell', async ({ page }, testInfo) => {
+    const prefix = localePrefix(testInfo.project.name);
+    await page.goto(`${prefix}/tjenester/mobilt-dekkskift/foresporsel`);
+
+    const location = page.getByTestId('seasonal-step-location');
+    await location.locator('input[name="fulfilment"][value="mobile"]').check();
+    await field(page, 'address').fill('Syntheticvegen 59, Tromsø');
+    await field(page, 'district').fill('Tromsdalen');
+    await nextFrom(location);
+
+    const vehicle = page.getByTestId('seasonal-step-vehicle-storage');
+    await field(page, 'vehicle').fill('Tesla Model Y');
+    await field(page, 'storage_plan').selectOption('renew');
+    await expect(field(page, 'registration_number')).toHaveAttribute('required', '');
+    await field(page, 'registration_number').fill('EV12345');
+    await nextFrom(vehicle);
+
+    const time = page.getByTestId('seasonal-step-time');
+    await field(page, 'preferred_date').fill('2030-10-15');
+    await field(page, 'booking_mode').selectOption('period');
+    await expect(field(page, 'booking_slot_key')).toBeHidden();
+    await field(page, 'preferred_time_start').fill('12:00');
+    await field(page, 'preferred_time_end').fill('15:00');
+    await nextFrom(time);
+
+    const contact = page.getByTestId('seasonal-step-contact');
+    await field(page, 'name').fill(`Synthetic period ${testInfo.project.name}`);
+    await field(page, 'phone').fill('93958270');
+    await nextFrom(contact);
+    await field(page, 'consent').check();
+    await page.getByTestId('seasonal-submit').click();
+
+    await expect(page).toHaveURL(/\/foresporsel\/SR-[A-Z0-9]+\/takk$/);
+    await expectNoGlobalOverflow(page);
+});
+
 test('seasonal server validation reopens the first panel and preserves the buyer input', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     await page.goto(`${prefix}/tjenester/mobilt-dekkskift/foresporsel`);

@@ -10,6 +10,7 @@ use App\Modules\Outbox\Models\OutboxMessage;
 use App\Modules\ServiceBooking\BookingCalendar;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Models\BookingScheduleInterval;
+use App\Modules\ServiceBooking\Models\Client;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use App\Modules\ServiceBooking\ServiceRequestCreator;
 use Illuminate\Contracts\Console\Kernel;
@@ -26,6 +27,8 @@ $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
 const INTAKE_MIGRATION = '2026_09_14_000000_prepare_service_requests_for_manual_intake';
+const CLIENT_CRM_MIGRATION = '2026_09_14_010000_add_client_crm_fields';
+const VAN_ASSIGNMENT_MIGRATION = '2026_09_14_020000_add_assigned_van_to_service_requests';
 
 function intakeAssert(bool $condition, string $message, mixed $actual = null): void
 {
@@ -49,7 +52,11 @@ function intakeBaselineMigrations(): array
 {
     return array_values(array_filter(
         glob(database_path('migrations/*.php')) ?: [],
-        static fn (string $path): bool => basename($path) !== INTAKE_MIGRATION.'.php',
+        static fn (string $path): bool => ! in_array(basename($path), [
+            INTAKE_MIGRATION.'.php',
+            CLIENT_CRM_MIGRATION.'.php',
+            VAN_ASSIGNMENT_MIGRATION.'.php',
+        ], true),
     ));
 }
 
@@ -160,6 +167,10 @@ try {
     foreach (['source', 'created_by_user_id', 'phone_normalized'] as $column) {
         intakeAssert(Schema::hasColumn('service_requests', $column), "Missing service_requests.{$column}.");
     }
+    intakeAssert(Schema::hasTable('clients'), 'Clients table was not created by the additive CRM migration.');
+    foreach (['client_id', 'district', 'assigned_van', 'preferred_period_starts_at', 'preferred_period_ends_at'] as $column) {
+        intakeAssert(Schema::hasColumn('service_requests', $column), "Missing service_requests.{$column}.");
+    }
     foreach (['source', 'actor_user_id', 'session_fingerprint'] as $column) {
         intakeAssert(Schema::hasColumn('service_request_submissions', $column), "Missing service_request_submissions.{$column}.");
     }
@@ -169,6 +180,9 @@ try {
     }
     intakeAssert($after['source'] === 'public' && $after['created_by_user_id'] === null, 'Legacy request provenance was not backfilled safely.', $after);
     intakeAssert($after['phone_normalized'] === '4790000000', 'Legacy phone was not normalized.', $after['phone_normalized']);
+    intakeAssert($after['client_id'] === null && $after['district'] === null, 'Legacy request was linked or assigned a district during migration.', $after);
+    intakeAssert($after['assigned_van'] === null, 'Legacy request was assigned to a van during migration.', $after['assigned_van']);
+    intakeAssert($after['preferred_period_starts_at'] === null && $after['preferred_period_ends_at'] === null, 'Legacy text window was guessed into structured timestamps.', $after);
     $legacySubmission = (array) DB::table('service_request_submissions')->where('token', $legacyToken)->first();
     intakeAssert($legacySubmission['source'] === 'public' && $legacySubmission['actor_user_id'] === null && $legacySubmission['session_fingerprint'] === null, 'Legacy submission provenance changed unexpectedly.', $legacySubmission);
 
@@ -232,7 +246,39 @@ try {
     ]), $operations, 'ru');
     intakeAssert($exact->booking_slot_key === $slot->key, 'Exact slot was not claimed atomically.');
     intakeAssert($exact->booking_starts_at !== null && $exact->booking_ends_at !== null, 'Exact slot timestamps were not retained.');
-    intakeAssert(ServiceRequest::query()->count() === 3, 'Unexpected request count after upgrade and intake flows.', ServiceRequest::query()->count());
+    $client = Client::query()->create([
+        'name' => 'MySQL CRM client',
+        'phone' => '+47 933 33 333',
+        'phone_normalized' => '4793333333',
+        'email' => 'mysql-crm@example.test',
+        'address' => 'Syntheticvegen 59',
+        'district' => 'Tromsdalen',
+        'created_by_user_id' => $operations->id,
+    ]);
+    $period = $creator->createManual(intakePayload($service, [
+        'booking_mode' => 'period',
+        'preferred_date' => $date->format('Y-m-d'),
+        'preferred_time_start' => '12:00',
+        'preferred_time_end' => '15:00',
+        'preferred_window' => null,
+        'client_id' => $client->id,
+        'district' => 'Tromsdalen',
+        'fulfilment' => 'mobile',
+        'address' => 'Syntheticvegen 59',
+        'assigned_van' => 'van_2',
+        'name' => 'MySQL request snapshot',
+        'phone' => '+47 944 44 444',
+    ]), $operations, 'nb');
+    intakeAssert($period->client_id === $client->id, 'Manual request was not linked to its explicit client.');
+    intakeAssert($period->booking_slot_key === null && $period->booking_starts_at === null, 'Preferred period occupied a booking slot.');
+    intakeAssert($period->preferred_window === '12:00–15:00', 'Structured period label was not retained.', $period->preferred_window);
+    intakeAssert($period->preferred_period_starts_at?->setTimezone($calendar->timezone())->format('H:i') === '12:00', 'Structured period start was not retained.');
+    intakeAssert($period->district === 'Tromsdalen', 'Request district was not retained.');
+    intakeAssert($period->assigned_van === 'van_2', 'Manual van assignment was not retained.', $period->assigned_van);
+    $client->update(['name' => 'Changed MySQL CRM client', 'phone' => '+47 955 55 555', 'phone_normalized' => '4795555555']);
+    $period->refresh();
+    intakeAssert($period->name === 'MySQL request snapshot' && $period->phone === '+47 944 44 444', 'Editing a client rewrote the historical request snapshot.');
+    intakeAssert(ServiceRequest::query()->count() === 4, 'Unexpected request count after upgrade and intake flows.', ServiceRequest::query()->count());
     intakeAssert(OutboxMessage::query()->count() === 0, 'Manual requests published external events after exact-slot intake.');
 
     intakeAssertOldApplicationCanRead($manual);
@@ -253,6 +299,11 @@ try {
             'exact_slot_claim' => true,
             'no_manual_external_outbox' => true,
             'retained_old_application_read' => true,
+            'client_crm_additive_upgrade' => true,
+            'legacy_period_not_guessed' => true,
+            'client_snapshot_independence' => true,
+            'structured_unconfirmed_period' => true,
+            'manual_nullable_van_assignment' => true,
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
 } catch (Throwable $exception) {

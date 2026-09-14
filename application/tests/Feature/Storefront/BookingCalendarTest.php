@@ -132,22 +132,29 @@ test('forged or omitted slots are rejected whenever that location has a configur
     expect(ServiceRequest::query()->count())->toBe(0);
 });
 
-test('without a configured calendar the request clearly falls back to a manually confirmed window', function (): void {
+test('without a configured calendar the request offers a structured unconfirmed period', function (): void {
     $date = calendarDate();
 
     $this->get('/tjenester/calendar-seasonal/foresporsel')
         ->assertOk()
-        ->assertSee('data-booking-manual', false)
-        ->assertSee('Timeplanen er ikke satt opp')
-        ->assertSee('name="preferred_window"', false);
+        ->assertSee('data-booking-period', false)
+        ->assertSee('name="booking_mode"', false)
+        ->assertSee('name="preferred_time_start"', false)
+        ->assertSee('name="preferred_time_end"', false);
 
     $this->post('/tjenester/calendar-seasonal/foresporsel', calendarPayload($date, [
+        'booking_mode' => 'period',
         'preferred_window' => null,
-    ]))->assertSessionHasErrors('preferred_window');
+    ]))->assertSessionHasErrors(['preferred_time_start', 'preferred_time_end']);
 
-    $this->post('/tjenester/calendar-seasonal/foresporsel', calendarPayload($date))
+    $this->post('/tjenester/calendar-seasonal/foresporsel', calendarPayload($date, [
+        'booking_mode' => 'period',
+        'preferred_time_start' => '12:00',
+        'preferred_time_end' => '15:00',
+    ]))
         ->assertRedirect();
-    expect(ServiceRequest::query()->firstOrFail()->booking_slot_key)->toBeNull();
+    expect(ServiceRequest::query()->firstOrFail()->booking_slot_key)->toBeNull()
+        ->and(ServiceRequest::query()->firstOrFail()->preferred_window)->toBe('12:00–15:00');
 });
 
 test('the same submission token is idempotent and consumes capacity only once', function (): void {
