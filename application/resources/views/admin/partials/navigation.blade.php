@@ -6,7 +6,8 @@
     if ($adminUser->isOwner() || $adminUser->role === \App\Modules\Identity\Enums\UserRole::Operations) {
         $workspace = [...$workspace,
             ['key' => 'clients', 'route' => 'clients.index', 'patterns' => ['admin.clients.*']],
-            ['key' => 'service_requests', 'route' => 'service-requests.index', 'patterns' => ['admin.service-requests.*']],
+            ['key' => 'operations_day', 'route' => 'service-requests.day', 'patterns' => ['admin.service-requests.day']],
+            ['key' => 'service_requests', 'route' => 'service-requests.index', 'patterns' => ['admin.service-requests.index', 'admin.service-requests.create', 'admin.service-requests.store', 'admin.service-requests.show', 'admin.service-requests.edit', 'admin.service-requests.update']],
             ['key' => 'booking_calendar', 'route' => 'booking-calendar.index', 'patterns' => ['admin.booking-calendar.index']],
         ];
     }

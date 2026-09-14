@@ -55,7 +55,7 @@ final class ClientDirectorySearch
                         }
 
                         $registration->orWhereRaw(
-                            "JSON_SEARCH(client_vehicle_requests.vehicles, 'one', ?, '!', '$[*].registration_number') IS NOT NULL",
+                            "EXISTS (SELECT 1 FROM JSON_TABLE(COALESCE(client_vehicle_requests.vehicles, JSON_ARRAY()), '$[*]' COLUMNS (registration_number VARCHAR(255) PATH '$.registration_number' NULL ON EMPTY NULL ON ERROR)) AS vehicle_registration WHERE LOWER(CONVERT(COALESCE(vehicle_registration.registration_number, '') USING utf8mb4)) LIKE LOWER(CONVERT(? USING utf8mb4)) ESCAPE '!')",
                             [$pattern],
                         );
                     });

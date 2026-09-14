@@ -36,13 +36,21 @@
     );
     $currentFulfilment = old('fulfilment', $request->fulfilment ?: 'workshop');
     $field = 'easytire-input mt-2 min-h-11 w-full rounded-lg px-3';
+    $requestParameters = ['request' => $request];
+    if (filled($returnTo ?? null)) $requestParameters['return_to'] = $returnTo;
+    $formAction = $editing
+        ? route('admin.service-requests.update', $requestParameters)
+        : route('admin.service-requests.store', filled($returnTo ?? null) ? ['return_to' => $returnTo] : []);
+    $backHref = $editing
+        ? route('admin.service-requests.show', $requestParameters)
+        : (filled($returnTo ?? null) ? $returnTo : route('admin.service-requests.index'));
 @endphp
 
 <x-layouts.admin :title="$editing ? __('service_requests.edit') : __('service_requests.create')">
     <div class="max-w-6xl space-y-8" data-admin-request-form data-initial-service="{{ $request->service_slug }}">
         <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <a class="inline-flex min-h-11 items-center underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ $editing ? route('admin.service-requests.show', $request) : route('admin.service-requests.index') }}">{{ __('service_requests.back') }}</a>
+                <a class="inline-flex min-h-11 items-center underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ $backHref }}">{{ filled($returnTo ?? null) ? __('operations_day.back_to_day') : __('service_requests.back') }}</a>
                 <p class="mt-5 text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">{{ __('service_requests.manual_intake') }}</p>
                 <h1 class="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{{ $editing ? __('service_requests.edit') : __('service_requests.create') }}</h1>
                 <p class="mt-3 max-w-3xl leading-7 text-easytire-muted">{{ __('service_requests.manual_intro') }}</p>
@@ -63,7 +71,7 @@
             </div>
         @endif
 
-        <form class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,.85fr)]" method="post" action="{{ $editing ? route('admin.service-requests.update', $request) : route('admin.service-requests.store') }}" data-seasonal-prices='@json($seasonalPrices)'>
+        <form class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,.85fr)]" method="post" action="{{ $formAction }}" data-seasonal-prices='@json($seasonalPrices)'>
             @csrf
             @if($editing) @method('PUT') @else <input type="hidden" name="submission_token" value="{{ $submissionToken }}"> @endif
             @unless($detailsLocked)<input type="hidden" name="operational_form" value="1">@endunless

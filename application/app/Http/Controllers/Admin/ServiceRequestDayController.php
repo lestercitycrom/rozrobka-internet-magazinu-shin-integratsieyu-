@@ -7,9 +7,11 @@ use App\Modules\Content\Models\ServicePage;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use App\Modules\ServiceBooking\ServiceRequestMapLink;
+use App\Modules\ServiceBooking\ServiceRequestVehiclePayload;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -20,17 +22,23 @@ final class ServiceRequestDayController extends Controller
         $filters = $request->validate([
             'date' => ['nullable', 'date_format:Y-m-d'],
             'resource' => ['nullable', Rule::in(['all', 'workshop', 'van_1', 'van_2', 'mobile_unassigned'])],
+            'include_history' => ['nullable', 'boolean'],
             'include_cancelled' => ['nullable', 'boolean'],
         ]);
         $timezone = (string) config('service_booking.timezone', 'Europe/Oslo');
-        $date = (string) ($filters['date'] ?? CarbonImmutable::now($timezone)->format('Y-m-d'));
+        $today = CarbonImmutable::now($timezone)->format('Y-m-d');
+        $date = (string) ($filters['date'] ?? $today);
         $resource = (string) ($filters['resource'] ?? 'all');
+        $includeHistory = $request->boolean('include_history') || $request->boolean('include_cancelled');
 
         $query = ServiceRequest::query()
             ->with('client')
             ->whereDate('preferred_date', $date);
-        if (! $request->boolean('include_cancelled')) {
-            $query->where('status', '!=', ServiceRequestStatus::Cancelled->value);
+        if (! $includeHistory) {
+            $query->whereNotIn('status', [
+                ServiceRequestStatus::Closed->value,
+                ServiceRequestStatus::Cancelled->value,
+            ]);
         }
 
         $this->applyResource($query, $resource);
@@ -42,6 +50,13 @@ final class ServiceRequestDayController extends Controller
             ->orderBy('id')
             ->get();
 
+        $returnParameters = ['date' => $date, 'resource' => $resource];
+        if ($includeHistory) {
+            $returnParameters['include_history'] = 1;
+        }
+        $returnTo = route('admin.service-requests.day', $returnParameters, false);
+        $preparation = $this->preparation($requests);
+
         $locale = app()->getLocale();
         $serviceTitles = ServicePage::query()
             ->whereIn('slug', $requests->pluck('service_slug')->filter()->unique())
@@ -51,7 +66,8 @@ final class ServiceRequestDayController extends Controller
             ]);
 
         return view('admin.requests.day', compact(
-            'requests', 'serviceTitles', 'maps', 'timezone', 'date', 'resource', 'filters',
+            'requests', 'serviceTitles', 'maps', 'timezone', 'today', 'date', 'resource',
+            'includeHistory', 'returnTo', 'preparation',
         ));
     }
 
@@ -64,5 +80,82 @@ final class ServiceRequestDayController extends Controller
             'mobile_unassigned' => $query->where('fulfilment', 'mobile')->whereNull('assigned_van'),
             default => null,
         };
+    }
+
+    /**
+     * Build the preparation list from the exact collection rendered below it.
+     * Closed and cancelled rows remain historical context, never work instructions.
+     *
+     * @param  Collection<int, ServiceRequest>  $requests
+     * @return array{confirmed: array{request_count: int, actions: list<array<string, mixed>>}, pending: array{request_count: int, actions: list<array<string, mixed>>}}
+     */
+    private function preparation(Collection $requests): array
+    {
+        $groups = [
+            'confirmed' => ['request_count' => 0, 'actions' => []],
+            'pending' => ['request_count' => 0, 'actions' => []],
+        ];
+
+        foreach ($requests as $item) {
+            if (! in_array($item->status, [ServiceRequestStatus::New, ServiceRequestStatus::Contacted], true)) {
+                continue;
+            }
+
+            $group = $item->booking_starts_at === null ? 'pending' : 'confirmed';
+            $groups[$group]['request_count']++;
+
+            foreach ($this->vehicles($item) as $index => $vehicle) {
+                $storagePlan = (string) ($vehicle['storage_plan'] ?? 'unknown');
+                if (! in_array($storagePlan, ['none', 'new', 'renew', 'last', 'unknown'], true)) {
+                    $storagePlan = 'unknown';
+                }
+                if ($storagePlan === 'none') {
+                    continue;
+                }
+
+                $storageNumber = filled($vehicle['storage_number'] ?? null)
+                    ? trim((string) $vehicle['storage_number'])
+                    : null;
+                $groups[$group]['actions'][] = [
+                    'request' => $item,
+                    'vehicle_number' => $index + 1,
+                    'vehicle' => $vehicle,
+                    'storage_plan' => $storagePlan,
+                    'storage_number' => $storageNumber,
+                    'needs_storage_number' => ServiceRequestVehiclePayload::requiresStoredSet($storagePlan)
+                        && $storageNumber === null,
+                ];
+            }
+        }
+
+        return $groups;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function vehicles(ServiceRequest $request): array
+    {
+        $vehicles = is_array($request->vehicles) ? array_values($request->vehicles) : [];
+        if ($vehicles !== []) {
+            return $vehicles;
+        }
+        if (! filled($request->vehicle)
+            && ! filled($request->registration_number)
+            && ! filled($request->tire_size)
+            && ! $request->dekkhotell
+            && $request->dekkhotell_already_stored === null
+            && ! filled($request->dekkhotell_number)) {
+            return [];
+        }
+
+        return [[
+            'vehicle' => $request->vehicle,
+            'registration_number' => $request->registration_number,
+            'tire_size' => $request->tire_size,
+            'storage_plan' => ServiceRequestVehiclePayload::generalPlan(
+                (bool) $request->dekkhotell,
+                $request->dekkhotell_already_stored,
+            ),
+            'storage_number' => $request->dekkhotell_number,
+        ]];
     }
 }

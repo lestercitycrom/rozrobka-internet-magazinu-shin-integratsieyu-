@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -47,7 +48,10 @@ class ServiceRequestController extends Controller
             'assigned_van' => ['nullable', Rule::in(['unassigned', 'van_1', 'van_2'])],
             'view' => ['nullable', Rule::in(['all', 'new', 'workshop', 'mobile', 'additional'])],
             'new_only' => ['nullable', 'boolean'],
+            'without_date' => ['nullable', 'boolean'],
         ]);
+
+        $withoutDate = $input->boolean('without_date');
 
         $query = ServiceRequest::query()->with(['createdBy', 'client'])->latest();
         if (filled($filters['q'] ?? null)) {
@@ -63,9 +67,10 @@ class ServiceRequestController extends Controller
             });
         }
         $query
-            ->when(filled($filters['date'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', $filters['date']))
-            ->when(filled($filters['date_from'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', '>=', $filters['date_from']))
-            ->when(filled($filters['date_to'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', '<=', $filters['date_to']))
+            ->when($withoutDate, fn (Builder $query) => $query->whereNull('preferred_date'))
+            ->when(! $withoutDate && filled($filters['date'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', $filters['date']))
+            ->when(! $withoutDate && filled($filters['date_from'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', '>=', $filters['date_from']))
+            ->when(! $withoutDate && filled($filters['date_to'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', '<=', $filters['date_to']))
             ->when(filled($filters['service'] ?? null), fn (Builder $query) => $query->where('service_slug', $filters['service']))
             ->when(filled($filters['fulfilment'] ?? null), fn (Builder $query) => $query->where('fulfilment', $filters['fulfilment']))
             ->when(filled($filters['status'] ?? null), fn (Builder $query) => $query->where('status', $filters['status']))
@@ -106,6 +111,7 @@ class ServiceRequestController extends Controller
 
     public function create(Request $input, SeasonalQuoteCalculator $quotes): View
     {
+        $returnTo = $this->safeDayReturnTo($input);
         $client = $input->filled('client')
             ? Client::query()->findOrFail($input->integer('client'))
             : null;
@@ -124,6 +130,7 @@ class ServiceRequestController extends Controller
 
         return view('admin.requests.form', $this->formData($request, $quotes) + [
             'submissionToken' => old('submission_token', (string) Str::uuid()),
+            'returnTo' => $returnTo,
         ]);
     }
 
@@ -131,33 +138,42 @@ class ServiceRequestController extends Controller
     {
         $request = $creator->createManual($input->validated(), $input->user(), app()->getLocale());
 
-        return redirect()->route('admin.service-requests.show', $request)
+        return redirect()->route('admin.service-requests.show', $this->requestRouteParameters(
+            $request,
+            $this->safeDayReturnTo($input),
+        ))
             ->with('status', __('service_requests.created'));
     }
 
-    public function show(ServiceRequest $request, ServiceRequestMapLink $maps): View
+    public function show(ServiceRequest $request, ServiceRequestMapLink $maps, Request $input): View
     {
         $request->load(['createdBy', 'client']);
 
         return view('admin.requests.show', [
             'request' => $request,
+            'returnTo' => $this->safeDayReturnTo($input),
             'mapUrl' => $maps->forAddress($request->address),
             'serviceTitle' => $this->serviceTitles([$request->service_slug])[$request->service_slug] ?? $request->service_slug,
         ]);
     }
 
-    public function edit(ServiceRequest $request, SeasonalQuoteCalculator $quotes): View
+    public function edit(ServiceRequest $request, SeasonalQuoteCalculator $quotes, Request $input): View
     {
         $request->load(['createdBy', 'client']);
 
-        return view('admin.requests.form', $this->formData($request, $quotes));
+        return view('admin.requests.form', $this->formData($request, $quotes) + [
+            'returnTo' => $this->safeDayReturnTo($input),
+        ]);
     }
 
     public function update(UpsertServiceRequest $input, ServiceRequest $request, ServiceRequestCreator $creator): RedirectResponse
     {
         $creator->updateManual($request, $input->validated());
 
-        return redirect()->route('admin.service-requests.show', $request)
+        return redirect()->route('admin.service-requests.show', $this->requestRouteParameters(
+            $request,
+            $this->safeDayReturnTo($input),
+        ))
             ->with('status', __('service_requests.saved'));
     }
 
@@ -204,5 +220,57 @@ class ServiceRequestController extends Controller
                 $page->slug => $locale === 'ru' && filled($page->title_ru) ? $page->title_ru : $page->title_nb,
             ])
             ->all();
+    }
+
+    private function safeDayReturnTo(Request $input): ?string
+    {
+        $candidate = $input->query('return_to');
+        if (! is_string($candidate) || $candidate === '' || str_contains($candidate, '\\')) {
+            return null;
+        }
+
+        $parts = parse_url($candidate);
+        $expectedPath = route('admin.service-requests.day', [], false);
+        if ($parts === false
+            || ($parts['path'] ?? null) !== $expectedPath
+            || array_intersect_key($parts, array_flip(['scheme', 'host', 'port', 'user', 'pass', 'fragment'])) !== []) {
+            return null;
+        }
+
+        parse_str((string) ($parts['query'] ?? ''), $query);
+        if (array_diff(array_keys($query), ['date', 'resource', 'include_history']) !== []) {
+            return null;
+        }
+
+        $validator = Validator::make($query, [
+            'date' => ['required', 'date_format:Y-m-d'],
+            'resource' => ['required', Rule::in(['all', 'workshop', 'van_1', 'van_2', 'mobile_unassigned'])],
+            'include_history' => ['sometimes', Rule::in(['1'])],
+        ]);
+        if ($validator->fails()) {
+            return null;
+        }
+
+        $validated = $validator->validated();
+        $parameters = [
+            'date' => $validated['date'],
+            'resource' => $validated['resource'],
+        ];
+        if (($validated['include_history'] ?? null) === '1') {
+            $parameters['include_history'] = 1;
+        }
+
+        return route('admin.service-requests.day', $parameters, false);
+    }
+
+    /** @return array<string, mixed> */
+    private function requestRouteParameters(ServiceRequest $request, ?string $returnTo): array
+    {
+        $parameters = ['request' => $request];
+        if ($returnTo !== null) {
+            $parameters['return_to'] = $returnTo;
+        }
+
+        return $parameters;
     }
 }

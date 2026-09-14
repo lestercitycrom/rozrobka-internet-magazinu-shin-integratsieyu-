@@ -292,11 +292,47 @@ class E2eStorefrontSeeder extends Seeder
             'SR-E2E-DAY-1300-VAN2' => [
                 'fulfilment' => 'mobile',
                 'assigned_van' => 'van_2',
+                'booking_slot_key' => 'issue66-20301015-1300-van2',
                 'booking_starts_at' => '2030-10-15 11:00:00',
                 'booking_ends_at' => '2030-10-15 11:30:00',
                 'preferred_period_starts_at' => null,
                 'preferred_period_ends_at' => null,
-                'vehicles' => [$this->issue66Vehicle(1)],
+                'client_id' => $clients->get(42)->id,
+                'name' => 'Issue 66 request snapshot',
+                'email' => 'issue-66-snapshot@example.test',
+                'phone' => '90006642',
+                'phone_normalized' => '4790006642',
+                'vehicles' => [$this->issue66Vehicle(1, 'renew')],
+            ],
+            'SR-E2E-DAY-UNASSIGNED' => [
+                'fulfilment' => 'mobile',
+                'assigned_van' => null,
+                'booking_starts_at' => null,
+                'booking_ends_at' => null,
+                'preferred_period_starts_at' => null,
+                'preferred_period_ends_at' => null,
+                'preferred_window' => 'Call before arrival',
+                'vehicles' => [$this->issue66Vehicle(1, 'last')],
+            ],
+            'SR-E2E-DAY-CLOSED-HISTORY' => [
+                'fulfilment' => 'workshop',
+                'assigned_van' => null,
+                'booking_starts_at' => '2030-10-15 12:00:00',
+                'booking_ends_at' => '2030-10-15 12:30:00',
+                'preferred_period_starts_at' => null,
+                'preferred_period_ends_at' => null,
+                'status' => ServiceRequestStatus::Closed,
+                'vehicles' => [$this->issue66Vehicle(1, 'renew', 'CLOSED-66')],
+            ],
+            'SR-E2E-DAY-CANCELLED-HISTORY' => [
+                'fulfilment' => 'mobile',
+                'assigned_van' => 'van_2',
+                'booking_starts_at' => '2030-10-15 12:30:00',
+                'booking_ends_at' => '2030-10-15 13:00:00',
+                'preferred_period_starts_at' => null,
+                'preferred_period_ends_at' => null,
+                'status' => ServiceRequestStatus::Cancelled,
+                'vehicles' => [$this->issue66Vehicle(1, 'last', 'CANCELLED-66')],
             ],
         ];
 
@@ -318,6 +354,22 @@ class E2eStorefrontSeeder extends Seeder
                 ...$schedule,
             ]);
         }
+
+        ServiceRequest::query()->updateOrCreate(['reference' => 'SR-E2E-DAY-UNDATED'], [
+            'submission_token' => (string) Str::uuid(),
+            'locale' => 'nb',
+            'source' => ServiceRequestSource::AdminManual,
+            'service_slug' => 'mobilt-dekkskift',
+            'fulfilment' => 'workshop',
+            'preferred_date' => null,
+            'preferred_window' => 'Date must be agreed',
+            'vehicles' => [$this->issue66Vehicle(1)],
+            'name' => 'Issue 66 undated customer',
+            'email' => null,
+            'phone' => '90006602',
+            'phone_normalized' => '4790006602',
+            'status' => ServiceRequestStatus::New,
+        ]);
 
         ServiceRequest::query()->updateOrCreate(['reference' => 'SR-E2E-DAY-NEXTDATE'], [
             'submission_token' => (string) Str::uuid(),

@@ -19,6 +19,7 @@ return [
     'client_lookup_error' => 'Не удалось выполнить поиск. Попробуйте ещё раз.',
     'client_lookup_more' => 'Загрузить ещё',
     'operations_day' => 'Открыть рабочий день',
+    'without_date' => 'Только заявки без даты',
     'open_client' => 'Открыть карточку клиента',
     'create_and_link_client' => 'Создать и связать клиента',
     'contact' => 'Контакты',

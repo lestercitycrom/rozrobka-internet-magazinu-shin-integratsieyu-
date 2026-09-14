@@ -1,4 +1,6 @@
-import { expect, test, type Page, type Response } from '@playwright/test';
+import { expect, test, type Page, type Response, type TestInfo } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { ensureAdminLocale, expectNoGlobalOverflow, loginOperations } from './helpers';
 
 const LOOKUP_QUERY = 'Issue 66 Lookup Client';
@@ -71,6 +73,36 @@ async function submitDayFilters(page: Page, date: string, resource: string): Pro
     ]);
 }
 
+async function attachOperationsEvidence(page: Page, testInfo: TestInfo, label: string): Promise<void> {
+    if (process.env.E2E_CAPTURE_OPERATIONS_ARTIFACTS !== '1') return;
+
+    const safeLabel = label.replace(/[^a-z0-9-]+/gi, '-').toLowerCase();
+    const evidenceDirectory = join(process.cwd(), 'test-results', 'operations-day-artifacts');
+    await mkdir(evidenceDirectory, { recursive: true });
+    const viewportImage = await page.screenshot({ fullPage: false });
+    await writeFile(join(evidenceDirectory, `${safeLabel}-viewport.png`), viewportImage);
+    await testInfo.attach(`${safeLabel}-viewport`, {
+        body: viewportImage,
+        contentType: 'image/png',
+    });
+
+    const summary = page.locator('[data-preparation-summary]');
+    if (await summary.isVisible()) {
+        const summaryImage = await summary.screenshot();
+        const summaryText = `${await summary.innerText()}\n`;
+        await writeFile(join(evidenceDirectory, `${safeLabel}-preparation.png`), summaryImage);
+        await writeFile(join(evidenceDirectory, `${safeLabel}-preparation.txt`), summaryText, 'utf8');
+        await testInfo.attach(`${safeLabel}-preparation`, {
+            body: summaryImage,
+            contentType: 'image/png',
+        });
+        await testInfo.attach(`${safeLabel}-preparation.txt`, {
+            body: Buffer.from(summaryText, 'utf8'),
+            contentType: 'text/plain',
+        });
+    }
+}
+
 test('operations remotely searches, paginates and selects clients without leaking internal fields', async ({ page }, testInfo) => {
     expect(page.viewportSize()?.width).toBe(expectedViewportWidth(testInfo.project.name));
     await loginOperations(page);
@@ -140,25 +172,53 @@ test('operations remotely searches, paginates and selects clients without leakin
     }
 });
 
-test('operations day keeps chronology and multi-vehicle LAST context across dates and resources', async ({ page }, testInfo) => {
+test('operations completes the filtered workday preparation and safe request-return flow', async ({ page }, testInfo) => {
     expect(page.viewportSize()?.width).toBe(expectedViewportWidth(testInfo.project.name));
     await loginOperations(page);
 
     for (const locale of ['nb', 'ru'] as const) {
         await ensureAdminLocale(page, locale);
-        await page.goto(`/admin/service-requests/day?date=${DAY}&resource=all`);
+        await page.goto('/admin');
+        const workdayEntry = page.getByTestId('admin-nav-operations_day');
+        if ((page.viewportSize()?.width ?? 1440) < 1024) await page.getByTestId('admin-menu-toggle').click();
+        await workdayEntry.click();
+        await expect(page).toHaveURL((url) => url.pathname === '/admin/service-requests/day');
+        await expect(page.getByTestId('operations-day-today')).toBeVisible();
+        await expect(page.locator('[data-day-resource]')).toHaveCount(5);
+
+        await submitDayFilters(page, DAY, 'all');
 
         const root = page.locator('[data-operations-day]');
         const items = root.locator('[data-operations-day-item]');
         await expect(root).toBeVisible();
-        await expect(items).toHaveCount(3);
+        await expect(items).toHaveCount(4);
 
         const texts = await items.allTextContents();
-        const references = ['SR-E2E-DAY-0900', 'SR-E2E-DAY-1030-VAN1', 'SR-E2E-DAY-1300-VAN2'];
+        const references = [
+            'SR-E2E-DAY-0900',
+            'SR-E2E-DAY-1030-VAN1',
+            'SR-E2E-DAY-1300-VAN2',
+            'SR-E2E-DAY-UNASSIGNED',
+        ];
         expect(texts.map((text) => references.find((reference) => text.includes(reference)))).toEqual(references);
         expect(texts[0]).toContain('09:00');
         expect(texts[1]).toContain('10:30');
         expect(texts[2]).toContain('13:00');
+        await expect(root).not.toContainText('SR-E2E-DAY-CLOSED-HISTORY');
+        await expect(root).not.toContainText('SR-E2E-DAY-CANCELLED-HISTORY');
+
+        const confirmedPreparation = root.locator('[data-preparation-group="confirmed"]');
+        const pendingPreparation = root.locator('[data-preparation-group="pending"]');
+        await expect(confirmedPreparation.locator('[data-preparation-action]')).toHaveCount(1);
+        await expect(confirmedPreparation).toContainText('SR-E2E-DAY-1300-VAN2');
+        await expect(confirmedPreparation).not.toContainText('SR-E2E-DAY-1030-VAN1');
+        await expect(pendingPreparation.locator('[data-preparation-action]')).toHaveCount(2);
+        await expect(pendingPreparation).toContainText('SR-E2E-DAY-1030-VAN1');
+        await expect(pendingPreparation).toContainText('SR-E2E-DAY-UNASSIGNED');
+        await expect(root.locator('[data-preparation-summary] [data-storage-number-warning]')).toHaveCount(2);
+        await expect(root.locator('[data-preparation-summary]')).toContainText(locale === 'ru'
+            ? 'Уточнить номер перед подготовкой.'
+            : 'Avklar lagernummer før forberedelse.');
 
         const fiveVehicleVisit = items.filter({ hasText: 'SR-E2E-DAY-1030-VAN1' });
         await expect(fiveVehicleVisit).toContainText('Day vehicle 1');
@@ -168,6 +228,7 @@ test('operations day keeps chronology and multi-vehicle LAST context across date
             ? 'Выдать хранящийся комплект и не принимать снятый комплект обратно'
             : 'Hent lagret hjulsett; det avmonterte settet skal ikke lagres på nytt');
         await expectNoGlobalOverflow(page);
+        await attachOperationsEvidence(page, testInfo, `${locale}-${testInfo.project.name}-active`);
 
         await submitDayFilters(page, DAY, 'van_1');
         await expect(page.locator('[data-operations-day-item]')).toHaveCount(1);
@@ -183,9 +244,71 @@ test('operations day keeps chronology and multi-vehicle LAST context across date
         await submitDayFilters(page, DAY, 'van_2');
         await expect(page.locator('[data-operations-day-item]')).toHaveCount(1);
         await expect(page.locator('[data-operations-day-item]')).toContainText('SR-E2E-DAY-1300-VAN2');
+        await expect(page.locator('[data-operations-day-item]')).not.toContainText('SR-E2E-DAY-CANCELLED-HISTORY');
         await expectNoGlobalOverflow(page);
 
-        await submitDayFilters(page, NEXT_DAY, 'all');
+        const returnContext = `/admin/service-requests/day?date=${DAY}&resource=van_2`;
+        await page.locator('[data-operations-day-item]').getByRole('link', {
+            name: 'SR-E2E-DAY-1300-VAN2',
+            exact: true,
+        }).click();
+        await expect(page).toHaveURL((url) => url.pathname.match(/^\/admin\/service-requests\/\d+$/) !== null
+            && url.searchParams.get('return_to') === returnContext);
+        await expect(page.locator('main')).toContainText('Issue 66 request snapshot');
+        await expect(page.locator('main')).toContainText('90006642');
+
+        await page.getByTestId('request-edit').click();
+        await expect(page).toHaveURL((url) => url.pathname.match(/^\/admin\/service-requests\/\d+\/edit$/) !== null
+            && url.searchParams.get('return_to') === returnContext);
+        await expect(page.locator('[name="name"]')).toHaveValue('Issue 66 request snapshot');
+        await page.locator('[name="phone"]').fill('not-a-phone');
+        await page.getByTestId('request-save').click();
+        await expect(page.getByTestId('request-form-errors')).toBeVisible();
+        await expect(page).toHaveURL((url) => url.pathname.match(/^\/admin\/service-requests\/\d+\/edit$/) !== null
+            && url.searchParams.get('return_to') === returnContext);
+        await expect(page.locator('[name="name"]')).toHaveValue('Issue 66 request snapshot');
+
+        await page.locator('[name="phone"]').fill('90006642');
+        await page.locator('[name="status"]').selectOption('contacted');
+        await page.getByTestId('request-save').click();
+        await expect(page).toHaveURL((url) => url.pathname.match(/^\/admin\/service-requests\/\d+$/) !== null
+            && url.searchParams.get('return_to') === returnContext);
+        await expect(page.locator('main')).toContainText('Issue 66 request snapshot');
+        await expect(page.locator('main')).toContainText('90006642');
+        await page.getByTestId('request-back').click();
+        await expect(page).toHaveURL((url) => url.pathname === '/admin/service-requests/day'
+            && url.searchParams.get('date') === DAY
+            && url.searchParams.get('resource') === 'van_2');
+        await expectNoGlobalOverflow(page);
+
+        await submitDayFilters(page, DAY, 'mobile_unassigned');
+        await expect(page.locator('[data-operations-day-item]')).toHaveCount(1);
+        await expect(page.locator('[data-operations-day-item]')).toContainText('SR-E2E-DAY-UNASSIGNED');
+        await expectNoGlobalOverflow(page);
+
+        const filters = page.locator('[data-operations-day-filters]');
+        await filters.locator('[name="include_history"]').check();
+        await submitDayFilters(page, DAY, 'all');
+        expect(new URL(page.url()).searchParams.get('include_history')).toBe('1');
+        await expect(page.locator('[data-operations-day-item]')).toHaveCount(6);
+        const preparation = page.locator('[data-preparation-summary]');
+        await expect(preparation.locator('[data-preparation-action]')).toHaveCount(3);
+        await expect(preparation).not.toContainText('SR-E2E-DAY-CLOSED-HISTORY');
+        await expect(preparation).not.toContainText('SR-E2E-DAY-CANCELLED-HISTORY');
+        const historyItems = page.locator('[data-operations-day-item][data-status="closed"], [data-operations-day-item][data-status="cancelled"]');
+        await expect(historyItems).toHaveCount(2);
+        await expect(historyItems.locator('[data-history-no-actions]')).toHaveCount(2);
+        await expectNoGlobalOverflow(page);
+        await attachOperationsEvidence(page, testInfo, `${locale}-${testInfo.project.name}-history`);
+
+        await page.getByTestId('operations-day-undated').click();
+        await expect(page).toHaveURL((url) => url.pathname === '/admin/service-requests'
+            && url.searchParams.get('without_date') === '1');
+        await expect(page.locator('main')).toContainText('SR-E2E-DAY-UNDATED');
+        await expect(page.locator('main')).not.toContainText('SR-E2E-DAY-0900');
+        await expectNoGlobalOverflow(page);
+
+        await page.goto(`/admin/service-requests/day?date=${NEXT_DAY}&resource=all`);
         await expect(page.locator('[data-operations-day-item]')).toHaveCount(1);
         await expect(page.locator('[data-operations-day-item]')).toContainText('SR-E2E-DAY-NEXTDATE');
         await expect(page.locator('[data-operations-day-item]')).not.toContainText('SR-E2E-DAY-0900');

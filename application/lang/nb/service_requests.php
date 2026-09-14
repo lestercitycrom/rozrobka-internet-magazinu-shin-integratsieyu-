@@ -19,6 +19,7 @@ return [
     'client_lookup_error' => 'Søket kunne ikke fullføres. Prøv igjen.',
     'client_lookup_more' => 'Last inn flere',
     'operations_day' => 'Åpne arbeidsdagen',
+    'without_date' => 'Bare forespørsler uten dato',
     'open_client' => 'Åpne kundekort',
     'create_and_link_client' => 'Opprett og koble kunde',
     'contact' => 'Kontakt',

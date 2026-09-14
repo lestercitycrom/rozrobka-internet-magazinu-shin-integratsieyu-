@@ -131,22 +131,25 @@ test('client lookup searches client fields and registration snapshots without tr
         'client_id' => $vehicleRegistrationClient->id,
         'vehicles' => [
             issue66LookupVehicle('First car', 'AA66001'),
-            issue66LookupVehicle('Second car', 'BB66002'),
-            issue66LookupVehicle('Third car', 'CC66003'),
+            issue66LookupVehicle('Second car', 'Bb66002'),
+            issue66LookupVehicle('Third car', 'cC66003'),
             issue66LookupVehicle('Fourth car', 'FUTURE663', 'last', '00042'),
         ],
     ]);
     issue66LookupRequest('SR-LOOKUP-STORAGE-DECOY-66', [
         'client_id' => $storageNumberDecoy->id,
         'vehicles' => [
-            issue66LookupVehicle('Storage decoy car', 'NOT-THE-PLATE', 'renew', 'FUTURE663'),
+            [
+                ...issue66LookupVehicle('OTHER-JSON-FIELD-66', 'NOT-THE-PLATE', 'renew', 'FUTURE663'),
+                'tire_size' => 'TIRE-FIELD-ONLY-66',
+            ],
         ],
     ]);
     issue66LookupRequest('SR-LOOKUP-UNLINKED-66', [
         'client_id' => null,
         'name' => $unlinkedDecoy->name,
-        'registration_number' => 'TOP66001',
-        'vehicles' => [issue66LookupVehicle('Unlinked car', 'FUTURE663')],
+        'registration_number' => 'UNLINKED-TOP-ONLY-66',
+        'vehicles' => [issue66LookupVehicle('Unlinked car', 'UNLINKED-JSON-ONLY-66')],
     ]);
 
     foreach ([
@@ -154,6 +157,8 @@ test('client lookup searches client fields and registration snapshots without tr
         ['needle-email-66@example.test', $emailClient->id],
         ['99 88 77 66', $phoneClient->id],
         ['TOP66001', $topRegistrationClient->id],
+        ['bB66002', $vehicleRegistrationClient->id],
+        ['Cc66003', $vehicleRegistrationClient->id],
         ['FUTURE663', $vehicleRegistrationClient->id],
     ] as [$query, $expectedId]) {
         $response = $this->actingAs($operations)
@@ -169,6 +174,19 @@ test('client lookup searches client fields and registration snapshots without tr
         ->assertSee('JSON Registration Client')
         ->assertDontSee('Storage Number Decoy')
         ->assertDontSee('Unlinked Request Decoy');
+
+    foreach (['OTHER-JSON-FIELD-66', 'TIRE-FIELD-ONLY-66', 'UNLINKED-TOP-ONLY-66', 'UNLINKED-JSON-ONLY-66'] as $query) {
+        $this->actingAs($operations)
+            ->getJson(route('admin.clients.lookup', ['q' => strtolower($query)]))
+            ->assertOk()
+            ->assertJsonCount(0, 'items');
+
+        $this->actingAs($operations)
+            ->get(route('admin.clients.index', ['q' => strtolower($query)]))
+            ->assertOk()
+            ->assertDontSee('Storage Number Decoy')
+            ->assertDontSee('Unlinked Request Decoy');
+    }
 });
 
 /** @param array<string, mixed> $override */
