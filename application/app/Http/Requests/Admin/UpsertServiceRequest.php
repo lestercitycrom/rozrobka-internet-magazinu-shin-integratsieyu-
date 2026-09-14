@@ -36,8 +36,11 @@ final class UpsertServiceRequest extends FormRequest
         $isBattery = $slug === 'bilbatteri';
         $requiresRequestedDate = $isSeasonal || $isMounting || $isBattery;
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
-        $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
         $storedVehicles = is_array($requestModel?->vehicles) ? $requestModel->vehicles : [];
+        $effectiveCarCount = $this->has('car_count')
+            ? (int) $this->input('car_count')
+            : ((! $isCreate && ! $serviceChanged) ? max(1, count($storedVehicles)) : 1);
+        $secondVehicle = $isSeasonal && $effectiveCarCount === 2;
         $storedFirstStorage = (string) ($storedVehicles[0]['storage_plan'] ?? 'none');
         $storedSecondStorage = (string) ($storedVehicles[1]['storage_plan'] ?? 'none');
         $firstStorage = (string) $this->input('storage_plan', $storedFirstStorage);
@@ -49,7 +52,9 @@ final class UpsertServiceRequest extends FormRequest
         $secondStorageChanged = $isCreate || $serviceChanged
             || ($this->has('storage_plan_2') && $secondStorage !== $storedSecondStorage);
         $supportsGeneralStorage = $this->supportsGeneralStorage($slug);
-        $generalStorageSelected = $supportsGeneralStorage && $this->boolean('dekkhotell');
+        $generalStorageSelected = $supportsGeneralStorage && ($this->has('dekkhotell')
+            ? $this->boolean('dekkhotell')
+            : (bool) $requestModel?->dekkhotell);
         $generalStorageChanged = $isCreate || $serviceChanged
             || ($this->has('dekkhotell') && $generalStorageSelected !== (bool) $requestModel?->dekkhotell);
         $seasonalVehicleTypes = $isSeasonal && $effectiveFulfilment === 'workshop'
@@ -127,6 +132,12 @@ final class UpsertServiceRequest extends FormRequest
             'wheel_count' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
             'dekkhotell' => ['nullable', 'boolean'],
             'dekkhotell_control' => ['nullable', 'boolean'],
+            'dekkhotell_already_stored' => [
+                Rule::prohibitedIf(! $supportsGeneralStorage),
+                Rule::requiredIf($generalStorageSelected && $generalStorageChanged),
+                'nullable',
+                'boolean',
+            ],
             'assigned_van' => [Rule::prohibitedIf($effectiveFulfilment !== 'mobile'), 'sometimes', 'nullable', Rule::in(['van_1', 'van_2'])],
             'additional_services' => [Rule::prohibitedIf(! $supportsAdditionalServices), 'nullable', 'array', 'max:3'],
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],

@@ -221,6 +221,10 @@ final class ServiceRequestCreator
     {
         $vehicles = $this->vehicles($data);
         $usesStorage = collect($vehicles)->contains(fn (array $vehicle): bool => ($vehicle['storage_plan'] ?? 'none') !== 'none');
+        $usesGeneralStorage = $vehicles === [] && (bool) ($data['dekkhotell'] ?? false);
+        $alreadyStored = $usesGeneralStorage && array_key_exists('dekkhotell_already_stored', $data)
+            ? ($data['dekkhotell_already_stored'] === null ? null : (bool) $data['dekkhotell_already_stored'])
+            : null;
         $period = $this->preferredPeriod($data);
 
         return [
@@ -238,7 +242,8 @@ final class ServiceRequestCreator
             'registration_number' => $data['registration_number'] ?? null,
             'tire_size' => $data['tire_size'] ?? null,
             'wheel_count' => $data['wheel_count'] ?? null,
-            'dekkhotell' => $vehicles === [] ? (bool) ($data['dekkhotell'] ?? false) : $usesStorage,
+            'dekkhotell' => $vehicles === [] ? $usesGeneralStorage : $usesStorage,
+            'dekkhotell_already_stored' => $alreadyStored,
             'additional_services' => $data['additional_services'] ?? null,
             'vehicles' => $vehicles === [] ? null : $vehicles,
         ];
@@ -274,6 +279,7 @@ final class ServiceRequestCreator
             'registration_number' => $request->registration_number,
             'tire_size' => $request->tire_size,
             'wheel_count' => $request->wheel_count,
+            'dekkhotell_already_stored' => $request->dekkhotell_already_stored,
         ];
 
         $vehicles = $request->vehicles ?? [];
@@ -413,7 +419,7 @@ final class ServiceRequestCreator
         $protected = [
             'service_slug', 'service_variant', 'fulfilment', 'preferred_date', 'preferred_window',
             'preferred_period_starts_at', 'preferred_period_ends_at', 'booking_slot_key', 'vehicle', 'registration_number', 'tire_size', 'wheel_count',
-            'dekkhotell', 'additional_services',
+            'dekkhotell', 'dekkhotell_already_stored', 'additional_services',
         ];
         foreach ($protected as $key) {
             if (array_key_exists($key, $data)

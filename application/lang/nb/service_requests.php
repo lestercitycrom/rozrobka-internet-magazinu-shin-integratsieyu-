@@ -119,6 +119,8 @@ return [
         'tire_size_hint' => 'Valgfritt, for eksempel 205/55 R16',
         'dekkhotell' => 'Jeg ønsker informasjon om dekkhotell',
         'dekkhotell_registration_hint' => 'Registreringsnummer kreves når dekkhotell velges.',
+        'dekkhotell_already_stored_question' => 'Er hjulene allerede lagret hos EasyTire?',
+        'dekkhotell_already_stored_legacy' => 'Ikke registrert i den tidligere forespørselen. Velg bare et svar dersom kunden har bekreftet det.',
         'car_count' => 'Hvor mange biler gjelder forespørselen?',
         'one_car' => '1 bil',
         'two_cars' => 'To biler',

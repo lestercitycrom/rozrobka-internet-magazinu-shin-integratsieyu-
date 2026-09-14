@@ -130,7 +130,7 @@ test('legacy storage without registration remains editable but a new storage sel
     expect($legacy->refresh()->vehicles[0]['storage_plan'])->toBe('renew');
 });
 
-test('general tyre storage requires registration only when the storage choice is newly enabled', function (): void {
+test('general tyre storage records both explicit already-stored answers and preserves legacy unknown', function (): void {
     $service = issue59CrmService('omlegging-balansering');
     $operations = User::factory()->operations()->create();
     $date = now('Europe/Oslo')->addDays(2)->format('Y-m-d');
@@ -141,13 +141,92 @@ test('general tyre storage requires registration only when the storage choice is
     ]);
 
     $this->actingAs($operations)->post(route('admin.service-requests.store'), $payload)
-        ->assertSessionHasErrors('registration_number');
+        ->assertSessionHasErrors(['registration_number', 'dekkhotell_already_stored']);
     $this->actingAs($operations)->post(route('admin.service-requests.store'), [
         ...$payload, 'submission_token' => (string) Str::uuid(), 'registration_number' => 'ZH12345',
+    ])->assertSessionHasErrors('dekkhotell_already_stored');
+    $this->actingAs($operations)->post(route('admin.service-requests.store'), [
+        ...$payload, 'submission_token' => (string) Str::uuid(), 'registration_number' => 'ZH12345',
+        'dekkhotell_already_stored' => '1',
     ])->assertRedirect();
 
-    expect(ServiceRequest::query()->sole()->dekkhotell)->toBeTrue()
-        ->and(ServiceRequest::query()->sole()->registration_number)->toBe('ZH12345');
+    $request = ServiceRequest::query()->sole();
+    expect($request->dekkhotell)->toBeTrue()
+        ->and($request->dekkhotell_already_stored)->toBeTrue()
+        ->and($request->registration_number)->toBe('ZH12345');
+    $this->actingAs($operations)->get(route('admin.service-requests.show', $request))
+        ->assertOk()->assertSee('data-testid="general-storage-already"', false)
+        ->assertSee('Er hjulene allerede lagret hos EasyTire?');
+    $this->actingAs($operations)->get(route('admin.service-requests.edit', $request))
+        ->assertOk()->assertSee('data-general-storage-answer', false)
+        ->assertSee('name="dekkhotell_already_stored"', false);
+
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+        ...$payload, 'registration_number' => 'ZH12345', 'dekkhotell_already_stored' => '0',
+    ])->assertRedirect();
+    expect($request->refresh()->dekkhotell_already_stored)->toBeFalse();
+
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+        ...$payload, 'registration_number' => 'ZH12345', 'dekkhotell' => null,
+        'dekkhotell_already_stored' => '0',
+    ])->assertRedirect();
+    expect($request->refresh()->dekkhotell)->toBeFalse()
+        ->and($request->dekkhotell_already_stored)->toBeNull()
+        ->and($request->registration_number)->toBe('ZH12345');
+
+    $legacy = ServiceRequest::query()->create([
+        'reference' => 'SR-CRM-LEGACY-GENERAL-STORAGE', 'locale' => 'nb',
+        'source' => ServiceRequestSource::AdminManual, 'service_slug' => $service->slug,
+        'fulfilment' => 'workshop', 'dekkhotell' => true, 'dekkhotell_already_stored' => null,
+        'registration_number' => 'LEGACY1', 'name' => 'Legacy general storage',
+        'phone' => '90000000', 'phone_normalized' => '4790000000', 'status' => ServiceRequestStatus::New,
+    ]);
+    $this->actingAs($operations)->get(route('admin.service-requests.show', $legacy))
+        ->assertOk()->assertSee('Er hjulene allerede lagret hos EasyTire?')->assertSee('Ikke oppgitt');
+    $this->actingAs($operations)->get(route('admin.service-requests.edit', $legacy))
+        ->assertOk()->assertSee('Ikke registrert i den tidligere forespørselen.');
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $legacy), [
+        'name' => 'Legacy contact corrected', 'phone' => '91111111', 'status' => 'contacted',
+    ])->assertRedirect();
+    expect($legacy->refresh()->dekkhotell)->toBeTrue()
+        ->and($legacy->dekkhotell_already_stored)->toBeNull();
+});
+
+test('partial storage change for a stored second vehicle requires its registration atomically', function (): void {
+    $service = issue59CrmService('issue-59-second-car-patch', ServiceRequestFlow::Seasonal);
+    $operations = User::factory()->operations()->create();
+    $date = now('Europe/Oslo')->addDays(2)->format('Y-m-d');
+    $request = ServiceRequest::query()->create([
+        'reference' => 'SR-CRM-SECOND-CAR-PATCH', 'locale' => 'nb',
+        'source' => ServiceRequestSource::AdminManual, 'service_slug' => $service->slug,
+        'fulfilment' => 'workshop', 'preferred_date' => $date, 'vehicle' => 'Tesla Model Y',
+        'registration_number' => 'EV12345', 'dekkhotell' => false, 'vehicles' => [
+            ['vehicle' => 'Tesla Model Y', 'registration_number' => 'EV12345', 'tire_size' => '255/45 R19', 'vehicle_type' => 'passenger', 'rim_band' => 'r19', 'storage_plan' => 'none'],
+            ['vehicle' => 'Volvo XC60', 'registration_number' => null, 'tire_size' => '235/55 R18', 'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'none'],
+        ],
+        'name' => 'Second car storage', 'phone' => '90000000', 'phone_normalized' => '4790000000',
+        'status' => ServiceRequestStatus::New,
+    ]);
+    $partial = [
+        'service_slug' => $service->slug, 'fulfilment' => 'workshop', 'booking_mode' => 'manual',
+        'storage_plan_2' => 'renew',
+    ];
+
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), $partial)
+        ->assertSessionHasErrors('registration_number_2');
+    $request->refresh();
+    expect($request->vehicles)->toHaveCount(2)
+        ->and($request->vehicles[1]['storage_plan'])->toBe('none')
+        ->and($request->vehicles[1]['registration_number'])->toBeNull();
+
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+        ...$partial, 'registration_number_2' => 'EV54321',
+    ])->assertRedirect();
+    $request->refresh();
+    expect($request->vehicles)->toHaveCount(2)
+        ->and($request->vehicles[1]['storage_plan'])->toBe('renew')
+        ->and($request->vehicles[1]['registration_number'])->toBe('EV54321')
+        ->and($request->dekkhotell)->toBeTrue();
 });
 
 test('period validation is atomic while a historical contact-only edit stays possible', function (): void {

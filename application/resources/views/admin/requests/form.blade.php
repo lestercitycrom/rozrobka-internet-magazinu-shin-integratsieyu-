@@ -14,12 +14,16 @@
     $minimumDate = $editing && filled($storedDate) && $storedDate < $today ? $storedDate : $today;
     $generalStorageSlugs = ['omlegging-balansering', 'dekkreparasjon', 'tpms-sensor'];
     $currentSupportsGeneralStorage = in_array($currentService, $generalStorageSlugs, true);
+    $alreadyStoredValue = old(
+        'dekkhotell_already_stored',
+        $request->dekkhotell_already_stored === null ? null : ($request->dekkhotell_already_stored ? '1' : '0'),
+    );
     $currentFulfilment = old('fulfilment', $request->fulfilment ?: 'workshop');
     $field = 'easytire-input mt-2 min-h-11 w-full rounded-lg px-3';
 @endphp
 
 <x-layouts.admin :title="$editing ? __('service_requests.edit') : __('service_requests.create')">
-    <div class="max-w-6xl space-y-8" data-admin-request-form>
+    <div class="max-w-6xl space-y-8" data-admin-request-form data-initial-service="{{ $request->service_slug }}">
         <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <a class="inline-flex min-h-11 items-center underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ $editing ? route('admin.service-requests.show', $request) : route('admin.service-requests.index') }}">{{ __('service_requests.back') }}</a>
@@ -159,6 +163,16 @@
                             <input name="dekkhotell_control" value="1" type="hidden" @disabled(! $currentSupportsGeneralStorage)>
                             <label class="flex min-h-11 items-center gap-3 text-sm font-bold"><input name="dekkhotell" value="1" type="checkbox" data-general-storage-choice @checked(old('dekkhotell', $request->dekkhotell)) @disabled(! $currentSupportsGeneralStorage)>{{ __('service_requests.form.dekkhotell') }}</label>
                             <p class="mt-1 text-sm text-easytire-muted">{{ __('service_requests.form.dekkhotell_registration_hint') }}</p>
+                            <fieldset class="mt-4 border-l-2 border-easytire-brand pl-4" data-general-storage-answer @if(! old('dekkhotell', $request->dekkhotell)) hidden @endif>
+                                <legend class="text-sm font-bold">{{ __('service_requests.form.dekkhotell_already_stored_question') }}</legend>
+                                <div class="mt-2 flex flex-wrap gap-x-6 gap-y-2">
+                                    <label class="flex min-h-11 items-center gap-2 text-sm font-bold"><input name="dekkhotell_already_stored" value="1" type="radio" @checked((string) $alreadyStoredValue === '1')>{{ __('service_requests.yes') }}</label>
+                                    <label class="flex min-h-11 items-center gap-2 text-sm font-bold"><input name="dekkhotell_already_stored" value="0" type="radio" @checked((string) $alreadyStoredValue === '0')>{{ __('service_requests.no') }}</label>
+                                </div>
+                                @if($editing && $request->dekkhotell && $request->dekkhotell_already_stored === null)
+                                    <p class="mt-1 text-sm text-easytire-muted">{{ __('service_requests.form.dekkhotell_already_stored_legacy') }}</p>
+                                @endif
+                            </fieldset>
                         </div>
                     </div>
 
@@ -225,6 +239,7 @@
                 const registration = general?.querySelector('input[name="registration_number"]');
                 const generalStorage = root.querySelector('[data-general-storage]');
                 const generalStorageChoice = root.querySelector('[data-general-storage-choice]');
+                const generalStorageAnswer = root.querySelector('[data-general-storage-answer]');
                 const assignedVanField = root.querySelector('[data-assigned-van-field]');
                 const assignedVan = root.querySelector('[data-assigned-van]');
                 const problem = root.querySelector('textarea[name="note"]');
@@ -296,14 +311,24 @@
                     });
                 };
                 const updateGeneralStorageRegistration = () => {
-                    if (!registration) return;
                     const supportsStorage = !generalStorage?.hidden;
                     const selected = generalStorageChoice?.checked === true;
                     const initiallySelected = generalStorage?.dataset.initialSelected === '1';
                     const changed = selected !== initiallySelected;
+                    const serviceChanged = service?.value !== root.dataset.initialService;
                     const previouslyKnown = (generalStorage?.dataset.initialRegistration || '') !== '';
-                    registration.required = registration.dataset.serviceRequired === '1'
-                        || (supportsStorage && selected && (changed || previouslyKnown));
+                    if (registration) {
+                        registration.required = registration.dataset.serviceRequired === '1'
+                            || (supportsStorage && selected && (changed || previouslyKnown));
+                    }
+                    if (generalStorageAnswer) {
+                        const enabled = supportsStorage && selected;
+                        generalStorageAnswer.hidden = !enabled;
+                        generalStorageAnswer.querySelectorAll('input').forEach(input => {
+                            input.disabled = !enabled;
+                            input.required = enabled && (changed || serviceChanged);
+                        });
+                    }
                 };
                 const loadSlots = async () => {
                     if (mode?.value !== 'exact' || !date?.value) return;
