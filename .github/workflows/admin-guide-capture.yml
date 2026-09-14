@@ -1,0 +1,193 @@
+name: Admin guide screenshots
+on:
+  push:
+    branches: [codex/issue-61-admin-guide]
+    paths: [.github/workflows/admin-guide-capture.yml]
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: application
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_URL: http://127.0.0.1:8000
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /tmp/easytire-admin-guide.sqlite
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: file
+      MAIL_MAILER: array
+      STOREFRONT_RU_PREVIEW_ENABLED: 'true'
+      NDI_SANDBOX_CATALOG_ENABLED: 'true'
+      NDI_MEDIA_SYNC_ENABLED: 'false'
+      NDI_ORDER_ENABLED: 'false'
+      NDI_SANDBOX_ORDER_ENABLED: 'false'
+      NDI_C1_TEST_MODE: 'false'
+      E2E_ADMIN_EMAIL: e2e-admin@example.test
+      E2E_ADMIN_PASSWORD: e2e-only-password
+      E2E_OPERATIONS_EMAIL: e2e-operations@example.test
+      E2E_OPERATIONS_PASSWORD: e2e-operations-password
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: d3f2402e1a9bc056557f03b3a17c26194119d64e
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, fileinfo, mbstring, pdo_sqlite, sqlite3
+          coverage: none
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: application/package-lock.json
+      - name: Prepare isolated synthetic application
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
+          npm ci
+          cp .env.example .env
+          php artisan key:generate --force
+          test "$DB_CONNECTION" = sqlite
+          test "$DB_DATABASE" = /tmp/easytire-admin-guide.sqlite
+          touch "$DB_DATABASE"
+          php artisan migrate --force
+          php artisan e2e:seed-admin
+          php artisan db:seed --class=E2eStorefrontSeeder --force
+          php artisan storage:link
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Capture real rendered screens and page text
+        run: |
+          mkdir -p documentation-capture
+          php -S 127.0.0.1:8000 -t public tests/E2E/server.php > /tmp/easytire-guide-server.log 2>&1 &
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/admin/login >/dev/null && break; sleep 1; done
+          node --input-type=module <<'NODE'
+          import { chromium } from '@playwright/test';
+          import fs from 'node:fs/promises';
+          const base = 'http://127.0.0.1:8000';
+          const out = 'documentation-capture';
+          const browser = await chromium.launch({headless: true});
+          const context = await browser.newContext({viewport:{width:1440,height:1080},deviceScaleFactor:1});
+          await context.route('**/*', route => {
+            const u = new URL(route.request().url());
+            return u.hostname === '127.0.0.1' || u.protocol === 'data:' || u.protocol === 'blob:' ? route.continue() : route.abort();
+          });
+          const page = await context.newPage();
+          page.setDefaultTimeout(15000);
+          const records = [];
+          const captured = new Set();
+          async function shot(name, url) {
+            if (url) await page.goto(base+url,{waitUntil:'networkidle'});
+            await page.evaluate(() => document.fonts.ready);
+            await page.waitForTimeout(150);
+            const text = await page.locator('body').innerText();
+            await page.screenshot({path:`${out}/${name}.png`,fullPage:true});
+            const fields = await page.locator('input,select,textarea,button').evaluateAll(els => els.map(el => ({tag:el.tagName,name:el.getAttribute('name'),type:el.getAttribute('type'),text:el.tagName==='SELECT'?el.innerText:(el.closest('label')?.innerText||el.innerText||''),required:el.required,disabled:el.disabled})).filter(x=>x.type!=='password'&&x.type!=='hidden'));
+            records.push({name,url:page.url().replace(base,''),title:await page.title(),text,fields});
+            captured.add(page.url().replace(base,''));
+            await fs.writeFile(`${out}/pages.json`,JSON.stringify(records,null,2));
+          }
+          try {
+            await shot('01-login','/admin/login');
+            await page.locator('input[name=email]').fill(process.env.E2E_ADMIN_EMAIL);
+            await page.locator('input[name=password]').fill(process.env.E2E_ADMIN_PASSWORD);
+            await page.locator('form button[type=submit]').click();
+            await page.waitForURL(/\/admin\/?$/);
+            await page.getByTestId('switch-language-ru').click();
+            await page.waitForLoadState('networkidle');
+            await shot('02-dashboard');
+            const navigation = await page.locator('[data-testid^="admin-nav-"]').evaluateAll(els=>els.map(el=>({name:el.getAttribute('data-testid').replace('admin-nav-',''),url:new URL(el.href).pathname,label:el.innerText})));
+            await fs.writeFile(`${out}/navigation.json`,JSON.stringify(navigation,null,2));
+            await page.goto(base+'/admin/clients/create');
+            await page.locator('[name=name]').fill('Анна — учебный пример');
+            await page.locator('[name=phone]').fill('99 88 77 66');
+            await page.locator('[name=address]').fill('Учебный адрес, 12');
+            await page.locator('[name=district]').fill('Tromsdalen');
+            await page.locator('[name=note]').fill('Учебная запись. Позвонить перед выездом.');
+            await shot('03-client-create');
+            await page.getByTestId('client-save').click();
+            await page.waitForURL(/\/admin\/clients\/\d+$/);
+            const clientUrl = page.url().replace(base,'');
+            await shot('04-client-card-empty');
+            await shot('05-clients-list','/admin/clients');
+            await shot('06-client-edit',clientUrl+'/edit');
+            await page.goto(base+clientUrl);
+            await page.getByTestId('client-create-request').click();
+            await page.locator('[name=service_slug]').selectOption('oljeskift');
+            await page.locator('[name=fulfilment]').selectOption('mobile');
+            await page.locator('[name=booking_mode]').selectOption('period');
+            const future = new Date(Date.now()+3*86400000).toISOString().slice(0,10);
+            await page.locator('[name=preferred_date]').fill(future);
+            await page.locator('[name=preferred_time_start]').fill('10:00');
+            await page.locator('[name=preferred_time_end]').fill('12:00');
+            await page.locator('[name=assigned_van]').selectOption('van_1');
+            await page.locator('[data-general-vehicle-fields] [name=vehicle]').fill('Toyota — учебный пример');
+            await page.locator('[data-general-vehicle-fields] [name=registration_number]').fill('DEMO123');
+            await page.locator('[name=admin_note]').fill('Учебный пример: время ещё нужно согласовать.');
+            await shot('07-request-create');
+            await page.getByTestId('request-save').click();
+            await page.waitForURL(/\/admin\/service-requests\/\d+$/);
+            const requestUrl = page.url().replace(base,'');
+            await shot('08-request-card');
+            await shot('09-request-worklist','/admin/service-requests?view=mobile&assigned_van=van_1');
+            await shot('10-client-card-linked',clientUrl);
+            await page.goto(base+requestUrl+'/edit');
+            await page.locator('[name=service_slug]').selectOption('omlegging-balansering');
+            await page.locator('[name=booking_mode]').selectOption('manual');
+            await page.locator('[data-general-storage-choice]').check();
+            await page.locator('[name=dekkhotell_already_stored][value="1"]').check();
+            await shot('11-request-tyre-storage');
+            const seasonalSlug = await page.locator('[name=service_slug] option').evaluateAll(els=>els.find(el=>el.dataset.flow==='seasonal')?.value);
+            if (seasonalSlug) {
+              await page.locator('[name=service_slug]').selectOption(seasonalSlug);
+              await page.locator('[name=fulfilment]').selectOption('mobile');
+              await page.locator('[name=car_count]').selectOption('2');
+              await page.locator('[data-vehicle="1"] [name=vehicle]').fill('Toyota — учебный пример');
+              await page.locator('[data-vehicle="1"] [name=registration_number]').fill('DEMO123');
+              await page.locator('[name=storage_plan]').selectOption('new');
+              await page.locator('[name=vehicle_2]').fill('Volvo — учебный пример');
+              await page.locator('[name=registration_number_2]').fill('DEMO456');
+              await page.locator('[name=storage_plan_2]').selectOption('renew');
+              await shot('12-request-seasonal');
+            }
+            let n = 13;
+            for (const item of navigation) {
+              if (['dashboard','clients','service_requests'].includes(item.name)) continue;
+              try {
+                const key = String(n++).padStart(2,'0')+'-'+item.name;
+                await shot(key,item.url);
+                const links = await page.locator('main a[href]').evaluateAll(els=>els.map(el=>({url:new URL(el.href).pathname,text:el.innerText})));
+                await fs.writeFile(`${out}/${key}-links.json`,JSON.stringify(links,null,2));
+                const formLink = links.find(x=>x.url.startsWith(item.url+'/') && /\/(create|edit)$/.test(x.url));
+                const cardLink = links.find(x=>x.url.startsWith(item.url+'/') && !/\/(create|edit)$/.test(x.url) && !x.url.includes('/publication'));
+                if(formLink) await shot(key+'-form',formLink.url);
+                else if(cardLink && ['orders','catalog','imports'].includes(item.name)) await shot(key+'-card',cardLink.url);
+              } catch(error) {
+                records.push({name:item.name,error:String(error)});
+                await fs.writeFile(`${out}/pages.json`,JSON.stringify(records,null,2));
+              }
+            }
+            await shot('40-calendar-interval-form','/admin/booking-calendar/intervals/create');
+            await shot('41-calendar-blackout-form','/admin/booking-calendar/blackouts/create');
+            await page.setViewportSize({width:390,height:844});
+            await shot('42-clients-mobile','/admin/clients');
+            await fs.writeFile(`${out}/PROVENANCE.txt`,'Application SHA: d3f2402e1a9bc056557f03b3a17c26194119d64e\nSource: actual Laravel pages rendered on isolated GitHub runner, SQLite, synthetic fixtures only. Not a staging capture or acceptance.\n');
+          } finally {
+            await fs.writeFile(`${out}/pages.json`,JSON.stringify(records,null,2));
+            await browser.close();
+          }
+          NODE
+      - name: Export documentation screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: admin-guide-screens
+          path: application/documentation-capture
+          retention-days: 7
+          if-no-files-found: error
