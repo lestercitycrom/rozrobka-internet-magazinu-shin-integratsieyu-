@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpsertServiceRequest;
+use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Models\ServicePage;
 use App\Modules\ServiceBooking\CustomerPhoneNormalizer;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
@@ -27,6 +28,16 @@ class ServiceRequestController extends Controller
         $filters = $input->validate([
             'q' => ['nullable', 'string', 'max:120'],
             'date' => ['nullable', 'date_format:Y-m-d'],
+            'date_from' => [
+                'nullable',
+                'date_format:Y-m-d',
+                ...($input->filled('date_to') ? ['before_or_equal:date_to'] : []),
+            ],
+            'date_to' => [
+                'nullable',
+                'date_format:Y-m-d',
+                ...($input->filled('date_from') ? ['after_or_equal:date_from'] : []),
+            ],
             'service' => ['nullable', 'string', Rule::exists('service_pages', 'slug')],
             'fulfilment' => ['nullable', Rule::in(['workshop', 'mobile'])],
             'status' => ['nullable', Rule::in(['new', 'contacted', 'closed', 'cancelled'])],
@@ -48,6 +59,8 @@ class ServiceRequestController extends Controller
         }
         $query
             ->when(filled($filters['date'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', $filters['date']))
+            ->when(filled($filters['date_from'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', '>=', $filters['date_from']))
+            ->when(filled($filters['date_to'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', '<=', $filters['date_to']))
             ->when(filled($filters['service'] ?? null), fn (Builder $query) => $query->where('service_slug', $filters['service']))
             ->when(filled($filters['fulfilment'] ?? null), fn (Builder $query) => $query->where('fulfilment', $filters['fulfilment']))
             ->when(filled($filters['status'] ?? null), fn (Builder $query) => $query->where('status', $filters['status']))
@@ -58,7 +71,7 @@ class ServiceRequestController extends Controller
         return view('admin.requests.index', [
             'requests' => $requests,
             'filters' => $filters,
-            'serviceOptions' => $this->services(),
+            'serviceOptions' => $this->services(includeUnpublished: true),
             'serviceTitles' => $this->serviceTitles($requests->pluck('service_slug')->all()),
         ]);
     }
@@ -116,16 +129,25 @@ class ServiceRequestController extends Controller
     {
         return [
             'request' => $request,
-            'serviceOptions' => $this->services(),
+            'serviceOptions' => $this->services($request->service_slug),
             'seasonalPrices' => $quotes->publicMatrix(),
             'detailsLocked' => filled($request->booking_slot_key),
         ];
     }
 
     /** @return Collection<int, ServicePage> */
-    private function services()
+    private function services(?string $includeSlug = null, bool $includeUnpublished = false): Collection
     {
-        return ServicePage::query()->orderBy('sort_order')->orderBy('slug')->get();
+        return ServicePage::query()
+            ->when(! $includeUnpublished, function (Builder $query) use ($includeSlug): void {
+                $query->where(function (Builder $query) use ($includeSlug): void {
+                    $query->where('publication_status', ServicePagePublicationStatus::Published->value)
+                        ->when(filled($includeSlug), fn (Builder $query) => $query->orWhere('slug', $includeSlug));
+                });
+            })
+            ->orderBy('sort_order')
+            ->orderBy('slug')
+            ->get();
     }
 
     /** @param list<string> $slugs @return array<string, string> */

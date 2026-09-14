@@ -77,9 +77,7 @@ jobs:
         run: php tests/Integration/mysql-schema-repair-regression.php
 
       - name: Run service-request intake regression on real MySQL
-        run: |
-          php artisan migrate:fresh --force
-          php tests/Integration/mysql-service-request-intake-regression.php
+        run: php tests/Integration/mysql-service-request-intake-regression.php
 
   quality:
     name: Application quality

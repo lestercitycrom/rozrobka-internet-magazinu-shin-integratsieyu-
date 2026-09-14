@@ -53,6 +53,8 @@ return [
     'open_map' => 'Открыть адрес в Google Maps',
     'fulfilment' => 'Формат',
     'preferred_date' => 'Желаемая дата',
+    'date_from' => 'Дата с',
+    'date_to' => 'Дата по',
     'preferred_window' => 'Желаемое время',
     'vehicle' => 'Автомобиль',
     'registration_number' => 'Госномер',

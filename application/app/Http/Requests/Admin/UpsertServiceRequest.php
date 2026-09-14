@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
+use App\Modules\ServiceBooking\Models\ServiceRequest;
 use App\Rules\CustomerPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,29 +20,45 @@ final class UpsertServiceRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        $slug = mb_strtolower((string) $this->input('service_slug'));
+        $isCreate = $this->routeIs('admin.service-requests.store');
+        $requestModel = $this->route('request');
+        $requestModel = $requestModel instanceof ServiceRequest ? $requestModel : null;
+        $slug = mb_strtolower((string) $this->input('service_slug', $requestModel?->service_slug));
+        $effectiveFulfilment = (string) $this->input('fulfilment', $requestModel?->fulfilment);
+        $serviceChanged = $isCreate || ($this->has('service_slug') && $slug !== mb_strtolower((string) $requestModel?->service_slug));
         $isSeasonal = $this->isSeasonal($slug);
         $isMounting = $slug === 'omlegging-balansering';
         $isBattery = $slug === 'bilbatteri';
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
         $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
-        $seasonalVehicleTypes = $isSeasonal && $this->input('fulfilment') === 'workshop'
+        $seasonalVehicleTypes = $isSeasonal && $effectiveFulfilment === 'workshop'
             ? ['passenger']
             : ['passenger', 'large_vehicle', 'six_wheels'];
         $supportsAdditionalServices = in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
-        $isCreate = $this->routeIs('admin.service-requests.store');
-        $requestModel = $this->route('request');
-        $detailsLocked = is_object($requestModel) && filled($requestModel->booking_slot_key ?? null);
-        $bookingMode = (string) $this->input('booking_mode', 'manual');
+        $requiresProblem = in_array($slug, ['tpms-sensor', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
+        $detailsLocked = filled($requestModel?->booking_slot_key);
+        $bookingMode = (string) $this->input('booking_mode', $requestModel?->booking_slot_key ? 'exact' : 'manual');
         $operationalUpdate = $isCreate || $this->has('service_slug');
+        $storedDate = $requestModel?->preferred_date?->format('Y-m-d');
+        $dateChanged = $isCreate || ($this->has('preferred_date') && (string) $this->input('preferred_date') !== (string) $storedDate);
+        $serviceExists = Rule::exists('service_pages', 'slug');
+        if ($serviceChanged) {
+            $serviceExists->where('publication_status', ServicePagePublicationStatus::Published->value);
+        }
 
         return [
+            'operational_form' => ['nullable', 'boolean'],
             'submission_token' => [$isCreate ? 'required' : 'nullable', 'uuid'],
-            'service_slug' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), 'string', Rule::exists('service_pages', 'slug')],
+            'service_slug' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), 'string', $serviceExists],
             'service_variant' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
             'fulfilment' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
             'booking_mode' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in(['manual', 'exact'])],
-            'preferred_date' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'date', 'after_or_equal:today'],
+            'preferred_date' => [
+                $detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'),
+                'nullable',
+                'date',
+                ...($dateChanged ? ['after_or_equal:today'] : []),
+            ],
             'preferred_window' => [$detailsLocked ? 'sometimes' : 'nullable', 'string', 'max:64'],
             'booking_slot_key' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
             'car_count' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
@@ -63,16 +81,31 @@ final class UpsertServiceRequest extends FormRequest
             'name' => [$isCreate ? 'required' : 'sometimes', 'string', 'max:120'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => [$isCreate ? 'required' : 'sometimes', 'string', 'max:24', new CustomerPhone],
-            'address' => ['nullable', 'required_if:fulfilment,mobile', 'string', 'max:255'],
-            'note' => ['nullable', 'string', 'max:2000'],
+            'address' => [
+                ...($isCreate ? [] : ['sometimes']),
+                Rule::requiredIf($effectiveFulfilment === 'mobile'),
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'note' => [($requiresProblem && $serviceChanged) ? 'required' : 'nullable', 'string', 'max:2000'],
             'admin_note' => ['nullable', 'string', 'max:4000'],
-            'status' => ['required', Rule::in(['new', 'contacted', 'closed', 'cancelled'])],
+            'status' => $isCreate
+                ? ['prohibited']
+                : ['sometimes', Rule::in(['new', 'contacted', 'closed', 'cancelled'])],
         ];
     }
 
     protected function prepareForValidation(): void
     {
         $slug = mb_strtolower((string) $this->input('service_slug'));
+        if ($this->boolean('operational_form')) {
+            $this->merge(['dekkhotell' => $this->boolean('dekkhotell')]);
+            if (in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true)) {
+                $this->merge(['additional_services' => $this->input('additional_services', [])]);
+            }
+        }
+
         if (! $this->isSeasonal($slug)) {
             return;
         }

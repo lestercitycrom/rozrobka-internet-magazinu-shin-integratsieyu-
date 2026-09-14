@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 $applicationRoot = dirname(__DIR__, 2);
 $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8000';
+$databasePath = getenv('DB_DATABASE');
+if (! is_string($databasePath) || $databasePath === '') {
+    $databasePath = $applicationRoot.'/database/e2e.sqlite';
+}
 
 $environment = [
     'APP_DEBUG' => 'false',
@@ -11,7 +15,7 @@ $environment = [
     'APP_URL' => 'http://'.$host,
     'CACHE_STORE' => 'array',
     'DB_CONNECTION' => 'sqlite',
-    'DB_DATABASE' => $applicationRoot.'/database/e2e.sqlite',
+    'DB_DATABASE' => $databasePath,
     'DB_URL' => '',
     'MAIL_MAILER' => 'array',
     'QUEUE_CONNECTION' => 'sync',

@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\User;
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Models\ServicePage;
+use App\Modules\Outbox\Models\OutboxMessage;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -11,6 +13,53 @@ test('buyer submits a non-binding service request with a public reference', func
     $this->post('/tjenester/test/foresporsel', ['fulfilment' => 'workshop', 'vehicle' => 'Tesla Model Y', 'registration_number' => 'AB12345', 'tire_size' => '205/55 R16', 'dekkhotell' => '1', 'name' => 'Buyer', 'email' => 'buyer@example.test', 'phone' => '90000000', 'consent' => '1'])->assertRedirect();
     expect(ServiceRequest::query()->first()->reference)->toStartWith('SR-');
     expect(ServiceRequest::query()->first()->vehicle)->toBe('Tesla Model Y')->and(ServiceRequest::query()->first()->dekkhotell)->toBeTrue();
+});
+
+test('public generic request accepts no email remains visible to operations and only queues telegram', function (): void {
+    ServicePage::create(['slug' => 'optional-email', 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => 'Valgfri e-post', 'title_ru' => 'Необязательная почта']);
+    $operations = User::factory()->operations()->create();
+
+    $this->get('/tjenester/optional-email/foresporsel')
+        ->assertOk()
+        ->assertSee('name="email"', false)
+        ->assertDontSee('name="email" required', false);
+
+    $this->post('/tjenester/optional-email/foresporsel', [
+        'fulfilment' => 'workshop',
+        'name' => 'Buyer without email',
+        'email' => '',
+        'phone' => '90000000',
+        'consent' => '1',
+    ])->assertRedirect();
+
+    $stored = ServiceRequest::query()->sole();
+    expect($stored->email)->toBeNull()
+        ->and($stored->consent_at)->not->toBeNull()
+        ->and(OutboxMessage::query()->pluck('type')->all())->toBe(['telegram.service_request_created']);
+
+    $this->actingAs($operations)->get('/admin/service-requests?q=Buyer+without+email')
+        ->assertOk()
+        ->assertSee('Buyer without email');
+});
+
+test('public request rejects a nonempty invalid email while preserving the submitted contact data', function (): void {
+    ServicePage::create(['slug' => 'invalid-email', 'sort_order' => 1, 'publication_status' => ServicePagePublicationStatus::Published, 'title_nb' => 'Ugyldig e-post', 'title_ru' => 'Проверка почты']);
+
+    $this->from('/tjenester/invalid-email/foresporsel')
+        ->post('/tjenester/invalid-email/foresporsel', [
+            'fulfilment' => 'workshop',
+            'name' => 'Preserved Buyer',
+            'email' => 'not-an-email',
+            'phone' => '91111111',
+            'consent' => '1',
+        ])
+        ->assertRedirect('/tjenester/invalid-email/foresporsel')
+        ->assertSessionHasErrors('email')
+        ->assertSessionHasInput('name', 'Preserved Buyer')
+        ->assertSessionHasInput('phone', '91111111');
+
+    expect(ServiceRequest::query()->count())->toBe(0)
+        ->and(OutboxMessage::query()->count())->toBe(0);
 });
 
 test('service request form exposes accessible styled controls', function (): void {

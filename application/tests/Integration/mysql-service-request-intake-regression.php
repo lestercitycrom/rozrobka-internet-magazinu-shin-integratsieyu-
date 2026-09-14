@@ -13,15 +13,19 @@ use App\Modules\ServiceBooking\Models\BookingScheduleInterval;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use App\Modules\ServiceBooking\ServiceRequestCreator;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\Process\Process;
 
 require dirname(__DIR__, 2).'/vendor/autoload.php';
 
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
+
+const INTAKE_MIGRATION = '2026_09_14_000000_prepare_service_requests_for_manual_intake';
 
 function intakeAssert(bool $condition, string $message, mixed $actual = null): void
 {
@@ -30,8 +34,23 @@ function intakeAssert(bool $condition, string $message, mixed $actual = null): v
     }
 
     $suffix = func_num_args() >= 3 ? ' Actual: '.var_export($actual, true) : '';
-
     throw new RuntimeException($message.$suffix);
+}
+
+/** @param array<string, mixed> $arguments */
+function intakeArtisan(string $command, array $arguments = []): void
+{
+    $exitCode = Artisan::call($command, $arguments);
+    intakeAssert($exitCode === 0, "Artisan command {$command} failed.\n".Artisan::output(), $exitCode);
+}
+
+/** @return list<string> */
+function intakeBaselineMigrations(): array
+{
+    return array_values(array_filter(
+        glob(database_path('migrations/*.php')) ?: [],
+        static fn (string $path): bool => basename($path) !== INTAKE_MIGRATION.'.php',
+    ));
 }
 
 /** @return array<string, mixed> */
@@ -50,8 +69,41 @@ function intakePayload(ServicePage $service, array $override = []): array
         'address' => null,
         'note' => 'MySQL integration regression',
         'admin_note' => 'Created by operations',
-        'status' => 'new',
     ], $override);
+}
+
+function intakeAssertOldApplicationCanRead(ServiceRequest $request): void
+{
+    $oldPath = realpath((string) getenv('SCHEMA_REPAIR_OLD_APP_PATH'));
+    intakeAssert(is_string($oldPath) && is_file($oldPath.'/bootstrap/app.php'), 'Retained old application fixture is unavailable.', $oldPath);
+
+    $probe = <<<'PHP'
+require getcwd().'/vendor/autoload.php';
+$app = require getcwd().'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$request = App\Modules\ServiceBooking\Models\ServiceRequest::query()
+    ->where('reference', getenv('INTAKE_COMPAT_REFERENCE'))
+    ->firstOrFail();
+$view = (new App\Http\Controllers\Admin\ServiceRequestController)->show($request);
+echo json_encode([
+    'view' => $view->name(),
+    'reference' => $view->getData()['request']->reference,
+    'email' => $view->getData()['request']->email,
+], JSON_THROW_ON_ERROR);
+PHP;
+
+    $process = new Process([PHP_BINARY, '-r', $probe], $oldPath, [
+        'INTAKE_COMPAT_REFERENCE' => $request->reference,
+    ]);
+    $process->setTimeout(60);
+    $process->run();
+    intakeAssert($process->isSuccessful(), 'Retained old application could not read the upgraded database.', $process->getErrorOutput());
+    $result = json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
+    intakeAssert($result === [
+        'view' => 'admin.requests.show',
+        'reference' => $request->reference,
+        'email' => null,
+    ], 'Retained old application returned an unexpected service-request contract.', $result);
 }
 
 try {
@@ -62,12 +114,12 @@ try {
     intakeAssert(app()->environment('testing'), 'This regression is restricted to APP_ENV=testing.', app()->environment());
     intakeAssert(str_contains(strtolower($databaseName), 'test'), 'The isolated database name must contain "test".', $databaseName);
 
-    foreach (['source', 'created_by_user_id', 'phone_normalized'] as $column) {
-        intakeAssert(Schema::hasColumn('service_requests', $column), "Missing service_requests.{$column}.");
-    }
-    foreach (['source', 'actor_user_id', 'session_fingerprint'] as $column) {
-        intakeAssert(Schema::hasColumn('service_request_submissions', $column), "Missing service_request_submissions.{$column}.");
-    }
+    intakeArtisan('migrate:fresh', [
+        '--path' => intakeBaselineMigrations(),
+        '--realpath' => true,
+        '--force' => true,
+    ]);
+    intakeAssert(! Schema::hasColumn('service_requests', 'source'), 'Baseline unexpectedly contains the intake migration.');
 
     $service = ServicePage::query()->create([
         'slug' => 'mysql-intake-service',
@@ -81,6 +133,44 @@ try {
     $otherOperations = User::factory()->operations()->create();
     $editor = User::factory()->editor()->create();
     $owner = User::factory()->owner()->create();
+    $legacyToken = (string) Str::uuid();
+    $legacyRequestId = (int) DB::table('service_requests')->insertGetId([
+        'reference' => 'SR-PRE-57-MYSQL',
+        'submission_token' => $legacyToken,
+        'locale' => 'nb',
+        'service_slug' => $service->slug,
+        'fulfilment' => 'workshop',
+        'name' => 'Pre migration customer',
+        'email' => 'legacy@example.test',
+        'phone' => '900 00 000',
+        'status' => 'new',
+        'consent_at' => '2026-09-01 12:00:00',
+        'created_at' => '2026-09-01 12:00:00',
+        'updated_at' => '2026-09-01 12:00:00',
+    ]);
+    DB::table('service_request_submissions')->insert([
+        'token' => $legacyToken,
+        'service_request_id' => $legacyRequestId,
+        'created_at' => '2026-09-01 12:00:00',
+    ]);
+    $before = (array) DB::table('service_requests')->find($legacyRequestId);
+
+    intakeArtisan('migrate', ['--force' => true]);
+
+    foreach (['source', 'created_by_user_id', 'phone_normalized'] as $column) {
+        intakeAssert(Schema::hasColumn('service_requests', $column), "Missing service_requests.{$column}.");
+    }
+    foreach (['source', 'actor_user_id', 'session_fingerprint'] as $column) {
+        intakeAssert(Schema::hasColumn('service_request_submissions', $column), "Missing service_request_submissions.{$column}.");
+    }
+    $after = (array) DB::table('service_requests')->find($legacyRequestId);
+    foreach (['reference', 'email', 'phone', 'consent_at', 'created_at', 'updated_at'] as $column) {
+        intakeAssert($after[$column] === $before[$column], "Populated row changed during intake migration: {$column}.", $after[$column]);
+    }
+    intakeAssert($after['source'] === 'public' && $after['created_by_user_id'] === null, 'Legacy request provenance was not backfilled safely.', $after);
+    intakeAssert($after['phone_normalized'] === '4790000000', 'Legacy phone was not normalized.', $after['phone_normalized']);
+    $legacySubmission = (array) DB::table('service_request_submissions')->where('token', $legacyToken)->first();
+    intakeAssert($legacySubmission['source'] === 'public' && $legacySubmission['actor_user_id'] === null && $legacySubmission['session_fingerprint'] === null, 'Legacy submission provenance changed unexpectedly.', $legacySubmission);
 
     intakeAssert($operations->canOperateServiceRequests(), 'Operations lost service-request access.');
     intakeAssert(! $editor->canOperateServiceRequests(), 'Editor gained service-request PII access.');
@@ -91,7 +181,6 @@ try {
     $creator = app(ServiceRequestCreator::class);
     $payload = intakePayload($service);
     $manual = $creator->createManual($payload, $operations, 'nb');
-
     intakeAssert($manual->source === ServiceRequestSource::AdminManual, 'Manual request source was not retained.', $manual->source->value);
     intakeAssert($manual->created_by_user_id === $operations->id, 'Manual request creator was not retained.', $manual->created_by_user_id);
     intakeAssert($manual->email === null && $manual->consent_at === null, 'Manual request invented email or public consent.');
@@ -101,7 +190,6 @@ try {
 
     $replayed = $creator->createManual($payload, $operations, 'nb');
     intakeAssert($replayed->is($manual), 'Same-actor idempotent replay created another request.');
-
     try {
         $creator->createManual($payload, $otherOperations, 'nb');
         throw new RuntimeException('Another employee reused a submission token without a conflict.');
@@ -111,7 +199,6 @@ try {
 
     $found = ServiceRequest::query()->where('phone_normalized', 'like', '%99887766%')->sole();
     intakeAssert($found->is($manual), 'Normalized phone lookup did not find the manual request.');
-
     $creator->updateManual($manual, [
         'name' => 'MySQL updated customer',
         'phone' => '+47 911 11 111',
@@ -136,7 +223,6 @@ try {
     ]);
     $slot = $calendar->availability('workshop', $date)['slots']->first();
     intakeAssert($slot !== null, 'No exact slot was generated for the MySQL regression.');
-
     $exact = $creator->createManual(intakePayload($service, [
         'booking_mode' => 'exact',
         'preferred_date' => $date->format('Y-m-d'),
@@ -146,14 +232,18 @@ try {
     ]), $operations, 'ru');
     intakeAssert($exact->booking_slot_key === $slot->key, 'Exact slot was not claimed atomically.');
     intakeAssert($exact->booking_starts_at !== null && $exact->booking_ends_at !== null, 'Exact slot timestamps were not retained.');
-    intakeAssert(ServiceRequest::query()->count() === 2, 'Unexpected request count after idempotent and exact-slot flows.', ServiceRequest::query()->count());
+    intakeAssert(ServiceRequest::query()->count() === 3, 'Unexpected request count after upgrade and intake flows.', ServiceRequest::query()->count());
     intakeAssert(OutboxMessage::query()->count() === 0, 'Manual requests published external events after exact-slot intake.');
+
+    intakeAssertOldApplicationCanRead($manual);
 
     fwrite(STDOUT, json_encode([
         'status' => 'passed',
         'driver' => $connection->getDriverName(),
         'verified' => [
-            'mysql_schema' => true,
+            'populated_pre_issue_57_upgrade' => true,
+            'legacy_rows_preserved' => true,
+            'legacy_provenance_backfilled' => true,
             'manual_optional_email' => true,
             'employee_provenance' => true,
             'role_boundaries' => true,
@@ -162,6 +252,7 @@ try {
             'unconfirmed_window' => true,
             'exact_slot_claim' => true,
             'no_manual_external_outbox' => true,
+            'retained_old_application_read' => true,
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
 } catch (Throwable $exception) {

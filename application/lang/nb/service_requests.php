@@ -53,6 +53,8 @@ return [
     'open_map' => 'Åpne adressen i Google Maps',
     'fulfilment' => 'Sted',
     'preferred_date' => 'Ønsket dato',
+    'date_from' => 'Fra dato',
+    'date_to' => 'Til dato',
     'preferred_window' => 'Ønsket tidsrom',
     'vehicle' => 'Bil',
     'registration_number' => 'Registreringsnummer',

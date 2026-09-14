@@ -87,14 +87,15 @@ final class ServiceRequestCreator
                 return $locked->refresh();
             }
 
-            $operational = $this->preparedOperationalData($data);
+            $effectiveData = $this->effectiveOperationalInput($locked, $data);
+            $operational = $this->preparedOperationalData($effectiveData);
             $changed = collect($operational)->contains(
                 fn (mixed $value, string $key): bool => $this->comparable($locked->getAttribute($key)) !== $this->comparable($value),
             );
             $slot = null;
-            if (($data['booking_mode'] ?? 'manual') === 'exact') {
+            if (($effectiveData['booking_mode'] ?? 'manual') === 'exact') {
                 $slot = $this->calendar->claim(
-                    $data['booking_slot_key'] ?? null,
+                    $effectiveData['booking_slot_key'] ?? null,
                     (string) $operational['fulfilment'],
                     $this->calendar->localDate((string) $operational['preferred_date']),
                     $operational['preferred_window'] ?? null,
@@ -185,7 +186,7 @@ final class ServiceRequestCreator
                 'address' => filled($data['address'] ?? null) ? trim((string) $data['address']) : null,
                 'note' => filled($data['note'] ?? null) ? trim((string) $data['note']) : null,
                 'admin_note' => filled($data['admin_note'] ?? null) ? trim((string) $data['admin_note']) : null,
-                'status' => $data['status'] ?? ServiceRequestStatus::New,
+                'status' => ServiceRequestStatus::New,
                 'consent_at' => $source === ServiceRequestSource::Public ? now() : null,
             ]);
 
@@ -228,6 +229,63 @@ final class ServiceRequestCreator
             'additional_services' => $data['additional_services'] ?? null,
             'vehicles' => $vehicles === [] ? null : $vehicles,
         ];
+    }
+
+    /**
+     * Preserve fields omitted by conditional/partial admin forms while still
+     * treating explicitly submitted empty values as deliberate edits.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function effectiveOperationalInput(ServiceRequest $request, array $data): array
+    {
+        if ((string) ($data['service_slug'] ?? $request->service_slug) !== $request->service_slug) {
+            return $data;
+        }
+
+        $existing = [
+            'service_slug' => $request->service_slug,
+            'service_variant' => $request->service_variant,
+            'fulfilment' => $request->fulfilment,
+            'booking_mode' => $request->booking_slot_key ? 'exact' : 'manual',
+            'preferred_date' => $request->preferred_date?->format('Y-m-d'),
+            'preferred_window' => $request->preferred_window,
+            'booking_slot_key' => $request->booking_slot_key,
+            'vehicle' => $request->vehicle,
+            'registration_number' => $request->registration_number,
+            'tire_size' => $request->tire_size,
+            'wheel_count' => $request->wheel_count,
+        ];
+
+        $vehicles = $request->vehicles ?? [];
+        if ($vehicles !== []) {
+            $existing['car_count'] = count($vehicles);
+            foreach ([0 => '', 1 => '_2'] as $index => $suffix) {
+                if (! isset($vehicles[$index]) || ! is_array($vehicles[$index])) {
+                    continue;
+                }
+                foreach (['vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan'] as $field) {
+                    $existing[$field.$suffix] = $vehicles[$index][$field] ?? null;
+                }
+            }
+        }
+
+        foreach ($existing as $key => $value) {
+            if (! array_key_exists($key, $data)) {
+                $data[$key] = $value;
+            }
+        }
+
+        $fullForm = (bool) ($data['operational_form'] ?? false);
+        if (! array_key_exists('dekkhotell', $data)) {
+            $data['dekkhotell'] = $fullForm ? false : $request->dekkhotell;
+        }
+        if (! array_key_exists('additional_services', $data)) {
+            $data['additional_services'] = $fullForm ? null : $request->additional_services;
+        }
+
+        return $data;
     }
 
     /** @param array<string, mixed> $operational @return array<string, mixed> */
@@ -321,10 +379,25 @@ final class ServiceRequestCreator
             return $value->format('Y-m-d');
         }
         if (is_array($value)) {
-            return json_encode($value, JSON_THROW_ON_ERROR);
+            return json_encode($this->canonical($value), JSON_THROW_ON_ERROR);
         }
 
         return (string) ($value ?? '');
+    }
+
+    private function canonical(array $value): array
+    {
+        if (! array_is_list($value)) {
+            ksort($value);
+        }
+
+        foreach ($value as $key => $item) {
+            if (is_array($item)) {
+                $value[$key] = $this->canonical($item);
+            }
+        }
+
+        return $value;
     }
 
     private function reference(): string

@@ -4,6 +4,8 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8000';
 const serverPort = new URL(baseURL).port || '8000';
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.test';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
+const operationsEmail = process.env.E2E_OPERATIONS_EMAIL ?? 'e2e-operations@example.test';
+const operationsPassword = process.env.E2E_OPERATIONS_PASSWORD ?? 'e2e-operations-password';
 const e2eDatabase = process.env.E2E_DB_DATABASE ?? `${process.cwd()}/database/e2e.sqlite`;
 const e2eDatabaseForPhp = e2eDatabase.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
@@ -63,7 +65,7 @@ export default defineConfig({
         {
             name: 'admin-service-requests-desktop',
             dependencies: ['admin-desktop'],
-            use: { ...devices['Desktop Chrome'] },
+            use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
             testMatch: /admin\.service-requests\.spec\.ts/,
         },
         {
@@ -73,8 +75,14 @@ export default defineConfig({
             testMatch: /admin\.service-requests\.spec\.ts/,
         },
         {
-            name: 'admin-homepage-content',
+            name: 'admin-service-requests-mobile-320',
             dependencies: ['admin-service-requests-mobile-390'],
+            use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
+            testMatch: /admin\.service-requests\.spec\.ts/,
+        },
+        {
+            name: 'admin-homepage-content',
+            dependencies: ['admin-service-requests-mobile-320'],
             use: { ...devices['Desktop Chrome'] },
             testMatch: /admin-homepage-content\.spec\.ts/,
         },
@@ -120,6 +128,8 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        stdout: 'ignore',
+        stderr: process.env.CI ? 'pipe' : 'ignore',
         env: {
             TEMP: phpTempDirectory,
             TMP: phpTempDirectory,
@@ -133,6 +143,8 @@ export default defineConfig({
             SESSION_DRIVER: 'file',
             E2E_ADMIN_EMAIL: adminEmail,
             E2E_ADMIN_PASSWORD: adminPassword,
+            E2E_OPERATIONS_EMAIL: operationsEmail,
+            E2E_OPERATIONS_PASSWORD: operationsPassword,
             NDI_SANDBOX_CATALOG_ENABLED: 'true',
             STOREFRONT_RU_PREVIEW_ENABLED: 'true',
         },
