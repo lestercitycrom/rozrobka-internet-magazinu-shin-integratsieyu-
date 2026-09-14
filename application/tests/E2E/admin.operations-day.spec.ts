@@ -8,8 +8,8 @@ const LOOKUP_PAGE_TWO_TARGET = 'Issue 66 Lookup Client 0021';
 const LOOKUP_DEEP_TARGET = 'Issue 66 Lookup Client 1001';
 const REGISTRATION_QUERY = 'ISSUE66REG';
 const INTERNAL_SENTINEL = 'ISSUE66_INTERNAL_NOTE_MUST_NOT_LEAK';
-const DAY = '2030-10-15';
-const NEXT_DAY = '2030-10-16';
+const DAY = '2037-06-15';
+const NEXT_DAY = '2037-06-16';
 
 function expectedViewportWidth(projectName: string): number {
     if (projectName.includes('320')) return 320;
