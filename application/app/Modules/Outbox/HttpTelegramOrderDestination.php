@@ -3,6 +3,7 @@
 namespace App\Modules\Outbox;
 
 use App\Modules\Outbox\Contracts\TelegramOrderDestination;
+use App\Modules\ServiceBooking\ServiceRequestVehiclePayload;
 use Illuminate\Http\Client\Factory as HttpFactory;
 
 final class HttpTelegramOrderDestination implements TelegramOrderDestination
@@ -24,7 +25,7 @@ final class HttpTelegramOrderDestination implements TelegramOrderDestination
             $service = trim((string) ($payload['service_slug'] ?? 'ukjent tjeneste')) ?: 'ukjent tjeneste';
             $fulfilment = ($payload['fulfilment'] ?? null) === 'mobile' ? 'hjemme hos kunden' : 'verksted';
             $date = trim((string) ($payload['preferred_date'] ?? 'ikke valgt')) ?: 'ikke valgt';
-            $cars = max(1, min(2, (int) ($payload['car_count'] ?? 1)));
+            $cars = max(1, min(ServiceRequestVehiclePayload::MAX_VEHICLES, (int) ($payload['car_count'] ?? 1)));
             $storage = ($payload['dekkhotell'] ?? false) === true ? 'ja' : 'nei';
             $minimum = is_int($payload['quote_min_minor'] ?? null) ? $payload['quote_min_minor'] : null;
             $maximum = is_int($payload['quote_max_minor'] ?? null) ? $payload['quote_max_minor'] : $minimum;

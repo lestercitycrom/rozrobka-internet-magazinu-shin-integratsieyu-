@@ -69,7 +69,21 @@ final class ServiceRequestCreator
             }
 
             if ($locked->booking_slot_key !== null) {
-                $this->assertBookedDetailsUnchanged($locked, $data);
+                $operationalKeys = [
+                    'service_slug', 'service_variant', 'fulfilment', 'booking_mode', 'preferred_date', 'preferred_window',
+                    'preferred_time_start', 'preferred_time_end', 'booking_slot_key', 'car_count', 'vehicles',
+                    'vehicle', 'registration_number', 'tire_size', 'wheel_count', 'storage_plan', 'dekkhotell',
+                    'dekkhotell_already_stored', 'storage_number', 'additional_services',
+                ];
+                if (array_intersect_key($data, array_flip($operationalKeys)) !== []) {
+                    $effectiveData = $this->effectiveOperationalInput($locked, $data);
+                    $this->assertBookedDetailsUnchanged(
+                        $locked,
+                        $this->preparedOperationalData($effectiveData),
+                        allowStorageNumberChanges: true,
+                    );
+                    $this->assertBookedControlsUnchanged($locked, $data);
+                }
                 if ($locked->status === ServiceRequestStatus::Cancelled
                     && ($contact['status'] ?? null) !== ServiceRequestStatus::Cancelled->value) {
                     throw ValidationException::withMessages([
@@ -77,7 +91,10 @@ final class ServiceRequestCreator
                     ]);
                 }
 
-                $locked->update($contact);
+                $locked->update([
+                    ...$contact,
+                    ...$this->bookedStorageNumberChanges($locked, $data),
+                ]);
 
                 return $locked->refresh();
             }
@@ -90,6 +107,14 @@ final class ServiceRequestCreator
 
             $effectiveData = $this->effectiveOperationalInput($locked, $data);
             $operational = $this->preparedOperationalData($effectiveData);
+            $this->assertExactBookingSupportsVehicleCount($effectiveData, $operational['vehicles'] ?? []);
+            if (array_key_exists('vehicles', $operational)
+                && $this->comparableVehicles($locked->vehicles) === $this->comparableVehicles($operational['vehicles'])) {
+                // A browser form submits the newly introduced nullable storage key even
+                // for historical rows. Keep the original JSON byte shape when nothing
+                // operational actually changed.
+                $operational['vehicles'] = $locked->vehicles;
+            }
             $changed = collect($operational)->contains(
                 fn (mixed $value, string $key): bool => $this->comparable($locked->getAttribute($key)) !== $this->comparable($value),
             );
@@ -163,6 +188,11 @@ final class ServiceRequestCreator
             $legacyExactAttempt = $bookingMode === null
                 && ! $allowUnconfirmed
                 && ($source !== ServiceRequestSource::Public || filled($operational['vehicles'] ?? null));
+            if (count($operational['vehicles'] ?? []) > 2 && ($bookingMode === 'exact' || $legacyExactAttempt)) {
+                throw ValidationException::withMessages([
+                    'booking_mode' => __('service_requests.validation.exact_vehicle_limit'),
+                ]);
+            }
             if ($bookingMode === 'exact' || $legacyExactAttempt) {
                 $slot = $this->calendar->claim(
                     $data['booking_slot_key'] ?? null,
@@ -220,12 +250,20 @@ final class ServiceRequestCreator
     private function preparedOperationalData(array $data): array
     {
         $vehicles = $this->vehicles($data);
-        $usesStorage = collect($vehicles)->contains(fn (array $vehicle): bool => ($vehicle['storage_plan'] ?? 'none') !== 'none');
-        $usesGeneralStorage = $vehicles === [] && (bool) ($data['dekkhotell'] ?? false);
-        $alreadyStored = $usesGeneralStorage && array_key_exists('dekkhotell_already_stored', $data)
+        $usesStorage = collect($vehicles)->contains(
+            fn (array $vehicle): bool => ServiceRequestVehiclePayload::chargesNewStoragePeriod((string) ($vehicle['storage_plan'] ?? 'none')),
+        );
+        $existingFutureStorage = (bool) ($data['dekkhotell'] ?? false);
+        $existingAlreadyStored = array_key_exists('dekkhotell_already_stored', $data)
             ? ($data['dekkhotell_already_stored'] === null ? null : (bool) $data['dekkhotell_already_stored'])
             : null;
+        $generalPlan = (string) ($data['storage_plan'] ?? ServiceRequestVehiclePayload::generalPlan($existingFutureStorage, $existingAlreadyStored));
+        $generalFacts = ServiceRequestVehiclePayload::generalFacts($generalPlan, $existingFutureStorage, $existingAlreadyStored);
+        if ($vehicles === [] && (bool) ($data['legacy_storage_clear'] ?? false)) {
+            $generalFacts = ['dekkhotell' => false, 'dekkhotell_already_stored' => null];
+        }
         $period = $this->preferredPeriod($data);
+        $primaryVehicle = $vehicles[0] ?? null;
 
         return [
             'service_slug' => (string) $data['service_slug'],
@@ -238,12 +276,15 @@ final class ServiceRequestCreator
                 : $period['label'],
             'preferred_period_starts_at' => $period['starts_at'] ?? null,
             'preferred_period_ends_at' => $period['ends_at'] ?? null,
-            'vehicle' => $data['vehicle'] ?? null,
-            'registration_number' => $data['registration_number'] ?? null,
-            'tire_size' => $data['tire_size'] ?? null,
+            'vehicle' => $primaryVehicle['vehicle'] ?? ($data['vehicle'] ?? null),
+            'registration_number' => $primaryVehicle['registration_number'] ?? ($data['registration_number'] ?? null),
+            'tire_size' => $primaryVehicle['tire_size'] ?? ($data['tire_size'] ?? null),
             'wheel_count' => $data['wheel_count'] ?? null,
-            'dekkhotell' => $vehicles === [] ? $usesGeneralStorage : $usesStorage,
-            'dekkhotell_already_stored' => $alreadyStored,
+            'dekkhotell' => $vehicles === [] ? $generalFacts['dekkhotell'] : $usesStorage,
+            'dekkhotell_already_stored' => $vehicles === [] ? $generalFacts['dekkhotell_already_stored'] : null,
+            'dekkhotell_number' => $vehicles === [] && filled($data['storage_number'] ?? null)
+                ? trim((string) $data['storage_number'])
+                : null,
             'additional_services' => $data['additional_services'] ?? null,
             'vehicles' => $vehicles === [] ? null : $vehicles,
         ];
@@ -280,19 +321,19 @@ final class ServiceRequestCreator
             'tire_size' => $request->tire_size,
             'wheel_count' => $request->wheel_count,
             'dekkhotell_already_stored' => $request->dekkhotell_already_stored,
+            'dekkhotell_number' => $request->dekkhotell_number,
         ];
 
         $vehicles = $request->vehicles ?? [];
-        if ($vehicles !== []) {
+        if ($vehicles !== [] && ! array_key_exists('vehicles', $data) && ! ServiceRequestVehiclePayload::hasLegacyFields($data)) {
+            $existing['vehicles'] = $vehicles;
             $existing['car_count'] = count($vehicles);
-            foreach ([0 => '', 1 => '_2'] as $index => $suffix) {
-                if (! isset($vehicles[$index]) || ! is_array($vehicles[$index])) {
-                    continue;
-                }
-                foreach (['vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan'] as $field) {
-                    $existing[$field.$suffix] = $vehicles[$index][$field] ?? null;
-                }
-            }
+        } elseif ($vehicles === []) {
+            $existing['storage_plan'] = ServiceRequestVehiclePayload::generalPlan(
+                (bool) $request->dekkhotell,
+                $request->dekkhotell_already_stored,
+            );
+            $existing['storage_number'] = $request->dekkhotell_number;
         }
 
         foreach ($existing as $key => $value) {
@@ -329,31 +370,21 @@ final class ServiceRequestCreator
     /** @param array<string, mixed> $data @return list<array<string, string|null>> */
     private function vehicles(array $data): array
     {
-        if (! isset($data['car_count'])) {
-            return [];
+        $vehicles = is_array($data['vehicles'] ?? null)
+            ? array_values($data['vehicles'])
+            : ServiceRequestVehiclePayload::legacyVehicles($data);
+
+        return ServiceRequestVehiclePayload::normalized($vehicles);
+    }
+
+    /** @param array<string, mixed> $data @param list<array<string, mixed>> $vehicles */
+    private function assertExactBookingSupportsVehicleCount(array $data, array $vehicles): void
+    {
+        if (($data['booking_mode'] ?? null) === 'exact' && count($vehicles) > 2) {
+            throw ValidationException::withMessages([
+                'booking_mode' => __('service_requests.validation.exact_vehicle_limit'),
+            ]);
         }
-
-        $vehicles = [[
-            'vehicle' => (string) ($data['vehicle'] ?? ''),
-            'registration_number' => $data['registration_number'] ?? null,
-            'tire_size' => $data['tire_size'] ?? null,
-            'vehicle_type' => (string) ($data['vehicle_type'] ?? 'passenger'),
-            'rim_band' => (string) ($data['rim_band'] ?? 'unknown'),
-            'storage_plan' => (string) ($data['storage_plan'] ?? 'none'),
-        ]];
-
-        if ((int) $data['car_count'] === 2) {
-            $vehicles[] = [
-                'vehicle' => (string) ($data['vehicle_2'] ?? ''),
-                'registration_number' => $data['registration_number_2'] ?? null,
-                'tire_size' => $data['tire_size_2'] ?? null,
-                'vehicle_type' => (string) ($data['vehicle_type_2'] ?? 'passenger'),
-                'rim_band' => (string) ($data['rim_band_2'] ?? 'unknown'),
-                'storage_plan' => (string) ($data['storage_plan_2'] ?? 'none'),
-            ];
-        }
-
-        return $vehicles;
     }
 
     /** @param array<string, mixed> $data @return array<string, mixed> */
@@ -414,21 +445,107 @@ final class ServiceRequestCreator
     }
 
     /** @param array<string, mixed> $data */
-    private function assertBookedDetailsUnchanged(ServiceRequest $request, array $data): void
-    {
+    private function assertBookedDetailsUnchanged(
+        ServiceRequest $request,
+        array $data,
+        bool $allowStorageNumberChanges = false,
+    ): void {
         $protected = [
             'service_slug', 'service_variant', 'fulfilment', 'preferred_date', 'preferred_window',
-            'preferred_period_starts_at', 'preferred_period_ends_at', 'booking_slot_key', 'vehicle', 'registration_number', 'tire_size', 'wheel_count',
-            'dekkhotell', 'dekkhotell_already_stored', 'additional_services',
+            'preferred_period_starts_at', 'preferred_period_ends_at', 'booking_slot_key', 'vehicles',
+            'vehicle', 'registration_number', 'tire_size', 'wheel_count', 'dekkhotell',
+            'dekkhotell_already_stored', 'dekkhotell_number', 'additional_services',
         ];
         foreach ($protected as $key) {
-            if (array_key_exists($key, $data)
-                && $this->comparable($request->getAttribute($key)) !== $this->comparable($data[$key])) {
+            if (! array_key_exists($key, $data)) {
+                continue;
+            }
+            if ($allowStorageNumberChanges && $key === 'dekkhotell_number') {
+                continue;
+            }
+            $matches = $key === 'vehicles'
+                ? $this->comparableVehicles($request->getAttribute($key), $allowStorageNumberChanges)
+                    === $this->comparableVehicles($data[$key], $allowStorageNumberChanges)
+                : $this->comparable($request->getAttribute($key)) === $this->comparable($data[$key]);
+            if (! $matches) {
                 throw ValidationException::withMessages([
                     $key => __('service_requests.validation.booked_details_locked'),
                 ]);
             }
         }
+    }
+
+    /** @param array<string, mixed> $submitted */
+    private function assertBookedControlsUnchanged(ServiceRequest $request, array $submitted): void
+    {
+        $expected = [
+            'booking_mode' => 'exact',
+            'booking_slot_key' => $request->booking_slot_key,
+            'preferred_time_start' => null,
+            'preferred_time_end' => null,
+            'car_count' => is_array($request->vehicles) ? count($request->vehicles) : null,
+        ];
+
+        foreach ($expected as $key => $value) {
+            if (! array_key_exists($key, $submitted)) {
+                continue;
+            }
+            if ($this->comparable($submitted[$key]) !== $this->comparable($value)) {
+                throw ValidationException::withMessages([
+                    $key => __('service_requests.validation.booked_details_locked'),
+                ]);
+            }
+        }
+    }
+
+    /** @param array<string, mixed> $submitted @return array<string, mixed> */
+    private function bookedStorageNumberChanges(ServiceRequest $request, array $submitted): array
+    {
+        $storedVehicles = is_array($request->vehicles) ? array_values($request->vehicles) : [];
+        if ($storedVehicles !== []) {
+            if (! is_array($submitted['vehicles'] ?? null)) {
+                return [];
+            }
+
+            $vehicles = $storedVehicles;
+            foreach (array_values($submitted['vehicles']) as $index => $vehicle) {
+                if (! is_array($vehicle) || ! array_key_exists('storage_number', $vehicle)) {
+                    continue;
+                }
+                if (! in_array($vehicles[$index]['storage_plan'] ?? 'none', ['new', 'renew', 'last'], true)) {
+                    throw ValidationException::withMessages([
+                        "vehicles.{$index}.storage_number" => __('service_requests.validation.storage_number_requires_active_plan'),
+                    ]);
+                }
+                $number = $this->storageNumber($vehicle['storage_number']);
+                $storedNumber = $this->storageNumber($vehicles[$index]['storage_number'] ?? null);
+                if ($number === $storedNumber) {
+                    continue;
+                }
+                $vehicles[$index]['storage_number'] = $number;
+            }
+
+            return $vehicles === $storedVehicles ? [] : ['vehicles' => $vehicles];
+        }
+
+        if (! array_key_exists('storage_number', $submitted)) {
+            return [];
+        }
+
+        $number = $this->storageNumber($submitted['storage_number']);
+
+        return $number === $request->dekkhotell_number ? [] : ['dekkhotell_number' => $number];
+    }
+
+    private function storageNumber(mixed $value): ?string
+    {
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 
     private function comparable(mixed $value): string
@@ -441,6 +558,25 @@ final class ServiceRequestCreator
         }
 
         return (string) ($value ?? '');
+    }
+
+    private function comparableVehicles(mixed $vehicles, bool $ignoreStorageNumbers = false): string
+    {
+        if (! is_array($vehicles)) {
+            return $this->comparable($vehicles);
+        }
+
+        $normalized = ServiceRequestVehiclePayload::normalized($vehicles);
+        foreach ($normalized as &$vehicle) {
+            if ($ignoreStorageNumbers) {
+                unset($vehicle['storage_number']);
+            } else {
+                $vehicle['storage_number'] = $vehicle['storage_number'] ?? null;
+            }
+        }
+        unset($vehicle);
+
+        return $this->comparable($normalized);
     }
 
     private function canonical(array $value): array

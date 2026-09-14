@@ -3,6 +3,7 @@
 namespace App\Modules\Outbox;
 
 use App\Modules\Outbox\Contracts\NotionOrderDestination;
+use App\Modules\ServiceBooking\ServiceRequestVehiclePayload;
 use Illuminate\Http\Client\Factory as HttpFactory;
 
 final class HttpNotionOrderDestination implements NotionOrderDestination
@@ -65,7 +66,7 @@ final class HttpNotionOrderDestination implements NotionOrderDestination
             $service = trim((string) ($payload['service_slug'] ?? 'ukjent tjeneste')) ?: 'ukjent tjeneste';
             $fulfilment = ($payload['fulfilment'] ?? null) === 'mobile' ? 'hjemme hos kunden' : 'verksted';
             $date = trim((string) ($payload['preferred_date'] ?? 'ikke valgt')) ?: 'ikke valgt';
-            $cars = max(1, min(2, (int) ($payload['car_count'] ?? 1)));
+            $cars = max(1, min(ServiceRequestVehiclePayload::MAX_VEHICLES, (int) ($payload['car_count'] ?? 1)));
             $storage = ($payload['dekkhotell'] ?? false) === true ? 'ja' : 'nei';
 
             return sprintf('Ny tjenesteforespørsel %s. Tjeneste: %s. Sted: %s. Ønsket dato: %s. Biler: %d. Dekkhotell: %s. Beregnet pris: %s. Leveringsnøkkel: %s.', self::reference($payload), $service, $fulfilment, $date, $cars, $storage, $quote, $idempotencyKey);

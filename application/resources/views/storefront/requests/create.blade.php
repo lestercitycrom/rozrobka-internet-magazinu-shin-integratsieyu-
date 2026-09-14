@@ -36,6 +36,24 @@
     $prefillVehicle = is_array($fitmentContext) ? (string) ($fitmentContext['vehicle'] ?? '') : '';
     $prefillRegistration = is_array($fitmentContext) ? (string) ($fitmentContext['registration'] ?? '') : '';
     $prefillTireSize = is_array($fitmentContext) ? (string) ($fitmentContext['size'] ?? '') : '';
+    $seasonalVehicles = old('vehicles');
+    if (! is_array($seasonalVehicles) || $seasonalVehicles === []) {
+        $legacyCount = max(1, min(2, (int) old('car_count', 1)));
+        $seasonalVehicles = [];
+        for ($legacyIndex = 0; $legacyIndex < $legacyCount; $legacyIndex++) {
+            $suffix = $legacyIndex === 0 ? '' : '_2';
+            $seasonalVehicles[] = [
+                'vehicle' => old('vehicle'.$suffix, $legacyIndex === 0 ? $prefillVehicle : ''),
+                'registration_number' => old('registration_number'.$suffix, $legacyIndex === 0 ? $prefillRegistration : ''),
+                'tire_size' => old('tire_size'.$suffix, $legacyIndex === 0 ? $prefillTireSize : ''),
+                'vehicle_type' => old('vehicle_type'.$suffix, 'passenger'),
+                'rim_band' => old('rim_band'.$suffix, 'unknown'),
+                'storage_plan' => old('storage_plan'.$suffix, $legacyIndex === 0 && old('dekkhotell') ? 'new' : 'none'),
+            ];
+        }
+    }
+    $seasonalVehicles = array_values(array_slice($seasonalVehicles, 0, \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::MAX_VEHICLES));
+    $seasonalVehicleCount = max(1, count($seasonalVehicles));
 @endphp
 
 <x-layouts.storefront :title="__('booking.title')" active-section="services">
@@ -119,68 +137,75 @@
                                 <section class="et-step-panel" data-booking-panel data-testid="seasonal-step-vehicle-storage">
                                     <h2 class="et-h3" tabindex="-1">{{ __('pro.booking.vehicle_title') }}</h2>
                                     <p class="et-copy">{{ __('pro.booking.vehicle_text') }}</p>
-                                    <div class="et-field et-request-field-separated">
-                                        <label class="et-label" for="booking-car-count">{{ __('service_requests.form.car_count') }}</label>
-                                        <select class="et-select easytire-input" id="booking-car-count" name="car_count" data-car-count required>
-                                            <option value="1" @selected((int) old('car_count', 1) === 1)>{{ __('service_requests.form.one_car') }}</option>
-                                            <option value="2" @selected((int) old('car_count', 1) === 2)>{{ __('service_requests.form.two_cars') }}</option>
-                                        </select>
+                                    <input type="hidden" name="car_count" value="{{ $seasonalVehicleCount }}" data-car-count>
+                                    <p class="et-help et-request-field-separated">{{ __('service_requests.form.vehicle_limit_hint', ['max' => \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::MAX_VEHICLES]) }}</p>
+
+                                    <div data-seasonal-vehicles>
+                                        @for ($vehicleIndex = 0; $vehicleIndex < \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::MAX_VEHICLES; $vehicleIndex++)
+                                            @php
+                                                $vehicle = $seasonalVehicles[$vehicleIndex] ?? [
+                                                    'vehicle' => '', 'registration_number' => '', 'tire_size' => '',
+                                                    'vehicle_type' => 'passenger', 'rim_band' => 'unknown', 'storage_plan' => 'none',
+                                                ];
+                                                $fieldPrefix = "vehicles.{$vehicleIndex}";
+                                                $domPrefix = "booking-vehicle-{$vehicleIndex}";
+                                            @endphp
+                                            <fieldset class="et-form-section et-seasonal-vehicle" data-seasonal-vehicle data-request-vehicle data-vehicle-index="{{ $vehicleIndex }}" @if($vehicleIndex >= $seasonalVehicleCount) hidden @endif>
+                                                <legend class="et-label et-seasonal-vehicle__legend">{{ __('service_requests.form.car_number', ['number' => $vehicleIndex + 1]) }}</legend>
+                                                @if($vehicleIndex > 0)
+                                                    <button class="et-btn et-btn--link et-seasonal-vehicle__remove" type="button" data-remove-vehicle>{{ __('service_requests.form.remove_vehicle') }}</button>
+                                                @endif
+                                                <div class="et-form-grid">
+                                                    <div class="et-field">
+                                                        <label class="et-label" for="{{ $domPrefix }}-model">{{ __('service_requests.form.vehicle') }} <span class="et-required">*</span></label>
+                                                        <input class="et-input easytire-input" id="{{ $domPrefix }}-model" name="vehicles[{{ $vehicleIndex }}][vehicle]" value="{{ $vehicle['vehicle'] ?? '' }}" data-vehicle-field="vehicle" @required($vehicleIndex < $seasonalVehicleCount) autocomplete="off" aria-invalid="{{ $errors->has($fieldPrefix.'.vehicle') ? 'true' : 'false' }}">
+                                                        <p class="et-help">{{ __('service_requests.form.vehicle_hint') }}</p>
+                                                        @error($fieldPrefix.'.vehicle')<p class="et-form-error">{{ $message }}</p>@enderror
+                                                    </div>
+                                                    <div class="et-field">
+                                                        <label class="et-label" for="{{ $domPrefix }}-registration">{{ __('service_requests.form.registration_number') }}</label>
+                                                        <input class="et-input easytire-input" id="{{ $domPrefix }}-registration" name="vehicles[{{ $vehicleIndex }}][registration_number]" value="{{ $vehicle['registration_number'] ?? '' }}" data-vehicle-field="registration_number" autocomplete="off" autocapitalize="characters" data-storage-registration aria-invalid="{{ $errors->has($fieldPrefix.'.registration_number') ? 'true' : 'false' }}">
+                                                        <p class="et-help">{{ __('service_requests.form.registration_number_hint') }}</p>
+                                                        @error($fieldPrefix.'.registration_number')<p class="et-form-error">{{ $message }}</p>@enderror
+                                                    </div>
+                                                    <div class="et-field">
+                                                        <label class="et-label" for="{{ $domPrefix }}-size">{{ __('service_requests.form.tire_size') }}</label>
+                                                        <input class="et-input easytire-input" id="{{ $domPrefix }}-size" name="vehicles[{{ $vehicleIndex }}][tire_size]" value="{{ $vehicle['tire_size'] ?? '' }}" data-vehicle-field="tire_size" autocomplete="off" placeholder="205/55 R16" aria-invalid="{{ $errors->has($fieldPrefix.'.tire_size') ? 'true' : 'false' }}">
+                                                        <p class="et-help">{{ __('service_requests.form.tire_size_hint') }}</p>
+                                                        @error($fieldPrefix.'.tire_size')<p class="et-form-error">{{ $message }}</p>@enderror
+                                                    </div>
+                                                    <div class="et-field">
+                                                        <label class="et-label" for="{{ $domPrefix }}-type">{{ __('service_requests.form.vehicle_type') }}</label>
+                                                        <select class="et-select easytire-input" id="{{ $domPrefix }}-type" name="vehicles[{{ $vehicleIndex }}][vehicle_type]" data-vehicle-field="vehicle_type" data-quote-field @required($vehicleIndex < $seasonalVehicleCount)>
+                                                            @foreach (['passenger', 'large_vehicle', 'six_wheels'] as $type)<option value="{{ $type }}" @selected(($vehicle['vehicle_type'] ?? 'passenger') === $type)>{{ __('service_requests.form.'.$type) }}</option>@endforeach
+                                                        </select>
+                                                        @error($fieldPrefix.'.vehicle_type')<p class="et-form-error">{{ $message }}</p>@enderror
+                                                    </div>
+                                                    <div class="et-field">
+                                                        <label class="et-label" for="{{ $domPrefix }}-rim">{{ __('service_requests.form.rim_band') }}</label>
+                                                        <select class="et-select easytire-input" id="{{ $domPrefix }}-rim" name="vehicles[{{ $vehicleIndex }}][rim_band]" data-vehicle-field="rim_band" data-quote-field @required($vehicleIndex < $seasonalVehicleCount)>
+                                                            @foreach (['unknown', 'r15', 'r16-r18', 'r19'] as $band)<option value="{{ $band }}" @selected(($vehicle['rim_band'] ?? 'unknown') === $band)>{{ __('service_requests.form.rim_'.$band) }}</option>@endforeach
+                                                        </select>
+                                                        @error($fieldPrefix.'.rim_band')<p class="et-form-error">{{ $message }}</p>@enderror
+                                                    </div>
+                                                    <div class="et-field et-field--full">
+                                                        <label class="et-label" for="{{ $domPrefix }}-storage">{{ __('service_requests.form.storage_plan') }}</label>
+                                                        <select class="et-select easytire-input" id="{{ $domPrefix }}-storage" name="vehicles[{{ $vehicleIndex }}][storage_plan]" data-vehicle-field="storage_plan" data-quote-field data-storage-plan @required($vehicleIndex < $seasonalVehicleCount)>
+                                                            @foreach (['none', 'new', 'renew', 'last'] as $plan)<option value="{{ $plan }}" @selected(($vehicle['storage_plan'] ?? 'none') === $plan)>{{ __('service_requests.form.storage_'.$plan) }}</option>@endforeach
+                                                        </select>
+                                                        <p class="et-help">{{ __('service_requests.form.storage_charge_note') }}</p>
+                                                        @error($fieldPrefix.'.storage_plan')<p class="et-form-error">{{ $message }}</p>@enderror
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                        @endfor
                                     </div>
 
-                                    <fieldset class="et-form-section et-seasonal-vehicle" data-seasonal-vehicle="1">
-                                        <legend class="et-label et-seasonal-vehicle__legend">{{ __('service_requests.form.car_1') }}</legend>
-                                        <div class="et-form-grid">
-                                        <div class="et-field">
-                                            <label class="et-label" for="booking-vehicle">{{ __('service_requests.form.vehicle') }} <span class="et-required">*</span></label>
-                                            <input class="et-input easytire-input" id="booking-vehicle" name="vehicle" value="{{ old('vehicle') }}" required autocomplete="off" aria-describedby="booking-vehicle-hint" aria-invalid="{{ $errors->has('vehicle') ? 'true' : 'false' }}">
-                                            <p class="et-help" id="booking-vehicle-hint">{{ __('service_requests.form.vehicle_hint') }}</p>
-                                            @error('vehicle')<p class="et-form-error">{{ $message }}</p>@enderror
-                                        </div>
-                                        <div class="et-field">
-                                            <label class="et-label" for="booking-registration-number">{{ __('service_requests.form.registration_number') }}</label>
-                                            <input class="et-input easytire-input" id="booking-registration-number" name="registration_number" value="{{ old('registration_number') }}" autocomplete="off" autocapitalize="characters" aria-describedby="booking-registration-number-hint" aria-invalid="{{ $errors->has('registration_number') ? 'true' : 'false' }}" data-storage-registration>
-                                            <p class="et-help" id="booking-registration-number-hint">{{ __('service_requests.form.registration_number_hint') }}</p>
-                                            @error('registration_number')<p class="et-form-error">{{ $message }}</p>@enderror
-                                        </div>
-                                        <div class="et-field">
-                                            <label class="et-label" for="booking-tire-size">{{ __('service_requests.form.tire_size') }}</label>
-                                            <input class="et-input easytire-input" id="booking-tire-size" name="tire_size" value="{{ old('tire_size') }}" autocomplete="off" aria-describedby="booking-tire-size-hint" aria-invalid="{{ $errors->has('tire_size') ? 'true' : 'false' }}">
-                                            <p class="et-help" id="booking-tire-size-hint">{{ __('service_requests.form.tire_size_hint') }}</p>
-                                            @error('tire_size')<p class="et-form-error">{{ $message }}</p>@enderror
-                                        </div>
-                                        <div class="et-field">
-                                            <label class="et-label" for="booking-vehicle-type">{{ __('service_requests.form.vehicle_type') }}</label>
-                                            <select class="et-select easytire-input" id="booking-vehicle-type" name="vehicle_type" required data-quote-field>
-                                                @foreach (['passenger', 'large_vehicle', 'six_wheels'] as $type)<option value="{{ $type }}" @selected(old('vehicle_type', 'passenger') === $type)>{{ __('service_requests.form.'.$type) }}</option>@endforeach
-                                            </select>
-                                        </div>
-                                        <div class="et-field">
-                                            <label class="et-label" for="booking-rim-band">{{ __('service_requests.form.rim_band') }}</label>
-                                            <select class="et-select easytire-input" id="booking-rim-band" name="rim_band" required data-quote-field>
-                                                @foreach (['unknown', 'r15', 'r16-r18', 'r19'] as $band)<option value="{{ $band }}" @selected(old('rim_band', 'unknown') === $band)>{{ __('service_requests.form.rim_'.$band) }}</option>@endforeach
-                                            </select>
-                                        </div>
-                                        <div class="et-field et-field--full">
-                                            <label class="et-label" for="booking-storage-plan">{{ __('service_requests.form.storage_plan') }}</label>
-                                            <select class="et-select easytire-input" id="booking-storage-plan" name="storage_plan" required data-quote-field data-storage-plan>
-                                                @foreach (['none', 'new', 'renew'] as $plan)<option value="{{ $plan }}" @selected(old('storage_plan', old('dekkhotell') ? 'new' : 'none') === $plan)>{{ __('service_requests.form.storage_'.$plan) }}</option>@endforeach
-                                            </select>
-                                            <p class="et-help">{{ __('service_requests.form.storage_charge_note') }}</p>
-                                        </div>
-                                        </div>
-                                    </fieldset>
-
-                                    <fieldset class="et-form-section et-seasonal-vehicle" data-seasonal-vehicle="2" @if((int) old('car_count', 1) !== 2) hidden @endif>
-                                        <legend class="et-label et-seasonal-vehicle__legend">{{ __('service_requests.form.car_2') }}</legend>
-                                        <div class="et-form-grid">
-                                            <div class="et-field"><label class="et-label" for="booking-vehicle-2">{{ __('service_requests.form.vehicle') }} <span class="et-required">*</span></label><input class="et-input easytire-input" id="booking-vehicle-2" name="vehicle_2" value="{{ old('vehicle_2') }}" @required((int) old('car_count', 1) === 2) autocomplete="off">@error('vehicle_2')<p class="et-form-error">{{ $message }}</p>@enderror</div>
-                                            <div class="et-field"><label class="et-label" for="booking-registration-number-2">{{ __('service_requests.form.registration_number') }}</label><input class="et-input easytire-input" id="booking-registration-number-2" name="registration_number_2" value="{{ old('registration_number_2') }}" autocapitalize="characters" data-storage-registration></div>
-                                            <div class="et-field"><label class="et-label" for="booking-tire-size-2">{{ __('service_requests.form.tire_size') }}</label><input class="et-input easytire-input" id="booking-tire-size-2" name="tire_size_2" value="{{ old('tire_size_2') }}" placeholder="205/55 R16"></div>
-                                            <div class="et-field"><label class="et-label" for="booking-vehicle-type-2">{{ __('service_requests.form.vehicle_type') }}</label><select class="et-select easytire-input" id="booking-vehicle-type-2" name="vehicle_type_2" data-quote-field>@foreach (['passenger', 'large_vehicle', 'six_wheels'] as $type)<option value="{{ $type }}" @selected(old('vehicle_type_2', 'passenger') === $type)>{{ __('service_requests.form.'.$type) }}</option>@endforeach</select></div>
-                                            <div class="et-field"><label class="et-label" for="booking-rim-band-2">{{ __('service_requests.form.rim_band') }}</label><select class="et-select easytire-input" id="booking-rim-band-2" name="rim_band_2" data-quote-field>@foreach (['unknown', 'r15', 'r16-r18', 'r19'] as $band)<option value="{{ $band }}" @selected(old('rim_band_2', 'unknown') === $band)>{{ __('service_requests.form.rim_'.$band) }}</option>@endforeach</select></div>
-                                            <div class="et-field et-field--full"><label class="et-label" for="booking-storage-plan-2">{{ __('service_requests.form.storage_plan') }}</label><select class="et-select easytire-input" id="booking-storage-plan-2" name="storage_plan_2" data-quote-field data-storage-plan>@foreach (['none', 'new', 'renew'] as $plan)<option value="{{ $plan }}" @selected(old('storage_plan_2', 'none') === $plan)>{{ __('service_requests.form.storage_'.$plan) }}</option>@endforeach</select><p class="et-help">{{ __('service_requests.form.storage_charge_note') }}</p></div>
-                                        </div>
-                                    </fieldset>
+                                    <div class="et-step-actions et-seasonal-vehicle-actions">
+                                        <button class="et-btn et-btn--outline" type="button" data-add-vehicle>{{ __('service_requests.form.add_vehicle') }}</button>
+                                        <span data-vehicle-count-status aria-live="polite"></span>
+                                    </div>
+                                    <div class="et-alert et-alert--info et-request-notice" data-exact-vehicle-limit hidden><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('service_requests.form.exact_vehicle_limit') }}</div></div>
 
                                     <div class="et-alert et-alert--info et-request-notice" data-seasonal-quote data-exact-template="{{ __('service_requests.form.quote_exact') }}" data-range-template="{{ __('service_requests.form.quote_range') }}" data-unavailable-template="{{ __('service_requests.form.quote_unavailable') }}"><span class="et-alert__icon" aria-hidden="true">i</span><div data-seasonal-quote-text>{{ __('service_requests.form.quote_unavailable') }}</div></div>
                                     <div class="et-step-actions"><button class="et-btn et-btn--outline" type="button" data-booking-back>{{ __('pro.booking.back') }}</button><button class="et-btn et-btn--primary" type="button" data-booking-next>{{ __('pro.booking.next') }}</button></div>
@@ -282,7 +307,7 @@
                             <h2 class="et-h3 et-request-summary-title" id="booking-summary-title">{{ $service->title }}</h2>
                             <dl class="et-summary-list">
                                 <div><dt>{{ __('pro.booking.summary_location') }}</dt><dd data-summary-field="fulfilment" data-empty-label="—">{{ $requestedFulfilment === 'mobile' ? __('booking.mobile') : __('booking.workshop') }}</dd></div>
-                                <div><dt>{{ __('pro.booking.summary_vehicle') }}</dt><dd data-summary-field="vehicle" data-empty-label="—">{{ old('vehicle') ?: '—' }}</dd></div>
+                                <div><dt>{{ __('pro.booking.summary_vehicle') }}</dt><dd data-summary-field="vehicles[0][vehicle]" data-empty-label="—">{{ $seasonalVehicles[0]['vehicle'] ?? '—' }}</dd></div>
                                 <div><dt>{{ __('pro.booking.summary_date') }}</dt><dd data-summary-field="preferred_date" data-empty-label="—">{{ old('preferred_date') ?: '—' }}</dd></div>
                                 <div><dt>{{ __('pro.booking.summary_contact') }}</dt><dd data-summary-field="email" data-empty-label="—">{{ old('email') ?: '—' }}</dd></div>
                             </dl>

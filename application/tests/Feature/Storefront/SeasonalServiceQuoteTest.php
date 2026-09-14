@@ -42,14 +42,15 @@ test('seasonal form exposes one or two cars storage renewal and live pricing inp
     $this->get('/tjenester/custom-seasonal/foresporsel')
         ->assertOk()
         ->assertSee('name="car_count"', false)
-        ->assertSee('name="vehicle_2"', false)
-        ->assertSee('name="storage_plan"', false)
+        ->assertSee('name="vehicles[1][vehicle]"', false)
+        ->assertSee('name="vehicles[0][storage_plan]"', false)
         ->assertSee('value="renew"', false)
+        ->assertSee('value="last"', false)
         ->assertSee('data-seasonal-prices=', false)
         ->assertSee('data-seasonal-quote', false)
         ->assertSee('name="preferred_date" type="date"', false)
         ->assertSee('required aria-invalid=', false)
-        ->assertSee('Dekkhotell legges alltid til som en ny periode');
+        ->assertSee('Siste uttak gir ingen ny lagringsperiode.');
 });
 
 test('seasonal request validates the second car and stores server calculated quote', function (): void {

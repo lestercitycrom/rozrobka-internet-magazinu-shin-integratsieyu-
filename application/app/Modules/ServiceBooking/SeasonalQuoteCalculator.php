@@ -37,14 +37,14 @@ final class SeasonalQuoteCalculator
                 return null;
             }
 
-            $storage = $vehicle['storage_plan'] === 'none'
-                ? [0, 0]
-                : $this->storageRange($prices, $vehicle['rim_band']);
+            $storage = ServiceRequestVehiclePayload::chargesNewStoragePeriod($vehicle['storage_plan'])
+                ? $this->storageRange($prices, $vehicle['rim_band'])
+                : [0, 0];
             if ($storage === null) {
                 return null;
             }
 
-            // Storage always adds a new six-month period, including tyres already at the hotel.
+            // LAST returns the stored set without accepting a new storage period.
             $minimum += $base[0] + $storage[0];
             $maximum += $base[1] + $storage[1];
         }

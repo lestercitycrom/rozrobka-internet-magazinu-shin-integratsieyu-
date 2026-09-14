@@ -89,9 +89,9 @@ test('operations completes the real Russian intake public follow-up and safe his
     await page.getByTestId('request-edit').click();
 
     await expect(page.locator('[name="preferred_date"]')).toHaveValue(/\d{4}-\d{2}-\d{2}/);
-    await expect(page.locator('[name="tire_size"]:enabled')).toHaveValue('255/45 R19');
-    await expect(page.locator('[name="tire_size_2"]:enabled')).toHaveValue('235/55 R18');
-    await expect(page.locator('[name="registration_number"]:enabled')).toHaveJSProperty('required', false);
+    await expect(page.locator('[name="vehicles[0][tire_size]"]:enabled')).toHaveValue('255/45 R19');
+    await expect(page.locator('[name="vehicles[1][tire_size]"]:enabled')).toHaveValue('235/55 R18');
+    await expect(page.locator('[name="vehicles[0][registration_number]"]:enabled')).toHaveJSProperty('required', false);
     await page.locator('[name="name"]').fill(`E2E Historical updated ${suffix}`);
     await page.locator('[name="admin_note"]').fill('Only contact follow-up changed.');
     await page.getByTestId('request-save').click();
@@ -100,5 +100,66 @@ test('operations completes the real Russian intake public follow-up and safe his
     await expect(page.locator('main')).toContainText('255/45 R19');
     await expect(page.locator('main')).toContainText('235/55 R18');
     await expect(page.getByText(/2 300 NOK/)).toBeVisible();
+    await expectNoGlobalOverflow(page);
+
+    const exactReference = `SR-E2E-EXACT-${currentSurface}`;
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(exactReference);
+    await page.getByRole('button', { name: 'Показать' }).click();
+    visibleResults = page.locator('article:visible, table:visible');
+    await visibleResults.getByRole('link', { name: exactReference }).first().click();
+    await page.getByTestId('request-edit').click();
+
+    await expect(page.locator('[name="service_slug"]')).toBeDisabled();
+    await expect(page.locator('select[name="vehicles[0][storage_plan]"]')).toBeDisabled();
+    const bookedStorageNumber = page.getByTestId('booked-storage-number-0');
+    await expect(bookedStorageNumber).toBeVisible();
+    await expect(bookedStorageNumber).toBeEnabled();
+    await bookedStorageNumber.fill('00042-A');
+    await page.getByTestId('request-save').click();
+
+    await expect(page.locator('main')).toContainText('00042-A');
+    await page.getByTestId('request-edit').click();
+    await expect(page.getByTestId('booked-storage-number-0')).toHaveValue('00042-A');
+    await expectNoGlobalOverflow(page);
+});
+
+test('operations stores and reopens five vehicles with an internal hotel number', async ({ page }, testInfo) => {
+    const currentSurface = surface(testInfo.project.name);
+    const suffix = currentSurface.toLowerCase();
+    const storageNumber = `00042-${currentSurface}`;
+
+    await loginOperations(page);
+    await page.goto('/admin/service-requests/create');
+    await page.locator('[name="service_slug"]').selectOption('mobilt-dekkskift');
+    await page.locator('[name="fulfilment"]').selectOption('workshop');
+    await page.locator('[name="booking_mode"]').selectOption('period');
+    await page.locator('[name="preferred_date"]').fill(new Date(Date.now() + 4 * 86_400_000).toISOString().slice(0, 10));
+    await page.locator('[name="preferred_time_start"]').fill('09:00');
+    await page.locator('[name="preferred_time_end"]').fill('11:00');
+
+    for (let index = 1; index < 5; index += 1) {
+        await page.locator('[data-add-vehicle]').click();
+    }
+    await expect(page.locator('[data-admin-vehicles] [data-request-vehicle]:visible')).toHaveCount(5);
+
+    for (let index = 0; index < 5; index += 1) {
+        await page.locator(`[name="vehicles[${index}][vehicle]"]`).fill(`E2E vehicle ${index + 1} ${suffix}`);
+        await page.locator(`[name="vehicles[${index}][vehicle_type]"]`).selectOption('passenger');
+        await page.locator(`[name="vehicles[${index}][rim_band]"]`).selectOption('r16-r18');
+        await page.locator(`[name="vehicles[${index}][storage_plan]"]`).selectOption(index === 4 ? 'last' : 'none');
+    }
+    await page.locator('[name="vehicles[4][registration_number]"]').fill(`LAST${currentSurface.replace('-', '')}`);
+    await page.locator('[name="vehicles[4][storage_number]"]').fill(storageNumber);
+    await page.locator('[name="name"]').fill(`E2E five cars ${suffix}`);
+    await page.locator('[name="phone"]').fill('98 76 54 32');
+    await page.getByTestId('request-save').click();
+
+    await expect(page).toHaveURL(/\/admin\/service-requests\/\d+$/);
+    await expect(page.locator('main')).toContainText(`E2E vehicle 5 ${suffix}`);
+    await expect(page.locator('main')).toContainText(storageNumber);
+    await page.getByTestId('request-edit').click();
+    await expect(page.locator('[data-admin-vehicles] [data-request-vehicle]:visible')).toHaveCount(5);
+    await expect(page.locator('[name="vehicles[4][storage_number]"]')).toHaveValue(storageNumber);
     await expectNoGlobalOverflow(page);
 });

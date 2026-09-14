@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectNoGlobalOverflow, localePrefix } from './helpers';
 
 const field = (page: Page, name: string) => page.locator(`[name="${name}"]`);
+const vehicleField = (page: Page, index: number, name: string) => field(page, `vehicles[${index}][${name}]`);
 
 async function nextFrom(panel: Locator): Promise<void> {
     await panel.locator('[data-booking-next]').click();
@@ -22,9 +23,9 @@ test('seasonal quote updates to the exact public price for one car', async ({ pa
     await page.goto(`${prefix}/tjenester/mobilt-dekkskift/foresporsel`);
 
     const vehicleStep = await openSeasonalVehicleStep(page);
-    await field(page, 'vehicle').fill('Tesla Model Y');
-    await field(page, 'rim_band').selectOption('r16-r18');
-    await field(page, 'storage_plan').selectOption('none');
+    await vehicleField(page, 0, 'vehicle').fill('Tesla Model Y');
+    await vehicleField(page, 0, 'rim_band').selectOption('r16-r18');
+    await vehicleField(page, 0, 'storage_plan').selectOption('none');
 
     const quote = page.locator('[data-seasonal-quote-text]');
     await expect(quote).toContainText(/600\s*NOK/);
@@ -40,22 +41,47 @@ test('seasonal quote includes both cars and a renewed six-month hotel period', a
     await field(page, 'address').fill('Stakkevollvegen 33, Tromsø');
     const vehicleStep = await openSeasonalVehicleStep(page);
 
-    await field(page, 'vehicle').fill('Tesla Model Y');
-    await field(page, 'rim_band').selectOption('r16-r18');
-    await field(page, 'storage_plan').selectOption('renew');
-    await field(page, 'car_count').selectOption('2');
-    const secondVehicle = vehicleStep.locator('[data-seasonal-vehicle="2"]');
+    await vehicleField(page, 0, 'vehicle').fill('Tesla Model Y');
+    await vehicleField(page, 0, 'rim_band').selectOption('r16-r18');
+    await vehicleField(page, 0, 'storage_plan').selectOption('renew');
+    await vehicleStep.locator('[data-add-vehicle]').click();
+    const secondVehicle = vehicleStep.locator('[data-seasonal-vehicle][data-vehicle-index="1"]');
     await expect(secondVehicle).toBeVisible();
-    await field(page, 'vehicle_2').fill('Volvo XC60');
-    await field(page, 'rim_band_2').selectOption('r19');
-    await field(page, 'storage_plan_2').selectOption('none');
+    await vehicleField(page, 1, 'vehicle').fill('Volvo XC60');
+    await vehicleField(page, 1, 'rim_band').selectOption('r19');
+    await vehicleField(page, 1, 'storage_plan').selectOption('none');
 
     await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/2\s*300\s*NOK/);
     await expect(page.locator('[data-seasonal-summary-price]')).toContainText(/2\s*300\s*NOK/);
 
-    await field(page, 'rim_band').selectOption('unknown');
+    await vehicleField(page, 0, 'rim_band').selectOption('unknown');
     await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/[–-]/);
     await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/NOK/);
+    await expectNoGlobalOverflow(page);
+});
+
+test('seasonal form handles five cars and LAST without a new hotel period', async ({ page }, testInfo) => {
+    const prefix = localePrefix(testInfo.project.name);
+    await page.goto(`${prefix}/tjenester/mobilt-dekkskift/foresporsel`);
+
+    const vehicleStep = await openSeasonalVehicleStep(page);
+    for (let index = 1; index < 5; index += 1) {
+        await vehicleStep.locator('[data-add-vehicle]').click();
+    }
+
+    await expect(vehicleStep.locator('[data-seasonal-vehicle]:visible')).toHaveCount(5);
+    await expect(field(page, 'car_count')).toHaveValue('5');
+
+    for (let index = 0; index < 5; index += 1) {
+        await vehicleField(page, index, 'vehicle').fill(`Synthetic car ${index + 1}`);
+        await vehicleField(page, index, 'rim_band').selectOption('r16-r18');
+        await vehicleField(page, index, 'storage_plan').selectOption(index === 0 ? 'last' : 'none');
+    }
+
+    await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/3\s*000\s*NOK/);
+    await expect(field(page, 'booking_mode')).toHaveValue('period');
+    await expect(page.locator('[data-exact-vehicle-limit]')).toBeVisible();
+    await expect(page.locator('[name$="[storage_number]"]')).toHaveCount(0);
     await expectNoGlobalOverflow(page);
 });
 
@@ -64,10 +90,10 @@ test('seasonal flow retains its entered data when the buyer moves between panels
     await page.goto(`${prefix}/tjenester/mobilt-dekkskift/foresporsel`);
 
     const vehicleStep = await openSeasonalVehicleStep(page);
-    await field(page, 'vehicle').fill('Tesla Model Y');
-    await field(page, 'registration_number').fill('EV12345');
-    await field(page, 'tire_size').fill('255/45 R19');
-    await field(page, 'rim_band').selectOption('r19');
+    await vehicleField(page, 0, 'vehicle').fill('Tesla Model Y');
+    await vehicleField(page, 0, 'registration_number').fill('EV12345');
+    await vehicleField(page, 0, 'tire_size').fill('255/45 R19');
+    await vehicleField(page, 0, 'rim_band').selectOption('r19');
     await nextFrom(vehicleStep);
 
     const time = page.getByTestId('seasonal-step-time');
@@ -79,10 +105,10 @@ test('seasonal flow retains its entered data when the buyer moves between panels
     const selectedSlot = await slotSelect.inputValue();
     await time.locator('[data-booking-back]').click();
 
-    await expect(field(page, 'vehicle')).toHaveValue('Tesla Model Y');
-    await expect(field(page, 'registration_number')).toHaveValue('EV12345');
-    await expect(field(page, 'tire_size')).toHaveValue('255/45 R19');
-    await expect(field(page, 'rim_band')).toHaveValue('r19');
+    await expect(vehicleField(page, 0, 'vehicle')).toHaveValue('Tesla Model Y');
+    await expect(vehicleField(page, 0, 'registration_number')).toHaveValue('EV12345');
+    await expect(vehicleField(page, 0, 'tire_size')).toHaveValue('255/45 R19');
+    await expect(vehicleField(page, 0, 'rim_band')).toHaveValue('r19');
     await nextFrom(vehicleStep);
     await expect(field(page, 'preferred_date')).toHaveValue('2030-10-15');
     await expect(field(page, 'booking_slot_key')).toHaveValue(selectedSlot);
@@ -100,10 +126,10 @@ test('seasonal buyer can request an unconfirmed period with district and dekkhot
     await nextFrom(location);
 
     const vehicle = page.getByTestId('seasonal-step-vehicle-storage');
-    await field(page, 'vehicle').fill('Tesla Model Y');
-    await field(page, 'storage_plan').selectOption('renew');
-    await expect(field(page, 'registration_number')).toHaveAttribute('required', '');
-    await field(page, 'registration_number').fill('EV12345');
+    await vehicleField(page, 0, 'vehicle').fill('Tesla Model Y');
+    await vehicleField(page, 0, 'storage_plan').selectOption('renew');
+    await expect(vehicleField(page, 0, 'registration_number')).toHaveAttribute('required', '');
+    await vehicleField(page, 0, 'registration_number').fill('EV12345');
     await nextFrom(vehicle);
 
     const time = page.getByTestId('seasonal-step-time');
@@ -132,9 +158,9 @@ test('seasonal server validation reopens the first panel and preserves the buyer
     await page.getByTestId('seasonal-step-location').locator('input[name="fulfilment"][value="mobile"]').check();
     await field(page, 'address').fill('Stakkevollvegen 33, Tromsø');
     const vehicleStep = await openSeasonalVehicleStep(page);
-    await field(page, 'vehicle').fill('Tesla Model Y');
-    await field(page, 'registration_number').fill('EV12345');
-    await field(page, 'rim_band').selectOption('r19');
+    await vehicleField(page, 0, 'vehicle').fill('Tesla Model Y');
+    await vehicleField(page, 0, 'registration_number').fill('EV12345');
+    await vehicleField(page, 0, 'rim_band').selectOption('r19');
     await nextFrom(vehicleStep);
     await field(page, 'preferred_date').fill('2030-10-15');
     await nextFrom(page.getByTestId('seasonal-step-time'));
@@ -150,8 +176,8 @@ test('seasonal server validation reopens the first panel and preserves the buyer
     await expect(page.getByTestId('seasonal-step-location')).toBeVisible();
     await expect(page.getByTestId('seasonal-step-vehicle-storage')).toBeHidden();
     await expect(field(page, 'address')).toHaveValue('Stakkevollvegen 33, Tromsø');
-    await expect(field(page, 'vehicle')).toHaveValue('Tesla Model Y');
-    await expect(field(page, 'registration_number')).toHaveValue('EV12345');
+    await expect(vehicleField(page, 0, 'vehicle')).toHaveValue('Tesla Model Y');
+    await expect(vehicleField(page, 0, 'registration_number')).toHaveValue('EV12345');
 });
 
 test('mounting and TPMS requests are workshop-only', async ({ page }, testInfo) => {

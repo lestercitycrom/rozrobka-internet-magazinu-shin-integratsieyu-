@@ -6,12 +6,18 @@ use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
+use App\Modules\ServiceBooking\ServiceRequestVehiclePayload;
 use App\Rules\CustomerPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 final class UpsertServiceRequest extends FormRequest
 {
+    private bool $usedLegacyVehiclePayload = false;
+
+    private bool $legacyGeneralStorageMissingAlreadyStored = false;
+
     public function authorize(): bool
     {
         return $this->user()?->canOperateServiceRequests() === true;
@@ -37,26 +43,19 @@ final class UpsertServiceRequest extends FormRequest
         $requiresRequestedDate = $isSeasonal || $isMounting || $isBattery;
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
         $storedVehicles = is_array($requestModel?->vehicles) ? $requestModel->vehicles : [];
-        $effectiveCarCount = $this->has('car_count')
-            ? (int) $this->input('car_count')
-            : ((! $isCreate && ! $serviceChanged) ? max(1, count($storedVehicles)) : 1);
-        $secondVehicle = $isSeasonal && $effectiveCarCount === 2;
-        $storedFirstStorage = (string) ($storedVehicles[0]['storage_plan'] ?? 'none');
-        $storedSecondStorage = (string) ($storedVehicles[1]['storage_plan'] ?? 'none');
-        $firstStorage = (string) $this->input('storage_plan', $storedFirstStorage);
-        $secondStorage = (string) $this->input('storage_plan_2', $storedSecondStorage);
-        $firstUsesStorage = $isSeasonal && $firstStorage !== 'none';
-        $secondUsesStorage = $secondVehicle && $secondStorage !== 'none';
-        $firstStorageChanged = $isCreate || $serviceChanged
-            || ($this->has('storage_plan') && $firstStorage !== $storedFirstStorage);
-        $secondStorageChanged = $isCreate || $serviceChanged
-            || ($this->has('storage_plan_2') && $secondStorage !== $storedSecondStorage);
+        $submittedVehicles = is_array($this->input('vehicles')) ? array_values($this->input('vehicles')) : [];
+        $effectiveCarCount = count($submittedVehicles) ?: ((! $isCreate && ! $serviceChanged) ? count($storedVehicles) : 0);
         $supportsGeneralStorage = $this->supportsGeneralStorage($slug);
-        $generalStorageSelected = $supportsGeneralStorage && ($this->has('dekkhotell')
-            ? $this->boolean('dekkhotell')
-            : (bool) $requestModel?->dekkhotell);
-        $generalStorageChanged = $isCreate || $serviceChanged
-            || ($this->has('dekkhotell') && $generalStorageSelected !== (bool) $requestModel?->dekkhotell);
+        $storedGeneralPlan = ServiceRequestVehiclePayload::generalPlan(
+            (bool) $requestModel?->dekkhotell,
+            $requestModel?->dekkhotell_already_stored,
+        );
+        $generalPlan = (string) $this->input('storage_plan', $storedGeneralPlan);
+        $generalPlanChanged = $isCreate || $serviceChanged || ($this->has('storage_plan') && $generalPlan !== $storedGeneralPlan);
+        $generalPlans = ServiceRequestVehiclePayload::STORAGE_PLANS;
+        if (! $isCreate && $storedGeneralPlan === 'unknown') {
+            $generalPlans[] = 'unknown';
+        }
         $seasonalVehicleTypes = $isSeasonal && $effectiveFulfilment === 'workshop'
             ? ['passenger']
             : ['passenger', 'large_vehicle', 'six_wheels'];
@@ -74,16 +73,13 @@ final class UpsertServiceRequest extends FormRequest
             || ($requiresRequestedDate && ($isCreate || $serviceChanged || filled($storedDate)));
         $structuredModeSubmitted = $this->has('booking_mode') && in_array($bookingMode, ['period', 'exact'], true);
         $datePresence = $detailsLocked ? ['sometimes'] : ($structuredModeSubmitted ? [] : $serviceContractPresence);
-        $firstRegistrationRequired = ($isBattery && ($isCreate || $serviceChanged || $this->has('registration_number')))
-            || ($firstUsesStorage && ($firstStorageChanged
-                || ($this->has('registration_number') && filled($storedVehicles[0]['registration_number'] ?? null))))
-            || ($generalStorageSelected && ($generalStorageChanged
-                || ($this->has('registration_number') && filled($requestModel?->registration_number))));
-        $secondRegistrationRequired = $secondUsesStorage
-            && ($secondStorageChanged
-                || ($this->has('registration_number_2') && filled($storedVehicles[1]['registration_number'] ?? null)));
-        $firstRegistrationPresence = $firstRegistrationRequired ? [] : $serviceContractPresence;
-        $secondRegistrationPresence = $secondRegistrationRequired ? [] : $serviceContractPresence;
+        $generalStorageActive = in_array($generalPlan, ['new', 'renew', 'last'], true)
+            || ($generalPlan === 'unknown'
+                && ((bool) $requestModel?->dekkhotell || $requestModel?->dekkhotell_already_stored === true));
+        $generalRegistrationRequired = ($isBattery && ($isCreate || $serviceChanged || $this->has('registration_number')))
+            || ($supportsGeneralStorage && $generalStorageActive
+                && ($generalPlanChanged || $this->has('registration_number')));
+        $generalRegistrationPresence = $generalRegistrationRequired ? [] : $serviceContractPresence;
         $serviceExists = Rule::exists('service_pages', 'slug');
         if ($serviceChanged) {
             $serviceExists->where('publication_status', ServicePagePublicationStatus::Published->value);
@@ -115,29 +111,29 @@ final class UpsertServiceRequest extends FormRequest
                 Rule::requiredIf($bookingMode === 'period' && $operationalUpdate),
                 'nullable', 'date_format:H:i', 'after:preferred_time_start',
             ],
-            'booking_slot_key' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
-            'car_count' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
-            'vehicle' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => [...$firstRegistrationPresence, Rule::requiredIf($firstRegistrationRequired), 'nullable', 'string', 'max:32'],
+            'booking_slot_key' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact' && $effectiveCarCount <= 2), 'nullable', 'string', 'max:80'],
+            'vehicle_payload_conflict' => ['prohibited'],
+            'storage_payload_conflict' => ['prohibited'],
+            'legacy_storage_clear' => ['nullable', 'boolean'],
+            'car_count' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal && $operationalUpdate), 'nullable', 'integer', 'between:1,'.ServiceRequestVehiclePayload::MAX_VEHICLES],
+            'vehicles' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal && $operationalUpdate), Rule::prohibitedIf(! $isSeasonal), 'nullable', 'array', 'min:1', 'max:'.ServiceRequestVehiclePayload::MAX_VEHICLES],
+            'vehicles.*' => ['array:vehicle,registration_number,tire_size,vehicle_type,rim_band,storage_plan,storage_number'],
+            'vehicles.*.vehicle' => ['required', 'string', 'max:120'],
+            'vehicles.*.registration_number' => ['nullable', 'string', 'max:32'],
+            'vehicles.*.tire_size' => ['nullable', 'string', 'max:64'],
+            'vehicles.*.vehicle_type' => ['required', Rule::in($seasonalVehicleTypes)],
+            'vehicles.*.rim_band' => ['required', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
+            'vehicles.*.storage_plan' => ['required', Rule::in(ServiceRequestVehiclePayload::STORAGE_PLANS)],
+            'vehicles.*.storage_number' => ['nullable', 'string', 'max:64', 'regex:/^[\pL\pN][\pL\pN ._\/-]*$/u'],
+            'vehicle' => [...$serviceContractPresence, Rule::prohibitedIf($isSeasonal), 'nullable', 'string', 'max:120'],
+            'registration_number' => [...$generalRegistrationPresence, Rule::requiredIf($generalRegistrationRequired), Rule::prohibitedIf($isSeasonal), 'nullable', 'string', 'max:32'],
             'tire_size' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
-            'vehicle_type' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
-            'vehicle_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
-            'registration_number_2' => [...$secondRegistrationPresence, Rule::requiredIf($secondRegistrationRequired), 'nullable', 'string', 'max:32'],
-            'tire_size_2' => ['nullable', 'string', 'max:64'],
-            'vehicle_type_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['none', 'new', 'renew'])],
+            'storage_plan' => [Rule::prohibitedIf($isSeasonal || ! $supportsGeneralStorage), 'sometimes', 'string', Rule::in($generalPlans)],
+            'storage_number' => [Rule::prohibitedIf($isSeasonal || ! $supportsGeneralStorage), 'nullable', 'string', 'max:64', 'regex:/^[\pL\pN][\pL\pN ._\/-]*$/u'],
             'wheel_count' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
-            'dekkhotell' => ['nullable', 'boolean'],
-            'dekkhotell_control' => ['nullable', 'boolean'],
-            'dekkhotell_already_stored' => [
-                Rule::prohibitedIf(! $supportsGeneralStorage),
-                Rule::requiredIf($generalStorageSelected && $generalStorageChanged),
-                'nullable',
-                'boolean',
-            ],
+            'dekkhotell' => ['prohibited'],
+            'dekkhotell_control' => ['prohibited'],
+            'dekkhotell_already_stored' => ['prohibited'],
             'assigned_van' => [Rule::prohibitedIf($effectiveFulfilment !== 'mobile'), 'sometimes', 'nullable', Rule::in(['van_1', 'van_2'])],
             'additional_services' => [Rule::prohibitedIf(! $supportsAdditionalServices), 'nullable', 'array', 'max:3'],
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],
@@ -160,34 +156,157 @@ final class UpsertServiceRequest extends FormRequest
         ];
     }
 
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $isCreate = $this->routeIs('admin.service-requests.store');
+            $requestModel = $this->route('request');
+            $requestModel = $requestModel instanceof ServiceRequest ? $requestModel : null;
+            $slug = mb_strtolower((string) $this->input('service_slug', $requestModel?->service_slug));
+            $serviceChanged = $isCreate || ($this->has('service_slug') && $slug !== mb_strtolower((string) $requestModel?->service_slug));
+            $storedVehicles = is_array($requestModel?->vehicles) ? $requestModel->vehicles : [];
+            $vehicles = is_array($this->input('vehicles')) ? array_values($this->input('vehicles')) : [];
+
+            foreach ($vehicles as $index => $vehicle) {
+                if (! is_array($vehicle)) {
+                    continue;
+                }
+                $plan = (string) ($vehicle['storage_plan'] ?? 'none');
+                $stored = is_array($storedVehicles[$index] ?? null) ? $storedVehicles[$index] : [];
+                $planChanged = $plan !== (string) ($stored['storage_plan'] ?? 'none');
+                $registrationRequired = $plan !== 'none'
+                    && ($isCreate || $serviceChanged || $planChanged || filled($stored['registration_number'] ?? null));
+                if ($registrationRequired && blank($vehicle['registration_number'] ?? null)) {
+                    $validator->errors()->add("vehicles.{$index}.registration_number", __('service_requests.validation.registration_required'));
+                }
+            }
+
+            if ($this->usedLegacyVehiclePayload) {
+                foreach ([
+                    0 => [
+                        'vehicle' => 'vehicle', 'registration_number' => 'registration_number',
+                        'tire_size' => 'tire_size', 'vehicle_type' => 'vehicle_type',
+                        'rim_band' => 'rim_band', 'storage_plan' => 'storage_plan',
+                    ],
+                    1 => [
+                        'vehicle' => 'vehicle_2', 'registration_number' => 'registration_number_2',
+                        'tire_size' => 'tire_size_2', 'vehicle_type' => 'vehicle_type_2',
+                        'rim_band' => 'rim_band_2', 'storage_plan' => 'storage_plan_2',
+                    ],
+                ] as $index => $aliases) {
+                    if (! isset($vehicles[$index])) {
+                        continue;
+                    }
+                    foreach ($aliases as $canonical => $legacy) {
+                        foreach ($validator->errors()->get("vehicles.{$index}.{$canonical}") as $message) {
+                            $validator->errors()->add($legacy, $message);
+                        }
+                    }
+                }
+            }
+
+            if ($this->legacyGeneralStorageMissingAlreadyStored) {
+                $validator->errors()->add(
+                    'dekkhotell_already_stored',
+                    __('service_requests.validation.storage_already_required'),
+                );
+            }
+
+            if (($this->input('booking_mode') ?? null) === 'exact' && count($vehicles) > 2) {
+                $validator->errors()->add('booking_mode', __('service_requests.validation.exact_vehicle_limit'));
+            }
+        });
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'vehicle_payload_conflict.prohibited' => __('service_requests.validation.vehicle_payload_conflict'),
+            'storage_payload_conflict.prohibited' => __('service_requests.validation.storage_payload_conflict'),
+            'vehicles.*.storage_number.regex' => __('service_requests.validation.storage_number_format'),
+            'storage_number.regex' => __('service_requests.validation.storage_number_format'),
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         $isCreate = $this->routeIs('admin.service-requests.store');
         $requestModel = $this->route('request');
         $requestModel = $requestModel instanceof ServiceRequest ? $requestModel : null;
         $slug = mb_strtolower((string) $this->input('service_slug', $requestModel?->service_slug));
+        $serviceChanged = $isCreate || ($this->has('service_slug') && $slug !== mb_strtolower((string) $requestModel?->service_slug));
         if ($this->has('assigned_van') && ! filled($this->input('assigned_van'))) {
             $this->merge(['assigned_van' => null]);
         }
         if ($this->boolean('operational_form')) {
-            if ($this->boolean('dekkhotell_control') && $this->supportsGeneralStorage($slug)) {
-                $this->merge(['dekkhotell' => $this->boolean('dekkhotell')]);
-            }
             if (in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true)) {
                 $this->merge(['additional_services' => $this->input('additional_services', [])]);
             }
         }
 
-        if (! $isCreate || ! $this->isSeasonal($slug)) {
+        $operationalUpdate = $isCreate || $this->has('service_slug');
+        if (! $operationalUpdate) {
             return;
         }
 
-        $this->merge([
-            'car_count' => $this->input('car_count', 1),
-            'vehicle_type' => $this->input('vehicle_type', 'passenger'),
-            'rim_band' => $this->input('rim_band', 'unknown'),
-            'storage_plan' => $this->input('storage_plan', 'none'),
-        ]);
+        $input = $this->all();
+        unset($input['legacy_storage_clear']);
+        if ($this->isSeasonal($slug)) {
+            $conflict = ServiceRequestVehiclePayload::hasConflictingPayload($input);
+            $hasCanonicalVehicles = is_array($input['vehicles'] ?? null);
+            $hasLegacyVehicles = ServiceRequestVehiclePayload::hasLegacyFields($input);
+            $vehicles = $hasCanonicalVehicles
+                ? array_values($input['vehicles'])
+                : ($hasLegacyVehicles ? $this->legacyVehiclesForRequest($input, $requestModel, $serviceChanged) : []);
+            $this->usedLegacyVehiclePayload = ! $hasCanonicalVehicles && $hasLegacyVehicles;
+            if ($vehicles === [] && ($isCreate || $serviceChanged)) {
+                $vehicles = [[
+                    'vehicle' => null, 'registration_number' => null, 'tire_size' => null,
+                    'vehicle_type' => 'passenger', 'rim_band' => 'unknown', 'storage_plan' => 'none', 'storage_number' => null,
+                ]];
+            }
+            if ($hasCanonicalVehicles || $hasLegacyVehicles || $isCreate || $serviceChanged) {
+                foreach (['vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan', 'vehicle_2', 'registration_number_2', 'tire_size_2', 'vehicle_type_2', 'rim_band_2', 'storage_plan_2'] as $legacyField) {
+                    unset($input[$legacyField]);
+                }
+                $input['vehicles'] = $vehicles;
+                $input['car_count'] = count($vehicles);
+            }
+            if ($conflict) {
+                $input['vehicle_payload_conflict'] = true;
+            }
+        } elseif ($this->supportsGeneralStorage($slug)) {
+            $legacyStorageSubmitted = array_key_exists('dekkhotell', $input)
+                || array_key_exists('dekkhotell_control', $input)
+                || array_key_exists('dekkhotell_already_stored', $input);
+            if (array_key_exists('storage_plan', $input) && $legacyStorageSubmitted) {
+                $input['storage_payload_conflict'] = true;
+            } elseif (! array_key_exists('storage_plan', $input) && $legacyStorageSubmitted) {
+                $futureStorage = array_key_exists('dekkhotell_control', $input)
+                    ? filter_var($input['dekkhotell'] ?? false, FILTER_VALIDATE_BOOL)
+                    : filter_var($input['dekkhotell'] ?? $requestModel?->dekkhotell, FILTER_VALIDATE_BOOL);
+                $alreadyStored = array_key_exists('dekkhotell_already_stored', $input)
+                    ? ($input['dekkhotell_already_stored'] === null || $input['dekkhotell_already_stored'] === ''
+                        ? null
+                        : filter_var($input['dekkhotell_already_stored'], FILTER_VALIDATE_BOOL))
+                    : $requestModel?->dekkhotell_already_stored;
+                if ($futureStorage && ! array_key_exists('dekkhotell_already_stored', $input)) {
+                    $this->legacyGeneralStorageMissingAlreadyStored = true;
+                    $input['storage_plan'] = 'new';
+                } elseif (! $futureStorage) {
+                    // The legacy checkbox contract meant “no new hotel period”; it
+                    // did not assert whether a historical set existed.
+                    $input['storage_plan'] = 'none';
+                    $input['legacy_storage_clear'] = true;
+                } else {
+                    $input['storage_plan'] = ServiceRequestVehiclePayload::generalPlan($futureStorage, $alreadyStored);
+                }
+            }
+            unset($input['dekkhotell'], $input['dekkhotell_control'], $input['dekkhotell_already_stored']);
+        }
+
+        $this->replace($input);
     }
 
     private function isSeasonal(string $slug): bool
@@ -201,5 +320,41 @@ final class UpsertServiceRequest extends FormRequest
     private function supportsGeneralStorage(string $slug): bool
     {
         return in_array($slug, ['omlegging-balansering', 'dekkreparasjon', 'tpms-sensor'], true);
+    }
+
+    /**
+     * Adapt the historical one/two-car admin form without losing omitted fields
+     * on an existing request. Canonical `vehicles` submissions are never merged.
+     *
+     * @param  array<string, mixed>  $input
+     * @return list<array<string, mixed>>
+     */
+    private function legacyVehiclesForRequest(array $input, ?ServiceRequest $request, bool $serviceChanged): array
+    {
+        $stored = ! $serviceChanged && is_array($request?->vehicles) ? array_values($request->vehicles) : [];
+        $count = array_key_exists('car_count', $input)
+            ? (int) $input['car_count']
+            : ($stored !== [] ? count($stored) : 1);
+        if ($count < 1 || $count > ServiceRequestVehiclePayload::MAX_VEHICLES) {
+            return [];
+        }
+
+        $fields = ['vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan'];
+        $vehicles = [];
+        for ($index = 0; $index < $count; $index++) {
+            $vehicle = is_array($stored[$index] ?? null) ? $stored[$index] : [];
+            $suffix = $index === 0 ? '' : '_'.($index + 1);
+            foreach ($fields as $field) {
+                $legacyField = $field.$suffix;
+                if (array_key_exists($legacyField, $input)) {
+                    $vehicle[$field] = $input[$legacyField];
+                } elseif (! array_key_exists($field, $vehicle)) {
+                    $vehicle[$field] = null;
+                }
+            }
+            $vehicles[] = $vehicle;
+        }
+
+        return $vehicles;
     }
 }
