@@ -6,7 +6,10 @@
                 <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{{ __('service_requests.title') }}</h1>
                 <p class="mt-3 max-w-2xl leading-7 text-easytire-muted">{{ __('service_requests.intro') }}</p>
             </div>
-            <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.create') }}" data-testid="request-create">{{ __('service_requests.create') }}</a>
+            <div class="flex flex-wrap gap-3">
+                <a class="et-btn et-btn--outline" href="{{ route('admin.service-requests.day') }}">{{ __('service_requests.operations_day') }}</a>
+                <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.create') }}" data-testid="request-create">{{ __('service_requests.create') }}</a>
+            </div>
         </header>
 
         <nav class="flex flex-wrap gap-2" aria-label="{{ __('service_requests.views') }}" data-testid="request-views">

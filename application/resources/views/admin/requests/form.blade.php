@@ -72,18 +72,34 @@
                 <section class="easytire-card rounded-2xl p-6">
                     <h2 class="text-xl font-black">{{ __('service_requests.customer') }}</h2>
                     <div class="mt-5 grid gap-5 sm:grid-cols-2">
-                        <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.linked_client') }}
-                            <select class="{{ $field }}" name="client_id" data-client-select>
+                        <div
+                            class="sm:col-span-2"
+                            data-client-lookup
+                            data-client-lookup-url="{{ route('admin.clients.lookup') }}"
+                            data-minimum-message="{{ __('service_requests.client_lookup_minimum') }}"
+                            data-searching-message="{{ __('service_requests.client_lookup_searching') }}"
+                            data-empty-message="{{ __('service_requests.client_lookup_empty') }}"
+                            data-results-message="{{ __('service_requests.client_lookup_results') }}"
+                            data-error-message="{{ __('service_requests.client_lookup_error') }}"
+                        >
+                            <label class="block text-sm font-bold" for="client-lookup-input">{{ __('service_requests.client_lookup_label') }}</label>
+                            <input class="{{ $field }}" id="client-lookup-input" type="search" autocomplete="off" placeholder="{{ __('service_requests.client_lookup_hint') }}" data-client-lookup-input>
+                            <label class="mt-4 block text-sm font-bold" for="client-id">{{ __('service_requests.linked_client') }}</label>
+                            <select class="{{ $field }}" id="client-id" name="client_id" data-client-select>
                                 <option value="">{{ __('service_requests.no_linked_client') }}</option>
                                 @foreach($clientOptions as $client)
                                     <option value="{{ $client->id }}" @selected((string) old('client_id', $request->client_id) === (string) $client->id)>{{ $client->name }} · {{ $client->phone }}</option>
                                 @endforeach
                             </select>
-                            <span class="mt-2 block font-normal text-easytire-muted">
+                            <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+                                <span class="text-sm font-normal text-easytire-muted" data-client-lookup-status aria-live="polite">{{ __('service_requests.client_lookup_minimum') }}</span>
+                                <button class="et-btn et-btn--outline" type="button" data-client-load-more hidden>{{ __('service_requests.client_lookup_more') }}</button>
+                            </div>
+                            <span class="mt-2 block text-sm font-normal text-easytire-muted">
                                 <a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.create', $editing ? ['service_request' => $request->id] : []) }}">{{ __('service_requests.create_client_link') }}</a>
                                 · {{ __('service_requests.client_snapshot_note') }}
                             </span>
-                        </label>
+                        </div>
                         <label class="block text-sm font-bold">{{ __('service_requests.form.name') }}<input class="{{ $field }}" name="name" value="{{ old('name', $request->name) }}" maxlength="120" required autocomplete="name"></label>
                         <label class="block text-sm font-bold">{{ __('service_requests.form.phone') }}<input class="{{ $field }}" name="phone" value="{{ old('phone', $request->phone) }}" maxlength="24" required inputmode="tel" autocomplete="tel"></label>
                         <label class="block text-sm font-bold">{{ __('service_requests.form.email_optional') }}<input class="{{ $field }}" name="email" value="{{ old('email', $request->email) }}" maxlength="255" type="email" autocomplete="email"></label>

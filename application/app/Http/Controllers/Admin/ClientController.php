@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpsertClient;
 use App\Modules\Content\Models\ServicePage;
+use App\Modules\ServiceBooking\ClientDirectorySearch;
 use App\Modules\ServiceBooking\CustomerPhoneNormalizer;
 use App\Modules\ServiceBooking\Models\Client;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -17,23 +17,17 @@ use Illuminate\View\View;
 
 final class ClientController extends Controller
 {
-    public function index(Request $request, CustomerPhoneNormalizer $phones): View
+    public function index(Request $request, ClientDirectorySearch $search): View
     {
         $filters = $request->validate(['q' => ['nullable', 'string', 'max:120']]);
-        $clients = Client::query()
-            ->withCount('serviceRequests')
-            ->when(filled($filters['q'] ?? null), function (Builder $query) use ($filters, $phones): void {
-                $needle = trim((string) $filters['q']);
-                $phoneNeedle = $phones->searchTerm($needle);
-                $query->where(function (Builder $query) use ($needle, $phoneNeedle): void {
-                    $query->where('name', 'like', "%{$needle}%")
-                        ->orWhere('email', 'like', "%{$needle}%");
-                    if ($phoneNeedle !== null) {
-                        $query->orWhere('phone_normalized', 'like', "%{$phoneNeedle}%");
-                    }
-                });
-            })
-            ->latest()
+        $query = Client::query()->withCount('serviceRequests');
+        if (filled($filters['q'] ?? null)) {
+            $search->apply($query, (string) $filters['q']);
+        }
+
+        $clients = $query
+            ->orderBy('name')
+            ->orderBy('id')
             ->paginate(25)
             ->withQueryString();
 

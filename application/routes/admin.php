@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminLocaleController;
 use App\Http\Controllers\Admin\BookingCalendarController;
 use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\ClientLookupController;
 use App\Http\Controllers\Admin\ContentPageController;
 use App\Http\Controllers\Admin\HomepageBusinessPartnerController;
 use App\Http\Controllers\Admin\HomepagePromotionController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Admin\PublicServicePriceController;
 use App\Http\Controllers\Admin\ServiceAddonController;
 use App\Http\Controllers\Admin\ServicePageController;
 use App\Http\Controllers\Admin\ServiceRequestController;
+use App\Http\Controllers\Admin\ServiceRequestDayController;
 use App\Http\Controllers\Admin\StorefrontSettingsController;
 use App\Http\Controllers\Admin\SystemHealthController;
 use Illuminate\Support\Facades\Route;
@@ -37,10 +39,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
 
         Route::middleware('admin.roles:owner,operations')->group(function (): void {
+            Route::get('/clients/lookup', ClientLookupController::class)->name('clients.lookup');
             Route::resource('clients', ClientController::class)->except('destroy');
             Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests.index');
             Route::get('/service-requests/create', [ServiceRequestController::class, 'create'])->name('service-requests.create');
             Route::post('/service-requests', [ServiceRequestController::class, 'store'])->name('service-requests.store');
+            Route::get('/service-requests/day', ServiceRequestDayController::class)->name('service-requests.day');
             Route::get('/service-requests/{request}/edit', [ServiceRequestController::class, 'edit'])->name('service-requests.edit');
             Route::get('/service-requests/{request}', [ServiceRequestController::class, 'show'])->name('service-requests.show');
             Route::match(['put', 'patch'], '/service-requests/{request}', [ServiceRequestController::class, 'update'])->name('service-requests.update');

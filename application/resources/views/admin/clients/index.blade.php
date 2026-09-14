@@ -12,6 +12,7 @@
         <form class="easytire-card flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-end" method="get" action="{{ route('admin.clients.index') }}" data-testid="client-filters">
             <label class="block flex-1 text-sm font-bold">{{ __('clients.search') }}
                 <input class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="{{ __('clients.search_hint') }}">
+                <span class="mt-2 block font-normal text-easytire-muted">{{ __('clients.registration_history_notice') }}</span>
             </label>
             <div class="flex gap-3">
                 <button class="et-btn et-btn--primary" type="submit">{{ __('clients.apply') }}</button>

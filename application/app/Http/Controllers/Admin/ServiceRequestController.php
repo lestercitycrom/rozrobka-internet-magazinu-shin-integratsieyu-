@@ -164,13 +164,9 @@ class ServiceRequestController extends Controller
     /** @return array<string, mixed> */
     private function formData(ServiceRequest $request, SeasonalQuoteCalculator $quotes): array
     {
-        $clientOptions = Client::query()->orderBy('name')->orderBy('id')->limit(250)->get();
-        if (filled($request->client_id) && ! $clientOptions->contains('id', $request->client_id)) {
-            $selectedClient = Client::query()->find($request->client_id);
-            if ($selectedClient !== null) {
-                $clientOptions->prepend($selectedClient);
-            }
-        }
+        $selectedClientId = old('client_id', $request->client_id);
+        $selectedClient = filled($selectedClientId) ? Client::query()->find($selectedClientId) : null;
+        $clientOptions = $selectedClient === null ? collect() : collect([$selectedClient]);
 
         return [
             'request' => $request,

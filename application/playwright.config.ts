@@ -66,19 +66,19 @@ export default defineConfig({
             name: 'admin-service-requests-desktop',
             dependencies: ['admin-desktop'],
             use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
-            testMatch: /admin\.(service-requests|clients)\.spec\.ts/,
+            testMatch: /admin\.(service-requests|clients|operations-day)\.spec\.ts/,
         },
         {
             name: 'admin-service-requests-mobile-390',
             dependencies: ['admin-service-requests-desktop'],
             use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
-            testMatch: /admin\.(service-requests|clients)\.spec\.ts/,
+            testMatch: /admin\.(service-requests|clients|operations-day)\.spec\.ts/,
         },
         {
             name: 'admin-service-requests-mobile-320',
             dependencies: ['admin-service-requests-mobile-390'],
             use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
-            testMatch: /admin\.(service-requests|clients)\.spec\.ts/,
+            testMatch: /admin\.(service-requests|clients|operations-day)\.spec\.ts/,
         },
         {
             name: 'admin-homepage-content',

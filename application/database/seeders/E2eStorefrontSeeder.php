@@ -23,6 +23,7 @@ use App\Modules\Pricing\Enums\PricingRuleScope;
 use App\Modules\Pricing\Models\PricingRule;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
+use App\Modules\ServiceBooking\Models\Client;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -217,6 +218,138 @@ class E2eStorefrontSeeder extends Seeder
         ]);
 
         $this->seedHistoricalServiceRequests();
+        $this->seedIssue66OperationsFixtures();
+    }
+
+    private function seedIssue66OperationsFixtures(): void
+    {
+        $clients = collect(range(1, 1001))->mapWithKeys(function (int $number): array {
+            $client = Client::query()->updateOrCreate(
+                ['email' => sprintf('issue-66-client-%02d@example.test', $number)],
+                [
+                    'name' => sprintf('Issue 66 Lookup Client %04d', $number),
+                    'phone' => sprintf('9000%04d', $number),
+                    'phone_normalized' => sprintf('479000%04d', $number),
+                    'address' => sprintf('Testvegen %d', $number),
+                    'district' => 'Tromsø',
+                    'note' => null,
+                    'created_by_user_id' => null,
+                ],
+            );
+
+            return [$number => $client];
+        });
+
+        ServiceRequest::query()->updateOrCreate(['reference' => 'SR-E2E-LOOKUP-ISSUE66'], [
+            'submission_token' => (string) Str::uuid(),
+            'locale' => 'nb',
+            'source' => ServiceRequestSource::AdminManual,
+            'client_id' => $clients->get(21)->id,
+            'service_slug' => 'mobilt-dekkskift',
+            'fulfilment' => 'mobile',
+            'vehicle' => 'Issue 66 registration car',
+            'registration_number' => null,
+            'vehicles' => [[
+                'vehicle' => 'Issue 66 registration car',
+                'registration_number' => 'ISSUE66REG',
+                'tire_size' => '205/55 R16',
+                'vehicle_type' => 'passenger',
+                'rim_band' => 'r16-r18',
+                'storage_plan' => 'none',
+                'storage_number' => null,
+            ]],
+            'name' => $clients->get(21)->name,
+            'email' => $clients->get(21)->email,
+            'phone' => $clients->get(21)->phone,
+            'phone_normalized' => $clients->get(21)->phone_normalized,
+            'status' => ServiceRequestStatus::New,
+            'admin_note' => 'ISSUE66_INTERNAL_NOTE_MUST_NOT_LEAK',
+        ]);
+
+        $dayRequests = [
+            'SR-E2E-DAY-0900' => [
+                'fulfilment' => 'workshop',
+                'assigned_van' => null,
+                'booking_starts_at' => '2030-10-15 07:00:00',
+                'booking_ends_at' => '2030-10-15 07:30:00',
+                'preferred_period_starts_at' => null,
+                'preferred_period_ends_at' => null,
+                'vehicles' => [$this->issue66Vehicle(1)],
+            ],
+            'SR-E2E-DAY-1030-VAN1' => [
+                'fulfilment' => 'mobile',
+                'assigned_van' => 'van_1',
+                'booking_starts_at' => null,
+                'booking_ends_at' => null,
+                'preferred_period_starts_at' => '2030-10-15 08:30:00',
+                'preferred_period_ends_at' => '2030-10-15 10:00:00',
+                'vehicles' => collect(range(1, 5))->map(fn (int $number): array => $this->issue66Vehicle(
+                    $number,
+                    $number === 5 ? 'last' : 'none',
+                    $number === 5 ? '00042-A' : null,
+                ))->all(),
+            ],
+            'SR-E2E-DAY-1300-VAN2' => [
+                'fulfilment' => 'mobile',
+                'assigned_van' => 'van_2',
+                'booking_starts_at' => '2030-10-15 11:00:00',
+                'booking_ends_at' => '2030-10-15 11:30:00',
+                'preferred_period_starts_at' => null,
+                'preferred_period_ends_at' => null,
+                'vehicles' => [$this->issue66Vehicle(1)],
+            ],
+        ];
+
+        foreach ($dayRequests as $reference => $schedule) {
+            ServiceRequest::query()->updateOrCreate(['reference' => $reference], [
+                'submission_token' => (string) Str::uuid(),
+                'locale' => 'nb',
+                'source' => ServiceRequestSource::AdminManual,
+                'service_slug' => 'mobilt-dekkskift',
+                'preferred_date' => '2030-10-15',
+                'preferred_window' => $reference === 'SR-E2E-DAY-1030-VAN1' ? '10:30–12:00' : null,
+                'name' => 'Issue 66 day customer',
+                'email' => null,
+                'phone' => '90006600',
+                'phone_normalized' => '4790006600',
+                'address' => 'Testvegen 66, Tromsø',
+                'district' => 'Tromsø',
+                'status' => ServiceRequestStatus::New,
+                ...$schedule,
+            ]);
+        }
+
+        ServiceRequest::query()->updateOrCreate(['reference' => 'SR-E2E-DAY-NEXTDATE'], [
+            'submission_token' => (string) Str::uuid(),
+            'locale' => 'nb',
+            'source' => ServiceRequestSource::AdminManual,
+            'service_slug' => 'mobilt-dekkskift',
+            'fulfilment' => 'workshop',
+            'preferred_date' => '2030-10-16',
+            'preferred_window' => '09:00–09:30',
+            'booking_starts_at' => '2030-10-16 07:00:00',
+            'booking_ends_at' => '2030-10-16 07:30:00',
+            'vehicles' => [$this->issue66Vehicle(1)],
+            'name' => 'Issue 66 next day customer',
+            'email' => null,
+            'phone' => '90006601',
+            'phone_normalized' => '4790006601',
+            'status' => ServiceRequestStatus::New,
+        ]);
+    }
+
+    /** @return array<string, string|null> */
+    private function issue66Vehicle(int $number, string $storagePlan = 'none', ?string $storageNumber = null): array
+    {
+        return [
+            'vehicle' => 'Day vehicle '.$number,
+            'registration_number' => sprintf('DAY66%02d', $number),
+            'tire_size' => '205/55 R16',
+            'vehicle_type' => 'passenger',
+            'rim_band' => 'r16-r18',
+            'storage_plan' => $storagePlan,
+            'storage_number' => $storageNumber,
+        ];
     }
 
     private function seedHistoricalServiceRequests(): void
