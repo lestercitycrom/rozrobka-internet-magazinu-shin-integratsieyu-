@@ -80,7 +80,7 @@ test('homepage renders only published localized promotions and source-backed rev
 });
 
 test('administrator can manage promotions and cannot publish a review without an approved source URL', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $promotionPayload = homepagePromotionPayload(['publication_status' => ContentPageStatus::Published->value]);
 
     $this->actingAs($admin)->get('/admin/homepage-promotions/create')->assertOk();
@@ -96,7 +96,7 @@ test('administrator can manage promotions and cannot publish a review without an
 });
 
 test('promotions accept only active image assets and safely lose their media when it is deactivated', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $image = homepagePromotionMedia($admin, 'promotion-image.webp', 'image/webp', true);
     $document = homepagePromotionMedia($admin, 'promotion-document.pdf', 'application/pdf', true);
     $payload = homepagePromotionPayload([

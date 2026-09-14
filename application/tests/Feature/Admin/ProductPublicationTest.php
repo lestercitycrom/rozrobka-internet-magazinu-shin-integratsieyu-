@@ -21,7 +21,7 @@ test('guests and customers cannot change product publication', function (): void
 
 test('an administrator can publish a reviewed product and invalid statuses are rejected', function (): void {
     $productId = catalogProductId();
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
 
     $this->actingAs($admin)
         ->put('/admin/catalog/'.$productId.'/publication', ['publication_status' => 'published'])
@@ -36,7 +36,7 @@ test('an administrator can publish a reviewed product and invalid statuses are r
 
 test('publication controls are localized for Russian administrators', function (): void {
     $productId = catalogProductId();
-    $admin = User::factory()->operations()->create(['locale' => 'ru']);
+    $admin = User::factory()->owner()->create(['locale' => 'ru']);
 
     $this->actingAs($admin)->get('/admin/catalog/'.$productId)
         ->assertOk()
@@ -45,7 +45,7 @@ test('publication controls are localized for Russian administrators', function (
 });
 
 test('administrator previews and publishes only draft products with a positive computable retail price', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $eligibleId = pricedDraftProductId('PUBLISH-1', '100.0000');
     $zeroId = pricedDraftProductId('PUBLISH-0', '0.0000');
     PricingRule::create(['name' => 'Test retail', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'ndi-file-current', 'currency' => 'NOK', 'markup_basis_points' => 1000, 'fixed_markup_minor' => 0, 'rounding_increment_minor' => 100, 'priority' => 1, 'is_active' => true]);

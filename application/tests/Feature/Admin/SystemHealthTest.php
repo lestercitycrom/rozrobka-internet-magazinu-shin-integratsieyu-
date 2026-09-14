@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 uses(RefreshDatabase::class);
 
 test('health is visible to administrators and hides sensitive storage details', function (): void {
-    $this->actingAs(User::factory()->operations()->create())->get('/admin/health')
+    $this->actingAs(User::factory()->owner()->create())->get('/admin/health')
         ->assertOk()->assertSee('Systemhelse')->assertSee('Database')->assertSee('Køforbindelse')->assertSee('Dintero-betaling')->assertSee('Notion')->assertDontSee(base_path());
 });
 

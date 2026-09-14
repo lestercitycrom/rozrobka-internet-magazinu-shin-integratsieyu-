@@ -129,7 +129,7 @@ test('rollback preserves an operator-returned old hotel price and does not reapp
 });
 
 test('admin ownership survives a return to the release value and blocks rollback of that field', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     StorefrontSettings::query()->create(['id' => 1, 'business_title_nb' => 'En lokal partner for bilparken.']);
     $this->seed(PublicServicePriceSeeder::class);
     $this->seed(CustomerHomepageCompositionSeeder::class);
@@ -231,7 +231,7 @@ test('full production seed applies the guarded navigation correction to exact le
 
 test('full production seed repeats without overwriting an administrator edit in only one language', function (): void {
     $this->seed(DatabaseSeeder::class);
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
 
     $this->actingAs($admin)->put('/admin/storefront-settings', [
         'hero_text_nb' => 'Operatørens egen norske hero-tekst.',
@@ -253,7 +253,7 @@ test('full production seed repeats without overwriting an administrator edit in 
 test('full production seed preserves an administrator choice equal to the exact pre-release hero copy', function (): void {
     $oldNb = 'Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
     $appliedRu = 'Закажите замену колёс дома, на работе или в мастерской. EasyTire упростит сезонную замену и подтвердит детали до визита.';
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
 
     $this->seed(DatabaseSeeder::class);
     $this->actingAs($admin)->put('/admin/storefront-settings', [
@@ -273,7 +273,7 @@ test('complete release rollback preserves an admin return to the applied value a
     $oldNb = 'Bestill hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
     $oldRu = 'Закажите выезд домой, на работу или приезжайте в мастерскую. EasyTire упростит сезонную замену и подтвердит детали до визита.';
     $appliedNb = 'Bestill dekkskift hjemme, på jobb eller på verksted. EasyTire gjør sesongskiftet enkelt, med tydelig oppfølging før avtalen bekreftes.';
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     StorefrontSettings::query()->create([
         'id' => 1,
         'hero_text_nb' => $oldNb,

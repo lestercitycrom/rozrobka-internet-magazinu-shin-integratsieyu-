@@ -21,6 +21,9 @@ use App\Modules\Orders\Enums\PaymentStatus;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Pricing\Enums\PricingRuleScope;
 use App\Modules\Pricing\Models\PricingRule;
+use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
+use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
+use App\Modules\ServiceBooking\Models\ServiceRequest;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -212,6 +215,41 @@ class E2eStorefrontSeeder extends Seeder
             'authorized_at' => now(),
             'authorization_expires_at' => now()->addDays(7),
         ]);
+
+        $this->seedHistoricalServiceRequests();
+    }
+
+    private function seedHistoricalServiceRequests(): void
+    {
+        foreach (['DESKTOP', 'MOBILE-390', 'MOBILE-320'] as $surface) {
+            ServiceRequest::query()->updateOrCreate(['reference' => 'SR-E2E-HIST-'.$surface], [
+                'submission_token' => (string) Str::uuid(),
+                'locale' => 'nb',
+                'source' => ServiceRequestSource::Public,
+                'created_by_user_id' => null,
+                'service_slug' => 'mobilt-dekkskift',
+                'fulfilment' => 'workshop',
+                'preferred_date' => now()->subDays(10)->format('Y-m-d'),
+                'preferred_window' => 'Ettermiddag',
+                'vehicle' => 'Tesla Model Y',
+                'registration_number' => 'EV12345',
+                'tire_size' => '255/45 R19',
+                'dekkhotell' => true,
+                'vehicles' => [
+                    ['vehicle' => 'Tesla Model Y', 'registration_number' => 'EV12345', 'tire_size' => '255/45 R19', 'vehicle_type' => 'passenger', 'rim_band' => 'r19', 'storage_plan' => 'renew'],
+                    ['vehicle' => 'Volvo XC60', 'registration_number' => 'EV54321', 'tire_size' => '235/55 R18', 'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'none'],
+                ],
+                'quote_min_minor' => 230000,
+                'quote_max_minor' => 230000,
+                'quote_currency' => 'NOK',
+                'name' => 'E2E Historical '.$surface,
+                'email' => null,
+                'phone' => '93333333',
+                'phone_normalized' => '4793333333',
+                'status' => ServiceRequestStatus::New,
+                'consent_at' => now()->subMonth(),
+            ]);
+        }
     }
 
     private function seedHomepageVideoFixture(): void

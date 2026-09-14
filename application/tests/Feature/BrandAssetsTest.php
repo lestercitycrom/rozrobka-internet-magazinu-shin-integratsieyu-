@@ -8,7 +8,7 @@ uses(RefreshDatabase::class);
 test('storefront, admin layout and login expose favicon and manifest links', function (): void {
     $this->get('/')->assertOk()->assertSee('href="/favicon.svg"', false)->assertSee('href="/site.webmanifest"', false);
     $this->get('/admin/login')->assertOk()->assertSee('href="/favicon.svg"', false)->assertSee('href="/site.webmanifest"', false);
-    $this->actingAs(User::factory()->operations()->create())->get('/admin')->assertOk()->assertSee('href="/favicon.svg"', false)->assertSee('href="/site.webmanifest"', false);
+    $this->actingAs(User::factory()->owner()->create())->get('/admin')->assertOk()->assertSee('href="/favicon.svg"', false)->assertSee('href="/site.webmanifest"', false);
 });
 
 test('declared brand assets exist and manifest is valid json', function (): void {

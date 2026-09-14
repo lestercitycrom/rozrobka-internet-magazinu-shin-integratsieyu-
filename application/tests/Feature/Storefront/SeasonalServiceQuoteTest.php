@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
@@ -86,8 +87,9 @@ test('seasonal request validates the second car and stores server calculated quo
         ->and($stored->quote_min_minor)->toBe(230000)
         ->and($stored->quote_max_minor)->toBe(230000)
         ->and($stored->quote_currency)->toBe('NOK')
-        ->and(OutboxMessage::query()->count())->toBe(2)
-        ->and(OutboxMessage::query()->pluck('type')->all())->toContain('notion.service_request_created', 'telegram.service_request_created')
+        ->and(OutboxMessage::query()->count())->toBe(1)
+        ->and(OutboxMessage::query()->pluck('type')->all())->toContain('telegram.service_request_created')
+        ->and(OutboxMessage::query()->pluck('type')->all())->not->toContain('notion.service_request_created')
         ->and(OutboxMessage::query()->firstOrFail()->getRawOriginal('payload_encrypted'))->not->toContain('buyer@example.test');
 
     $this->post('/tjenester/custom-seasonal/foresporsel', [
@@ -97,4 +99,39 @@ test('seasonal request validates the second car and stores server calculated quo
         'vehicle_type' => 'large_vehicle',
         'address' => null,
     ])->assertSessionHasErrors(['vehicle_type']);
+});
+
+test('seasonal public request accepts no email without weakening consent or external routing', function (): void {
+    $operations = User::factory()->operations()->create();
+    $payload = [
+        'fulfilment' => 'workshop',
+        'preferred_date' => now()->addDay()->format('Y-m-d'),
+        'preferred_window' => 'Ettermiddag',
+        'car_count' => 1,
+        'vehicle' => 'Tesla Model Y',
+        'vehicle_type' => 'passenger',
+        'rim_band' => 'r19',
+        'storage_plan' => 'none',
+        'name' => 'Seasonal no email',
+        'phone' => '92222222',
+    ];
+
+    $this->post('/tjenester/custom-seasonal/foresporsel', $payload)
+        ->assertSessionHasErrors('consent');
+
+    $this->post('/tjenester/custom-seasonal/foresporsel', [...$payload, 'consent' => '1'])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    $stored = ServiceRequest::query()->sole();
+    expect($stored->email)->toBeNull()
+        ->and($stored->consent_at)->not->toBeNull()
+        ->and($stored->quote_min_minor)->toBe(65000)
+        ->and(OutboxMessage::query()->pluck('type')->all())->toBe(['telegram.service_request_created'])
+        ->and(OutboxMessage::query()->pluck('type')->all())->not->toContain('notion.service_request_created');
+
+    $this->actingAs($operations)->get('/admin/service-requests?q=Seasonal+no+email')
+        ->assertOk()
+        ->assertSee($stored->reference)
+        ->assertSee('Seasonal no email');
 });

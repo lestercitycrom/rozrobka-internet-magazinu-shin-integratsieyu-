@@ -50,7 +50,7 @@ class StoreServiceRequest extends FormRequest
             'additional_services' => [Rule::prohibitedIf(! $supportsAdditionalServices), 'nullable', 'array', 'max:3'],
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],
             'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:24', new CustomerPhone],
             'address' => ['nullable', 'required_if:fulfilment,mobile', 'string', 'max:255'],
             'note' => [$requiresProblem ? 'required' : 'nullable', 'string', 'max:2000'],

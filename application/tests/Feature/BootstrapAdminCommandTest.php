@@ -45,7 +45,7 @@ test('interactive bootstrap rejects a mismatched password', function (): void {
 });
 
 test('interactive bootstrap cannot create a second administrator', function (): void {
-    User::factory()->operations()->create(['email' => 'operations@example.test']);
+    User::factory()->owner()->create(['email' => 'operations@example.test']);
 
     $this->artisan('easytire:bootstrap-admin')
         ->expectsQuestion('Name', 'Owner')

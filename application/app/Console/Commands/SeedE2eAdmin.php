@@ -40,7 +40,25 @@ class SeedE2eAdmin extends Command
             'email_verified_at' => now(),
         ])->save();
 
-        $this->components->info('E2E administrator is ready.');
+        $operationsEmail = mb_strtolower(trim((string) config('e2e.operations_email')));
+        $operationsPassword = (string) config('e2e.operations_password');
+        if (! filter_var($operationsEmail, FILTER_VALIDATE_EMAIL) || $operationsPassword === '') {
+            $this->components->error('Provide E2E_OPERATIONS_EMAIL and E2E_OPERATIONS_PASSWORD.');
+
+            return self::INVALID;
+        }
+
+        $operations = User::query()->firstOrNew(['email' => $operationsEmail]);
+        $operations->forceFill([
+            'name' => 'E2E Operations',
+            'password' => Hash::make($operationsPassword),
+            'role' => UserRole::Operations,
+            'locale' => 'nb',
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ])->save();
+
+        $this->components->info('E2E owner and operations accounts are ready.');
 
         return self::SUCCESS;
     }

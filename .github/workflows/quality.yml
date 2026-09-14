@@ -76,6 +76,9 @@ jobs:
       - name: Run real MySQL migration recovery regression
         run: php tests/Integration/mysql-schema-repair-regression.php
 
+      - name: Run service-request intake regression on real MySQL
+        run: php tests/Integration/mysql-service-request-intake-regression.php
+
   quality:
     name: Application quality
     runs-on: ubuntu-latest

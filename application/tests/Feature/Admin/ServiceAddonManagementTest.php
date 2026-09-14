@@ -12,7 +12,7 @@ function serviceAddon(): ServiceAddon
 }
 
 test('administrator can edit a seeded service add-on with a decimal NOK price', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $addon = serviceAddon();
 
     $this->actingAs($admin)->get('/admin/service-addons')->assertOk()->assertSee('Tilleggstjenester')->assertSee('Pris mangler');
@@ -23,7 +23,7 @@ test('administrator can edit a seeded service add-on with a decimal NOK price', 
 });
 
 test('administrator cannot activate an unpriced or zero-priced service add-on', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $addon = serviceAddon();
     $payload = ['title_nb' => 'Montering', 'title_ru' => 'Монтаж', 'applicability' => 'tire', 'billing_mode' => 'per_item', 'is_active' => '1', 'sort_order' => '10'];
 
@@ -33,7 +33,7 @@ test('administrator cannot activate an unpriced or zero-priced service add-on', 
 });
 
 test('service add-on administration has a Russian internal locale', function (): void {
-    $admin = User::factory()->operations()->create(['locale' => 'ru']);
+    $admin = User::factory()->owner()->create(['locale' => 'ru']);
     serviceAddon();
 
     $this->actingAs($admin)->get('/admin/service-addons')->assertOk()->assertSee('Дополнительные услуги')->assertSee('Цена не задана');

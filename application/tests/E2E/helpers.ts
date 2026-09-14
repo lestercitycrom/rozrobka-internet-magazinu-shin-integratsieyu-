@@ -38,9 +38,19 @@ export async function loginAdmin(page: Page): Promise<void> {
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e-admin@example.test';
     const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'e2e-only-password';
     await page.goto('/admin/login');
-    await page.getByLabel(/e-postadresse/i).fill(adminEmail);
-    await page.getByLabel(/passord/i).fill(adminPassword);
-    await page.getByRole('button', { name: /logg inn/i }).click();
+    await page.locator('input[name="email"]').fill(adminEmail);
+    await page.locator('input[name="password"]').fill(adminPassword);
+    await page.locator('form button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/admin\/?$/);
+}
+
+export async function loginOperations(page: Page): Promise<void> {
+    const operationsEmail = process.env.E2E_OPERATIONS_EMAIL ?? 'e2e-operations@example.test';
+    const operationsPassword = process.env.E2E_OPERATIONS_PASSWORD ?? 'e2e-operations-password';
+    await page.goto('/admin/login');
+    await page.locator('input[name="email"]').fill(operationsEmail);
+    await page.locator('input[name="password"]').fill(operationsPassword);
+    await page.locator('form button[type="submit"]').click();
     await expect(page).toHaveURL(/\/admin\/?$/);
 }
 

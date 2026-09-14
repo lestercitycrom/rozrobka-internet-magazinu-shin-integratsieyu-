@@ -38,4 +38,24 @@ class User extends Authenticatable
     {
         return $this->role->canAccessAdmin();
     }
+
+    public function hasAdminRole(UserRole ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
+
+    public function canOperateServiceRequests(): bool
+    {
+        return $this->hasAdminRole(UserRole::Owner, UserRole::Operations);
+    }
+
+    public function canManageContent(): bool
+    {
+        return $this->hasAdminRole(UserRole::Owner, UserRole::Editor);
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->role === UserRole::Owner;
+    }
 }

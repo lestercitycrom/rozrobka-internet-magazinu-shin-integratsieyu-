@@ -19,7 +19,7 @@ test('operations admin explicitly confirms goods ready before Dintero capture', 
     config()->set(['payments.enabled' => true, 'payments.provider' => 'fake']);
     $gateway = new FakePaymentGateway;
     app()->instance(PaymentGateway::class, $gateway);
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $order = adminPayableOrder();
     PaymentAttempt::create([
         'order_id' => $order->id,
@@ -57,7 +57,7 @@ test('capture endpoint rejects an order not accepted by NDI without changing rea
     config()->set(['payments.enabled' => true, 'payments.provider' => 'fake']);
     $gateway = new FakePaymentGateway;
     app()->instance(PaymentGateway::class, $gateway);
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $order = adminPayableOrder();
     $order->update(['ndi_status' => NdiOrderStatus::NotSubmitted]);
     PaymentAttempt::create([

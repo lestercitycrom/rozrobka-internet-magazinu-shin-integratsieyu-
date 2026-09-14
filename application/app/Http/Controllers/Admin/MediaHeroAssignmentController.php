@@ -14,6 +14,7 @@ final class MediaHeroAssignmentController extends Controller
 {
     public function store(Request $r, string $type, int $id)
     {
+        abort_if($type === 'product' && ! $r->user()->isOwner(), 403);
         $d = $r->validate(['media_asset_id' => ['required', Rule::exists('media_assets', 'id')->where(
             static fn ($query) => $query->where('is_active', true)->where('mime', 'like', 'image/%'),
         )]]);
@@ -30,8 +31,9 @@ final class MediaHeroAssignmentController extends Controller
         return back();
     }
 
-    public function destroy(string $type, int $id)
+    public function destroy(Request $request, string $type, int $id)
     {
+        abort_if($type === 'product' && ! $request->user()->isOwner(), 403);
         $model = $this->model($type, $id);
         $model->mediaAssignments()->where('role', $type === 'product' ? 'primary' : 'hero')->delete();
 

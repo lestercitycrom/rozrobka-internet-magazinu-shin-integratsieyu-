@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('admin forms expose a localized in-memory dirty guard for locale switches', function (string $locale, string $message): void {
-    $admin = User::factory()->operations()->create(['locale' => $locale]);
+    $admin = User::factory()->owner()->create(['locale' => $locale]);
 
     $this->actingAs($admin)->get('/admin/content-pages/create')
         ->assertOk()

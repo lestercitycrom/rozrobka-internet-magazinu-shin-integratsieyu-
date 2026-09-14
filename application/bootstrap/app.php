@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\Admin\EnsureActiveAdmin;
+use App\Http\Middleware\Admin\EnsureAdminRole;
 use App\Http\Middleware\Admin\SetAdminLocale;
 use App\Http\Middleware\SetPublicLocale;
 use App\Http\Middleware\SetRussianPreviewLocale;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin.active' => EnsureActiveAdmin::class,
+            'admin.roles' => EnsureAdminRole::class,
             'admin.locale' => SetAdminLocale::class,
             'public.locale' => SetPublicLocale::class,
             'public.preview.ru' => SetRussianPreviewLocale::class,

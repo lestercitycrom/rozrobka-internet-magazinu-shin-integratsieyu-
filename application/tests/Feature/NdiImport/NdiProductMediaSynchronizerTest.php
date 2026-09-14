@@ -415,7 +415,7 @@ test('an existing primary image remains the storefront primary regardless of upl
 });
 
 test('admin cannot delete a supplier asset retained by media provenance', function (): void {
-    $admin = User::factory()->operations()->create();
+    $admin = User::factory()->owner()->create();
     $asset = MediaAsset::create([
         'disk' => 'public', 'path' => 'media/ndi/protected.png', 'original_name' => 'protected.png', 'mime' => 'image/png',
         'byte_size' => 1, 'width' => 1, 'height' => 1, 'sha256' => str_repeat('e', 64),

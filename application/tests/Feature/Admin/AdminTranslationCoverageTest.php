@@ -15,7 +15,7 @@ dataset('admin locales', [
 ]);
 
 test('content, payment and pagination translations are complete', function (string $locale, string $heading, string $previous): void {
-    $admin = User::factory()->operations()->create(['locale' => $locale]);
+    $admin = User::factory()->owner()->create(['locale' => $locale]);
     $now = now();
 
     foreach (range(1, 21) as $index) {
