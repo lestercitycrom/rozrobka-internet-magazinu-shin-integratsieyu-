@@ -138,12 +138,15 @@ final class ServiceRequestDayController extends Controller
         if ($vehicles !== []) {
             return $vehicles;
         }
+
+        $hasStorageSignal = (bool) $request->dekkhotell
+            || $request->dekkhotell_already_stored !== null
+            || filled($request->dekkhotell_number);
+
         if (! filled($request->vehicle)
             && ! filled($request->registration_number)
             && ! filled($request->tire_size)
-            && ! $request->dekkhotell
-            && $request->dekkhotell_already_stored === null
-            && ! filled($request->dekkhotell_number)) {
+            && ! $hasStorageSignal) {
             return [];
         }
 
@@ -151,10 +154,12 @@ final class ServiceRequestDayController extends Controller
             'vehicle' => $request->vehicle,
             'registration_number' => $request->registration_number,
             'tire_size' => $request->tire_size,
-            'storage_plan' => ServiceRequestVehiclePayload::generalPlan(
-                (bool) $request->dekkhotell,
-                $request->dekkhotell_already_stored,
-            ),
+            'storage_plan' => $hasStorageSignal
+                ? ServiceRequestVehiclePayload::generalPlan(
+                    (bool) $request->dekkhotell,
+                    $request->dekkhotell_already_stored,
+                )
+                : 'none',
             'storage_number' => $request->dekkhotell_number,
         ]];
     }

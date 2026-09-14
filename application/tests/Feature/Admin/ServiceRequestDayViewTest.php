@@ -254,6 +254,50 @@ test('preparation summary separates confirmed and pending vehicle actions and ne
         ->assertSee('Уточнить номер перед подготовкой.');
 });
 
+test('general vehicle without a storage signal stays visible without becoming a preparation action', function (): void {
+    issue66FreezeAtOsloDay();
+    $service = issue66GenericDayService();
+    $operations = User::factory()->operations()->create(['locale' => 'nb']);
+
+    issue66DayRequest($service, 'SR-DAY-GENERAL-NO-STORAGE-66', [
+        'preferred_date' => '2026-01-16',
+        'vehicle' => 'General non-storage car',
+        'registration_number' => 'NOST6601',
+        'dekkhotell' => false,
+        'dekkhotell_already_stored' => null,
+        'dekkhotell_number' => null,
+    ]);
+
+    $response = $this->actingAs($operations)
+        ->get(route('admin.service-requests.day', ['date' => '2026-01-16']))
+        ->assertOk()
+        ->assertSee('General non-storage car')
+        ->assertSee('NOST6601')
+        ->assertSee('Ingen dekkhotellhandling er registrert')
+        ->assertDontSee('Dekkhotelldata må avklares');
+
+    expect(substr_count($response->getContent(), 'data-day-vehicle'))->toBe(1)
+        ->and(substr_count($response->getContent(), 'data-preparation-action'))->toBe(0);
+
+    issue66DayRequest($service, 'SR-DAY-GENERAL-LEGACY-STORAGE-66', [
+        'preferred_date' => '2026-01-17',
+        'vehicle' => 'Legacy storage car',
+        'registration_number' => 'LEG6602',
+        'dekkhotell' => true,
+        'dekkhotell_already_stored' => null,
+        'dekkhotell_number' => null,
+    ]);
+
+    $legacyResponse = $this->actingAs($operations)
+        ->get(route('admin.service-requests.day', ['date' => '2026-01-17']))
+        ->assertOk()
+        ->assertSee('Legacy storage car')
+        ->assertSee('LEG6602')
+        ->assertSee('Dekkhotelldata må avklares');
+
+    expect(substr_count($legacyResponse->getContent(), 'data-preparation-action'))->toBe(1);
+});
+
 test('safe day return context survives show edit validation and update without changing the client snapshot', function (): void {
     issue66FreezeAtOsloDay();
     $service = issue66DayService();
@@ -415,6 +459,18 @@ function issue66DayService(): ServicePage
         'request_flow' => ServiceRequestFlow::Seasonal,
         'title_nb' => 'Arbeidsdag service',
         'title_ru' => 'Услуга рабочего дня',
+    ]);
+}
+
+function issue66GenericDayService(): ServicePage
+{
+    return ServicePage::query()->create([
+        'slug' => 'issue-66-generic-day-service',
+        'sort_order' => 2,
+        'publication_status' => ServicePagePublicationStatus::Published,
+        'request_flow' => ServiceRequestFlow::Generic,
+        'title_nb' => 'Generell arbeidsdag service',
+        'title_ru' => 'Общая услуга рабочего дня',
     ]);
 }
 

@@ -122,11 +122,16 @@
                         $timeKind = $item->booking_starts_at ? 'confirmed' : ($item->preferred_period_starts_at ? 'desired' : 'unconfirmed');
                         $vehicles = is_array($item->vehicles) ? array_values($item->vehicles) : [];
                         if ($vehicles === [] && (filled($item->vehicle) || filled($item->registration_number) || filled($item->tire_size) || $item->dekkhotell || $item->dekkhotell_already_stored !== null || filled($item->dekkhotell_number))) {
+                            $hasGeneralStorageSignal = (bool) $item->dekkhotell
+                                || $item->dekkhotell_already_stored !== null
+                                || filled($item->dekkhotell_number);
                             $vehicles = [[
                                 'vehicle' => $item->vehicle,
                                 'registration_number' => $item->registration_number,
                                 'tire_size' => $item->tire_size,
-                                'storage_plan' => \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::generalPlan((bool) $item->dekkhotell, $item->dekkhotell_already_stored),
+                                'storage_plan' => $hasGeneralStorageSignal
+                                    ? \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::generalPlan((bool) $item->dekkhotell, $item->dekkhotell_already_stored)
+                                    : 'none',
                                 'storage_number' => $item->dekkhotell_number,
                             ]];
                         }
