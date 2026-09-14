@@ -271,6 +271,91 @@ test('full seasonal edit preserves vehicle sizes historical date and quote snaps
         ->and($request->quote_currency)->toBe('NOK');
 });
 
+test('partial seasonal edit with unchanged service preserves omitted multi vehicle details and quote', function (): void {
+    $service = issue57Service([
+        'slug' => 'issue-57-seasonal-partial',
+        'request_flow' => ServiceRequestFlow::Seasonal,
+    ]);
+    $staff = User::factory()->operations()->create();
+    $vehicles = [
+        ['vehicle' => 'Tesla Model Y', 'registration_number' => 'EV12345', 'tire_size' => '255/45 R19', 'vehicle_type' => 'passenger', 'rim_band' => 'r19', 'storage_plan' => 'renew'],
+        ['vehicle' => 'Volvo XC60', 'registration_number' => 'EV54321', 'tire_size' => '235/55 R18', 'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'none'],
+    ];
+    $request = ServiceRequest::create([
+        'reference' => 'SR-PARTIAL-PRESERVE-57', 'locale' => 'nb', 'source' => ServiceRequestSource::Public,
+        'service_slug' => $service->slug, 'fulfilment' => 'workshop', 'preferred_date' => now()->addDays(2),
+        'preferred_window' => 'Ettermiddag', 'vehicle' => 'Tesla Model Y', 'registration_number' => 'EV12345',
+        'tire_size' => '255/45 R19', 'dekkhotell' => true, 'vehicles' => $vehicles,
+        'quote_min_minor' => 234500, 'quote_max_minor' => 246700, 'quote_currency' => 'NOK',
+        'name' => 'Original Name', 'phone' => '90000000', 'phone_normalized' => '4790000000',
+        'status' => ServiceRequestStatus::New, 'consent_at' => now(),
+    ]);
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+        'service_slug' => $service->slug,
+        'fulfilment' => 'workshop',
+        'booking_mode' => 'manual',
+        'name' => 'Corrected Name',
+        'phone' => '90000000',
+    ])->assertRedirect(route('admin.service-requests.show', $request));
+
+    $request->refresh();
+    expect($request->name)->toBe('Corrected Name')
+        ->and($request->vehicles)->toBe($vehicles)
+        ->and($request->dekkhotell)->toBeTrue()
+        ->and($request->tire_size)->toBe('255/45 R19')
+        ->and($request->quote_min_minor)->toBe(234500)
+        ->and($request->quote_max_minor)->toBe(246700)
+        ->and($request->quote_currency)->toBe('NOK');
+});
+
+test('partial service change to battery requires the resulting battery contract', function (): void {
+    $generic = issue57Service(['slug' => 'issue-57-generic-before-battery']);
+    $battery = issue57Service(['slug' => 'bilbatteri']);
+    $staff = User::factory()->operations()->create();
+    $request = ServiceRequest::create([
+        'reference' => 'SR-PARTIAL-BATTERY-57', 'locale' => 'nb', 'source' => ServiceRequestSource::AdminManual,
+        'created_by_user_id' => $staff->id, 'service_slug' => $generic->slug, 'fulfilment' => 'workshop',
+        'name' => 'Battery Customer', 'phone' => '90000000', 'phone_normalized' => '4790000000',
+        'status' => ServiceRequestStatus::New,
+    ]);
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+        'service_slug' => $battery->slug,
+        'fulfilment' => 'workshop',
+        'booking_mode' => 'manual',
+        'note' => 'Bilen starter tregt.',
+        'name' => 'Battery Customer',
+        'phone' => '90000000',
+    ])->assertSessionHasErrors(['preferred_date', 'registration_number']);
+
+    expect($request->fresh()->service_slug)->toBe($generic->slug)
+        ->and($request->fresh()->preferred_date)->toBeNull()
+        ->and($request->fresh()->registration_number)->toBeNull();
+});
+
+test('partial fulfilment change to mobile requires a new address', function (): void {
+    $service = issue57Service(['slug' => 'issue-57-mobile-change']);
+    $staff = User::factory()->operations()->create();
+    $request = ServiceRequest::create([
+        'reference' => 'SR-PARTIAL-MOBILE-57', 'locale' => 'nb', 'source' => ServiceRequestSource::AdminManual,
+        'created_by_user_id' => $staff->id, 'service_slug' => $service->slug, 'fulfilment' => 'workshop',
+        'name' => 'Mobile Customer', 'phone' => '90000000', 'phone_normalized' => '4790000000',
+        'status' => ServiceRequestStatus::New,
+    ]);
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+        'service_slug' => $service->slug,
+        'fulfilment' => 'mobile',
+        'booking_mode' => 'manual',
+        'name' => 'Mobile Customer',
+        'phone' => '90000000',
+    ])->assertSessionHasErrors('address');
+
+    expect($request->fresh()->fulfilment)->toBe('workshop')
+        ->and($request->fresh()->address)->toBeNull();
+});
+
 test('full seasonal edit preserves an omitted single vehicle size but a genuine service change does not restore seasonal data', function (): void {
     $seasonal = issue57Service([
         'slug' => 'issue-57-seasonal-single',

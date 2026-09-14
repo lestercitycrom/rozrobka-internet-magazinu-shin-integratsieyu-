@@ -26,6 +26,11 @@ final class UpsertServiceRequest extends FormRequest
         $slug = mb_strtolower((string) $this->input('service_slug', $requestModel?->service_slug));
         $effectiveFulfilment = (string) $this->input('fulfilment', $requestModel?->fulfilment);
         $serviceChanged = $isCreate || ($this->has('service_slug') && $slug !== mb_strtolower((string) $requestModel?->service_slug));
+        $fulfilmentChanged = ! $isCreate
+            && $this->has('fulfilment')
+            && $effectiveFulfilment !== (string) $requestModel?->fulfilment;
+        $serviceContractPresence = ($isCreate || $serviceChanged) ? [] : ['sometimes'];
+        $addressPresence = ($isCreate || $fulfilmentChanged) ? [] : ['sometimes'];
         $isSeasonal = $this->isSeasonal($slug);
         $isMounting = $slug === 'omlegging-balansering';
         $isBattery = $slug === 'bilbatteri';
@@ -53,11 +58,11 @@ final class UpsertServiceRequest extends FormRequest
             'operational_form' => ['nullable', 'boolean'],
             'submission_token' => [$isCreate ? 'required' : 'nullable', 'uuid'],
             'service_slug' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), 'string', $serviceExists],
-            'service_variant' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
+            'service_variant' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
             'fulfilment' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
             'booking_mode' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in(['manual', 'exact'])],
             'preferred_date' => [
-                ...($isCreate ? [] : ['sometimes']),
+                ...$serviceContractPresence,
                 Rule::requiredIf($dateRequired),
                 'nullable',
                 'date',
@@ -65,20 +70,20 @@ final class UpsertServiceRequest extends FormRequest
             ],
             'preferred_window' => [$detailsLocked ? 'sometimes' : 'nullable', 'string', 'max:64'],
             'booking_slot_key' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
-            'car_count' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
-            'vehicle' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
-            'tire_size' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
-            'vehicle_type' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
-            'vehicle_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
+            'car_count' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
+            'vehicle' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
+            'registration_number' => [...$serviceContractPresence, Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
+            'tire_size' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
+            'vehicle_type' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
+            'rim_band' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
+            'storage_plan' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
+            'vehicle_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
             'registration_number_2' => ['nullable', 'string', 'max:32'],
             'tire_size_2' => ['nullable', 'string', 'max:64'],
-            'vehicle_type_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan_2' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['none', 'new', 'renew'])],
-            'wheel_count' => [...($isCreate ? [] : ['sometimes']), Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
+            'vehicle_type_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
+            'rim_band_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
+            'storage_plan_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['none', 'new', 'renew'])],
+            'wheel_count' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
             'dekkhotell' => ['nullable', 'boolean'],
             'additional_services' => [Rule::prohibitedIf(! $supportsAdditionalServices), 'nullable', 'array', 'max:3'],
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],
@@ -86,7 +91,7 @@ final class UpsertServiceRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => [$isCreate ? 'required' : 'sometimes', 'string', 'max:24', new CustomerPhone],
             'address' => [
-                ...($isCreate ? [] : ['sometimes']),
+                ...$addressPresence,
                 Rule::requiredIf($effectiveFulfilment === 'mobile'),
                 'nullable',
                 'string',
@@ -102,7 +107,10 @@ final class UpsertServiceRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $slug = mb_strtolower((string) $this->input('service_slug'));
+        $isCreate = $this->routeIs('admin.service-requests.store');
+        $requestModel = $this->route('request');
+        $requestModel = $requestModel instanceof ServiceRequest ? $requestModel : null;
+        $slug = mb_strtolower((string) $this->input('service_slug', $requestModel?->service_slug));
         if ($this->boolean('operational_form')) {
             $this->merge(['dekkhotell' => $this->boolean('dekkhotell')]);
             if (in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true)) {
@@ -110,7 +118,7 @@ final class UpsertServiceRequest extends FormRequest
             }
         }
 
-        if (! $this->isSeasonal($slug)) {
+        if (! $isCreate || ! $this->isSeasonal($slug)) {
             return;
         }
 
