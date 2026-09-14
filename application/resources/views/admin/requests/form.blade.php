@@ -4,11 +4,13 @@
     $vehicleOne = is_array($vehicles) ? ($vehicles[0] ?? []) : [];
     $vehicleTwo = is_array($vehicles) ? ($vehicles[1] ?? []) : [];
     $currentService = old('service_slug', $request->service_slug ?: optional($serviceOptions->first())->slug);
-    $currentMode = old('booking_mode', $request->booking_slot_key ? 'exact' : 'manual');
+    $currentMode = old('booking_mode', $request->booking_slot_key ? 'exact' : ($request->preferred_period_starts_at ? 'period' : 'manual'));
     $currentStatus = old('status', $request->status?->value ?? 'new');
     $selectedAdditionalServices = old('additional_services', $request->additional_services ?? []);
     $today = now()->format('Y-m-d');
     $storedDate = $request->preferred_date?->format('Y-m-d');
+    $storedPeriodStart = $request->preferred_period_starts_at?->setTimezone(config('service_booking.timezone'))->format('H:i');
+    $storedPeriodEnd = $request->preferred_period_ends_at?->setTimezone(config('service_booking.timezone'))->format('H:i');
     $minimumDate = $editing && filled($storedDate) && $storedDate < $today ? $storedDate : $today;
     $field = 'easytire-input mt-2 min-h-11 w-full rounded-lg px-3';
 @endphp
@@ -47,10 +49,23 @@
                 <section class="easytire-card rounded-2xl p-6">
                     <h2 class="text-xl font-black">{{ __('service_requests.customer') }}</h2>
                     <div class="mt-5 grid gap-5 sm:grid-cols-2">
+                        <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.linked_client') }}
+                            <select class="{{ $field }}" name="client_id" data-client-select>
+                                <option value="">{{ __('service_requests.no_linked_client') }}</option>
+                                @foreach($clientOptions as $client)
+                                    <option value="{{ $client->id }}" @selected((string) old('client_id', $request->client_id) === (string) $client->id)>{{ $client->name }} · {{ $client->phone }}</option>
+                                @endforeach
+                            </select>
+                            <span class="mt-2 block font-normal text-easytire-muted">
+                                <a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.create', $editing ? ['service_request' => $request->id] : []) }}">{{ __('service_requests.create_client_link') }}</a>
+                                · {{ __('service_requests.client_snapshot_note') }}
+                            </span>
+                        </label>
                         <label class="block text-sm font-bold">{{ __('service_requests.form.name') }}<input class="{{ $field }}" name="name" value="{{ old('name', $request->name) }}" maxlength="120" required autocomplete="name"></label>
                         <label class="block text-sm font-bold">{{ __('service_requests.form.phone') }}<input class="{{ $field }}" name="phone" value="{{ old('phone', $request->phone) }}" maxlength="24" required inputmode="tel" autocomplete="tel"></label>
                         <label class="block text-sm font-bold">{{ __('service_requests.form.email_optional') }}<input class="{{ $field }}" name="email" value="{{ old('email', $request->email) }}" maxlength="255" type="email" autocomplete="email"></label>
                         <label class="block text-sm font-bold">{{ __('service_requests.address') }}<input class="{{ $field }}" name="address" value="{{ old('address', $request->address) }}" maxlength="255" autocomplete="street-address"></label>
+                        <label class="block text-sm font-bold">{{ __('service_requests.district') }}<input class="{{ $field }}" name="district" value="{{ old('district', $request->district) }}" maxlength="120"></label>
                         <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.note') }}<textarea class="{{ $field }} min-h-28 py-3" name="note" maxlength="2000">{{ old('note', $request->note) }}</textarea></label>
                     </div>
                 </section>
@@ -84,11 +99,19 @@
                         <label class="block text-sm font-bold">{{ __('service_requests.booking_mode') }}
                             <select class="{{ $field }}" name="booking_mode" required data-booking-mode>
                                 <option value="manual" @selected($currentMode === 'manual')>{{ __('service_requests.booking_mode_manual') }}</option>
+                                <option value="period" @selected($currentMode === 'period')>{{ __('service_requests.booking_mode_period') }}</option>
                                 <option value="exact" @selected($currentMode === 'exact')>{{ __('service_requests.booking_mode_exact') }}</option>
                             </select>
                         </label>
                         <label class="block text-sm font-bold">{{ __('service_requests.preferred_date') }}<input class="{{ $field }}" name="preferred_date" value="{{ old('preferred_date', $storedDate) }}" type="date" min="{{ $minimumDate }}" data-request-date></label>
                         <label class="block text-sm font-bold" data-manual-window>{{ __('service_requests.preferred_window') }}<input class="{{ $field }}" name="preferred_window" value="{{ old('preferred_window', $request->preferred_window) }}" maxlength="64" placeholder="{{ __('service_requests.preferred_window_hint') }}"></label>
+                        <div class="sm:col-span-2" data-preferred-period hidden>
+                            <div class="grid gap-5 sm:grid-cols-2">
+                                <label class="block text-sm font-bold">{{ __('service_requests.period_start') }}<input class="{{ $field }}" name="preferred_time_start" value="{{ old('preferred_time_start', $storedPeriodStart) }}" type="time" disabled></label>
+                                <label class="block text-sm font-bold">{{ __('service_requests.period_end') }}<input class="{{ $field }}" name="preferred_time_end" value="{{ old('preferred_time_end', $storedPeriodEnd) }}" type="time" disabled></label>
+                            </div>
+                            <p class="mt-2 text-sm text-easytire-muted">{{ __('service_requests.period_notice') }}</p>
+                        </div>
                         <label class="block text-sm font-bold sm:col-span-2" data-exact-slot hidden>{{ __('service_requests.exact_slot') }}
                             <select class="{{ $field }}" name="booking_slot_key" data-slot-select disabled><option value="">{{ __('service_requests.select_date_first') }}</option></select>
                             <span class="mt-2 block font-normal text-easytire-muted" data-slot-status aria-live="polite"></span>
@@ -113,11 +136,11 @@
                                 <div class="contents" data-vehicle="{{ $number }}" @if($number === 2) hidden @endif>
                                     <p class="font-black sm:col-span-2">{{ __('service_requests.vehicle_number', ['number' => $number]) }}</p>
                                     <label class="block text-sm font-bold">{{ __('service_requests.form.vehicle') }}<input class="{{ $field }}" name="{{ $number === 1 ? 'vehicle' : 'vehicle_2' }}" value="{{ old($number === 1 ? 'vehicle' : 'vehicle_2', $vehicleData['vehicle'] ?? ($number === 1 ? $request->vehicle : null)) }}" maxlength="120"></label>
-                                    <label class="block text-sm font-bold">{{ __('service_requests.registration_number') }}<input class="{{ $field }}" name="{{ $number === 1 ? 'registration_number' : 'registration_number_2' }}" value="{{ old($number === 1 ? 'registration_number' : 'registration_number_2', $vehicleData['registration_number'] ?? ($number === 1 ? $request->registration_number : null)) }}" maxlength="32"></label>
+                                    <label class="block text-sm font-bold">{{ __('service_requests.registration_number') }}<input class="{{ $field }}" name="{{ $number === 1 ? 'registration_number' : 'registration_number_2' }}" value="{{ old($number === 1 ? 'registration_number' : 'registration_number_2', $vehicleData['registration_number'] ?? ($number === 1 ? $request->registration_number : null)) }}" maxlength="32" data-storage-registration></label>
                                     <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.tire_size') }}<input class="{{ $field }}" name="{{ $number === 1 ? 'tire_size' : 'tire_size_2' }}" value="{{ old($number === 1 ? 'tire_size' : 'tire_size_2', $vehicleData['tire_size'] ?? ($number === 1 ? $request->tire_size : null)) }}" maxlength="64"></label>
                                     <label class="block text-sm font-bold">{{ __('service_requests.form.vehicle_type') }}<select class="{{ $field }}" name="{{ $number === 1 ? 'vehicle_type' : 'vehicle_type_2' }}">@foreach(['passenger','large_vehicle','six_wheels'] as $value)<option value="{{ $value }}" @selected(old($number === 1 ? 'vehicle_type' : 'vehicle_type_2', $vehicleData['vehicle_type'] ?? 'passenger') === $value)>{{ __('service_requests.form.'.$value) }}</option>@endforeach</select></label>
                                     <label class="block text-sm font-bold">{{ __('service_requests.form.rim_band') }}<select class="{{ $field }}" name="{{ $number === 1 ? 'rim_band' : 'rim_band_2' }}">@foreach(['unknown','r15','r16-r18','r19'] as $value)<option value="{{ $value }}" @selected(old($number === 1 ? 'rim_band' : 'rim_band_2', $vehicleData['rim_band'] ?? 'unknown') === $value)>{{ __('service_requests.form.rim_'.$value) }}</option>@endforeach</select></label>
-                                    <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.form.storage_plan') }}<select class="{{ $field }}" name="{{ $number === 1 ? 'storage_plan' : 'storage_plan_2' }}">@foreach(['none','new','renew'] as $value)<option value="{{ $value }}" @selected(old($number === 1 ? 'storage_plan' : 'storage_plan_2', $vehicleData['storage_plan'] ?? 'none') === $value)>{{ __('service_requests.form.storage_'.$value) }}</option>@endforeach</select></label>
+                                    <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.form.storage_plan') }}<select class="{{ $field }}" name="{{ $number === 1 ? 'storage_plan' : 'storage_plan_2' }}" data-storage-plan>@foreach(['none','new','renew'] as $value)<option value="{{ $value }}" @selected(old($number === 1 ? 'storage_plan' : 'storage_plan_2', $vehicleData['storage_plan'] ?? 'none') === $value)>{{ __('service_requests.form.storage_'.$value) }}</option>@endforeach</select></label>
                                 </div>
                             @endforeach
                         </div>
@@ -173,6 +196,7 @@
                 const mode = root.querySelector('[data-booking-mode]');
                 const date = root.querySelector('[data-request-date]');
                 const manual = root.querySelector('[data-manual-window]');
+                const period = root.querySelector('[data-preferred-period]');
                 const exact = root.querySelector('[data-exact-slot]');
                 const slots = root.querySelector('[data-slot-select]');
                 const status = root.querySelector('[data-slot-status]');
@@ -230,6 +254,15 @@
                     const visible = seasonal && !seasonal.hidden && carCount?.value === '2';
                     vehicleTwo.hidden = !visible;
                     vehicleTwo.querySelectorAll('input,select').forEach(el => el.disabled = !visible);
+                    updateStorageRegistration();
+                };
+                const updateStorageRegistration = () => {
+                    root.querySelectorAll('[data-vehicle]').forEach(vehicle => {
+                        if (vehicle.hidden) return;
+                        const plan = vehicle.querySelector('[data-storage-plan]');
+                        const registration = vehicle.querySelector('[data-storage-registration]');
+                        if (registration) registration.required = plan?.value !== 'none';
+                    });
                 };
                 const loadSlots = async () => {
                     if (mode?.value !== 'exact' || !date?.value) return;
@@ -260,15 +293,19 @@
                 };
                 const updateMode = () => {
                     const exactMode = mode?.value === 'exact';
-                    manual.hidden = exactMode;
+                    const periodMode = mode?.value === 'period';
+                    manual.hidden = exactMode || periodMode;
+                    period.hidden = !periodMode;
                     exact.hidden = !exactMode;
-                    manual.querySelectorAll('input').forEach(el => el.disabled = exactMode);
+                    manual.querySelectorAll('input').forEach(el => el.disabled = exactMode || periodMode);
+                    period.querySelectorAll('input').forEach(el => { el.disabled = !periodMode; el.required = periodMode; });
                     slots.disabled = !exactMode;
-                    date.required = exactMode || service?.selectedOptions[0]?.dataset.requiresDate === '1';
+                    date.required = exactMode || periodMode || service?.selectedOptions[0]?.dataset.requiresDate === '1';
                     if (exactMode) loadSlots();
                 };
                 service?.addEventListener('change', updateService);
                 carCount?.addEventListener('change', updateCars);
+                root.querySelectorAll('[data-storage-plan]').forEach(el => el.addEventListener('change', updateStorageRegistration));
                 mode?.addEventListener('change', updateMode);
                 date?.addEventListener('change', loadSlots);
                 fulfilment?.addEventListener('change', () => {

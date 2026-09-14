@@ -40,7 +40,7 @@ export default defineConfig({
         {
             name: 'buyer-mobile-320',
             use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 320, height: 844 } },
-            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|homepage-content-collections|homepage-composition|interaction-shell|map-overflow|product-detail|project-content|storefront-style)\.spec\.ts/,
+            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|homepage-content-collections|homepage-composition|interaction-shell|map-overflow|product-detail|project-content|service-requests|storefront-style)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',
@@ -66,19 +66,19 @@ export default defineConfig({
             name: 'admin-service-requests-desktop',
             dependencies: ['admin-desktop'],
             use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
-            testMatch: /admin\.service-requests\.spec\.ts/,
+            testMatch: /admin\.(service-requests|clients)\.spec\.ts/,
         },
         {
             name: 'admin-service-requests-mobile-390',
             dependencies: ['admin-service-requests-desktop'],
             use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
-            testMatch: /admin\.service-requests\.spec\.ts/,
+            testMatch: /admin\.(service-requests|clients)\.spec\.ts/,
         },
         {
             name: 'admin-service-requests-mobile-320',
             dependencies: ['admin-service-requests-mobile-390'],
             use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
-            testMatch: /admin\.service-requests\.spec\.ts/,
+            testMatch: /admin\.(service-requests|clients)\.spec\.ts/,
         },
         {
             name: 'admin-homepage-content',

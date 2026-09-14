@@ -18,6 +18,7 @@ return [
     'media' => 'Медиатека',
     'health' => 'Состояние системы',
     'service_requests' => 'Заявки на услуги',
+    'clients' => 'Клиенты',
     'service_addons' => 'Дополнительные услуги',
     'public_service_prices' => 'Публичные цены',
 ];

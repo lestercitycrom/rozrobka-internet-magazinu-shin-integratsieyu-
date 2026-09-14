@@ -19,11 +19,14 @@ class StoreServiceRequest extends FormRequest
         $isBattery = $slug === 'bilbatteri';
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
         $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
+        $firstUsesStorage = $isSeasonal && (string) $this->input('storage_plan', 'none') !== 'none';
+        $secondUsesStorage = $secondVehicle && (string) $this->input('storage_plan_2', 'none') !== 'none';
         $seasonalVehicleTypes = $isSeasonal && $this->input('fulfilment') === 'workshop'
             ? ['passenger']
             : ['passenger', 'large_vehicle', 'six_wheels'];
         $requiresProblem = in_array($slug, ['tpms-sensor', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
         $supportsAdditionalServices = in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
+        $bookingMode = (string) $this->input('booking_mode', '');
 
         return [
             'submission_token' => ['required', 'uuid'],
@@ -31,16 +34,19 @@ class StoreServiceRequest extends FormRequest
             'fulfilment' => ['required', Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
             'preferred_date' => [Rule::requiredIf($isSeasonal || $isMounting || $isBattery), 'nullable', 'date', 'after_or_equal:today'],
             'preferred_window' => ['nullable', 'string', 'max:64'],
-            'booking_slot_key' => ['nullable', 'string', 'max:80'],
+            'booking_mode' => ['nullable', Rule::in(['manual', 'period', 'exact'])],
+            'preferred_time_start' => [Rule::requiredIf($bookingMode === 'period'), 'nullable', 'date_format:H:i'],
+            'preferred_time_end' => [Rule::requiredIf($bookingMode === 'period'), 'nullable', 'date_format:H:i', 'after:preferred_time_start'],
+            'booking_slot_key' => [Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
             'car_count' => [Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
             'vehicle' => [Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => [Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
+            'registration_number' => [Rule::requiredIf($isBattery || $firstUsesStorage), 'nullable', 'string', 'max:32'],
             'tire_size' => [Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
             'vehicle_type' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
             'rim_band' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
             'storage_plan' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
             'vehicle_2' => [Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
-            'registration_number_2' => ['nullable', 'string', 'max:32'],
+            'registration_number_2' => [Rule::requiredIf($secondUsesStorage), 'nullable', 'string', 'max:32'],
             'tire_size_2' => ['nullable', 'string', 'max:64'],
             'vehicle_type_2' => [Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
             'rim_band_2' => [Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
@@ -53,6 +59,7 @@ class StoreServiceRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:24', new CustomerPhone],
             'address' => ['nullable', 'required_if:fulfilment,mobile', 'string', 'max:255'],
+            'district' => ['nullable', 'string', 'max:120'],
             'note' => [$requiresProblem ? 'required' : 'nullable', 'string', 'max:2000'],
             'consent' => ['accepted'],
             'website' => ['prohibited'],
@@ -69,6 +76,9 @@ class StoreServiceRequest extends FormRequest
             'preferred_date.required' => __('service_requests.validation.preferred_date_required'),
             'preferred_date.date' => __('service_requests.validation.preferred_date_invalid'),
             'preferred_date.after_or_equal' => __('service_requests.validation.preferred_date_not_past'),
+            'preferred_time_start.required' => __('service_requests.validation.period_start_required'),
+            'preferred_time_end.required' => __('service_requests.validation.period_end_required'),
+            'preferred_time_end.after' => __('service_requests.validation.period_order'),
         ];
     }
 

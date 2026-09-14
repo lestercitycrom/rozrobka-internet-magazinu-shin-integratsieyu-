@@ -37,17 +37,22 @@ final class UpsertServiceRequest extends FormRequest
         $requiresRequestedDate = $isSeasonal || $isMounting || $isBattery;
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
         $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
+        $firstUsesStorage = $isSeasonal && (string) $this->input('storage_plan', 'none') !== 'none';
+        $secondUsesStorage = $secondVehicle && (string) $this->input('storage_plan_2', 'none') !== 'none';
         $seasonalVehicleTypes = $isSeasonal && $effectiveFulfilment === 'workshop'
             ? ['passenger']
             : ['passenger', 'large_vehicle', 'six_wheels'];
         $supportsAdditionalServices = in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
         $requiresProblem = in_array($slug, ['tpms-sensor', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
         $detailsLocked = filled($requestModel?->booking_slot_key);
-        $bookingMode = (string) $this->input('booking_mode', $requestModel?->booking_slot_key ? 'exact' : 'manual');
+        $storedBookingMode = $requestModel?->booking_slot_key
+            ? 'exact'
+            : ($requestModel?->preferred_period_starts_at && $requestModel?->preferred_period_ends_at ? 'period' : 'manual');
+        $bookingMode = (string) $this->input('booking_mode', $storedBookingMode);
         $operationalUpdate = $isCreate || $this->has('service_slug');
         $storedDate = $requestModel?->preferred_date?->format('Y-m-d');
         $dateChanged = $isCreate || ($this->has('preferred_date') && (string) $this->input('preferred_date') !== (string) $storedDate);
-        $dateRequired = $bookingMode === 'exact'
+        $dateRequired = in_array($bookingMode, ['period', 'exact'], true)
             || ($requiresRequestedDate && ($isCreate || $serviceChanged || filled($storedDate)));
         $serviceExists = Rule::exists('service_pages', 'slug');
         if ($serviceChanged) {
@@ -57,10 +62,11 @@ final class UpsertServiceRequest extends FormRequest
         return [
             'operational_form' => ['nullable', 'boolean'],
             'submission_token' => [$isCreate ? 'required' : 'nullable', 'uuid'],
+            'client_id' => ['sometimes', 'nullable', 'integer', Rule::exists('clients', 'id')],
             'service_slug' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), 'string', $serviceExists],
             'service_variant' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
             'fulfilment' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
-            'booking_mode' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in(['manual', 'exact'])],
+            'booking_mode' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in(['manual', 'period', 'exact'])],
             'preferred_date' => [
                 ...$serviceContractPresence,
                 Rule::requiredIf($dateRequired),
@@ -69,16 +75,26 @@ final class UpsertServiceRequest extends FormRequest
                 ...($dateChanged ? ['after_or_equal:today'] : []),
             ],
             'preferred_window' => [$detailsLocked ? 'sometimes' : 'nullable', 'string', 'max:64'],
+            'preferred_time_start' => [
+                ...($operationalUpdate ? [] : ['sometimes']),
+                Rule::requiredIf($bookingMode === 'period' && $operationalUpdate),
+                'nullable', 'date_format:H:i',
+            ],
+            'preferred_time_end' => [
+                ...($operationalUpdate ? [] : ['sometimes']),
+                Rule::requiredIf($bookingMode === 'period' && $operationalUpdate),
+                'nullable', 'date_format:H:i', 'after:preferred_time_start',
+            ],
             'booking_slot_key' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
             'car_count' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
             'vehicle' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => [...$serviceContractPresence, Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
+            'registration_number' => [...$serviceContractPresence, Rule::requiredIf($isBattery || $firstUsesStorage), 'nullable', 'string', 'max:32'],
             'tire_size' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
             'vehicle_type' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
             'rim_band' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
             'storage_plan' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
             'vehicle_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
-            'registration_number_2' => ['nullable', 'string', 'max:32'],
+            'registration_number_2' => [...$serviceContractPresence, Rule::requiredIf($secondUsesStorage), 'nullable', 'string', 'max:32'],
             'tire_size_2' => ['nullable', 'string', 'max:64'],
             'vehicle_type_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
             'rim_band_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
@@ -97,6 +113,7 @@ final class UpsertServiceRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            'district' => ['nullable', 'string', 'max:120'],
             'note' => [($requiresProblem && $serviceChanged) ? 'required' : 'nullable', 'string', 'max:2000'],
             'admin_note' => ['nullable', 'string', 'max:4000'],
             'status' => $isCreate

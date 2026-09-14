@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminLocaleController;
 use App\Http\Controllers\Admin\BookingCalendarController;
 use App\Http\Controllers\Admin\CatalogController;
+use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\ContentPageController;
 use App\Http\Controllers\Admin\HomepageBusinessPartnerController;
 use App\Http\Controllers\Admin\HomepagePromotionController;
@@ -36,6 +37,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
 
         Route::middleware('admin.roles:owner,operations')->group(function (): void {
+            Route::resource('clients', ClientController::class)->except('destroy');
             Route::get('/service-requests', [ServiceRequestController::class, 'index'])->name('service-requests.index');
             Route::get('/service-requests/create', [ServiceRequestController::class, 'create'])->name('service-requests.create');
             Route::post('/service-requests', [ServiceRequestController::class, 'store'])->name('service-requests.store');

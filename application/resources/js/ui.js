@@ -246,26 +246,37 @@ const initBookingFlow = () => {
         const availability = one('[data-booking-availability]', root);
         if (availability) {
             const slotContainer = one('[data-booking-slots]', availability);
-            const manualContainer = one('[data-booking-manual]', availability);
+            const periodContainer = one('[data-booking-period]', availability);
             const slotSelect = one('[data-booking-slot-select]', availability);
-            const manualInput = one('[name="preferred_window"]', manualContainer || availability);
+            const modeSelect = one('[data-public-booking-mode]', root);
+            const periodInputs = all('[name="preferred_time_start"], [name="preferred_time_end"]', periodContainer || availability);
             const dateInput = one('[name="preferred_date"]', root);
             const status = one('[data-booking-availability-status]', availability);
             const timePanel = availability.closest('[data-booking-panel]');
             const timeNext = one('[data-booking-next]', timePanel);
             let fetchSequence = 0;
+            let scheduleConfigured = availability.dataset.initialConfigured === 'true';
 
-            const setMode = (configured) => {
-                if (slotContainer) slotContainer.hidden = !configured;
-                if (manualContainer) manualContainer.hidden = configured;
+            const syncMode = () => {
+                const exactOption = modeSelect ? one('option[value="exact"]', modeSelect) : null;
+                if (exactOption) exactOption.disabled = !scheduleConfigured;
+                if (modeSelect && !scheduleConfigured && modeSelect.value === 'exact') modeSelect.value = 'period';
+                const exact = scheduleConfigured && modeSelect?.value === 'exact';
+                const period = modeSelect?.value === 'period';
+                if (slotContainer) slotContainer.hidden = !exact;
+                if (periodContainer) periodContainer.hidden = !period;
                 if (slotSelect) {
-                    slotSelect.disabled = !configured;
-                    slotSelect.required = configured;
+                    slotSelect.disabled = !exact;
+                    slotSelect.required = exact;
                 }
-                if (manualInput) {
-                    manualInput.disabled = configured;
-                    manualInput.required = !configured;
-                }
+                periodInputs.forEach((input) => {
+                    input.disabled = !period;
+                    input.required = period;
+                });
+            };
+            const setConfigured = (configured) => {
+                scheduleConfigured = configured;
+                syncMode();
             };
             const resetSlots = (message) => {
                 if (!slotSelect) return;
@@ -294,8 +305,8 @@ const initBookingFlow = () => {
                     if (sequence !== fetchSequence) return;
 
                     const configured = payload.configured === true;
-                    setMode(configured);
-                    if (!configured) return;
+                    setConfigured(configured);
+                    if (!configured || modeSelect?.value !== 'exact') return;
 
                     const oldSlot = slotSelect.dataset.oldSlot || slotSelect.value;
                     resetSlots((payload.slots || []).length ? '' : availability.dataset.empty || '');
@@ -309,7 +320,7 @@ const initBookingFlow = () => {
                     if (sequence !== fetchSequence) return;
                     // Fail closed. If a schedule exists, the server will never
                     // accept a free-text value in place of a real slot.
-                    setMode(true);
+                    setConfigured(true);
                     resetSlots(availability.dataset.loadError || '');
                 } finally {
                     if (sequence === fetchSequence) {
@@ -319,7 +330,11 @@ const initBookingFlow = () => {
                 }
             };
 
-            setMode(availability.dataset.initialConfigured === 'true');
+            syncMode();
+            modeSelect?.addEventListener('change', () => {
+                syncMode();
+                if (modeSelect.value === 'exact') loadAvailability();
+            });
             dateInput?.addEventListener('change', loadAvailability);
             all('[name="fulfilment"]', root).forEach((field) => field.addEventListener('change', loadAvailability));
             if (dateInput?.value) loadAvailability();
@@ -329,6 +344,14 @@ const initBookingFlow = () => {
         try { seasonalPrices = JSON.parse(root.dataset.seasonalPrices || '{}'); } catch { seasonalPrices = {}; }
         const secondVehicle = one('[data-seasonal-vehicle="2"]', root);
         const carCount = one('[data-car-count]', root);
+        const syncStorageRegistrations = () => {
+            all('[data-seasonal-vehicle]', root).forEach((vehicle) => {
+                if (vehicle.hidden) return;
+                const plan = one('[data-storage-plan]', vehicle);
+                const registration = one('[data-storage-registration]', vehicle);
+                if (registration) registration.required = plan?.value !== 'none';
+            });
+        };
         const syncVehicleTypeOptions = () => {
             const workshop = one('[name="fulfilment"]:checked', root)?.value === 'workshop';
             ['vehicle_type', 'vehicle_type_2'].forEach((name) => {
@@ -348,6 +371,7 @@ const initBookingFlow = () => {
                 field.disabled = !enabled;
                 if (field.name === 'vehicle_2') field.required = enabled;
             });
+            syncStorageRegistrations();
         };
         const priceRange = (suffix = '') => {
             const value = (name, fallback) => one(`[name="${name}${suffix}"]`, root)?.value || fallback;
@@ -442,7 +466,9 @@ const initBookingFlow = () => {
         all('[data-booking-back]', root).forEach((button) => button.addEventListener('click', () => show(index - 1, true)));
         root.addEventListener('input', updateSummary);
         root.addEventListener('change', updateSummary);
+        all('[data-storage-plan]', root).forEach((field) => field.addEventListener('change', syncStorageRegistrations));
         root.dataset.enhanced = 'true';
+        syncStorageRegistrations();
         show(index);
     });
 };
