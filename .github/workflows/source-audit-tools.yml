@@ -1,0 +1,71 @@
+name: Source audit offline tools
+on:
+  push:
+    branches: [codex/issue-63-source-audit]
+    paths: [.github/workflows/source-audit-tools.yml]
+permissions:
+  contents: read
+jobs:
+  public-dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Download public wheels and numeric model files only
+        env:
+          HF_HUB_DISABLE_XET: '1'
+        run: |
+          set -euo pipefail
+          mkdir -p bundle/wheels bundle/model out
+          python -m pip download --only-binary=:all: --dest bundle/wheels faster-whisper==1.2.1 ctranslate2==4.6.0
+          python -m pip install --quiet 'huggingface_hub<1.0'
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download('Zoont/faster-whisper-large-v3-turbo-int8-ct2', revision='8d03bef2d94576dda118069ca1da6c721d27666f', local_dir='bundle/model', allow_patterns=['config.json','model.bin','preprocessor_config.json','tokenizer.json','vocabulary.json','README.md'])
+          PY
+          rm -rf bundle/model/.cache
+          (cd bundle && find . -type f -print0 | sort -z | xargs -0 sha256sum > ../out/MANIFEST.sha256)
+          cp out/MANIFEST.sha256 bundle/MANIFEST.sha256
+          printf '%s\n' 'Public ASR dependencies only. No repository source, private media or credentials.' 'Model: Zoont/faster-whisper-large-v3-turbo-int8-ct2 @ 8d03bef2d94576dda118069ca1da6c721d27666f' 'faster-whisper 1.2.1; ctranslate2 4.6.0; CPython 3.13; Linux x86_64.' > bundle/PROVENANCE.txt
+          tar -cf - bundle | split -b 200M -d -a 2 - out/offline-asr.tar.part-
+          ls -lh out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-part-00
+          path: out/offline-asr.tar.part-00
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-part-01
+          path: out/offline-asr.tar.part-01
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-part-02
+          path: out/offline-asr.tar.part-02
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-part-03
+          path: out/offline-asr.tar.part-03
+          compression-level: 0
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-part-04
+          path: out/offline-asr.tar.part-04
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-part-05
+          path: out/offline-asr.tar.part-05
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: ignore
