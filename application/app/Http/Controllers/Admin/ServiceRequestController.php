@@ -44,6 +44,7 @@ class ServiceRequestController extends Controller
             'status' => ['nullable', Rule::in(['new', 'contacted', 'closed', 'cancelled'])],
             'district' => ['nullable', 'string', 'max:120'],
             'dekkhotell' => ['nullable', 'boolean'],
+            'assigned_van' => ['nullable', Rule::in(['unassigned', 'van_1', 'van_2'])],
             'view' => ['nullable', Rule::in(['all', 'new', 'workshop', 'mobile', 'additional'])],
             'new_only' => ['nullable', 'boolean'],
         ]);
@@ -70,6 +71,15 @@ class ServiceRequestController extends Controller
             ->when(filled($filters['status'] ?? null), fn (Builder $query) => $query->where('status', $filters['status']))
             ->when(filled($filters['district'] ?? null), fn (Builder $query) => $query->where('district', 'like', '%'.trim((string) $filters['district']).'%'))
             ->when(isset($filters['dekkhotell']), fn (Builder $query) => $query->where('dekkhotell', $input->boolean('dekkhotell')))
+            ->when(filled($filters['assigned_van'] ?? null), function (Builder $query) use ($filters): void {
+                $query->where('fulfilment', 'mobile');
+                if ($filters['assigned_van'] === 'unassigned') {
+                    $query->whereNull('assigned_van');
+
+                    return;
+                }
+                $query->where('assigned_van', $filters['assigned_van']);
+            })
             ->when($input->boolean('new_only'), fn (Builder $query) => $query->where('status', ServiceRequestStatus::New));
 
         match ($filters['view'] ?? 'all') {
@@ -77,7 +87,8 @@ class ServiceRequestController extends Controller
             'workshop' => $query->where('fulfilment', 'workshop'),
             'mobile' => $query->where('fulfilment', 'mobile'),
             'additional' => $query->where(function (Builder $query): void {
-                $query->where('service_slug', 'oljeskift')->orWhereNotNull('additional_services');
+                $query->whereIn('service_slug', ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'])
+                    ->orWhereJsonLength('additional_services', '>', 0);
             }),
             default => null,
         };

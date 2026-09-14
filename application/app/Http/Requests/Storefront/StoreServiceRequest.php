@@ -27,14 +27,15 @@ class StoreServiceRequest extends FormRequest
         $requiresProblem = in_array($slug, ['tpms-sensor', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
         $supportsAdditionalServices = in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
         $bookingMode = (string) $this->input('booking_mode', '');
+        $requiresStructuredDate = in_array($bookingMode, ['period', 'exact'], true);
 
         return [
             'submission_token' => ['required', 'uuid'],
             'service_variant' => [Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
             'fulfilment' => ['required', Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
-            'preferred_date' => [Rule::requiredIf($isSeasonal || $isMounting || $isBattery), 'nullable', 'date', 'after_or_equal:today'],
+            'preferred_date' => [Rule::requiredIf($isSeasonal || $isMounting || $isBattery || $requiresStructuredDate), 'nullable', 'date', 'after_or_equal:today'],
             'preferred_window' => ['nullable', 'string', 'max:64'],
-            'booking_mode' => ['nullable', Rule::in(['manual', 'period', 'exact'])],
+            'booking_mode' => ['nullable', Rule::in(['period', 'exact'])],
             'preferred_time_start' => [Rule::requiredIf($bookingMode === 'period'), 'nullable', 'date_format:H:i'],
             'preferred_time_end' => [Rule::requiredIf($bookingMode === 'period'), 'nullable', 'date_format:H:i', 'after:preferred_time_start'],
             'booking_slot_key' => [Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],

@@ -232,11 +232,11 @@ class E2eStorefrontSeeder extends Seeder
                 'preferred_date' => now()->subDays(10)->format('Y-m-d'),
                 'preferred_window' => 'Ettermiddag',
                 'vehicle' => 'Tesla Model Y',
-                'registration_number' => 'EV12345',
+                'registration_number' => null,
                 'tire_size' => '255/45 R19',
                 'dekkhotell' => true,
                 'vehicles' => [
-                    ['vehicle' => 'Tesla Model Y', 'registration_number' => 'EV12345', 'tire_size' => '255/45 R19', 'vehicle_type' => 'passenger', 'rim_band' => 'r19', 'storage_plan' => 'renew'],
+                    ['vehicle' => 'Tesla Model Y', 'registration_number' => null, 'tire_size' => '255/45 R19', 'vehicle_type' => 'passenger', 'rim_band' => 'r19', 'storage_plan' => 'renew'],
                     ['vehicle' => 'Volvo XC60', 'registration_number' => 'EV54321', 'tire_size' => '235/55 R18', 'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'none'],
                 ],
                 'quote_min_minor' => 230000,

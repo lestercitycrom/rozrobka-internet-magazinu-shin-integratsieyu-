@@ -25,7 +25,8 @@
             <label class="block text-sm font-bold">{{ __('service_requests.status') }}<select class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="status"><option value="">{{ __('service_requests.all') }}</option>@foreach(['new','contacted','closed','cancelled'] as $value)<option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ __('service_requests.status_'.$value) }}</option>@endforeach</select></label>
             <label class="block text-sm font-bold">{{ __('service_requests.district') }}<input class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="district" value="{{ $filters['district'] ?? '' }}"></label>
             <label class="block text-sm font-bold">{{ __('service_requests.dekkhotell') }}<select class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="dekkhotell"><option value="">{{ __('service_requests.all') }}</option><option value="1" @selected(($filters['dekkhotell'] ?? '') === '1')>{{ __('service_requests.yes') }}</option><option value="0" @selected(($filters['dekkhotell'] ?? '') === '0')>{{ __('service_requests.no') }}</option></select></label>
-            <div class="flex flex-wrap items-end gap-3 md:col-span-2 xl:col-span-3">
+            <label class="block text-sm font-bold">{{ __('service_requests.assigned_van') }}<select class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="assigned_van"><option value="">{{ __('service_requests.all') }}</option>@foreach(['unassigned','van_1','van_2'] as $value)<option value="{{ $value }}" @selected(($filters['assigned_van'] ?? '') === $value)>{{ __('service_requests.assigned_van_'.$value) }}</option>@endforeach</select></label>
+            <div class="flex flex-wrap items-end gap-3 md:col-span-2 xl:col-span-2">
                 <button class="et-btn et-btn--primary" type="submit">{{ __('service_requests.apply_filters') }}</button>
                 <a class="et-btn et-btn--outline" href="{{ route('admin.service-requests.index', $activeView === 'all' ? [] : ['view' => $activeView]) }}">{{ __('service_requests.reset_filters') }}</a>
             </div>
@@ -42,6 +43,7 @@
                         <p class="mt-3 font-bold">@if($item->client)<a class="underline" href="{{ route('admin.clients.show', $item->client) }}">{{ $item->name }}</a>@else{{ $item->name }}@endif</p>
                         <p class="mt-1 text-sm text-easytire-muted">{{ $item->phone }} · {{ $serviceTitles[$item->service_slug] ?? $item->service_slug }}</p>
                         <p class="mt-3 text-sm">{{ __('service_requests.fulfilment_'.$item->fulfilment) }}@if($item->district) · {{ $item->district }}@endif · {{ $item->dekkhotell ? __('service_requests.dekkhotell_short') : __('service_requests.no_dekkhotell') }}</p>
+                        @if($item->fulfilment === 'mobile')<p class="mt-2 text-sm text-easytire-muted">{{ __('service_requests.assigned_van') }}: {{ __('service_requests.assigned_van_'.($item->assigned_van ?: 'unassigned')) }}</p>@endif
                         <p class="mt-3 text-sm text-easytire-muted">{{ $item->preferred_date?->format('Y-m-d') ?: __('service_requests.unconfirmed') }} · {{ $item->preferred_window ?: __('service_requests.unconfirmed') }}</p>
                         <p class="mt-2 text-xs text-easytire-muted">{{ __('service_requests.source_'.$item->source->value) }}@if($item->createdBy) · {{ $item->createdBy->name }}@endif · {{ $item->created_at->format('Y-m-d H:i') }}</p>
                     </article>
@@ -49,7 +51,7 @@
             </div>
             <div class="easytire-card hidden overflow-x-auto rounded-2xl lg:block">
                 <table class="min-w-[78rem] text-left text-sm">
-                    <thead class="bg-easytire-ink text-white"><tr><th class="p-4">{{ __('service_requests.reference') }}</th><th class="p-4">{{ __('service_requests.customer') }}</th><th class="p-4">{{ __('service_requests.service') }}</th><th class="p-4">{{ __('service_requests.preferred_date') }}</th><th class="p-4">{{ __('service_requests.district') }}</th><th class="p-4">{{ __('service_requests.dekkhotell') }}</th><th class="p-4">{{ __('service_requests.status') }}</th><th class="p-4">{{ __('service_requests.source') }}</th><th class="p-4">{{ __('service_requests.received') }}</th></tr></thead>
+                    <thead class="bg-easytire-ink text-white"><tr><th class="p-4">{{ __('service_requests.reference') }}</th><th class="p-4">{{ __('service_requests.customer') }}</th><th class="p-4">{{ __('service_requests.service') }}</th><th class="p-4">{{ __('service_requests.preferred_date') }}</th><th class="p-4">{{ __('service_requests.district') }}</th><th class="p-4">{{ __('service_requests.assigned_van') }}</th><th class="p-4">{{ __('service_requests.dekkhotell') }}</th><th class="p-4">{{ __('service_requests.status') }}</th><th class="p-4">{{ __('service_requests.source') }}</th><th class="p-4">{{ __('service_requests.received') }}</th></tr></thead>
                     <tbody class="divide-y divide-easytire-border">
                         @foreach($requests as $item)
                             <tr class="transition hover:bg-easytire-brand-soft/50">
@@ -58,6 +60,7 @@
                                 <td class="p-4"><p>{{ $serviceTitles[$item->service_slug] ?? $item->service_slug }}</p><p class="mt-1 text-easytire-muted">{{ __('service_requests.fulfilment_'.$item->fulfilment) }}</p></td>
                                 <td class="p-4">{{ $item->preferred_date?->format('Y-m-d') ?: __('service_requests.unconfirmed') }}<br><span class="text-easytire-muted">{{ $item->preferred_window ?: __('service_requests.unconfirmed') }}</span></td>
                                 <td class="p-4 text-easytire-muted">{{ $item->district ?: '—' }}</td>
+                                <td class="p-4 text-easytire-muted">{{ $item->fulfilment === 'mobile' ? __('service_requests.assigned_van_'.($item->assigned_van ?: 'unassigned')) : '—' }}</td>
                                 <td class="p-4">{{ $item->dekkhotell ? __('service_requests.yes') : __('service_requests.no') }}</td>
                                 <td class="p-4"><span class="et-admin-status et-admin-status--{{ $statusTone[$item->status->value] ?? 'neutral' }}">{{ __('service_requests.status_'.$item->status->value) }}</span></td>
                                 <td class="p-4 text-easytire-muted">{{ __('service_requests.source_'.$item->source->value) }}<br>{{ $item->createdBy?->name }}</td>

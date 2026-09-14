@@ -60,7 +60,7 @@ final class ServiceRequestCreator
         return DB::transaction(function () use ($request, $data): ServiceRequest {
             /** @var ServiceRequest $locked */
             $locked = ServiceRequest::query()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
-            $contact = Arr::only($data, ['client_id', 'name', 'email', 'phone', 'address', 'district', 'note', 'admin_note', 'status']);
+            $contact = Arr::only($data, ['client_id', 'name', 'email', 'phone', 'address', 'district', 'assigned_van', 'note', 'admin_note', 'status']);
             if (array_key_exists('email', $contact)) {
                 $contact['email'] = filled($contact['email']) ? mb_strtolower(trim((string) $contact['email'])) : null;
             }
@@ -227,6 +227,7 @@ final class ServiceRequestCreator
             'service_slug' => (string) $data['service_slug'],
             'service_variant' => $data['service_variant'] ?? null,
             'fulfilment' => (string) $data['fulfilment'],
+            'assigned_van' => ($data['fulfilment'] ?? null) === 'mobile' ? ($data['assigned_van'] ?? null) : null,
             'preferred_date' => $data['preferred_date'] ?? null,
             'preferred_window' => $period === null
                 ? (filled($data['preferred_window'] ?? null) ? trim((string) $data['preferred_window']) : null)
@@ -260,6 +261,7 @@ final class ServiceRequestCreator
             'service_slug' => $request->service_slug,
             'service_variant' => $request->service_variant,
             'fulfilment' => $request->fulfilment,
+            'assigned_van' => $request->assigned_van,
             'booking_mode' => $request->booking_slot_key
                 ? 'exact'
                 : ($request->preferred_period_starts_at && $request->preferred_period_ends_at ? 'period' : 'manual'),
@@ -295,7 +297,7 @@ final class ServiceRequestCreator
 
         $fullForm = (bool) ($data['operational_form'] ?? false);
         if (! array_key_exists('dekkhotell', $data)) {
-            $data['dekkhotell'] = $fullForm ? false : $request->dekkhotell;
+            $data['dekkhotell'] = $request->dekkhotell;
         }
         if (! array_key_exists('additional_services', $data)) {
             $data['additional_services'] = $fullForm ? null : $request->additional_services;
@@ -383,6 +385,19 @@ final class ServiceRequestCreator
         $date = (string) ($data['preferred_date'] ?? '');
         $start = (string) ($data['preferred_time_start'] ?? '');
         $end = (string) ($data['preferred_time_end'] ?? '');
+        if ($date === '' || $start === '' || $end === '') {
+            $messages = [];
+            if ($date === '') {
+                $messages['preferred_date'] = __('service_requests.validation.preferred_date_required');
+            }
+            if ($start === '') {
+                $messages['preferred_time_start'] = __('service_requests.validation.period_start_required');
+            }
+            if ($end === '') {
+                $messages['preferred_time_end'] = __('service_requests.validation.period_end_required');
+            }
+            throw ValidationException::withMessages($messages);
+        }
         $timezone = $this->calendar->timezone();
 
         return [

@@ -28,6 +28,7 @@ $app->make(Kernel::class)->bootstrap();
 
 const INTAKE_MIGRATION = '2026_09_14_000000_prepare_service_requests_for_manual_intake';
 const CLIENT_CRM_MIGRATION = '2026_09_14_010000_add_client_crm_fields';
+const VAN_ASSIGNMENT_MIGRATION = '2026_09_14_020000_add_assigned_van_to_service_requests';
 
 function intakeAssert(bool $condition, string $message, mixed $actual = null): void
 {
@@ -54,6 +55,7 @@ function intakeBaselineMigrations(): array
         static fn (string $path): bool => ! in_array(basename($path), [
             INTAKE_MIGRATION.'.php',
             CLIENT_CRM_MIGRATION.'.php',
+            VAN_ASSIGNMENT_MIGRATION.'.php',
         ], true),
     ));
 }
@@ -166,7 +168,7 @@ try {
         intakeAssert(Schema::hasColumn('service_requests', $column), "Missing service_requests.{$column}.");
     }
     intakeAssert(Schema::hasTable('clients'), 'Clients table was not created by the additive CRM migration.');
-    foreach (['client_id', 'district', 'preferred_period_starts_at', 'preferred_period_ends_at'] as $column) {
+    foreach (['client_id', 'district', 'assigned_van', 'preferred_period_starts_at', 'preferred_period_ends_at'] as $column) {
         intakeAssert(Schema::hasColumn('service_requests', $column), "Missing service_requests.{$column}.");
     }
     foreach (['source', 'actor_user_id', 'session_fingerprint'] as $column) {
@@ -179,6 +181,7 @@ try {
     intakeAssert($after['source'] === 'public' && $after['created_by_user_id'] === null, 'Legacy request provenance was not backfilled safely.', $after);
     intakeAssert($after['phone_normalized'] === '4790000000', 'Legacy phone was not normalized.', $after['phone_normalized']);
     intakeAssert($after['client_id'] === null && $after['district'] === null, 'Legacy request was linked or assigned a district during migration.', $after);
+    intakeAssert($after['assigned_van'] === null, 'Legacy request was assigned to a van during migration.', $after['assigned_van']);
     intakeAssert($after['preferred_period_starts_at'] === null && $after['preferred_period_ends_at'] === null, 'Legacy text window was guessed into structured timestamps.', $after);
     $legacySubmission = (array) DB::table('service_request_submissions')->where('token', $legacyToken)->first();
     intakeAssert($legacySubmission['source'] === 'public' && $legacySubmission['actor_user_id'] === null && $legacySubmission['session_fingerprint'] === null, 'Legacy submission provenance changed unexpectedly.', $legacySubmission);
@@ -260,6 +263,9 @@ try {
         'preferred_window' => null,
         'client_id' => $client->id,
         'district' => 'Tromsdalen',
+        'fulfilment' => 'mobile',
+        'address' => 'Syntheticvegen 59',
+        'assigned_van' => 'van_2',
         'name' => 'MySQL request snapshot',
         'phone' => '+47 944 44 444',
     ]), $operations, 'nb');
@@ -268,6 +274,7 @@ try {
     intakeAssert($period->preferred_window === '12:00–15:00', 'Structured period label was not retained.', $period->preferred_window);
     intakeAssert($period->preferred_period_starts_at?->setTimezone($calendar->timezone())->format('H:i') === '12:00', 'Structured period start was not retained.');
     intakeAssert($period->district === 'Tromsdalen', 'Request district was not retained.');
+    intakeAssert($period->assigned_van === 'van_2', 'Manual van assignment was not retained.', $period->assigned_van);
     $client->update(['name' => 'Changed MySQL CRM client', 'phone' => '+47 955 55 555', 'phone_normalized' => '4795555555']);
     $period->refresh();
     intakeAssert($period->name === 'MySQL request snapshot' && $period->phone === '+47 944 44 444', 'Editing a client rewrote the historical request snapshot.');
@@ -296,6 +303,7 @@ try {
             'legacy_period_not_guessed' => true,
             'client_snapshot_independence' => true,
             'structured_unconfirmed_period' => true,
+            'manual_nullable_van_assignment' => true,
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
 } catch (Throwable $exception) {

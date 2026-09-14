@@ -16,7 +16,7 @@ It adds an independent client registry, explicit snapshot-safe links between cli
 
 No customer login, automatic client merge, Dekkhotell inventory, geocoding, route optimization or automatic van allocation is introduced. Existing exact slots retain their capacity-safe claim path. A preferred period never claims an exact slot.
 
-The only open business decision inside this scope is the meaning of Car 1 / Car 2. Two mobile vans are confirmed, but names, zones, shifts and allocation rules are not. The candidate therefore does not claim or infer an assigned van while the PM question is unanswered.
+PM decision `5660431191` resolves the limited Car 1 / Car 2 question as a nullable manual internal assignment to stable values `van_1` / `van_2`. It does not identify customer vehicles, reserve a van, or infer names, crews, zones, shifts, routes or allocation rules.
 
 ## 2. Authoritative sources and interpretation
 
@@ -56,7 +56,8 @@ Confirmed requirements are implemented. Open business semantics remain explicit 
 
 - One paginated request table exposes client/contact, phone, service, fulfilment, exact time or preferred period, district, Dekkhotell, status, source, creator and creation time.
 - Search and filters combine and persist through pagination: normalized phone/name/reference/email, date or range, service, fulfilment, status, district and Dekkhotell.
-- Query-backed views are available for all, new, workshop, mobile and additional-service work. The additional view includes oil-change requests and requests with stored add-ons.
+- Query-backed views are available for all, new, workshop, mobile and additional-service work. The additional view includes the four confirmed additional-service families plus requests with a nonempty stored add-on list; an empty JSON list does not classify a request as additional work.
+- Mobile requests have a nullable manual internal van assignment (`van_1` / `van_2`) with a combinable filter. Workshop requests cannot retain or accept an active van assignment.
 - Commerce orders remain a separate paid aggregate with their own payment and NDI lifecycle.
 
 ### Permissions and external safety
@@ -80,13 +81,13 @@ Confirmed requirements are implemented. Open business semantics remain explicit 
 | Historical free text is not guessed | Implemented | nullable migration plus real-schema upgrade regression |
 | Combined operational filters and views | Implemented | admin controller/list and CRM filter tests |
 | Owner/Operations only | Implemented | route middleware, form authorization and forged-ID/RBAC tests |
-| Car 1 / Car 2 assignment | Decision required | two vans confirmed; resource semantics and allocation remain open |
+| Manual mobile van assignment | Implemented by PM decision | nullable `van_1` / `van_2`; no routing, resource capacity or customer-vehicle meaning |
 | Automatic routing, storage inventory, client merge | Out of scope | deliberately absent |
 
 ## 5. Data and migration safety
 
-- The migration is additive: it creates `clients` and adds nullable link, district and period columns to `service_requests`.
-- Legacy request rows keep `client_id`, district and structured-period fields null. Existing `preferred_window` values remain unchanged.
+- The migrations are additive: they create `clients` and add nullable link, district, period and manual-van columns to `service_requests`.
+- Legacy request rows keep `client_id`, district, assigned van and structured-period fields null. Existing `preferred_window` values remain unchanged.
 - Code rollback must leave the additive schema and collected data in place. The migration's `down()` deliberately does not destroy CRM data.
 - A real isolated MySQL upgrade regression builds the pre-Issue-59 schema, inserts a legacy request, applies the candidate migration and verifies both legacy preservation and new linked-period behavior.
 - Before staging use: take the normal database backup, run migrations once, verify migration status, then perform a synthetic Owner/Operations walkthrough.
@@ -100,6 +101,9 @@ Confirmed requirements are implemented. Open business semantics remain explicit 
 - Snapshot independence and forged client ID rejection.
 - Structured period validation and contact-only legacy edit preservation.
 - Storage registration per vehicle and explicit storage removal.
+- Legacy selected storage without a registration remains editable; a newly selected or changed storage state requires the registration.
+- Generic period transitions require a complete date/start/end tuple, and public seasonal forms cannot use the staff-only manual mode.
+- Manual mobile van assignment, filtering, public-forgery rejection and mobile-to-workshop clearing.
 - Combined views/filters with pagination query retention.
 - Existing service-request intake, slot capacity, quote, status and booking regressions.
 - Real MySQL additive-upgrade regression in CI.
@@ -112,13 +116,11 @@ Confirmed requirements are implemented. Open business semantics remain explicit 
 - Dynamic per-vehicle registration requirement, successful submit and global overflow checks.
 - No real customer data or external side effects.
 
-## 7. Open decision: mobile van assignment
+## 7. Decided boundary: mobile van assignment
 
-Exact PM question:
+PM decision `5660431191` selects only a nullable manual operator choice: unassigned, outgoing van 1 or outgoing van 2. The public form cannot set it. Moving an editable request from mobile to workshop clears the assignment, while contact-only or client-link edits preserve it.
 
-> Should the first implementation add only a nullable manual resource assignment with stable values `van_1` / `van_2` and localized operator labels, with no automatic routing and no implication that these are the customer's first/second vehicles; or must assignment remain open until the customer supplies resource names, zones and shifts?
-
-Until answered, request rows remain unassigned. This does not block the confirmed client, period, district, Dekkhotell and worklist features.
+This field is not a resource calendar. It does not change exact-slot capacity, price, status, dates or notifications and does not confirm a vehicle or route to the customer. Names, crews, zones, travel time, automatic allocation and per-van availability remain outside this slice.
 
 ## 8. Staging launch gates
 

@@ -86,13 +86,68 @@ test('an operator can explicitly remove storage without leaving a false dekkhote
         'operational_form' => '1', 'booking_mode' => 'period', 'preferred_date' => $date,
         'preferred_time_start' => '09:00', 'preferred_time_end' => '11:00',
         'car_count' => 1, 'vehicle' => 'Tesla Model Y', 'vehicle_type' => 'passenger',
-        'rim_band' => 'r19', 'storage_plan' => 'none', 'registration_number' => null,
+        'rim_band' => 'r19', 'storage_plan' => 'none', 'registration_number' => 'EV12345',
     ]))->assertRedirect();
 
     $request->refresh();
     expect($request->dekkhotell)->toBeFalse()
         ->and($request->vehicles[0]['storage_plan'])->toBe('none')
-        ->and($request->vehicles[0]['registration_number'])->toBeNull();
+        ->and($request->vehicles[0]['registration_number'])->toBe('EV12345');
+});
+
+test('legacy storage without registration remains editable but a new storage selection requires registration', function (): void {
+    $service = issue59CrmService('issue-59-legacy-storage', ServiceRequestFlow::Seasonal);
+    $operations = User::factory()->operations()->create();
+    $date = now('Europe/Oslo')->addDays(2)->format('Y-m-d');
+    $legacy = ServiceRequest::query()->create([
+        'reference' => 'SR-CRM-LEGACY-STORAGE', 'locale' => 'nb', 'source' => ServiceRequestSource::Public,
+        'service_slug' => $service->slug, 'fulfilment' => 'workshop', 'preferred_date' => $date,
+        'preferred_window' => 'Ettermiddag', 'vehicle' => 'Legacy car', 'registration_number' => null,
+        'dekkhotell' => true, 'vehicles' => [[
+            'vehicle' => 'Legacy car', 'registration_number' => null, 'tire_size' => '205/55 R16',
+            'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'renew',
+        ]],
+        'name' => 'Legacy storage customer', 'phone' => '90000000', 'phone_normalized' => '4790000000',
+        'status' => ServiceRequestStatus::New,
+    ]);
+
+    $unchangedStorage = issue59AdminPayload($service, [
+        'operational_form' => '1', 'booking_mode' => 'manual', 'preferred_date' => $date,
+        'preferred_window' => 'Ettermiddag', 'car_count' => 1, 'vehicle' => 'Legacy car',
+        'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'renew',
+        'registration_number' => null, 'name' => 'Legacy contact updated',
+    ]);
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $legacy), $unchangedStorage)
+        ->assertRedirect();
+    $legacy->refresh();
+    expect($legacy->name)->toBe('Legacy contact updated')
+        ->and($legacy->vehicles[0]['storage_plan'])->toBe('renew')
+        ->and($legacy->vehicles[0]['registration_number'])->toBeNull();
+
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $legacy), [
+        ...$unchangedStorage, 'storage_plan' => 'new', 'registration_number' => null,
+    ])->assertSessionHasErrors('registration_number');
+    expect($legacy->refresh()->vehicles[0]['storage_plan'])->toBe('renew');
+});
+
+test('general tyre storage requires registration only when the storage choice is newly enabled', function (): void {
+    $service = issue59CrmService('omlegging-balansering');
+    $operations = User::factory()->operations()->create();
+    $date = now('Europe/Oslo')->addDays(2)->format('Y-m-d');
+    $payload = issue59AdminPayload($service, [
+        'operational_form' => '1', 'booking_mode' => 'manual', 'preferred_date' => $date,
+        'service_variant' => 'mounting_balancing', 'wheel_count' => 4, 'tire_size' => '205/55 R16',
+        'dekkhotell_control' => '1', 'dekkhotell' => '1', 'registration_number' => null,
+    ]);
+
+    $this->actingAs($operations)->post(route('admin.service-requests.store'), $payload)
+        ->assertSessionHasErrors('registration_number');
+    $this->actingAs($operations)->post(route('admin.service-requests.store'), [
+        ...$payload, 'submission_token' => (string) Str::uuid(), 'registration_number' => 'ZH12345',
+    ])->assertRedirect();
+
+    expect(ServiceRequest::query()->sole()->dekkhotell)->toBeTrue()
+        ->and(ServiceRequest::query()->sole()->registration_number)->toBe('ZH12345');
 });
 
 test('period validation is atomic while a historical contact-only edit stays possible', function (): void {
@@ -122,6 +177,38 @@ test('period validation is atomic while a historical contact-only edit stays pos
         ->and($request->preferred_period_starts_at)->not->toBeNull();
 });
 
+test('public and admin period transitions require a date and public seasonal manual mode is rejected', function (): void {
+    $generic = issue59CrmService('oljeskift');
+    $seasonal = issue59CrmService('issue-59-public-mode', ServiceRequestFlow::Seasonal);
+    $operations = User::factory()->operations()->create();
+
+    $this->post(route('storefront.requests.store', $generic->slug), [
+        'submission_token' => (string) Str::uuid(), 'fulfilment' => 'workshop', 'booking_mode' => 'period',
+        'preferred_time_start' => '09:00', 'preferred_time_end' => '11:00', 'name' => 'Missing date',
+        'phone' => '90000000', 'consent' => '1',
+    ])->assertSessionHasErrors('preferred_date');
+
+    $date = now('Europe/Oslo')->addDays(2)->format('Y-m-d');
+    $this->post(route('storefront.requests.store', $seasonal->slug), issue59SeasonalPayload($date, [
+        'booking_mode' => 'manual', 'preferred_window' => 'Ettermiddag',
+    ]))->assertSessionHasErrors('booking_mode');
+
+    $existing = ServiceRequest::query()->create([
+        'reference' => 'SR-CRM-MANUAL-PERIOD', 'locale' => 'nb', 'source' => ServiceRequestSource::AdminManual,
+        'service_slug' => $generic->slug, 'fulfilment' => 'workshop', 'preferred_window' => 'Ettermiddag',
+        'name' => 'Admin period transition', 'phone' => '90000000', 'phone_normalized' => '4790000000',
+        'status' => ServiceRequestStatus::New,
+    ]);
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $existing), issue59AdminPayload($generic, [
+        'operational_form' => '1', 'booking_mode' => 'period', 'preferred_time_start' => '09:00',
+        'preferred_time_end' => '11:00',
+    ]))->assertSessionHasErrors('preferred_date');
+
+    expect(ServiceRequest::query()->count())->toBe(1)
+        ->and($existing->refresh()->preferred_period_starts_at)->toBeNull()
+        ->and($existing->preferred_window)->toBe('Ettermiddag');
+});
+
 test('work views and district and dekkhotell filters combine and persist in pagination', function (): void {
     $service = issue59CrmService('issue-59-filter-service');
     $oil = issue59CrmService('oljeskift');
@@ -146,6 +233,73 @@ test('work views and district and dekkhotell filters combine and persist in pagi
 
     $this->actingAs($operations)->get(route('admin.service-requests.index', ['view' => 'additional']))
         ->assertOk()->assertSee('SR-CRM-25')->assertSee('SR-CRM-27')->assertDontSee('SR-CRM-01');
+});
+
+test('additional work view includes supported services and only nonempty add-on selections', function (): void {
+    $operations = User::factory()->operations()->create();
+    foreach (['bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad', 'unrelated-service'] as $slug) {
+        issue59CrmService($slug);
+    }
+    foreach ([
+        ['SR-ADD-BATTERY', 'bilbatteri', null],
+        ['SR-ADD-DIAG', 'bildiagnose', []],
+        ['SR-ADD-WIPER', 'lyspaerer-viskerblad', null],
+        ['SR-ADD-EMPTY', 'unrelated-service', []],
+        ['SR-ADD-SELECTED', 'unrelated-service', ['air_filter']],
+    ] as [$reference, $slug, $addons]) {
+        ServiceRequest::query()->create([
+            'reference' => $reference, 'locale' => 'nb', 'source' => ServiceRequestSource::AdminManual,
+            'service_slug' => $slug, 'fulfilment' => 'workshop', 'additional_services' => $addons,
+            'name' => 'Additional view', 'phone' => '90000000', 'phone_normalized' => '4790000000',
+            'status' => ServiceRequestStatus::New,
+        ]);
+    }
+
+    $this->actingAs($operations)->get(route('admin.service-requests.index', ['view' => 'additional']))
+        ->assertOk()->assertSee('SR-ADD-BATTERY')->assertSee('SR-ADD-DIAG')->assertSee('SR-ADD-WIPER')
+        ->assertSee('SR-ADD-SELECTED')->assertDontSee('SR-ADD-EMPTY');
+});
+
+test('manual van assignment is mobile-only filterable and survives contact edits', function (): void {
+    $service = issue59CrmService('issue-59-mobile-van');
+    $operations = User::factory()->operations()->create();
+    $payload = issue59AdminPayload($service, [
+        'operational_form' => '1', 'fulfilment' => 'mobile', 'address' => 'Vanvegen 1',
+        'district' => 'Sentrum', 'assigned_van' => 'van_1',
+    ]);
+
+    $this->actingAs($operations)->post(route('admin.service-requests.store'), $payload)->assertRedirect();
+    $request = ServiceRequest::query()->sole();
+    expect($request->assigned_van)->toBe('van_1');
+
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+        'name' => 'Contact only', 'phone' => '91111111', 'status' => 'contacted',
+    ])->assertRedirect();
+    expect($request->refresh()->assigned_van)->toBe('van_1');
+
+    $this->actingAs($operations)->get(route('admin.service-requests.index', ['assigned_van' => 'van_1']))
+        ->assertOk()->assertSee($request->reference);
+    $this->actingAs($operations)->get(route('admin.service-requests.index', ['assigned_van' => 'van_2']))
+        ->assertOk()->assertDontSee($request->reference);
+
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), issue59AdminPayload($service, [
+        'operational_form' => '1', 'fulfilment' => 'workshop', 'name' => 'Contact only', 'phone' => '91111111',
+    ]))->assertRedirect();
+    expect($request->refresh()->assigned_van)->toBeNull();
+
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), issue59AdminPayload($service, [
+        'operational_form' => '1', 'fulfilment' => 'workshop', 'assigned_van' => 'van_2',
+    ]))->assertSessionHasErrors('assigned_van');
+});
+
+test('public requests cannot forge an internal van assignment', function (): void {
+    $service = issue59CrmService('issue-59-public-van');
+    $this->post(route('storefront.requests.store', $service->slug), [
+        'submission_token' => (string) Str::uuid(), 'fulfilment' => 'mobile', 'address' => 'Publicvegen 1',
+        'assigned_van' => 'van_2', 'name' => 'Public van attempt', 'phone' => '90000000', 'consent' => '1',
+    ])->assertRedirect();
+
+    expect(ServiceRequest::query()->sole()->assigned_van)->toBeNull();
 });
 
 function issue59CrmService(string $slug, ServiceRequestFlow $flow = ServiceRequestFlow::Generic): ServicePage

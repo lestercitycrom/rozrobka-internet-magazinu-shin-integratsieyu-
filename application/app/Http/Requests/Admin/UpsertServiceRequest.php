@@ -37,8 +37,21 @@ final class UpsertServiceRequest extends FormRequest
         $requiresRequestedDate = $isSeasonal || $isMounting || $isBattery;
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
         $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
-        $firstUsesStorage = $isSeasonal && (string) $this->input('storage_plan', 'none') !== 'none';
-        $secondUsesStorage = $secondVehicle && (string) $this->input('storage_plan_2', 'none') !== 'none';
+        $storedVehicles = is_array($requestModel?->vehicles) ? $requestModel->vehicles : [];
+        $storedFirstStorage = (string) ($storedVehicles[0]['storage_plan'] ?? 'none');
+        $storedSecondStorage = (string) ($storedVehicles[1]['storage_plan'] ?? 'none');
+        $firstStorage = (string) $this->input('storage_plan', $storedFirstStorage);
+        $secondStorage = (string) $this->input('storage_plan_2', $storedSecondStorage);
+        $firstUsesStorage = $isSeasonal && $firstStorage !== 'none';
+        $secondUsesStorage = $secondVehicle && $secondStorage !== 'none';
+        $firstStorageChanged = $isCreate || $serviceChanged
+            || ($this->has('storage_plan') && $firstStorage !== $storedFirstStorage);
+        $secondStorageChanged = $isCreate || $serviceChanged
+            || ($this->has('storage_plan_2') && $secondStorage !== $storedSecondStorage);
+        $supportsGeneralStorage = $this->supportsGeneralStorage($slug);
+        $generalStorageSelected = $supportsGeneralStorage && $this->boolean('dekkhotell');
+        $generalStorageChanged = $isCreate || $serviceChanged
+            || ($this->has('dekkhotell') && $generalStorageSelected !== (bool) $requestModel?->dekkhotell);
         $seasonalVehicleTypes = $isSeasonal && $effectiveFulfilment === 'workshop'
             ? ['passenger']
             : ['passenger', 'large_vehicle', 'six_wheels'];
@@ -54,6 +67,18 @@ final class UpsertServiceRequest extends FormRequest
         $dateChanged = $isCreate || ($this->has('preferred_date') && (string) $this->input('preferred_date') !== (string) $storedDate);
         $dateRequired = in_array($bookingMode, ['period', 'exact'], true)
             || ($requiresRequestedDate && ($isCreate || $serviceChanged || filled($storedDate)));
+        $structuredModeSubmitted = $this->has('booking_mode') && in_array($bookingMode, ['period', 'exact'], true);
+        $datePresence = $detailsLocked ? ['sometimes'] : ($structuredModeSubmitted ? [] : $serviceContractPresence);
+        $firstRegistrationRequired = ($isBattery && ($isCreate || $serviceChanged || $this->has('registration_number')))
+            || ($firstUsesStorage && ($firstStorageChanged
+                || ($this->has('registration_number') && filled($storedVehicles[0]['registration_number'] ?? null))))
+            || ($generalStorageSelected && ($generalStorageChanged
+                || ($this->has('registration_number') && filled($requestModel?->registration_number))));
+        $secondRegistrationRequired = $secondUsesStorage
+            && ($secondStorageChanged
+                || ($this->has('registration_number_2') && filled($storedVehicles[1]['registration_number'] ?? null)));
+        $firstRegistrationPresence = $firstRegistrationRequired ? [] : $serviceContractPresence;
+        $secondRegistrationPresence = $secondRegistrationRequired ? [] : $serviceContractPresence;
         $serviceExists = Rule::exists('service_pages', 'slug');
         if ($serviceChanged) {
             $serviceExists->where('publication_status', ServicePagePublicationStatus::Published->value);
@@ -68,7 +93,7 @@ final class UpsertServiceRequest extends FormRequest
             'fulfilment' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
             'booking_mode' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), Rule::in(['manual', 'period', 'exact'])],
             'preferred_date' => [
-                ...$serviceContractPresence,
+                ...$datePresence,
                 Rule::requiredIf($dateRequired),
                 'nullable',
                 'date',
@@ -88,19 +113,21 @@ final class UpsertServiceRequest extends FormRequest
             'booking_slot_key' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
             'car_count' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
             'vehicle' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => [...$serviceContractPresence, Rule::requiredIf($isBattery || $firstUsesStorage), 'nullable', 'string', 'max:32'],
+            'registration_number' => [...$firstRegistrationPresence, Rule::requiredIf($firstRegistrationRequired), 'nullable', 'string', 'max:32'],
             'tire_size' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
             'vehicle_type' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
             'rim_band' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
             'storage_plan' => [...$serviceContractPresence, Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
             'vehicle_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
-            'registration_number_2' => [...$serviceContractPresence, Rule::requiredIf($secondUsesStorage), 'nullable', 'string', 'max:32'],
+            'registration_number_2' => [...$secondRegistrationPresence, Rule::requiredIf($secondRegistrationRequired), 'nullable', 'string', 'max:32'],
             'tire_size_2' => ['nullable', 'string', 'max:64'],
             'vehicle_type_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
             'rim_band_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
             'storage_plan_2' => [...$serviceContractPresence, Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['none', 'new', 'renew'])],
             'wheel_count' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
             'dekkhotell' => ['nullable', 'boolean'],
+            'dekkhotell_control' => ['nullable', 'boolean'],
+            'assigned_van' => [Rule::prohibitedIf($effectiveFulfilment !== 'mobile'), 'sometimes', 'nullable', Rule::in(['van_1', 'van_2'])],
             'additional_services' => [Rule::prohibitedIf(! $supportsAdditionalServices), 'nullable', 'array', 'max:3'],
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],
             'name' => [$isCreate ? 'required' : 'sometimes', 'string', 'max:120'],
@@ -128,8 +155,13 @@ final class UpsertServiceRequest extends FormRequest
         $requestModel = $this->route('request');
         $requestModel = $requestModel instanceof ServiceRequest ? $requestModel : null;
         $slug = mb_strtolower((string) $this->input('service_slug', $requestModel?->service_slug));
+        if ($this->has('assigned_van') && ! filled($this->input('assigned_van'))) {
+            $this->merge(['assigned_van' => null]);
+        }
         if ($this->boolean('operational_form')) {
-            $this->merge(['dekkhotell' => $this->boolean('dekkhotell')]);
+            if ($this->boolean('dekkhotell_control') && $this->supportsGeneralStorage($slug)) {
+                $this->merge(['dekkhotell' => $this->boolean('dekkhotell')]);
+            }
             if (in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true)) {
                 $this->merge(['additional_services' => $this->input('additional_services', [])]);
             }
@@ -153,5 +185,10 @@ final class UpsertServiceRequest extends FormRequest
         $flow = $flow instanceof ServiceRequestFlow ? $flow->value : $flow;
 
         return $flow === ServiceRequestFlow::Seasonal->value;
+    }
+
+    private function supportsGeneralStorage(string $slug): bool
+    {
+        return in_array($slug, ['omlegging-balansering', 'dekkreparasjon', 'tpms-sensor'], true);
     }
 }

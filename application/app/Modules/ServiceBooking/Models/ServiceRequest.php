@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'reference', 'submission_token', 'locale', 'source', 'created_by_user_id', 'client_id', 'service_slug', 'service_variant', 'fulfilment', 'preferred_date',
+    'reference', 'submission_token', 'locale', 'source', 'created_by_user_id', 'client_id', 'service_slug', 'service_variant', 'fulfilment', 'assigned_van', 'preferred_date',
     'preferred_window', 'preferred_period_starts_at', 'preferred_period_ends_at', 'booking_schedule_interval_id', 'booking_slot_key', 'booking_starts_at', 'booking_ends_at',
     'vehicle', 'registration_number', 'tire_size', 'wheel_count', 'dekkhotell',
     'additional_services',
