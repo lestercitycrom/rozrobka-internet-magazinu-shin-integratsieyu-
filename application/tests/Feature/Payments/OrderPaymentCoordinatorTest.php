@@ -27,6 +27,10 @@ use Tests\Support\FakePaymentGateway;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    config()->set([
+        'payments.enabled' => true,
+        'payments.provider' => 'fake',
+    ]);
     $this->seed(E2eStorefrontSeeder::class);
 });
 

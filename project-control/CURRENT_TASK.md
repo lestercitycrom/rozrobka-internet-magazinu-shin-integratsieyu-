@@ -1,6 +1,7 @@
 # Current task
 
 - Issue: [#19 — catalogue availability recovery](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19).
+- PR: [#70 — Fix Issue #19 catalogue availability recovery](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/70).
 - Branch: `codex/issue-19-catalog-availability` in the dedicated `shop-ndi-design` clone.
 - Accepted base: `origin/main` at `47dfdee2bb9538ba70742b0c88cf1edd4a85707c`.
 - Application candidate: `aeb48a8049138c5dd0786f2b93fd3b696c9f37bd`; committed on the Issue branch and not deployed.
@@ -12,7 +13,7 @@
 - Sandbox contract: immutable SKU `NDI-TEST-4765205551649102`, quantity `2`, unit price `10 NOK`, total `20 NOK`; payment is Dintero-test-only and remains isolated from production and ordinary orders.
 - Import freshness contract: stock freshness uses the retained stored-artifact observation timestamp, initially derived from source-file filesystem modification time (mtime), never processing or replay time. Inbox duplicate detection is parser-version agnostic; retained artifact time and older-observation guards also prevent a same-content manual replay or touched already-stored duplicate from renewing freshness. Future observations are rejected and an older delivery cannot overwrite newer current stock.
 - Verified candidate: full Laravel `589 passed / 5,550 assertions / 1 expected Windows symlink skip`; standard Playwright `251 passed / 132 expected skips / 0 failures`; dedicated Issue #19 Playwright `11 passed / 4 expected skips`; supplemental map/content `56 passed` and sequential admin dependency chain `16 passed`; Pint and production asset build are clean. An independent code audit found no blocking or material defect.
-- Still pending: push/PR, CI, exact-head review and deployment. Future ingestion configuration repair is planned separately.
+- Still pending: CI on the final review head, exact-head review and deployment. Future ingestion configuration repair is planned separately.
 - Conservative limitation: a byte-identical supplier delivery cannot establish a new observation until a trusted delivery identifier/sequence is available and implemented, and a full bundle uses its oldest constituent mtime. Both cases keep commerce blocked rather than risk selling against stale data.
 - External boundary: a new authoritative NDI delivery remains required for fresh real inventory and purchasing. It is not a blocker to browse/demo recovery after the candidate is accepted and deployed.
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\NdiApi\NdiIntegrationProfile;
+use App\Modules\NdiApi\NdiSandboxContract;
 use App\Modules\Orders\Enums\FulfilmentMethod;
 use App\Modules\Orders\Enums\NdiOrderStatus;
 use App\Modules\Orders\Enums\OrderStatus;
@@ -24,6 +25,13 @@ use Illuminate\Support\Str;
 use Tests\Support\FakePaymentGateway;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    config()->set([
+        'payments.enabled' => true,
+        'payments.provider' => 'fake',
+    ]);
+});
 
 test('authorization and capture are idempotent and capture publishes paid order only after NDI acceptance', function (): void {
     $fake = bindFakePaymentGateway();
@@ -372,14 +380,14 @@ function paymentBoundarySandboxOrder(array $orderOverrides = [], array $itemOver
             'total_minor' => 2000,
         ], $orderOverrides),
         array_replace([
-            'external_sku' => 'NDI-TEST-4765205551649102',
-            'quantity' => 2,
-            'unit_price_minor' => 1000,
-            'line_total_minor' => 2000,
-            'currency' => 'NOK',
+            'external_sku' => NdiSandboxContract::CATALOG_SKU,
+            'quantity' => NdiSandboxContract::QUANTITY,
+            'unit_price_minor' => NdiSandboxContract::UNIT_PRICE_MINOR,
+            'line_total_minor' => NdiSandboxContract::TOTAL_MINOR,
+            'currency' => NdiSandboxContract::CURRENCY,
             'product_snapshot' => [
                 'product_type' => 'tire',
-                'supplier_article_id' => '4765205551649102',
+                'supplier_article_id' => NdiSandboxContract::ARTICLE_ID,
             ],
         ], $itemOverrides),
     );
@@ -391,10 +399,10 @@ function configureDinteroTestBoundary(): void
         'payments.enabled' => true,
         'payments.provider' => 'dintero',
         'payments.dintero.environment' => 'test',
-        'ndi_api.sandbox.catalog_sku' => 'NDI-TEST-4765205551649102',
-        'ndi_api.sandbox.article_id' => '4765205551649102',
-        'ndi_api.sandbox.quantity' => 2,
-        'ndi_api.sandbox.price_minor' => 1000,
+        'ndi_api.sandbox.catalog_sku' => NdiSandboxContract::CATALOG_SKU,
+        'ndi_api.sandbox.article_id' => NdiSandboxContract::ARTICLE_ID,
+        'ndi_api.sandbox.quantity' => NdiSandboxContract::QUANTITY,
+        'ndi_api.sandbox.price_minor' => NdiSandboxContract::UNIT_PRICE_MINOR,
     ]);
 }
 
