@@ -4754,6 +4754,7 @@
 
     .et-v3-process__step { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: min(1rem, 16px); padding: min(1.25rem, 20px); }
     .et-v3-process__icon, .et-v3-process__icon .et-icon { width: 48px; height: 48px; }
+    .et-v3-process__icon { grid-column: 1; grid-row: 1; }
     .et-v3-process__step > small { position: static; grid-column: 1; grid-row: 2; width: 28px; height: 28px; margin-inline: auto; }
     .et-v3-process__step > div { grid-column: 2; grid-row: 1 / span 2; }
 

@@ -155,6 +155,11 @@ test('mobile finder labels stay readable while preserving full accessible tab na
         expect(await isSingleLine(compactDimension)).toBe(true);
         const clippedCategories = await page.locator('.et-shop-categories a').evaluateAll((links) => links.filter((link) => link.scrollWidth > link.clientWidth + 1).length);
         expect(clippedCategories).toBe(0);
+        const processStep = page.locator('.et-v3-process__step').first();
+        const processIcon = await box(processStep.locator('.et-v3-process__icon'));
+        const processCopy = await box(processStep.locator(':scope > div'));
+        expect(processIcon.x + processIcon.width).toBeLessThanOrEqual(processCopy.x);
+        expect(processCopy.width).toBeGreaterThanOrEqual(140);
         await expectNoGlobalOverflow(page);
     }
 });
