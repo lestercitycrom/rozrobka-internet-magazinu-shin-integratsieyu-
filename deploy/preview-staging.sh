@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Issue #44 / PM 5673643971: published design candidates only; no DB mutation.
+# Issue #44 / PM 5678136657: published design/admin-polish candidates only; no DB mutation.
 set -Eeuo pipefail
 umask 0027
 
 readonly ROOT='/var/www/staging-easytire.bethub.fun'
 readonly REPO='/srv/git/shop-ndi.git'
 readonly BASE='bf7f03e3d3265174e4e4307064769a742dd087cc'
+readonly EXPECTED_CURRENT='33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b'
 readonly BRANCH='refs/heads/codex/issue-44-design-v2'
 readonly HOST='staging-easytire.bethub.fun'
 readonly COMPOSER='/usr/local/bin/composer'
@@ -22,9 +23,9 @@ git --git-dir="$REPO" merge-base --is-ancestor "$BASE" "$revision" || fail 'Cand
 # Fail closed if a preview contains backend, data, dependency or environment changes.
 while IFS= read -r -d '' file; do
     case "$file" in
-        application/resources/css/app.css|application/resources/css/design-tokens.css|application/resources/css/pro-design.css|application/resources/css/storefront-v3.css|application/resources/css/storefront-contracts.css|application/resources/views/storefront/*|application/resources/views/components/layouts/storefront.blade.php|application/resources/views/components/icon.blade.php|application/resources/views/welcome.blade.php|application/resources/js/ui.js|application/resources/js/catalog-live.js|application/resources/js/product-media.js|application/lang/nb/pro.php|application/lang/ru/pro.php|application/tests/*|application/playwright.config.ts|project-control/*|evidence/*|deploy/preview-staging.sh|deploy/tests/preview-staging-safety.sh|deploy/README.md) ;;
-        application/resources/views/components/storefront-money.blade.php|application/public/brand/*.webp|application/public/brand/*.jpg|application/public/brand/*.jpeg|application/public/brand/*.png|application/public/brand/*.avif|application/public/brand/*.svg|application/public/brand/*.mp4|application/public/brand/*.webm|application/public/brand/*.woff2) ;;
-        *) fail "Outside presentation-only preview scope: $file" ;;
+        application/resources/css/app.css|application/resources/css/design-tokens.css|application/resources/css/pro-design.css|application/resources/css/storefront-v3.css|application/resources/css/storefront-contracts.css|application/resources/css/admin-system.css|application/resources/views/storefront/*|application/resources/views/components/layouts/storefront.blade.php|application/resources/views/components/icon.blade.php|application/resources/views/welcome.blade.php|application/resources/views/admin/booking-calendar/blackout-form.blade.php|application/resources/views/admin/booking-calendar/interval-form.blade.php|application/resources/views/admin/clients/form.blade.php|application/resources/views/admin/clients/show.blade.php|application/resources/views/admin/partials/navigation.blade.php|application/resources/views/admin/requests/day.blade.php|application/resources/views/admin/requests/form.blade.php|application/resources/views/admin/requests/index.blade.php|application/resources/views/admin/requests/show.blade.php|application/resources/js/ui.js|application/resources/js/catalog-live.js|application/resources/js/product-media.js|application/lang/nb/pro.php|application/lang/ru/pro.php|application/tests/*|application/playwright.config.ts|application/vite.config.js|project-control/*|evidence/*|deploy/preview-staging.sh|deploy/tests/preview-staging-safety.sh|deploy/README.md) ;;
+        application/resources/views/components/storefront-money.blade.php|application/public/brand/*.webp|application/public/brand/*.jpg|application/public/brand/*.jpeg|application/public/brand/*.png|application/public/brand/*.avif|application/public/brand/*.svg|application/public/brand/*.mp4|application/public/brand/*.webm|application/public/brand/*.woff2|docs/operations/OPERATIONS_DAY_AND_CLIENT_SEARCH.md) ;;
+        *) fail "Outside approved preview scope: $file" ;;
     esac
 done < <(git --git-dir="$REPO" diff --name-only -z "$BASE" "$revision")
 while IFS= read -r entry; do
@@ -36,6 +37,7 @@ done < <(git --git-dir="$REPO" ls-tree -r "$revision")
 
 previous="$(readlink -f "$ROOT/current")"
 [[ "$previous" == "$ROOT/releases/"* && -d "$previous" && -f "$previous/REVISION" ]] || fail 'Current release cannot be safely retained.'
+[[ "$(head -n 1 "$previous/REVISION")" == "$EXPECTED_CURRENT" ]] || fail 'Active staging revision changed; inspect before replacing it.'
 [[ -f "$previous/application/.env" && -d "$ROOT/shared/storage" ]] || fail 'Existing runtime settings/storage are missing.'
 [[ "$(readlink -f "$previous/application/storage")" == "$ROOT/shared/storage" ]] || fail 'Unexpected active storage layout.'
 [[ -d "$ROOT/shared/storage/app/public" && "$(readlink -f "$previous/application/public/storage")" == "$ROOT/shared/storage/app/public" ]] || fail 'Unexpected public media storage layout.'
@@ -55,6 +57,8 @@ flock -n 9 || fail 'Another deployment is running.'
 [[ "$(readlink -f "$ROOT/current")" == "$previous" ]] || fail 'Current changed while acquiring the lock; inspect again.'
 release="$ROOT/releases/$(date -u +%Y%m%d%H%M%S)-${revision:0:12}-preview"
 [[ "$release" == "$ROOT/releases/"* && ! -e "$release" ]] || fail 'Unsafe or existing candidate directory.'
+rollback_link="$ROOT/.preview-rollback-${revision:0:12}"
+[[ ! -e "$rollback_link" && ! -L "$rollback_link" ]] || fail 'Rollback link already exists; inspect before activation.'
 completed=false
 readonly main_pid="$BASHPID"
 on_exit() {
@@ -63,14 +67,9 @@ on_exit() {
     trap - EXIT INT TERM
     if [[ "$completed" == true ]]; then return "$exit_code"; fi
     if [[ "$(readlink -f "$ROOT/current")" == "$release" ]]; then
-        rollback_link="$ROOT/.preview-rollback-${revision:0:12}"
-        if [[ ! -e "$rollback_link" && ! -L "$rollback_link" ]]; then
-            ln -s -- "$previous" "$rollback_link"
-            mv -Tf -- "$rollback_link" "$ROOT/current"
-            log "Rolled back code/assets to $previous; no database restore."
-        else
-            log "Rollback link already exists; current must be inspected: $rollback_link"
-        fi
+        ln -s -- "$previous" "$rollback_link"
+        mv -Tf -- "$rollback_link" "$ROOT/current"
+        log "Rolled back code/assets to $previous; no database restore."
     fi
     log "Failed candidate retained for inspection: $release"
     exit "$exit_code"

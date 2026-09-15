@@ -40,7 +40,7 @@
             <div class="rounded-2xl border border-dashed border-easytire-border bg-white px-6 py-12 text-center"><p class="text-easytire-muted">{{ __('service_requests.empty_view') }}</p><a class="mt-4 inline-flex font-bold text-easytire-brand underline" href="{{ route('admin.service-requests.index') }}">{{ __('service_requests.show_all') }}</a></div>
         @else
             @php($statusTone = ['new' => 'attention', 'contacted' => 'info', 'closed' => 'success', 'cancelled' => 'neutral'])
-            <div class="space-y-3 lg:hidden">
+            <div class="space-y-3 2xl:hidden">
                 @foreach($requests as $item)
                     <article class="easytire-card rounded-2xl p-5">
                         <div class="flex items-start justify-between gap-3"><a class="font-black underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.service-requests.show', $item) }}">{{ $item->reference }}</a><span class="et-admin-status et-admin-status--{{ $statusTone[$item->status->value] ?? 'neutral' }}">{{ __('service_requests.status_'.$item->status->value) }}</span></div>
@@ -53,7 +53,7 @@
                     </article>
                 @endforeach
             </div>
-            <div class="easytire-card hidden overflow-x-auto rounded-2xl lg:block">
+            <div class="easytire-card hidden overflow-x-auto rounded-2xl 2xl:block">
                 <table class="min-w-[78rem] text-left text-sm">
                     <thead class="bg-easytire-ink text-white"><tr><th class="p-4">{{ __('service_requests.reference') }}</th><th class="p-4">{{ __('service_requests.customer') }}</th><th class="p-4">{{ __('service_requests.service') }}</th><th class="p-4">{{ __('service_requests.preferred_date') }}</th><th class="p-4">{{ __('service_requests.district') }}</th><th class="p-4">{{ __('service_requests.assigned_van') }}</th><th class="p-4">{{ __('service_requests.dekkhotell') }}</th><th class="p-4">{{ __('service_requests.status') }}</th><th class="p-4">{{ __('service_requests.source') }}</th><th class="p-4">{{ __('service_requests.received') }}</th></tr></thead>
                     <tbody class="divide-y divide-easytire-border">

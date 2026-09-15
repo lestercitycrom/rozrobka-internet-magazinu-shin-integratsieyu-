@@ -13,6 +13,7 @@ $environment = [
     'APP_DEBUG' => 'false',
     'APP_ENV' => 'testing',
     'APP_URL' => 'http://'.$host,
+    'ASSET_URL' => 'http://'.$host,
     'CACHE_STORE' => 'array',
     'DB_CONNECTION' => 'sqlite',
     'DB_DATABASE' => $databasePath,

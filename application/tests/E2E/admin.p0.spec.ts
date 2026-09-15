@@ -36,6 +36,15 @@ test('mobile admin drawer works in NB and RU without horizontal overflow', async
 
     await page.getByTestId('switch-language-ru').click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+
+    await page.goto('/admin/clients/create');
+    const menuBox = await page.getByTestId('admin-menu-toggle').boundingBox();
+    expect(menuBox?.width).toBeGreaterThanOrEqual(44);
+    const logout = page.getByTestId('admin-logout');
+    await expect(logout).toBeVisible();
+    expect(await logout.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(11);
+    await expectNoGlobalOverflow(page);
+
     await openDrawer(page);
     const ruSidebar = page.getByTestId('admin-sidebar');
     await expect(ruSidebar.locator('a[href$="/admin/catalog"]')).toContainText('Каталог');

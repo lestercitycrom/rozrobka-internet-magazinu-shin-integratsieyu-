@@ -93,12 +93,13 @@
                             <label class="block text-sm font-bold" for="client-lookup-input">{{ __('service_requests.client_lookup_label') }}</label>
                             <input class="{{ $field }}" id="client-lookup-input" type="search" autocomplete="off" placeholder="{{ __('service_requests.client_lookup_hint') }}" data-client-lookup-input>
                             <label class="mt-4 block text-sm font-bold" for="client-id">{{ __('service_requests.linked_client') }}</label>
-                            <select class="{{ $field }}" id="client-id" name="client_id" data-client-select>
+                            <select class="{{ $field }}" id="client-id" name="client_id" data-client-select @error('client_id') aria-invalid="true" aria-describedby="request-client-id-error" @enderror>
                                 <option value="">{{ __('service_requests.no_linked_client') }}</option>
                                 @foreach($clientOptions as $client)
                                     <option value="{{ $client->id }}" @selected((string) old('client_id', $request->client_id) === (string) $client->id)>{{ $client->name }} · {{ $client->phone }}</option>
                                 @endforeach
                             </select>
+                            @error('client_id')<span class="et-admin-field-error" id="request-client-id-error">{{ $message }}</span>@enderror
                             <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
                                 <span class="text-sm font-normal text-easytire-muted" data-client-lookup-status aria-live="polite">{{ __('service_requests.client_lookup_minimum') }}</span>
                                 <button class="et-btn et-btn--outline" type="button" data-client-load-more hidden>{{ __('service_requests.client_lookup_more') }}</button>
@@ -108,12 +109,12 @@
                                 · {{ __('service_requests.client_snapshot_note') }}
                             </span>
                         </div>
-                        <label class="block text-sm font-bold">{{ __('service_requests.form.name') }}<input class="{{ $field }}" name="name" value="{{ old('name', $request->name) }}" maxlength="120" required autocomplete="name"></label>
-                        <label class="block text-sm font-bold">{{ __('service_requests.form.phone') }}<input class="{{ $field }}" name="phone" value="{{ old('phone', $request->phone) }}" maxlength="24" required inputmode="tel" autocomplete="tel"></label>
-                        <label class="block text-sm font-bold">{{ __('service_requests.form.email_optional') }}<input class="{{ $field }}" name="email" value="{{ old('email', $request->email) }}" maxlength="255" type="email" autocomplete="email"></label>
-                        <label class="block text-sm font-bold">{{ __('service_requests.address') }}<input class="{{ $field }}" name="address" value="{{ old('address', $request->address) }}" maxlength="255" autocomplete="street-address"></label>
-                        <label class="block text-sm font-bold">{{ __('service_requests.district') }}<input class="{{ $field }}" name="district" value="{{ old('district', $request->district) }}" maxlength="120"></label>
-                        <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.note') }}<textarea class="{{ $field }} min-h-28 py-3" name="note" maxlength="2000">{{ old('note', $request->note) }}</textarea></label>
+                        <label class="block text-sm font-bold" for="request-name">{{ __('service_requests.form.name') }}<input class="{{ $field }}" id="request-name" name="name" value="{{ old('name', $request->name) }}" maxlength="120" required autocomplete="name" @error('name') aria-invalid="true" aria-describedby="request-name-error" @enderror>@error('name')<span class="et-admin-field-error" id="request-name-error">{{ $message }}</span>@enderror</label>
+                        <label class="block text-sm font-bold" for="request-phone">{{ __('service_requests.form.phone') }}<input class="{{ $field }}" id="request-phone" name="phone" value="{{ old('phone', $request->phone) }}" maxlength="24" required inputmode="tel" autocomplete="tel" @error('phone') aria-invalid="true" aria-describedby="request-phone-error" @enderror>@error('phone')<span class="et-admin-field-error" id="request-phone-error">{{ $message }}</span>@enderror</label>
+                        <label class="block text-sm font-bold" for="request-email">{{ __('service_requests.form.email_optional') }}<input class="{{ $field }}" id="request-email" name="email" value="{{ old('email', $request->email) }}" maxlength="255" type="email" autocomplete="email" @error('email') aria-invalid="true" aria-describedby="request-email-error" @enderror>@error('email')<span class="et-admin-field-error" id="request-email-error">{{ $message }}</span>@enderror</label>
+                        <label class="block text-sm font-bold" for="request-address">{{ __('service_requests.address') }}<input class="{{ $field }}" id="request-address" name="address" value="{{ old('address', $request->address) }}" maxlength="255" autocomplete="street-address" @error('address') aria-invalid="true" aria-describedby="request-address-error" @enderror>@error('address')<span class="et-admin-field-error" id="request-address-error">{{ $message }}</span>@enderror</label>
+                        <label class="block text-sm font-bold" for="request-district">{{ __('service_requests.district') }}<input class="{{ $field }}" id="request-district" name="district" value="{{ old('district', $request->district) }}" maxlength="120" @error('district') aria-invalid="true" aria-describedby="request-district-error" @enderror>@error('district')<span class="et-admin-field-error" id="request-district-error">{{ $message }}</span>@enderror</label>
+                        <label class="block text-sm font-bold sm:col-span-2" for="request-note">{{ __('service_requests.note') }}<textarea class="{{ $field }} min-h-28 py-3" id="request-note" name="note" maxlength="2000" @error('note') aria-invalid="true" aria-describedby="request-note-error" @enderror>{{ old('note', $request->note) }}</textarea>@error('note')<span class="et-admin-field-error" id="request-note-error">{{ $message }}</span>@enderror</label>
                     </div>
                 </section>
 
@@ -121,7 +122,7 @@
                     <legend class="px-1 text-xl font-black">{{ __('service_requests.booking') }}</legend>
                     <div class="mt-4 grid gap-5 sm:grid-cols-2">
                         <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.service') }}
-                            <select class="{{ $field }}" name="service_slug" required data-request-service>
+                            <select class="{{ $field }}" name="service_slug" required data-request-service @error('service_slug') aria-invalid="true" aria-describedby="request-service-error" @enderror>
                                 @foreach($serviceOptions as $service)
                                     <option
                                         value="{{ $service->slug }}"
@@ -137,31 +138,35 @@
                                     >{{ app()->getLocale() === 'ru' && filled($service->title_ru) ? $service->title_ru : $service->title_nb }}</option>
                                 @endforeach
                             </select>
+                            @error('service_slug')<span class="et-admin-field-error" id="request-service-error">{{ $message }}</span>@enderror
                         </label>
                         <label class="block text-sm font-bold">{{ __('service_requests.fulfilment') }}
-                            <select class="{{ $field }}" name="fulfilment" required data-request-fulfilment>
+                            <select class="{{ $field }}" name="fulfilment" required data-request-fulfilment @error('fulfilment') aria-invalid="true" aria-describedby="request-fulfilment-error" @enderror>
                                 <option value="workshop" @selected(old('fulfilment', $request->fulfilment) === 'workshop')>{{ __('service_requests.fulfilment_workshop') }}</option>
                                 <option value="mobile" data-mobile-option @selected(old('fulfilment', $request->fulfilment) === 'mobile')>{{ __('service_requests.fulfilment_mobile') }}</option>
                             </select>
+                            @error('fulfilment')<span class="et-admin-field-error" id="request-fulfilment-error">{{ $message }}</span>@enderror
                         </label>
                         <label class="block text-sm font-bold">{{ __('service_requests.booking_mode') }}
-                            <select class="{{ $field }}" name="booking_mode" required data-booking-mode>
+                            <select class="{{ $field }}" name="booking_mode" required data-booking-mode @error('booking_mode') aria-invalid="true" aria-describedby="request-booking-mode-error" @enderror>
                                 <option value="manual" @selected($currentMode === 'manual')>{{ __('service_requests.booking_mode_manual') }}</option>
                                 <option value="period" @selected($currentMode === 'period')>{{ __('service_requests.booking_mode_period') }}</option>
                                 <option value="exact" @selected($currentMode === 'exact')>{{ __('service_requests.booking_mode_exact') }}</option>
                             </select>
+                            @error('booking_mode')<span class="et-admin-field-error" id="request-booking-mode-error">{{ $message }}</span>@enderror
                         </label>
-                        <label class="block text-sm font-bold">{{ __('service_requests.preferred_date') }}<input class="{{ $field }}" name="preferred_date" value="{{ old('preferred_date', $storedDate) }}" type="date" min="{{ $minimumDate }}" data-request-date></label>
-                        <label class="block text-sm font-bold" data-manual-window>{{ __('service_requests.preferred_window') }}<input class="{{ $field }}" name="preferred_window" value="{{ old('preferred_window', $request->preferred_window) }}" maxlength="64" placeholder="{{ __('service_requests.preferred_window_hint') }}"></label>
+                        <label class="block text-sm font-bold">{{ __('service_requests.preferred_date') }}<input class="{{ $field }}" name="preferred_date" value="{{ old('preferred_date', $storedDate) }}" type="date" min="{{ $minimumDate }}" data-request-date @error('preferred_date') aria-invalid="true" aria-describedby="request-date-error" @enderror>@error('preferred_date')<span class="et-admin-field-error" id="request-date-error">{{ $message }}</span>@enderror</label>
+                        <label class="block text-sm font-bold" data-manual-window>{{ __('service_requests.preferred_window') }}<input class="{{ $field }}" name="preferred_window" value="{{ old('preferred_window', $request->preferred_window) }}" maxlength="64" placeholder="{{ __('service_requests.preferred_window_hint') }}" @error('preferred_window') aria-invalid="true" aria-describedby="request-window-error" @enderror>@error('preferred_window')<span class="et-admin-field-error" id="request-window-error">{{ $message }}</span>@enderror</label>
                         <div class="sm:col-span-2" data-preferred-period hidden>
                             <div class="grid gap-5 sm:grid-cols-2">
-                                <label class="block text-sm font-bold">{{ __('service_requests.period_start') }}<input class="{{ $field }}" name="preferred_time_start" value="{{ old('preferred_time_start', $storedPeriodStart) }}" type="time" disabled></label>
-                                <label class="block text-sm font-bold">{{ __('service_requests.period_end') }}<input class="{{ $field }}" name="preferred_time_end" value="{{ old('preferred_time_end', $storedPeriodEnd) }}" type="time" disabled></label>
+                                <label class="block text-sm font-bold">{{ __('service_requests.period_start') }}<input class="{{ $field }}" name="preferred_time_start" value="{{ old('preferred_time_start', $storedPeriodStart) }}" type="time" disabled @error('preferred_time_start') aria-invalid="true" aria-describedby="request-period-start-error" @enderror>@error('preferred_time_start')<span class="et-admin-field-error" id="request-period-start-error">{{ $message }}</span>@enderror</label>
+                                <label class="block text-sm font-bold">{{ __('service_requests.period_end') }}<input class="{{ $field }}" name="preferred_time_end" value="{{ old('preferred_time_end', $storedPeriodEnd) }}" type="time" disabled @error('preferred_time_end') aria-invalid="true" aria-describedby="request-period-end-error" @enderror>@error('preferred_time_end')<span class="et-admin-field-error" id="request-period-end-error">{{ $message }}</span>@enderror</label>
                             </div>
                             <p class="mt-2 text-sm text-easytire-muted">{{ __('service_requests.period_notice') }}</p>
                         </div>
                         <label class="block text-sm font-bold sm:col-span-2" data-exact-slot hidden>{{ __('service_requests.exact_slot') }}
-                            <select class="{{ $field }}" name="booking_slot_key" data-slot-select disabled><option value="">{{ __('service_requests.select_date_first') }}</option></select>
+                            <select class="{{ $field }}" name="booking_slot_key" data-slot-select disabled @error('booking_slot_key') aria-invalid="true" aria-describedby="request-slot-error" @enderror><option value="">{{ __('service_requests.select_date_first') }}</option></select>
+                            @error('booking_slot_key')<span class="et-admin-field-error" id="request-slot-error">{{ $message }}</span>@enderror
                             <span class="mt-2 block font-normal text-easytire-muted" data-slot-status aria-live="polite"></span>
                         </label>
                     </div>
@@ -281,18 +286,18 @@
                     <h2 class="text-xl font-black">{{ __('service_requests.follow_up') }}</h2>
                     <div class="mt-5 space-y-5">
                         @if($editing)
-                            <label class="block text-sm font-bold">{{ __('service_requests.status') }}<select class="{{ $field }}" name="status" required>@foreach(['new','contacted','closed','cancelled'] as $status)<option value="{{ $status }}" @selected($currentStatus === $status)>{{ __('service_requests.status_'.$status) }}</option>@endforeach</select></label>
+                            <label class="block text-sm font-bold">{{ __('service_requests.status') }}<select class="{{ $field }}" name="status" required @error('status') aria-invalid="true" aria-describedby="request-status-error" @enderror>@foreach(['new','contacted','closed','cancelled'] as $status)<option value="{{ $status }}" @selected($currentStatus === $status)>{{ __('service_requests.status_'.$status) }}</option>@endforeach</select>@error('status')<span class="et-admin-field-error" id="request-status-error">{{ $message }}</span>@enderror</label>
                         @else
                             <div><span class="block text-sm font-bold">{{ __('service_requests.status') }}</span><p class="mt-2 text-sm text-easytire-muted">{{ __('service_requests.status_new') }}</p></div>
                         @endif
                         <label class="block text-sm font-bold" data-assigned-van-field @if($currentFulfilment !== 'mobile') hidden @endif>{{ __('service_requests.assigned_van') }}
-                            <select class="{{ $field }}" name="assigned_van" data-assigned-van @disabled($currentFulfilment !== 'mobile')>
+                            <select class="{{ $field }}" name="assigned_van" data-assigned-van @disabled($currentFulfilment !== 'mobile') @error('assigned_van') aria-invalid="true" aria-describedby="request-assigned-van-error" @enderror>
                                 @foreach(['unassigned' => '', 'van_1' => 'van_1', 'van_2' => 'van_2'] as $label => $value)<option value="{{ $value }}" @selected(old('assigned_van', $request->assigned_van) === $value)>{{ __('service_requests.assigned_van_'.$label) }}</option>@endforeach
                             </select>
                             <span class="mt-2 block font-normal text-easytire-muted">{{ __('service_requests.assigned_van_notice') }}</span>
-                            @error('assigned_van')<span class="mt-2 block text-red-700">{{ $message }}</span>@enderror
+                            @error('assigned_van')<span class="et-admin-field-error" id="request-assigned-van-error">{{ $message }}</span>@enderror
                         </label>
-                        <label class="block text-sm font-bold">{{ __('service_requests.admin_note') }}<textarea class="{{ $field }} min-h-40 py-3" name="admin_note" maxlength="4000">{{ old('admin_note', $request->admin_note) }}</textarea></label>
+                        <label class="block text-sm font-bold">{{ __('service_requests.admin_note') }}<textarea class="{{ $field }} min-h-40 py-3" name="admin_note" maxlength="4000" @error('admin_note') aria-invalid="true" aria-describedby="request-admin-note-error" @enderror>{{ old('admin_note', $request->admin_note) }}</textarea>@error('admin_note')<span class="et-admin-field-error" id="request-admin-note-error">{{ $message }}</span>@enderror</label>
                         <p class="text-sm leading-6 text-easytire-muted">{{ __('service_requests.manual_consent_note') }}</p>
                         <button class="et-btn et-btn--primary w-full" type="submit" data-testid="request-save">{{ $editing ? __('service_requests.save') : __('service_requests.create_action') }}</button>
                     </div>

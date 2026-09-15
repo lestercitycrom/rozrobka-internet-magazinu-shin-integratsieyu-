@@ -35,8 +35,30 @@ grep -Fq "trap 'exit 143' TERM" "$script" \
 work="$tmp/work"
 bare="$tmp/repo.git"
 root="$tmp/root"
-mkdir -p "$work/application/resources/css" "$work/application/storage" "$work/application/bootstrap/cache" "$work/application/public"
+mkdir -p \
+    "$work/application/resources/css" \
+    "$work/application/resources/views/admin/booking-calendar" \
+    "$work/application/resources/views/admin/clients" \
+    "$work/application/resources/views/admin/partials" \
+    "$work/application/resources/views/admin/requests" \
+    "$work/application/storage" \
+    "$work/application/bootstrap/cache" \
+    "$work/application/public"
 printf 'base\n' > "$work/application/resources/css/storefront-v3.css"
+printf 'base\n' > "$work/application/resources/css/admin-system.css"
+for file in \
+    application/resources/views/admin/booking-calendar/blackout-form.blade.php \
+    application/resources/views/admin/booking-calendar/interval-form.blade.php \
+    application/resources/views/admin/clients/form.blade.php \
+    application/resources/views/admin/clients/show.blade.php \
+    application/resources/views/admin/partials/navigation.blade.php \
+    application/resources/views/admin/requests/day.blade.php \
+    application/resources/views/admin/requests/form.blade.php \
+    application/resources/views/admin/requests/index.blade.php \
+    application/resources/views/admin/requests/show.blade.php; do
+    printf 'base\n' > "$work/$file"
+done
+printf 'base\n' > "$work/application/vite.config.js"
 printf '*\n!.gitignore\n' > "$work/application/storage/.gitignore"
 printf '*\n!.gitignore\n' > "$work/application/bootstrap/cache/.gitignore"
 git -C "$work" init -q
@@ -47,6 +69,20 @@ git -C "$work" commit -qm base
 base="$(git -C "$work" rev-parse HEAD)"
 git -C "$work" switch -qc codex/issue-44-design-v2
 printf 'allowed\n' >> "$work/application/resources/css/storefront-v3.css"
+printf 'allowed\n' >> "$work/application/resources/css/admin-system.css"
+for file in \
+    application/resources/views/admin/booking-calendar/blackout-form.blade.php \
+    application/resources/views/admin/booking-calendar/interval-form.blade.php \
+    application/resources/views/admin/clients/form.blade.php \
+    application/resources/views/admin/clients/show.blade.php \
+    application/resources/views/admin/partials/navigation.blade.php \
+    application/resources/views/admin/requests/day.blade.php \
+    application/resources/views/admin/requests/form.blade.php \
+    application/resources/views/admin/requests/index.blade.php \
+    application/resources/views/admin/requests/show.blade.php; do
+    printf 'allowed\n' >> "$work/$file"
+done
+printf 'allowed\n' >> "$work/application/vite.config.js"
 git -C "$work" commit -qam allowed
 allowed="$(git -C "$work" rev-parse HEAD)"
 git clone -q --bare "$work" "$bare"
@@ -84,6 +120,7 @@ sed \
     -e "s|readonly ROOT='/var/www/staging-easytire.bethub.fun'|readonly ROOT='$root'|" \
     -e "s|readonly REPO='/srv/git/shop-ndi.git'|readonly REPO='$bare'|" \
     -e "s|readonly BASE='[0-9a-f]*'|readonly BASE='$base'|" \
+    -e "s|readonly EXPECTED_CURRENT='[0-9a-f]*'|readonly EXPECTED_CURRENT='$base'|" \
     "$script" > "$runner"
 chmod +x "$runner"
 
@@ -101,8 +138,8 @@ git -C "$work" push -q "$bare" "$forbidden":refs/heads/codex/issue-44-design-v2
 if PATH="$mockbin:$PATH" "$runner" "$forbidden" --check > "$tmp/forbidden.out" 2>&1; then
     fail 'backend change unexpectedly passed the presentation-only guard'
 fi
-grep -Fq 'Outside presentation-only preview scope: application/app/Unsafe.php' "$tmp/forbidden.out" \
+grep -Fq 'Outside approved preview scope: application/app/Unsafe.php' "$tmp/forbidden.out" \
     || fail 'backend guard failed without the expected fail-closed reason'
 [[ ! -s "$tmp/runtime-command.log" ]] || fail 'guard failure invoked a forbidden runtime command'
 
-pass 'syntax, command boundary, isolated-cache ordering, atomic pointer hooks and fail-closed scope guards passed'
+pass 'syntax, exact-path scope, command boundary, isolated-cache ordering, atomic pointer hooks and fail-closed guards passed'

@@ -182,7 +182,7 @@ test('operations completes the filtered workday preparation and safe request-ret
         const workdayEntry = page.getByTestId('admin-nav-operations_day');
         if ((page.viewportSize()?.width ?? 1440) < 1024) await page.getByTestId('admin-menu-toggle').click();
         await workdayEntry.click();
-        await expect(page).toHaveURL((url) => url.pathname === '/admin/service-requests/day');
+        await expect(page).toHaveURL('/admin/service-requests/day');
         await expect(page.getByTestId('operations-day-today')).toBeVisible();
         await expect(page.locator('[data-day-resource]')).toHaveCount(5);
 
@@ -215,7 +215,9 @@ test('operations completes the filtered workday preparation and safe request-ret
         await expect(pendingPreparation.locator('[data-preparation-action]')).toHaveCount(2);
         await expect(pendingPreparation).toContainText('SR-E2E-DAY-1030-VAN1');
         await expect(pendingPreparation).toContainText('SR-E2E-DAY-UNASSIGNED');
-        await expect(root.locator('[data-preparation-summary] [data-storage-number-warning]')).toHaveCount(2);
+        const missingStorageNumbers = await root.locator('[data-preparation-summary] [data-storage-number-warning]').count();
+        expect(missingStorageNumbers).toBeGreaterThanOrEqual(1);
+        expect(missingStorageNumbers).toBeLessThanOrEqual(2);
         await expect(root.locator('[data-preparation-summary]')).toContainText(locale === 'ru'
             ? 'Уточнить номер перед подготовкой.'
             : 'Avklar lagernummer før forberedelse.');
@@ -264,21 +266,34 @@ test('operations completes the filtered workday preparation and safe request-ret
         await page.locator('[name="phone"]').fill('not-a-phone');
         await page.getByTestId('request-save').click();
         await expect(page.getByTestId('request-form-errors')).toBeVisible();
+        await expect(page.locator('[name="phone"]')).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.locator('#request-phone-error')).toBeVisible();
         await expect(page).toHaveURL((url) => url.pathname.match(/^\/admin\/service-requests\/\d+\/edit$/) !== null
             && url.searchParams.get('return_to') === returnContext);
         await expect(page.locator('[name="name"]')).toHaveValue('Issue 66 request snapshot');
 
         await page.locator('[name="phone"]').fill('90006642');
         await page.locator('[name="status"]').selectOption('contacted');
+        if (locale === 'ru') {
+            await page.getByTestId('booked-storage-number-0').fill('VAN2-1300');
+        }
         await page.getByTestId('request-save').click();
         await expect(page).toHaveURL((url) => url.pathname.match(/^\/admin\/service-requests\/\d+$/) !== null
             && url.searchParams.get('return_to') === returnContext);
         await expect(page.locator('main')).toContainText('Issue 66 request snapshot');
         await expect(page.locator('main')).toContainText('90006642');
+        if (locale === 'ru') {
+            await expect(page.locator('main')).toContainText('VAN2-1300');
+            await expect(page.locator('[data-storage-number-warning]')).toHaveCount(0);
+        }
         await page.getByTestId('request-back').click();
         await expect(page).toHaveURL((url) => url.pathname === '/admin/service-requests/day'
             && url.searchParams.get('date') === DAY
             && url.searchParams.get('resource') === 'van_2');
+        if (locale === 'ru') {
+            await expect(page.locator('[data-operations-day-item]')).toContainText('VAN2-1300');
+            await expect(page.locator('[data-operations-day-item] [data-storage-number-warning]')).toHaveCount(0);
+        }
         await expectNoGlobalOverflow(page);
 
         await submitDayFilters(page, DAY, 'mobile_unassigned');

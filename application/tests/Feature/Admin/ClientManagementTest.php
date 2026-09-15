@@ -46,6 +46,23 @@ test('operations can save find and edit a client without creating a request', fu
         ->and($client->fresh()->email)->toBeNull();
 });
 
+test('client validation identifies the exact invalid control accessibly', function (): void {
+    $staff = User::factory()->operations()->create(['locale' => 'ru']);
+
+    $response = $this->actingAs($staff)
+        ->from(route('admin.clients.create'))
+        ->followingRedirects()
+        ->post(route('admin.clients.store'), ['name' => 'Иван', 'phone' => 'bad'])
+        ->assertOk();
+
+    $response
+        ->assertOk()
+        ->assertSee('id="client-phone"', false)
+        ->assertSee('aria-invalid="true"', false)
+        ->assertSee('aria-describedby="client-phone-error"', false)
+        ->assertSee('id="client-phone-error"', false);
+});
+
 test('client request links are explicit and preserve the request contact snapshot', function (): void {
     $service = issue59Service();
     $staff = User::factory()->operations()->create();

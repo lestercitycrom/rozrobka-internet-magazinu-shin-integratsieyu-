@@ -296,16 +296,44 @@ test('homepage video lazy-loads, pauses offscreen and preserves manual pause', a
     await root.scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+});
 
+test('homepage video starts paused for reduced motion and allows explicit playback', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const root = page.locator('[data-homepage-video]');
+    const video = root.locator('[data-homepage-video-element]');
+    const control = root.locator('[data-homepage-video-control]');
+
+    await root.scrollIntoViewIfNeeded();
+    await expect(video).not.toHaveAttribute('src', /.+/);
+    await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+    await expect(root).not.toHaveClass(/is-video-playing/);
     await control.click();
+    await expect.poll(() => video.getAttribute('src')).toBeTruthy();
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(false);
     await expect.poll(() => root.evaluate((element) => element.classList.contains('is-video-playing'))).toBe(true);
+});
 
+test('homepage video pauses after a delivered runtime reduced-motion change', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await expect.poll(() => page.evaluate(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(false);
+    await page.goto('/');
+    const root = page.locator('[data-homepage-video]');
+    const video = root.locator('[data-homepage-video-element]');
+
+    await root.scrollIntoViewIfNeeded();
+    await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused), { timeout: 10_000 }).toBe(false);
+    await page.evaluate(() => {
+        const trackedWindow = window as Window & { __etReducedMotionChanges?: number };
+        trackedWindow.__etReducedMotionChanges = 0;
+        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+            trackedWindow.__etReducedMotionChanges = (trackedWindow.__etReducedMotionChanges ?? 0) + 1;
+        });
+    });
+
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect.poll(() => page.evaluate(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+    await expect.poll(() => page.evaluate(() => (window as Window & { __etReducedMotionChanges?: number }).__etReducedMotionChanges ?? 0)).toBeGreaterThan(0);
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
     await expect(root).not.toHaveClass(/is-video-playing/);
 });
@@ -378,12 +406,6 @@ test('configured public workshop clip decodes a real portrait frame and keeps pl
     await dialog.locator('[data-dekkhotell-dialog-close]').click();
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(false);
 
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
-    await control.click();
-    await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(false);
-    await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await expect.poll(() => page.evaluate(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(false);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
 
