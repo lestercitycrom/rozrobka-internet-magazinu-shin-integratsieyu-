@@ -10,7 +10,7 @@ This record separates catalogue browsing, commerce safety and supplier ingestion
 |---|---|
 | Accepted base | `origin/main` at `47dfdee2bb9538ba70742b0c88cf1edd4a85707c` |
 | Issue branch | `codex/issue-19-catalog-availability` |
-| Application candidate | Uncommitted working tree; no immutable candidate/review SHA |
+| Application candidate | `aeb48a8049138c5dd0786f2b93fd3b696c9f37bd`; committed and not deployed |
 | Active staging application | `980fdc117d27a7bcf5d0d0cd950e31e74cee1497` |
 | Immediate staging rollback | `33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b` |
 | Deployment state | Candidate not deployed; active staging remains unchanged |
@@ -86,7 +86,7 @@ Two independent conditions explain the user-visible failure:
 
 The coverage includes browseable stale/missing/zero states, fresh-only in-stock filtering, mixed-warehouse timestamp masking, replay/touch/parser-version timestamp safety, future/older observation rejection, server-side cart/checkout rejection, immutable Dintero-test-only sandbox payment isolation, production fixture exclusion, explicit missing-inbox failure, live-non-test health selection and the storefront-bounded health window. The browser matrix covers buyer and admin paths, Bokmål and the hidden Russian QA route, desktop, 390 px and 320 px layouts.
 
-CI, an immutable commit/review SHA and staging deployment are still pending. This file does not claim deployed runtime acceptance.
+Push/PR, CI, exact-head review and staging deployment are still pending. This file does not claim deployed runtime acceptance.
 
 Two deliberate fail-closed limitations remain. A byte-identical file cannot prove that the supplier made a new delivery until a trusted delivery identifier or sequence is available and implemented, so it stays a duplicate. A complete bundle is dated by its oldest constituent mtime, which can conservatively keep stock unavailable when one dataset is older than the others. Neither limitation can make stale inventory purchasable.
 

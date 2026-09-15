@@ -2,7 +2,7 @@
 
 Updated: 2026-09-15 — Issue #19 candidate, no deployment
 GitHub baseline: `origin/main` at `47dfdee2bb9538ba70742b0c88cf1edd4a85707c`
-Issue #19 application candidate: uncommitted working tree; no immutable SHA and not deployed
+Issue #19 application candidate: `aeb48a8049138c5dd0786f2b93fd3b696c9f37bd`; committed and not deployed
 Active staging application: `980fdc117d27a7bcf5d0d0cd950e31e74cee1497`
 Immediate staging rollback: `33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b`
 Production: not authorised
@@ -12,7 +12,7 @@ Production: not authorised
 | Environment | State |
 |---|---|
 | GitHub `main` | Accepted baseline `47dfdee2bb9538ba70742b0c88cf1edd4a85707c`. |
-| Issue branch | `codex/issue-19-catalog-availability` contains an uncommitted application/documentation candidate. It has not been deployed. |
+| Issue branch | `codex/issue-19-catalog-availability` contains application candidate `aeb48a8049138c5dd0786f2b93fd3b696c9f37bd` plus its project-control identity update. It has not been deployed. |
 | Staging | Application `980fdc117d27a7bcf5d0d0cd950e31e74cee1497` remains active; rollback `33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b` remains retained. |
 | Production | No deployment or merge authorisation. |
 
@@ -42,7 +42,7 @@ Production: not authorised
 
 - Final local verification is green: full Laravel `589 passed / 5,550 assertions / 1 expected Windows symlink skip`; standard Playwright `251 passed / 132 expected skips / 0 failures`; dedicated Issue #19 Playwright `11 passed / 4 expected skips`; supplemental map/content `56 passed`; sequential admin dependency chain `16 passed`; Pint and production asset build are clean. An independent code audit found no blocking or material defect.
 - Import freshness is anchored to the retained stored-artifact observation timestamp, initially derived from source-file filesystem modification time (mtime). Inbox duplicates remain duplicates across parser versions; retained artifact time and older-observation guards stop same-content manual replay or touched duplicate content from making old stock fresh. Future observations are rejected and older observations cannot overwrite newer current stock.
-- Commit/push, CI, exact-SHA review and deployment are still pending.
+- Push/PR, CI, exact-head review and deployment are still pending.
 - After code acceptance and deployment, a separate controlled operations step must configure the existing restricted inbox and verify only redacted readiness/receipt state.
 - A new authoritative NDI stock delivery and successful import remain necessary for fresh purchasable real inventory. That external input does not block browse/demo recovery once the candidate is deployed.
 - Known conservative behaviour: byte-identical content cannot count as a new observation until a trusted delivery identifier/sequence is available and implemented, and a full bundle is dated by its oldest constituent mtime. These can hold commerce closed; they cannot open it on stale data.
