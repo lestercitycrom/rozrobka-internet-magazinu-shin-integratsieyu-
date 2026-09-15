@@ -103,6 +103,7 @@ return [
         'finder_kicker' => 'Найдите подходящее для автомобиля',
         'finder_title' => 'Поиск шин и дисков',
         'finder_registration_tab' => 'Госномер',
+        'finder_registration_tab_compact' => 'Госномер',
         'finder_size_tab' => 'Размер шины',
         'finder_width' => 'Ширина',
         'finder_aspect' => 'Профиль',

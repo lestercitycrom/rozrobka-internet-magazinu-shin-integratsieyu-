@@ -4,6 +4,8 @@
 
 Этот документ — единый список реализации, сверки пожеланий клиента, собственных исправлений и честных ограничений проверки. Это передача версии для просмотра владельцем/ChatGPT Pro, не заявление о независимой приёмке или запуске production.
 
+Дизайн-код опубликован и активирован на staging: **`7363622ff150bf5f867e048e44f157bb626c82d7`**. Все три job [CI run 34927746672](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/actions/runs/34927746672) завершились успешно. Окончательный read-back этой версии уточняет промежуточные локальные запуски ниже; последующая правка документации не меняет выложенный код.
+
 ## Источники и границы
 
 - ZIP `EasyTire_UNIFIED_TZ_v2_2026-09-15.zip`, SHA-256 `4234EE9F20D5946A42E56E21DA0CDF4EB56B365446823ADC92596CF253923E90`; основное ТЗ, ET-01–42, QA-01–64 и приложения.
@@ -97,18 +99,23 @@
 18. Акции на 320/390 px остаются доступны без JavaScript: все предложения идут естественным списком, полные условия раскрываются, неработающие стрелки скрыты. Устранена минимальная высота, растягивавшая квадратную карточку шире экрана.
 19. Публичный formatter меняет только обозначение NOK → kr, не переписывая остальные обозначения валют; добавлены проверки нижнего регистра.
 20. Отсутствие native-dialog API больше не прерывает остальные JS-компоненты; условия акций в таком браузере остаются обычным раскрываемым текстом.
+21. На финальном staging-снимке найден разрыв слова Registreringsnummer на телефоне. Для узких экранов добавлена понятная подпись Reg.nr. с сохранением полного accessible-name; при увеличении текста вкладки могут переходить в стек.
 
 ## Проверка и доказательства
 
 Локальная среда: новый клон, синтетическая SQLite, PHP 8.3, Chromium Playwright; реальные интеграции отключены. Screenshots — CSS viewport, не утверждение о физическом устройстве. Большие локальные артефакты и клиентские экспорты не включены в Git.
 
-- Production assets: CSS `app-yR_mu3Dq.css`, JS `app-CKCevDiM.js`; exact-SHA сборка и runtime manifest дополнительно сверяются в handover PR #69.
+- Staging и чистая Linux CI-сборка: CSS `app-BUA91Xc5.css`, JS `app-CKCevDiM.js`. Локальная CSS `app-yR_mu3Dq.css` отличается только префиксом `http://127.0.0.1:8044` у 26 URL шрифтов: после его удаления файлы побайтово совпадают. На staging локальных URL нет.
 - Сборка, Blade cache, Pint, оригинальный project-control validator, Bash syntax и temporary-only preview safety harness: PASS на кандидате.
 - Полный PHP-прогон после адресного обновления устаревших presentation-контрактов: **542 PASS, 1 SKIP, 5196 assertions**. Skip — тест символьной ссылки на Windows. После последнего preload/локализации дополнительно **15 PASS / 249 assertions**, Pint PASS.
 - Финальная проверка регистра обозначений валют: **1 PASS / 5 assertions**, Pint PASS.
+- Финальная Linux CI: **543 PHP PASS / 5201 assertions**, MySQL regression и secret scan PASS. Playwright: **247 PASS, 1 FLAKY с успешным повтором, 124 ожидаемых SKIP** из 372 тестов, 10,3 мин. Flaky — переключение reduced-motion в video-тесте; его не выдаём за безусловный first-pass. Длинный admin intake прошёл на desktop/390/320 за 12,0/15,5/14,6 с.
 - Home behavior: 6/6 PASS и повтор 2/2 узких fallback/containment. Проверены реальные decoded frames 540×960 полученного ролика через тестовую подстановку HTML; это не доказательство назначения ролика в live CMS.
-- Первый полный E2E-запуск: **216 PASS, 16 FAIL, 111 SKIP, 23 не запущены** из 366. Это не зелёный aggregate: устаревшие presentation-контракты обновлены адресно; 9 затронутых buyer-кейсов прошли повтор, 8 map/contact-кейсов прошли с корректной изолированной конфигурацией карты. Admin CMS — 3/3 PASS; остававшиеся dependent cases и нестабильный длинный admin-переход проверяются отдельно. Окончательный результат exact-SHA CI и повторов публикуется в handover PR #69, а не подменяется суммой разнородных запусков.
-- 40 снимков/состояний публичных семейств: `application/storage/app/qa-design-v2/all-families-final/`; последующий повтор home/sticky/dialog после zoom-исправления: `all-families-final-zoomfix/`. Accessibility/link/resource measurements и последний прайс: `final-accessibility-links/`. Старый `all-families/` содержит промежуточные и смешанные снимки, он не финальное доказательство.
+- История локальной проверки: первый полный E2E дал **216 PASS, 16 FAIL, 111 SKIP, 23 не запущены** из 366. После адресного обновления устаревших presentation-контрактов 9 buyer-кейсов прошли повтор, ещё 8 map/contact-кейсов прошли с корректной изолированной конфигурацией карты. Этот ранний запуск не назван зелёным и не суммируется с повторами; итоговый независимый CI указан выше.
+- Оставшиеся локальные dependent cases завершены: **11 PASS / 7 ожидаемых SKIP**. Полное сохранение CMS прошло на отдельном стенде 8045 с корректной map-конфигурацией; первоначальный отказ на 8044 был вызван намеренно невалидным URL отключённой карты. Один запуск touch-320 не стартовал из-за нехватки ресурсов Windows; повтор прошёл. Нестабильный локальный admin-переход не воспроизвёлся в чистой CI; admin-код не менялся.
+- Финальные no-JS 390/320 и отсутствие dialog API: **2 PASS**. Полные условия остаются доступны, нет overflow, остальные JS-компоненты продолжают инициализацию.
+- 40 снимков/состояний публичных семейств: `application/storage/app/qa-design-v2/all-families-final/`; последующий повтор home/sticky/dialog после zoom-исправления: `all-families-final-zoomfix/`. Accessibility/link/resource measurements и последний прайс: `final-accessibility-links/`. Старый промежуточный `all-families/` удалён при разрешённой очистке временных файлов; финальные доказательства сохранены.
+- Live-проверка SHA `7363622`: 18/18 сочетаний шести публичных семейств и 1440/390/320 px — HTTP 200, без page overflow, битых изображений, page errors и ошибочных внутренних ресурсов. Отдельный home-повтор 3/3 после обычной прокрутки загрузил lazy media/партнёров. Реальные клики проверили карусель, окна, мобильное меню и decoded video 540×960, pause/reduced-motion. Запросов изменения данных не было; Google Maps намеренно заблокирован, проверен fallback, не внешний провайдер. Evidence: `application/storage/app/qa-design-v2/staging/report.json`, `report-home.json` и снимки. Этот automated PASS не заменяет визуальную оценку: root заметил и отдельно исправил перенос подписи finder.
 - Фактический локальный запуск с preload, без подстановки HTML: **CLS 0,0001404, LCP 948 ms**, 1440 px, Chromium, unthrottled; параллельный E2E мог влиять на абсолютное время. Это не mobile field data/INP/Lighthouse.
 - Все локальные ссылки header/footer вернули HTTP 200; PDF возврата — HTTP 200, `application/pdf`, 75 663 B. Внешние Facebook/Instagram не объявлены отдельно проверенными.
 - Полный статус каждого из 64 пунктов: [QA register](design-v2-qa-register.md).
@@ -121,9 +128,10 @@
 4. Финальный media-manifest с правами/уникальными сюжетами всех CMS-фото не получен; использованы существующие принятые assets и присланный ролик.
 5. Реальные устройства, реальные платежи, внешние интеграции и юридическая экспертиза не проводились. Эмуляция и изолированные тесты обозначены именно так.
 6. Независимая визуальная приёмка полной staging-версии — следующий шаг владельца/ChatGPT Pro, не блокировка выкладки текущего preview.
+7. На staging каталог сейчас пуст из-за существующего ограничения свежести остатков. Read-only SELECT в транзакции 15.09.2026 05:27 UTC: 1585 товаров, 1574 опубликованы, 16129 stock-записей; последние остатки от 04.09.2026 08:00:06 UTC, допустимый возраст 2160 минут (36 часов). До freshness gate доступны 918 SKU, после — 0. Данные не удалены; это не эффект дизайн-CSS. Синхронизация/API, порог и данные не менялись. Причина остановки обновления отдельно не исследовалась; реальный live product/cart-путь поэтому не подтверждён, его покрытие синтетическое.
 
 ## Версия staging
 
-Цель — [staging-easytire.bethub.fun](https://staging-easytire.bethub.fun/). Проверяемый runtime marker: `/design-revision.txt`. Точный опубликованный SHA, результат post-deploy проверок и путь сохранённого предыдущего релиза публикуются в deployment handover [PR #69](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/69) после фактической выкладки. Этот файл сам по себе не доказывает состояние сервера.
+[staging-easytire.bethub.fun](https://staging-easytire.bethub.fun/) активирован 15.09.2026, 04:16 UTC. `/design-revision.txt` и серверный `REVISION` совпали с `7363622ff150bf5f867e048e44f157bb626c82d7`; `/up` и главная — HTTP 200. Релиз: `/var/www/staging-easytire.bethub.fun/releases/20260915041644-7363622ff150-preview`. Предыдущий/принятый релиз сохранён: `/var/www/staging-easytire.bethub.fun/releases/20260915004533-bf7f03e3d326`. Runtime `.env` побайтово совпадает с предыдущим; `storage` указывает на прежнее shared storage. В live HTML подключён полученный workshop-ролик `/brand/easytire-workshop-loop.mp4` и его poster. Финальные результаты просмотра страниц фиксируются в handover [PR #69](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/69).
 
 На проверку: главная, `/dekk-og-felger`, `/dekk`, `/felger`, `/priser`, `/tjenester`, `/tjenester/dekkverksted`, `/tjenester/mobilt-dekkskift/foresporsel`, `/kontakt`, `/om-oss`, `/personvern`, `/kjopsvilkar`, карточка товара и корзина. Staging — только code/assets preview; без миграций, seed, очистки или переключения интеграций.

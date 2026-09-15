@@ -121,6 +121,36 @@ test('home hero and finder preserve content at 200 percent reflow and text-only 
     expect(headerOverlaps).toEqual([]);
 });
 
+test('mobile finder labels stay readable while preserving full accessible tab names', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic narrow-screen finder pass is sufficient');
+
+    for (const width of [390, 320]) {
+        await page.setViewportSize({ width, height: 844 });
+        await page.goto('/');
+        await page.evaluate(() => document.fonts.ready);
+        const registration = page.getByRole('tab', { name: 'Registreringsnummer', exact: true });
+        const compactLabel = registration.locator('.et-quick-finder__tab-compact');
+        await expect(compactLabel).toBeVisible();
+        await expect(compactLabel).toHaveText('Reg.nr.');
+        await expect(registration.locator('.et-quick-finder__tab-full')).toBeHidden();
+        const isSingleLine = () => compactLabel.evaluate((element) => {
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            return range.getClientRects().length === 1;
+        });
+        expect(await isSingleLine()).toBe(true);
+        await page.getByRole('tab', { name: 'Dekkdimensjon', exact: true }).click();
+        await expect(page.getByTestId('finder-width')).toBeVisible();
+        await registration.click();
+        await expect(registration).toHaveAttribute('aria-selected', 'true');
+        await expectNoGlobalOverflow(page);
+
+        await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+        expect(await isSingleLine()).toBe(true);
+        await expectNoGlobalOverflow(page);
+    }
+});
+
 test('functional reference pages keep DS-1 headings and the store header label stays stable', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic multi-route DS-1 pass is sufficient');
 

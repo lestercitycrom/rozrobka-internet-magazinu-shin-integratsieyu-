@@ -751,7 +751,7 @@
 
 .et-quick-finder__tabs {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
     border-block: 1px solid #d7d2c9;
     background: #e9e5dc;
 }
@@ -774,6 +774,10 @@
 
 .et-quick-finder__tabs button + button {
     border-left: 1px solid #d7d2c9;
+}
+
+.et-quick-finder__tab-compact {
+    display: none;
 }
 
 .et-quick-finder__tabs button[aria-selected='true'] {
@@ -3789,6 +3793,14 @@
         min-height: 48px;
         padding-inline: .5rem;
         font-size: .9375rem;
+    }
+
+    .et-quick-finder__tab-full {
+        display: none;
+    }
+
+    .et-quick-finder__tab-compact {
+        display: inline;
     }
 
     .et-quick-finder__panel {

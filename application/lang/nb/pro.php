@@ -103,6 +103,7 @@ return [
         'finder_kicker' => 'Finn riktig til bilen',
         'finder_title' => 'Søk dekk og felger',
         'finder_registration_tab' => 'Registreringsnummer',
+        'finder_registration_tab_compact' => 'Reg.nr.',
         'finder_size_tab' => 'Dekkdimensjon',
         'finder_width' => 'Bredde',
         'finder_aspect' => 'Profil',

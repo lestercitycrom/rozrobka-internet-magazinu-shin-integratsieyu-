@@ -19,9 +19,10 @@
     </div>
 
     <div class="et-quick-finder__tabs" role="tablist" aria-label="{{ __('pro.home.finder_title') }}">
-        <button id="{{ $finderId }}-registration-tab" type="button" role="tab" aria-selected="true" aria-controls="{{ $finderId }}-registration-panel">
+        <button id="{{ $finderId }}-registration-tab" type="button" role="tab" aria-label="{{ __('pro.home.finder_registration_tab') }}" aria-selected="true" aria-controls="{{ $finderId }}-registration-panel">
             <x-icon name="car" :size="19" />
-            {{ __('pro.home.finder_registration_tab') }}
+            <span class="et-quick-finder__tab-full" aria-hidden="true">{{ __('pro.home.finder_registration_tab') }}</span>
+            <span class="et-quick-finder__tab-compact" aria-hidden="true">{{ __('pro.home.finder_registration_tab_compact') }}</span>
         </button>
         <button id="{{ $finderId }}-size-tab" type="button" role="tab" aria-selected="false" aria-controls="{{ $finderId }}-size-panel" tabindex="-1">
             <x-icon name="tire" :size="19" />
