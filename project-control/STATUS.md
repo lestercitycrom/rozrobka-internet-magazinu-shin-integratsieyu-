@@ -1,57 +1,46 @@
 # EasyTire status
 
-Updated: 2026-09-13
-Accepted release: `ee512d723e78a65a89bfdee4268c3a779f632b33`
-Retained rollback: `01a931d432b32a5a0633d1b508256b225387d429`
+Updated: 2026-09-15 11:07 UTC
+GitHub baseline: `origin/main` at `bf7f03e3d3265174e4e4307064769a742dd087cc`
+PR #69 deployed application code: `980fdc117d27a7bcf5d0d0cd950e31e74cee1497`
+Immediate staging rollback: `33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b`
+Production: not authorised
 
 ## Environments
 
-| Environment | State | Canonical evidence |
-|---|---|---|
-| GitHub `main` | Customer homepage application candidate plus accepted deployment storage isolation | `fc695b63f3721e98ac665b4c0e505f313592afbd`; application candidate `8ea1a65cb34f7786764c520d6662fe86201d310d` / PR #52 |
-| Staging | Previous application remains active after one protected candidate failed during a partially applied MySQL migration | <https://staging-easytire.bethub.fun>, active `f70f358f06af384364973951eaab8d4fac2b2203`; Issue #44 runtime evidence |
-| Production | Not authorised | Separate production review and runtime decision required |
+| Environment | State |
+|---|---|
+| GitHub `main` | Accepted baseline `bf7f03e3d3265174e4e4307064769a742dd087cc`. |
+| Staging | PR #69 code `980fdc117d27a7bcf5d0d0cd950e31e74cee1497` is active for final review. The previous preview and accepted baseline are retained. |
+| Production | No deployment or merge authorisation. |
 
 ## Runtime gates
 
 | Gate | State |
 |---|---|
-| Dintero | Merchant-review implementation remains in code, but payment enablement is disabled on staging for the final acceptance checkpoint. Production account/KYC and acceptance remain external. |
-| NDI catalogue | Normalised catalogue/import boundary implemented, but the staging feed is currently beyond its freshness window. The correct fail-closed gate hides real NDI stock until a current import succeeds. |
-| NDI sandbox order | Restricted test fixture/profile remains implemented but every sandbox catalogue/inquiry/order gate is disabled on staging for the final acceptance checkpoint. |
-| Commercial NDI C1 | Disabled unless a separately authorised production gate enables it. |
-| Notion / Telegram | Code/outbox boundary exists and remains disabled. Notion work is postponed by the owner; no audit or runtime activation is authorised in the current website initiative. |
-| Statens lookup | Implemented where environment key enables it; wheel/full-kit compatibility remains blocked on licensed PCD/DIA fitment data. |
-| RU storefront | Hidden QA route, `noindex`; not a public language selector. |
+| Dintero | Disabled on staging. Test configuration and callback protection are present; no payment was initiated by this handoff. |
+| NDI catalogue | The catalogue/import boundary is preserved, but supplier stock is beyond the 2160-minute freshness limit. The fail-closed gate hides stale live stock. |
+| NDI sandbox/write | Disabled on staging. The fixture remains present but inactive; no inquiry/order was sent. |
+| Notion / Telegram | Disabled. Two pending outbox records are retained and were not sent. |
+| Customer email | Not enabled by this handoff. |
+| RU storefront | Hidden QA route with `noindex`; no public language selector. |
 
-## Current quality baseline
+## Runtime snapshot
 
-- GitHub-main baseline: Issue #31 / PR #38 is merged as `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; its accepted checks preserve the full Laravel/Playwright regression, frontend build, Pint, project-control validation and reachable-history secret scan gates.
-- Staging deployment/read-back: server `REVISION` matches `f70f358f06af384364973951eaab8d4fac2b2203`; the atomic hook completed `424` Laravel tests / `3920` assertions, reported `Nothing to migrate` and retained `ee512d723e78a65a89bfdee4268c3a779f632b33` plus `01a931d432b32a5a0633d1b508256b225387d429` as rollback releases.
-- Final engineer runtime read-back: database, cache, scheduler and managed queue worker healthy; queue/reservations, failed jobs, outbox pending/failed and supplier-media pending/failed are all zero; payment, NDI write/sandbox, customer-email, Notion and Telegram gates remain disabled. Homepage, admin login and robots return HTTP 200. The isolated NDI feed-freshness warning remains tracked under Issue #19.
-- Live staging validation: the public Issue #26 matrix is effectively green at all six required viewports (43 passed plus 41 expected skips after correcting one obsolete synthetic audit route). Authenticated admin passed 276 NB/RU surface checks and 12 interaction contracts. No external side effect was triggered.
-- `docs/access.md`, `.env`, private customer materials and runtime credentials are excluded from Git.
+- Browser: `/`, `/dekk`, `/tjenester` and `/admin/login` returned HTTP 200 at 1440/390/320 where applicable, with zero page overflow, same-origin assets and zero browser errors.
+- Services: queue worker and scheduler timer are active; both heartbeat ages were 0 minutes. Database-backed queue contains 0 jobs and 0 failed jobs.
+- Deferred work: outbox pending 2 / failed 0; supplier-media pending 36 / failed 0. Their external gates remain off.
+- Catalogue: 1585 products, 1574 published, 16129 stock rows. Latest observed stock is `2026-09-04 08:00:06`; 918 SKU pass catalogue rules before freshness and 0 after freshness.
+- Booking configuration: 0 schedule intervals and 0 blackout periods. No available slots in this state is a configuration limitation, not a workday-view failure.
+- Active staff-role account counts: Editor 1, Operations 1, Owner 2. No identities are recorded here.
+- Backups: immediate previous code release and accepted baseline retained; runtime `.env` and shared storage preserved. There are 33 existing database backup files; latest snapshot is `2026-09-15 10:33:39 UTC`, 1,822,336 bytes. This code-only preview made no database mutation.
+- Capacity: 5.2 GB was available after deployment.
 
 ## Current work
 
-- Active schema remediation: Issue #44 continuation comment `5654071478`, branch `codex/issue-44-mysql-schema-repair`, Draft PR #53. The PM requested a stricter second pass at reviewed head `ec9b3e52162ac624c3ba3fa4c16bc2fb51c46f5c`: exact MySQL comments/generated-column, foreign-key/index, interrupted-state, scoped-content rollback and old-application compatibility evidence. Staging replay and all runtime mutations remain unauthorised until a new exact-SHA gate.
+- Issue #44 implementation and exact-SHA staging preview are complete in PR #69.
+- Independent visual acceptance, merge and production deployment remain separate decisions.
+- Further functional development is stopped for this handoff.
+- Canonical details: `evidence/issue-44/design-v2-result.md`, `evidence/issue-44/design-v2-qa-register.md` and `docs/operations/OPERATIONS_DAY_AND_CLIENT_SEARCH.md`.
 
-- Active initiative: [Issue #9](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/9), audit-first website conformity and later bounded remediation.
-- Accepted audit: [Issue #10](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/10) / PR #17, merged as `05497aeb89d751a8dcf2f7a6d7c914a4cd3c8736`.
-- Completed remediation: [Issue #18](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/18) / PR #21, merged as `de3854d9289618d443ded5c50176e6dc43d875a6`; staging disk health is green.
-- Completed remediation: [Issue #20](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/20) / PR #23, merged, deployed and runtime-accepted as `ee512d723e78a65a89bfdee4268c3a779f632b33`.
-- Remaining confirmed remediation: [Issue #19](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19) is `blocked-external` pending a current complete NDI `stock` / `tires` / `wheels` dataset. PR #22 remains Draft; reviewed diagnostic head `d9815b99ee1f9dff4b10479c22f32a533e65591f`.
-- Issue #28 / PR #35 is merged on GitHub as `07ce99a2d09afdfe521f6150486aa98c799cef97`; this does not change staging or any integration gate.
-- Issue #29 / PR #36 is accepted and merged on GitHub as `0678fe39964292648c52ab97119b9977acbeaba2`; this does not change staging or any integration gate.
-- Completed internal remediation: [Issue #30](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/30) / PR #37, merged as `d69d8d2a70d492c039ae2e76be67938bda274349`; no deployment was authorised.
-- Completed internal remediation: [Issue #31](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/31) / PR #38, merged as `9d49ac82ced177d5310a909ddb7e82fff9c3678a`; no deployment was authorised.
-- Completed internal remediation: [Issue #32](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/32) / [PR #39](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/39), merged as `87509a644022a4df232c118d9bf4bab32f2c3683`; no deployment was authorised.
-- Completed internal remediation: [Issue #33](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/33) / [PR #40](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/40), merged as `9db6bb1304d257c2ecf262a74a0c2cc3e6ee6612`; no deployment was authorised.
-- Completed internal remediation: [Issue #41](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/41) / [PR #42](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/42), accepted and merged as `f70f358f06af384364973951eaab8d4fac2b2203`; that exact release is now deployed on staging under Issue #34 authorization.
-- Active final acceptance: [Issue #34](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/34) / [PR #43](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/43). Managed queue recovery, exact deployment and public/admin live acceptance are complete. The PR is being handed to the PM for exact-head final review; the previously accepted release remains the immediate rollback until that review is accepted.
-- Issue #34 durable evidence: [`evidence/issue-34/final-staging-acceptance.md`](../evidence/issue-34/final-staging-acceptance.md). The 44-row visual ledger is reconciled: 19 historical findings resolved on live staging, 23 protected MATCH rows rechecked, `AUD-26-002` still externally blocked and `AUD-26-040` still not verified by design.
-- Notion is postponed and excluded from the current website remediation initiative.
-- Reconciled website baseline: [`docs/management/WEBSITE_REQUIREMENTS_BASELINE.md`](../docs/management/WEBSITE_REQUIREMENTS_BASELINE.md).
-- Corrected audit result: 119 atomic requirements — 99 match, 4 mismatch rows (3 unique findings), 10 external blockers, 4 decisions required and 2 stale-TZ corrections.
-
-This file is a short runtime snapshot. Detailed history belongs to merged Issues, PRs and the linked reports.
+This file is the short current snapshot. Historical detail belongs to merged Issues, PRs and the linked evidence.
