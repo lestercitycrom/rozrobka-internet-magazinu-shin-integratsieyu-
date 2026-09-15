@@ -72,6 +72,70 @@ test('the sandbox fixture is a searchable priced catalog product and refresh is 
         ->assertOk()
         ->assertSee('data-testid="integration-test-quantity-note"', false)
         ->assertSee(__('storefront.integration_test_quantity_note', ['quantity' => 2]));
+
+    $supplierSkuId = DB::table('supplier_skus')->where('external_sku', 'NDI-TEST-4765205551649102')->value('id');
+    expect(DB::table('suppliers')->where('code', 'ndi-sandbox')->count())->toBe(1)
+        ->and(DB::table('supplier_skus')->where('external_sku', 'NDI-TEST-4765205551649102')->count())->toBe(1)
+        ->and(DB::table('current_stock')->where('supplier_sku_id', $supplierSkuId)->count())->toBe(1)
+        ->and(DB::table('sku_prices')->where('supplier_sku_id', $supplierSkuId)->count())->toBe(1)
+        ->and(DB::table('pricing_rules')->where('name', NdiSandboxCatalogManager::PRICING_RULE_NAME)->count())->toBe(1);
+});
+
+test('the sandbox fixture stays browseable when stale and an idempotent refresh restores safe purchasing', function (): void {
+    $this->artisan('ndi:sandbox-catalog')->assertSuccessful();
+    $catalog = app(CatalogReadService::class);
+    $sku = 'NDI-TEST-4765205551649102';
+
+    $this->travel((int) config('storefront.stock_max_age_minutes') + 1)->minutes();
+
+    $stale = $catalog->findPublicSku($sku);
+    expect($stale)->not->toBeNull()
+        ->and($stale->stock->isFresh())->toBeFalse()
+        ->and($stale->stock->canPurchase(2))->toBeFalse();
+
+    $this->get(route('storefront.products.show', ['sku' => $sku]))
+        ->assertOk()
+        ->assertSee(__('storefront.stock_stale_detail'))
+        ->assertDontSee('data-testid="product-cart-form"', false);
+
+    $this->get(route('storefront.tires.index', ['search' => $sku]))
+        ->assertOk()
+        ->assertSee($sku)
+        ->assertDontSee('data-testid="catalog-add-to-cart"', false);
+
+    $this->artisan('ndi:sandbox-catalog')->assertSuccessful();
+    $this->artisan('ndi:sandbox-catalog')->assertSuccessful();
+
+    $fresh = $catalog->findPublicSku($sku);
+    $supplierSkuId = DB::table('supplier_skus')->where('external_sku', $sku)->value('id');
+    expect($fresh)->not->toBeNull()
+        ->and($fresh->stock->quantity)->toBe(2)
+        ->and($fresh->stock->isFresh())->toBeTrue()
+        ->and($fresh->stock->canPurchase(2))->toBeTrue()
+        ->and(app(SellingPriceService::class)->forItem($fresh)?->money->minor)->toBe(1000)
+        ->and(DB::table('supplier_skus')->where('external_sku', $sku)->count())->toBe(1)
+        ->and(DB::table('current_stock')->where('supplier_sku_id', $supplierSkuId)->count())->toBe(1)
+        ->and(DB::table('sku_prices')->where('supplier_sku_id', $supplierSkuId)->count())->toBe(1);
+
+    $this->get(route('storefront.products.show', ['sku' => $sku]))
+        ->assertOk()
+        ->assertSee('data-testid="product-cart-form"', false);
+});
+
+test('sandbox refresh always provisions enough stock for the approved fixed quantity', function (): void {
+    config()->set('ndi_api.sandbox.stock_quantity', 1);
+
+    $sku = app(NdiSandboxCatalogManager::class)->refresh();
+
+    expect(DB::table('current_stock')->where('supplier_sku_id', $sku->id)->sole()->quantity)->toBe(2);
+});
+
+test('sandbox fixture price cannot be changed through environment configuration', function (): void {
+    config()->set('ndi_api.sandbox.price_minor', 9999);
+
+    expect(fn () => app(NdiSandboxCatalogManager::class)->refresh())
+        ->toThrow(LogicException::class, 'supplier-approved test quantity')
+        ->and(DB::table('suppliers')->where('code', 'ndi-sandbox')->exists())->toBeFalse();
 });
 
 test('the fixture can be disabled without deleting its audit records', function (): void {
@@ -89,6 +153,17 @@ test('the sandbox fixture is impossible to activate in production', function ():
 
     expect(fn () => app(NdiSandboxCatalogManager::class)->refresh())
         ->toThrow(LogicException::class, 'forbidden in production');
+});
+
+test('an existing sandbox fixture is never exposed by the production catalog', function (): void {
+    $this->artisan('ndi:sandbox-catalog')->assertSuccessful();
+
+    $this->app['env'] = 'production';
+    $catalog = app(CatalogReadService::class);
+
+    expect($catalog->findPublicSku('NDI-TEST-4765205551649102'))->toBeNull()
+        ->and($catalog->search(new CatalogQuery(productType: ProductType::Tire, search: '4765205551649102'))->total)->toBe(0)
+        ->and($catalog->suggestions(ProductType::Tire, '4765205'))->toBe([]);
 });
 
 test('sandbox orders freeze the supplier profile and approved NDI article', function (): void {

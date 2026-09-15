@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Modules\NdiApi\NdiIntegrationProfile;
 use App\Modules\NdiImport\NdiBundleImporter;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -18,9 +19,9 @@ final class SyncNdiInbox extends Command
     {
         $path = trim((string) config('ndi.inbox_path'));
         if ($path === '') {
-            $this->components->info('NDI inbox is not configured; nothing to import.');
+            $this->components->error('NDI inbox is not configured.');
 
-            return self::SUCCESS;
+            return self::FAILURE;
         }
         if (! is_dir($path) || ! is_readable($path)) {
             $this->components->error('The configured NDI inbox is unavailable.');
@@ -145,8 +146,32 @@ final class SyncNdiInbox extends Command
             }
             $handled++;
 
+            $previousRunId = $this->successfulRunIdForHash($sha256);
+            if ($previousRunId !== null) {
+                // Content identity is stronger than filename metadata. This check is
+                // deliberately parser-version agnostic: an old workbook must not
+                // become a new delivery after a parser deployment or an mtime touch.
+                DB::table('ndi_inbox_receipts')->where('id', $receipt->id)->update([
+                    'status' => 'succeeded',
+                    'import_run_id' => $previousRunId,
+                    'failure_code' => null,
+                    'updated_at' => now(),
+                ]);
+                $skipped++;
+
+                continue;
+            }
+
             try {
-                $outcome = $importer->importAvailable([$file], 'scheduled-inbox', refreshDuplicate: true);
+                // The file's stable mtime is the only delivery-time signal supplied by
+                // this inbox. Never turn an historical or duplicate workbook into a
+                // fresh stock observation merely because the watcher saw it today.
+                $outcome = $importer->importAvailable(
+                    [$file],
+                    'scheduled-inbox',
+                    refreshDuplicate: false,
+                    observedAt: CarbonImmutable::createFromTimestamp($modifiedAt),
+                );
                 $succeeded = in_array($outcome->status, ['succeeded', 'duplicate'], true);
                 DB::table('ndi_inbox_receipts')->where('id', $receipt->id)->update([
                     'status' => $succeeded ? 'succeeded' : 'failed',
@@ -154,7 +179,13 @@ final class SyncNdiInbox extends Command
                     'failure_code' => $succeeded ? null : 'validation_failed',
                     'updated_at' => now(),
                 ]);
-                $succeeded ? $imported++ : $failed++;
+                if ($outcome->status === 'succeeded') {
+                    $imported++;
+                } elseif ($outcome->status === 'duplicate') {
+                    $skipped++;
+                } else {
+                    $failed++;
+                }
             } catch (Throwable $exception) {
                 report($exception);
                 DB::table('ndi_inbox_receipts')->where('id', $receipt->id)->update([
@@ -177,5 +208,23 @@ final class SyncNdiInbox extends Command
 
         return $resolved !== false
             && hash_equals(rtrim($inboxRoot, DIRECTORY_SEPARATOR), dirname($resolved));
+    }
+
+    private function successfulRunIdForHash(string $sha256): ?string
+    {
+        $runId = DB::table('source_artifacts')
+            ->join('suppliers', 'suppliers.id', '=', 'source_artifacts.supplier_id')
+            ->join('import_run_artifacts', 'import_run_artifacts.source_artifact_id', '=', 'source_artifacts.id')
+            ->join('import_runs', 'import_runs.id', '=', 'import_run_artifacts.import_run_id')
+            ->where('suppliers.code', (string) config('ndi.supplier_code'))
+            ->where('suppliers.integration_profile', NdiIntegrationProfile::LIVE)
+            ->where('suppliers.is_test_fixture', false)
+            ->where('source_artifacts.sha256', $sha256)
+            ->whereIn('import_run_artifacts.dataset_role', ['tires', 'wheels', 'stock'])
+            ->whereIn('import_runs.status', ['succeeded', 'completed'])
+            ->orderByDesc('import_runs.finished_at')
+            ->value('import_runs.id');
+
+        return is_string($runId) && $runId !== '' ? $runId : null;
     }
 }

@@ -17,8 +17,35 @@ final readonly class CatalogStock
         return $this->localQuantity > 0;
     }
 
+    public function hasSnapshot(): bool
+    {
+        return $this->observedAt !== null && trim($this->observedAt) !== '';
+    }
+
     public function isFresh(): bool
     {
         return StockFreshnessPolicy::isFresh($this->observedAt);
+    }
+
+    public function state(): CatalogStockState
+    {
+        if (! $this->hasSnapshot()) {
+            return CatalogStockState::Missing;
+        }
+        if (! $this->isFresh()) {
+            return CatalogStockState::Stale;
+        }
+        if ($this->quantity < 1) {
+            return CatalogStockState::OutOfStock;
+        }
+
+        return $this->isAvailableLocally() ? CatalogStockState::Local : CatalogStockState::Remote;
+    }
+
+    public function canPurchase(int $requestedQuantity = 1): bool
+    {
+        return $requestedQuantity > 0
+            && $this->isFresh()
+            && $this->quantity >= $requestedQuantity;
     }
 }

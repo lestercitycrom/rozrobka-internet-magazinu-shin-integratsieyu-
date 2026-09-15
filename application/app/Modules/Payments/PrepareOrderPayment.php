@@ -25,6 +25,7 @@ final class PrepareOrderPayment
     public function execute(Order $order, string $returnUrl, ?string $callbackUrl = null, ?string $termsUrl = null): PaymentAttempt
     {
         $order = Order::query()->findOrFail($order->getKey());
+        PaymentBoundaryGuard::assertOrderAllowed($order);
         if (in_array($order->payment_status, [PaymentStatus::Pending, PaymentStatus::Authorized], true)) {
             return $this->authorize->execute($order, PaymentIdempotencyKey::authorizeFor($order), $returnUrl, $callbackUrl, $termsUrl);
         }

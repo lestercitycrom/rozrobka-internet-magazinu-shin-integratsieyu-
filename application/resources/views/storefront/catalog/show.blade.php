@@ -9,6 +9,9 @@
     $catalogLabel = $isTire ? __('storefront.tires') : __('storefront.wheels');
     $productHeading = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
     $productDescription = trim(implode(' · ', array_filter([$productHeading, $presenter->summary(), $item->sku])));
+    $requiredQuantity = $item->isIntegrationTest ? \App\Modules\NdiApi\NdiSandboxContract::QUANTITY : 1;
+    $canPurchase = $sellingPrice !== null && $item->stock->canPurchase($requiredQuantity);
+    $stockState = $item->stock->state();
     $productSchema = [
         '@context' => 'https://schema.org', '@type' => 'Product', 'name' => $productHeading,
         'sku' => $item->sku, 'brand' => ['@type' => 'Brand', 'name' => $item->brand],
@@ -16,11 +19,11 @@
         'url' => route($prefix.'products.show', ['sku' => $item->sku]),
     ];
     if ($item->primaryMedia) $productSchema['image'] = url($item->primaryMedia['url']);
-    if ($sellingPrice && $item->stock->isFresh()) {
+    if ($sellingPrice && in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote, \App\Modules\Catalog\ReadModel\CatalogStockState::OutOfStock], true)) {
         $productSchema['offers'] = [
             '@type' => 'Offer', 'priceCurrency' => $sellingPrice->money->currency,
             'price' => number_format($sellingPrice->money->minor / 100, 2, '.', ''),
-            'availability' => 'https://schema.org/InStock',
+            'availability' => $stockState === \App\Modules\Catalog\ReadModel\CatalogStockState::OutOfStock ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
             'url' => route($prefix.'products.show', ['sku' => $item->sku]),
         ];
     }
@@ -63,23 +66,24 @@
                         @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
 
                         <div class="et-stock-line">
-                            <span @class(['et-stock-dot' => $item->stock->quantity > 0 && $item->stock->isFresh()]) aria-hidden="true"></span>
-                            <span>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale_detail') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso_detail', ['count' => $item->stock->localQuantity]) : __('storefront.stock_remote_detail')) }}</span>
+                            <span @class(['et-stock-dot' => in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote], true)]) aria-hidden="true"></span>
+                            <span>{{ $presenter->availabilityDetail() }}</span>
                         </div>
 
-                        @if ($sellingPrice && $item->stock->quantity > 0 && $item->stock->isFresh())
+                        @if ($sellingPrice)
                             <div class="et-product-price">
                                 <x-storefront-money :minor="$sellingPrice->money->minor" :currency="$sellingPrice->money->currency" />
                                 <small>{{ __('storefront.selling_price_note') }}</small>
                             </div>
+                        @endif
+                        @if ($canPurchase)
                             <form class="et-product-purchase" method="post" action="{{ route($prefix.'cart.add') }}" data-testid="product-cart-form">
                                 @csrf
                                 <input type="hidden" name="sku" value="{{ $item->sku }}">
                                 <div class="et-purchase-controls">
                                     <div class="et-purchase-quantity">
                                         <label class="et-label" for="product-quantity">{{ __('storefront.quantity') }}</label>
-                                        @php $requiredTestQuantity = (int) config('ndi_api.sandbox.quantity', 2); @endphp
-                                        <input class="et-input easytire-input" id="product-quantity" data-testid="product-quantity" type="number" name="quantity" value="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" min="{{ $item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $item->isIntegrationTest ? $requiredTestQuantity : min(40, $item->stock->quantity) }}" inputmode="numeric" {{ $item->isIntegrationTest ? 'readonly' : '' }}>
+                                        <input class="et-input easytire-input" id="product-quantity" data-testid="product-quantity" type="number" name="quantity" value="{{ $requiredQuantity }}" min="{{ $requiredQuantity }}" max="{{ $item->isIntegrationTest ? $requiredQuantity : min(40, $item->stock->quantity) }}" inputmode="numeric" {{ $item->isIntegrationTest ? 'readonly' : '' }}>
                                     </div>
                                     <div class="et-purchase-actions" data-testid="product-purchase-actions">
                                         <button class="et-btn et-btn--outline" type="submit" name="intent" value="cart" data-testid="product-add-to-cart">{{ __('storefront.add_to_cart') }}</button>
@@ -89,7 +93,7 @@
                                 @if ($item->isIntegrationTest)
                                     <aside class="et-sandbox-purchase-note" data-testid="integration-test-quantity-note">
                                         <span>{{ __('storefront.integration_test_product') }}</span>
-                                        <small>{{ __('storefront.integration_test_quantity_note', ['quantity' => $requiredTestQuantity]) }}</small>
+                                        <small>{{ __('storefront.integration_test_quantity_note', ['quantity' => $requiredQuantity]) }}</small>
                                     </aside>
                                 @endif
                             </form>
@@ -97,7 +101,7 @@
                         @else
                             <div class="et-alert et-alert--warning et-product-unavailable">
                                 <span class="et-alert__icon" aria-hidden="true">!</span>
-                                <div><strong>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale') : ($item->stock->quantity > 0 ? __('storefront.price_unavailable') : __('storefront.stock_none')) }}</strong><br>{{ __('storefront.unavailable_note') }}</div>
+                                <div><strong>{{ $item->stock->canPurchase($requiredQuantity) ? __('storefront.price_unavailable') : $presenter->availabilityLabel() }}</strong><br>{{ __('storefront.unavailable_note') }}</div>
                             </div>
                         @endif
                     </div>
@@ -105,7 +109,7 @@
                     <h2 class="et-h3 et-product-spec-heading">{{ __('storefront.technical_details') }}</h2>
                     <dl class="et-spec-grid" data-testid="technical-details">
                         <div><dt>{{ __('storefront.item_number') }}</dt><dd>{{ $item->sku }}</dd></div>
-                        <div><dt>{{ __('pro.catalog.stock') }}</dt><dd>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale_detail') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso_detail', ['count' => $item->stock->localQuantity]) : __('storefront.stock_remote_detail')) }}</dd></div>
+                        <div><dt>{{ __('pro.catalog.stock') }}</dt><dd>{{ $presenter->availabilityDetail() }}</dd></div>
                         @if ($item->title !== $productHeading)<div><dt>{{ __('storefront.supplier_description') }}</dt><dd>{{ $item->title }}</dd></div>@endif
                         @if ($item->tire)
                             @if ($dimension)<div><dt>{{ __('storefront.dimension') }}</dt><dd>{{ $dimension }}</dd></div>@endif

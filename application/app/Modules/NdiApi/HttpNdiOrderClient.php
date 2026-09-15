@@ -33,13 +33,9 @@ final class HttpNdiOrderClient implements NdiOrderClient
 
     private function assertSandboxLines(NdiC1OrderRequest $request): void
     {
-        $article = (string) config('ndi_api.sandbox.article_id');
-        $quantity = (int) config('ndi_api.sandbox.quantity', 2);
         if (count($request->lines) !== 1
-            || $request->lines[0]->buyersArticleId !== $article
-            || $request->lines[0]->quantity !== $quantity
-            || $article !== '4765205551649102'
-            || $quantity !== 2) {
+            || $request->lines[0]->buyersArticleId !== NdiSandboxContract::ARTICLE_ID
+            || $request->lines[0]->quantity !== NdiSandboxContract::QUANTITY) {
             throw new NdiApiDisabled('NDI sandbox C1 rejected a non-approved article or quantity.');
         }
     }

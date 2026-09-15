@@ -28,6 +28,7 @@ final class ConfirmPayment
         string $payloadSha256,
     ): Order {
         $this->validateInput($provider, $externalEventId, $providerReference, $amountMinor, $currency, $payloadSha256);
+        PaymentBoundaryGuard::assertOrderAllowed($order);
 
         return DB::transaction(function () use ($order, $provider, $externalEventId, $providerReference, $amountMinor, $currency, $payloadSha256): Order {
             $duplicate = PaymentWebhookEvent::query()

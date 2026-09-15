@@ -4,6 +4,7 @@ namespace App\Modules\Catalog\Presentation;
 
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\ReadModel\CatalogItem;
+use App\Modules\Catalog\ReadModel\CatalogStockState;
 use App\Modules\Catalog\Support\ProductionYearNormalizer;
 
 final readonly class CatalogItemPresenter
@@ -75,6 +76,28 @@ final readonly class CatalogItemPresenter
             $this->boltCircle(),
             $offset !== null ? 'ET '.$offset : null,
         ]));
+    }
+
+    public function availabilityLabel(): string
+    {
+        return match ($this->item->stock->state()) {
+            CatalogStockState::Missing => __('storefront.stock_missing'),
+            CatalogStockState::Stale => __('storefront.stock_stale'),
+            CatalogStockState::OutOfStock => __('storefront.stock_none'),
+            CatalogStockState::Local => __('storefront.stock_tromso'),
+            CatalogStockState::Remote => __('storefront.stock_remote'),
+        };
+    }
+
+    public function availabilityDetail(): string
+    {
+        return match ($this->item->stock->state()) {
+            CatalogStockState::Missing => __('storefront.stock_missing_detail'),
+            CatalogStockState::Stale => __('storefront.stock_stale_detail'),
+            CatalogStockState::OutOfStock => __('storefront.stock_none'),
+            CatalogStockState::Local => __('storefront.stock_tromso_detail', ['count' => $this->item->stock->localQuantity]),
+            CatalogStockState::Remote => __('storefront.stock_remote_detail'),
+        };
     }
 
     /** @return list<array{label: string, value: string}> */

@@ -19,6 +19,9 @@ final class CatalogReadService
     public function search(CatalogQuery $filters): CatalogPage
     {
         $query = $this->baseQuery($filters);
+        if ($filters->inStockOnly) {
+            PublicCatalogAvailability::constrainToFreshPositiveStock($query);
+        }
         if ($filters->hasImageOnly) {
             $query->whereExists(function ($media): void {
                 $media->selectRaw('1')
@@ -113,8 +116,11 @@ final class CatalogReadService
             ->where('products.publication_status', PublicationStatus::Published->value)
             ->where('supplier_skus.catalog_state', CatalogState::Catalog->value);
 
-        // Import history retains unavailable rows; every public surface shares this gate.
-        PublicCatalogAvailability::constrain($query);
+        // Publication is product identity. Stock freshness only controls purchasing and the
+        // explicit "in stock" filter; a delayed feed must never erase the browse catalogue.
+        if (app()->environment('production')) {
+            $query->where('suppliers.is_test_fixture', false);
+        }
 
         if ($filters === null) {
             return $query;
@@ -190,12 +196,14 @@ final class CatalogReadService
             ->selectRaw(
                 'current_stock.supplier_sku_id, '
                 ."MAX(CASE WHEN warehouses.code = 'norway' THEN current_stock.quantity END) as national_quantity, "
+                ."MAX(CASE WHEN warehouses.code = 'norway' THEN current_stock.observed_at END) as national_observed_at, "
                 ."SUM(CASE WHEN warehouses.code = 'tromso' THEN current_stock.quantity ELSE 0 END) as local_quantity, "
+                ."MAX(CASE WHEN warehouses.code = 'tromso' THEN current_stock.observed_at END) as local_observed_at, "
                 ."SUM(CASE WHEN warehouses.code NOT IN ('norway', 'tromso') THEN current_stock.quantity ELSE 0 END) as remote_location_quantity, "
-                .'MAX(current_stock.observed_at) as observed_at'
+                ."MIN(CASE WHEN warehouses.code != 'norway' THEN current_stock.observed_at END) as physical_oldest_observed_at, "
+                ."MAX(CASE WHEN warehouses.code != 'norway' THEN current_stock.observed_at END) as physical_latest_observed_at"
             )
             ->groupBy('current_stock.supplier_sku_id')
-            ->tap(fn (Builder $query) => StockFreshnessPolicy::constrain($query, 'current_stock.observed_at'))
             ->get()
             ->keyBy('supplier_sku_id');
         $media = MediaAssignment::query()
@@ -218,13 +226,22 @@ final class CatalogReadService
         return array_map(function (SupplierSku $sku) use ($prices, $stocks, $media, $nullableBool): CatalogItem {
             $stock = $stocks->get($sku->id);
             $asset = $media->get($sku->product_id);
-            $rawLocalQuantity = (int) ($stock?->local_quantity ?? 0);
+            $localObservedAt = $stock?->local_observed_at === null ? null : (string) $stock->local_observed_at;
+            $rawLocalQuantity = StockFreshnessPolicy::isFresh($localObservedAt)
+                ? (int) ($stock?->local_quantity ?? 0)
+                : 0;
             $remoteLocationQuantity = (int) ($stock?->remote_location_quantity ?? 0);
             $physicalQuantity = $rawLocalQuantity + $remoteLocationQuantity;
             // NDI's Norway value is the contracted, capped sellable quantity. Location rows are
             // warehouse detail and must not be added on top of it.
             $nationalQuantity = $stock?->national_quantity;
             $quantity = $nationalQuantity === null ? $physicalQuantity : (int) $nationalQuantity;
+            $observedAt = $nationalQuantity === null
+                ? $this->aggregateObservedAt(
+                    $stock?->physical_oldest_observed_at,
+                    $stock?->physical_latest_observed_at,
+                )
+                : ($stock?->national_observed_at === null ? null : (string) $stock->national_observed_at);
             $localQuantity = min($rawLocalQuantity, $quantity);
             $remoteQuantity = max(0, $quantity - $localQuantity);
 
@@ -239,7 +256,7 @@ final class CatalogReadService
                     ->map(fn ($price) => new CatalogPrice($price->amount, $price->currency, TaxMode::from($price->tax_mode), $price->observed_at, $price->code))
                     ->values()
                     ->all(),
-                stock: new CatalogStock($quantity, $stock?->observed_at, $localQuantity, $remoteQuantity),
+                stock: new CatalogStock($quantity, $observedAt, $localQuantity, $remoteQuantity),
                 tire: $sku->getAttribute('tire_rim_diameter_in') === null ? null : [
                     'width_mm' => $sku->getAttribute('tire_width_mm'), 'width_inch' => $sku->getAttribute('tire_width_inch'),
                     'aspect_ratio' => $sku->getAttribute('tire_aspect_ratio'), 'rim_diameter_in' => $sku->getAttribute('tire_rim_diameter_in'),
@@ -273,5 +290,20 @@ final class CatalogReadService
                 supplierArticleId: filled($sku->supplier_item_id) ? (string) $sku->supplier_item_id : null,
             );
         }, $skus);
+    }
+
+    private function aggregateObservedAt(mixed $oldest, mixed $latest): ?string
+    {
+        if ($oldest === null || $latest === null) {
+            return null;
+        }
+
+        $oldest = (string) $oldest;
+        $latest = (string) $latest;
+
+        // When physical locations are the quantity source, every contributing snapshot
+        // must be current. Return the failing edge so CatalogStock remains fail-closed
+        // for both stale and implausibly future timestamps.
+        return StockFreshnessPolicy::isFresh($oldest) ? $latest : $oldest;
     }
 }

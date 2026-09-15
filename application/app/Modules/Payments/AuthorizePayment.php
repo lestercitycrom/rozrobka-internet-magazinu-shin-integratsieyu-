@@ -32,6 +32,7 @@ final class AuthorizePayment
         ?string $termsUrl = null,
     ): PaymentAttempt {
         PaymentBoundaryGuard::assertEnabled();
+        PaymentBoundaryGuard::assertOrderAllowed($order);
         $provider = PaymentBoundaryGuard::provider($this->gateway->provider());
         $idempotencyKey = PaymentBoundaryGuard::idempotencyKey($idempotencyKey);
         if (filter_var($returnUrl, FILTER_VALIDATE_URL) === false || ! in_array(parse_url($returnUrl, PHP_URL_SCHEME), ['http', 'https'], true)) {

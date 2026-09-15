@@ -85,7 +85,13 @@ final class NdiSandboxCatalogManager
             CurrentStock::query()->updateOrCreate(
                 ['supplier_sku_id' => $sku->id, 'warehouse_id' => $warehouse->id],
                 [
-                    'quantity' => max(1, (int) config('ndi_api.sandbox.stock_quantity', 2)),
+                    // The only approved sandbox order is the fixed two-item NDI fixture.
+                    // Never publish less stock than that order requires, even when a
+                    // staging environment variable was accidentally lowered.
+                    'quantity' => max(
+                        NdiSandboxContract::QUANTITY,
+                        (int) config('ndi_api.sandbox.stock_quantity', 2),
+                    ),
                     'observed_at' => $now,
                     'source_artifact_id' => $artifactId,
                 ],
@@ -94,11 +100,11 @@ final class NdiSandboxCatalogManager
             $priceList = PriceList::query()->updateOrCreate([
                 'supplier_id' => $supplier->id,
                 'code' => self::PRICE_LIST_CODE,
-                'currency' => 'NOK',
+                'currency' => NdiSandboxContract::CURRENCY,
                 'tax_mode' => TaxMode::Gross,
                 'valid_from' => '2000-01-01 00:00:00',
             ], ['valid_to' => null]);
-            $priceMinor = max(100, (int) config('ndi_api.sandbox.price_minor', 1000));
+            $priceMinor = NdiSandboxContract::UNIT_PRICE_MINOR;
             SkuPrice::query()->updateOrCreate(
                 ['supplier_sku_id' => $sku->id, 'price_list_id' => $priceList->id],
                 [
@@ -114,7 +120,7 @@ final class NdiSandboxCatalogManager
                     'scope_key' => $catalogSku,
                     'source_price_list_code' => self::PRICE_LIST_CODE,
                     'source_tax_mode' => TaxMode::Gross,
-                    'currency' => 'NOK',
+                    'currency' => NdiSandboxContract::CURRENCY,
                     'markup_basis_points' => 0,
                     'fixed_markup_minor' => 0,
                     'rounding_increment_minor' => 1,
@@ -143,11 +149,13 @@ final class NdiSandboxCatalogManager
         if (! config('ndi_api.sandbox.enabled', false)) {
             throw new LogicException('The NDI sandbox catalog feature is disabled.');
         }
-        if ((string) config('ndi_api.sandbox.party_id') !== '1220000'
-            || (string) config('ndi_api.sandbox.article_id') !== '4765205551649102') {
+        if ((string) config('ndi_api.sandbox.party_id') !== NdiSandboxContract::PARTY_ID
+            || (string) config('ndi_api.sandbox.article_id') !== NdiSandboxContract::ARTICLE_ID
+            || (string) config('ndi_api.sandbox.catalog_sku') !== NdiSandboxContract::CATALOG_SKU) {
             throw new LogicException('The NDI sandbox fixture must use the supplier-approved PartyID and article.');
         }
-        if ((int) config('ndi_api.sandbox.quantity', 2) !== 2) {
+        if ((int) config('ndi_api.sandbox.quantity', NdiSandboxContract::QUANTITY) !== NdiSandboxContract::QUANTITY
+            || (int) config('ndi_api.sandbox.price_minor', NdiSandboxContract::UNIT_PRICE_MINOR) !== NdiSandboxContract::UNIT_PRICE_MINOR) {
             throw new LogicException('The NDI sandbox fixture must use the supplier-approved test quantity 2.');
         }
     }

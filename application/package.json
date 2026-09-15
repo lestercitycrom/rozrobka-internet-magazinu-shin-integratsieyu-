@@ -6,6 +6,7 @@
         "build": "vite build",
         "dev": "vite",
         "test:e2e": "playwright test",
+        "test:e2e:issue19": "playwright test --config=playwright.issue-19.config.ts",
         "test:e2e:ui": "playwright test --ui",
         "test:preview": "playwright test --config=playwright.preview.config.ts"
     },

@@ -25,6 +25,13 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function (): void {
+    config()->set([
+        'payments.enabled' => true,
+        'payments.provider' => 'fake',
+    ]);
+});
+
 test('checkout freezes an immutable snapshot and duplicate idempotency key returns the same order', function (): void {
     $data = commerceCheckoutData();
     $cart = commerceCart();

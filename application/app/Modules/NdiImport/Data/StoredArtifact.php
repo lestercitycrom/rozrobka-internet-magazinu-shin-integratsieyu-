@@ -2,6 +2,8 @@
 
 namespace App\Modules\NdiImport\Data;
 
+use Carbon\CarbonImmutable;
+
 final readonly class StoredArtifact
 {
     public function __construct(
@@ -12,5 +14,6 @@ final readonly class StoredArtifact
         public int $byteSize,
         public string $sha256,
         public string $contentType,
+        public CarbonImmutable $receivedAt,
     ) {}
 }

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Modules\NdiImport\Exceptions\NdiImportAlreadyRunning;
 use App\Modules\NdiImport\Exceptions\NdiPublishFailed;
 use App\Modules\NdiImport\NdiBundleImporter;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 
 class ImportNdiBundle extends Command
@@ -21,13 +22,23 @@ class ImportNdiBundle extends Command
     public function handle(NdiBundleImporter $importer): int
     {
         try {
-            $method = $this->option('partial') ? 'importAvailable' : 'import';
-            $outcome = $importer->{$method}(
-                array_values($this->argument('files')),
-                (string) $this->option('trigger'),
-                (bool) $this->option('redacted'),
-                (bool) $this->option('allow-stock-drop'),
-            );
+            $files = array_values($this->argument('files'));
+            $observedAt = $this->oldestFileModification($files);
+            $outcome = $this->option('partial')
+                ? $importer->importAvailable(
+                    $files,
+                    (string) $this->option('trigger'),
+                    (bool) $this->option('redacted'),
+                    (bool) $this->option('allow-stock-drop'),
+                    observedAt: $observedAt,
+                )
+                : $importer->import(
+                    $files,
+                    (string) $this->option('trigger'),
+                    (bool) $this->option('redacted'),
+                    (bool) $this->option('allow-stock-drop'),
+                    observedAt: $observedAt,
+                );
         } catch (NdiImportAlreadyRunning $exception) {
             $this->components->error($exception->getMessage());
 
@@ -58,5 +69,27 @@ class ImportNdiBundle extends Command
         return in_array($outcome->status, ['succeeded', 'duplicate'], true)
             ? self::SUCCESS
             : self::FAILURE;
+    }
+
+    /** @param list<string> $files */
+    private function oldestFileModification(array $files): ?CarbonImmutable
+    {
+        $oldest = null;
+        foreach ($files as $file) {
+            clearstatcache(true, $file);
+            if (! is_string($file) || ! is_file($file) || ! is_readable($file)) {
+                continue;
+            }
+            $modifiedAt = filemtime($file);
+            if ($modifiedAt === false) {
+                continue;
+            }
+            $candidate = CarbonImmutable::createFromTimestamp($modifiedAt);
+            if ($oldest === null || $candidate->isBefore($oldest)) {
+                $oldest = $candidate;
+            }
+        }
+
+        return $oldest;
     }
 }

@@ -26,6 +26,7 @@ final class SynchronizeProviderPayment
     public function execute(Order $order, string $providerReference, string $source): PaymentAttempt
     {
         PaymentBoundaryGuard::assertEnabled();
+        PaymentBoundaryGuard::assertOrderAllowed($order);
         $provider = PaymentBoundaryGuard::provider($this->gateway->provider());
         $transaction = $this->gateway->transaction(PaymentBoundaryGuard::providerReference($providerReference));
         $this->assertTransaction($order, $transaction);
