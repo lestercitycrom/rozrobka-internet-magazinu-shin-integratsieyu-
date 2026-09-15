@@ -1,19 +1,26 @@
 # Current review
 
-- Issue: [#19 — catalogue availability recovery](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19).
-- PR: [#70 — Fix Issue #19 catalogue availability recovery](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/70).
-- Branch: `codex/issue-19-catalog-availability`.
-- Exact accepted base: `origin/main` at `47dfdee2bb9538ba70742b0c88cf1edd4a85707c`.
-- Corrected application candidate: `2aaec105f67455cfdcfbebe0eb7991de3322a051`; supersedes `aeb48a8049138c5dd0786f2b93fd3b696c9f37bd`. The review branch additionally contains project-control and verification/CI-harness corrections; its exact final head will be reported in PR #70. No deployment has been performed.
-- Active staging application: `980fdc117d27a7bcf5d0d0cd950e31e74cee1497`; immediate rollback `33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b`.
-- Browse contract: published active real NDI products remain visible with localized missing, stale, zero, local or remote availability states. The in-stock filter remains fresh-positive only.
-- Commerce contract: missing, stale, zero or insufficient stock cannot enter a valid cart or proceed through checkout/payment. Fresh secondary warehouse data cannot mask stale authoritative Norway or contributing physical rows.
-- Environment contract: production excludes every test fixture. The only approved sandbox order is immutable SKU `NDI-TEST-4765205551649102`, quantity `2`, unit `10 NOK`, total `20 NOK`, and it is blocked outside Dintero test.
-- Operations contract: missing `NDI_INBOX_PATH` fails explicitly; supplier health uses only successful live non-test stock imports, cannot outlive storefront stock freshness and reports redacted inbox configuration/readiness/receipt state without paths or filenames.
-- Import provenance contract: the retained stored-artifact observation timestamp, initially derived from source-file filesystem modification time (mtime), not processing time, governs stock freshness. Inbox duplicate detection spans parser versions; retained artifact time and older-observation guards prevent same-content manual replay or a touched already-stored duplicate from renewing freshness. Future observations are rejected before mutation and older observations cannot replace newer current stock. For every exact supplier-SKU and price-list identity, current price time is non-decreasing: older distinct artifacts remain historical evidence but cannot replace current amount, timestamp or artifact. The current row is locked during arbitration; equal-time corrections and legitimate newer decreases remain accepted.
-- Current backend verification is green: full Laravel `590 passed / 5,574 assertions / 1 expected Windows symlink skip` and targeted Pint. Retained frontend evidence is unchanged because the correction touches no frontend files: standard Playwright `251 passed / 132 expected skips / 0 failures`, dedicated Issue #19 Playwright `11 passed / 4 expected skips`, supplemental map/content `56 passed`, sequential admin chain `16 passed`, and a clean production asset build. The price rollback regression was observed red with the guard removed and green after restoration; an independent exact-candidate audit found no blocking or material defect.
-- Review gate: the prior `c44b0462836938385764a5ba7e9ea0f3b72a7004` head passed all three GitHub checks, then PM exact-head review found a P1 older-price rollback. Candidate `2aaec105f67455cfdcfbebe0eb7991de3322a051` corrects it; CI on the new final review head and exact-head re-review are pending. Merge and deployment remain separate later steps.
-- Runtime gate: future inbox configuration repair is planned. A new external NDI delivery remains the blocker to fresh purchasable real inventory, but not to catalogue browsing/demo after deployment.
-- Conservative fail-closed limitation: byte-identical supplier content cannot prove a new delivery until a trusted delivery identifier/sequence is available and implemented; a full bundle uses its oldest constituent mtime. Either condition may keep purchasing blocked, but cannot make stale inventory sellable.
+Review only the final Issue #19 handoff branch against accepted base `f25a005ac0277ce0ef03c303a2e7c9a997a83a48`. The exact candidate head and PR are published in Issue #19 when ready.
 
-Detailed diagnosis, candidate behaviour, verification limits and redacted runtime facts are recorded in `evidence/issue-19/catalog-recovery.md`.
+## Required invariants
+
+- Published active real products remain browseable and detail-visible when stock is missing, stale or zero.
+- Visibility is independent from purchasability.
+- Add-to-cart, checkout and payment require a valid selling price plus fresh, sufficient positive stock; direct requests remain fail-closed.
+- Missing price is explicit and never represented as zero, purchase price or supplier cost.
+- An unavailable real product has a nearby localized contact action that opens `/kontakt` or `/ru/kontakt` and does not imply that an order was placed.
+- Existing safe prices remain visible even when stock is stale; fresh ordinary products retain their purchase controls.
+- The staging-only demo remains fixed at quantity `2`, unit `10 NOK`, total `20 NOK`, includes the no-real-delivery copy and stays isolated from production and commercial NDI ordering.
+
+## Focused evidence expected
+
+- PHP rendering assertions for tyre and wheel, NB/RU, valid price and missing price.
+- Issue #19 Playwright at 1440, 390 and 320 px for NB/RU: CTA visible and keyboard-operable, target opens, price placeholder visible when required, no horizontal overflow.
+- Existing direct cart rejection remains green; no new external payment or supplier call is needed.
+- One normal CI run on the final exact head. Record only checks actually run for this candidate.
+
+## Release and handoff
+
+The active application before this closeout is the accepted `f25a005ac0277ce0ef03c303a2e7c9a997a83a48` release; its accepted runtime evidence is linked from `STATUS.md`. A narrow code/assets-only staging preview is authorised after focused checks, with a fresh server read-back, valid backup and retained rollback. Final merge remains the PM's exact-head decision.
+
+Once the final main/application identity, two real product URLs, permanent demo URL, rollback, clean working-copy path and absence of competing application work are confirmed in Issue #19, the PM may post `CATALOG HANDOFF READY`. The designer then starts one branch from that final accepted `main`; old PRs and branches are not inputs.

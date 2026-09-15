@@ -33,6 +33,7 @@ export default defineConfig({
         { name: 'issue-19-nb-mobile-320', use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 320, height: 720 } } },
         { name: 'issue-19-ru-desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
         { name: 'issue-19-ru-mobile', use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 390, height: 844 } } },
+        { name: 'issue-19-ru-mobile-320', use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 320, height: 720 } } },
     ],
     webServer: {
         command: `${phpCommand} -r "is_dir('${phpTempDirectoryForPhp}') || mkdir('${phpTempDirectoryForPhp}', 0777, true); file_exists('${databaseForPhp}') || touch('${databaseForPhp}');" && ${phpCommand} artisan migrate:fresh --force && ${phpCommand} artisan db:seed --class=E2eStorefrontSeeder --force && ${phpCommand} -S 127.0.0.1:${serverPort} -t public tests/E2E/server.php`,

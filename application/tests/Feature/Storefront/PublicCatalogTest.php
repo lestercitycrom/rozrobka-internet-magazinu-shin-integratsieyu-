@@ -48,6 +48,11 @@ test('visitor can filter published tires and open a product page', function (): 
         ->assertOk()
         ->assertSee('205/55 R16')
         ->assertSee(__('storefront.price_unavailable'))
+        ->assertSee('data-testid="product-price-unavailable"', false)
+        ->assertSee('data-testid="product-availability-contact"', false)
+        ->assertSee('href="'.route('storefront.content.show', ['slug' => 'kontakt']).'"', false)
+        ->assertSee(__('storefront.availability_contact'))
+        ->assertDontSee('data-testid="product-cart-form"', false)
         ->assertSee('SKU-TIRE-205');
 });
 
@@ -320,10 +325,14 @@ test('public catalog retains fresh zero stock while keeping inactive suppliers h
     $this->get('/produkter/SKU-ZERO-STOCK')
         ->assertOk()
         ->assertSee(__('storefront.stock_none'))
+        ->assertSee(__('storefront.availability_contact'))
+        ->assertSee('href="'.route('storefront.content.show', ['slug' => 'kontakt']).'"', false)
         ->assertDontSee('data-testid="product-cart-form"', false);
     $this->get('/ru/produkter/SKU-ZERO-STOCK')
         ->assertOk()
         ->assertSee('Нет зарегистрированного остатка.')
+        ->assertSee('Уточнить цену и наличие')
+        ->assertSee('href="'.route('storefront.preview.content.show', ['slug' => 'kontakt']).'"', false)
         ->assertDontSee('data-testid="product-cart-form"', false);
     $this->get('/produkter/SKU-INACTIVE-SUPPLIER')->assertNotFound();
     $this->getJson('/dekk/suggestions?q=SKU-ZERO')->assertOk()->assertJsonFragment(['sku' => 'SKU-ZERO-STOCK']);
@@ -374,22 +383,35 @@ test('all public catalog surfaces retain stale and missing stock but purchasing 
         ->assertSee('SKU-FRESH-STOCK')
         ->assertDontSee('SKU-STALE-STOCK')
         ->assertDontSee('SKU-MISSING-STOCK');
-    $this->get('/produkter/SKU-FRESH-STOCK')->assertOk();
+    $this->get('/produkter/SKU-FRESH-STOCK')
+        ->assertOk()
+        ->assertSee('data-testid="product-cart-form"', false)
+        ->assertDontSee('data-testid="product-availability-contact"', false);
     $this->get('/produkter/SKU-STALE-STOCK')
         ->assertOk()
         ->assertSee(__('storefront.stock_stale_detail'))
+        ->assertSee(__('storefront.availability_contact'))
+        ->assertSee('href="'.route('storefront.content.show', ['slug' => 'kontakt']).'"', false)
+        ->assertDontSee('data-testid="product-price-unavailable"', false)
         ->assertDontSee('data-testid="product-cart-form"', false);
     $this->get('/produkter/SKU-MISSING-STOCK')
         ->assertOk()
         ->assertSee(__('storefront.stock_missing_detail'))
+        ->assertSee(__('storefront.availability_contact'))
+        ->assertSee('href="'.route('storefront.content.show', ['slug' => 'kontakt']).'"', false)
+        ->assertDontSee('data-testid="product-price-unavailable"', false)
         ->assertDontSee('data-testid="product-cart-form"', false);
     $this->get('/ru/produkter/SKU-STALE-STOCK')
         ->assertOk()
         ->assertSee('Последние данные об остатках устарели и не используются для оформления.')
+        ->assertSee('Уточнить цену и наличие')
+        ->assertSee('href="'.route('storefront.preview.content.show', ['slug' => 'kontakt']).'"', false)
         ->assertDontSee('data-testid="product-cart-form"', false);
     $this->get('/ru/produkter/SKU-MISSING-STOCK')
         ->assertOk()
         ->assertSee('NDI ещё не передал складской остаток для этого товара.')
+        ->assertSee('Уточнить цену и наличие')
+        ->assertSee('href="'.route('storefront.preview.content.show', ['slug' => 'kontakt']).'"', false)
         ->assertDontSee('data-testid="product-cart-form"', false);
     $this->getJson('/dekk/suggestions?q=SKU-FRESH')->assertOk()->assertJsonFragment(['sku' => 'SKU-FRESH-STOCK']);
     $this->getJson('/dekk/suggestions?q=SKU-STALE')->assertOk()->assertJsonFragment(['sku' => 'SKU-STALE-STOCK']);
@@ -454,6 +476,10 @@ test('wheel detail normalizes fitment values and marks the wheel navigation in N
         ->assertSee('8 × 18')
         ->assertSee('5×112')
         ->assertSee('66.6')
+        ->assertSee(__('storefront.price_unavailable'))
+        ->assertSee('data-testid="product-price-unavailable"', false)
+        ->assertSee(__('storefront.availability_contact'))
+        ->assertSee('href="'.route('storefront.content.show', ['slug' => 'kontakt']).'"', false)
         ->assertDontSee('8.00')
         ->assertDontSee('112.00')
         ->assertDontSee('Silver')
@@ -461,7 +487,14 @@ test('wheel detail normalizes fitment values and marks the wheel navigation in N
     expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.store.index'), 'Dekk og felger'))->toBe(2);
 
     $russian = $this->get('/ru/produkter/SKU-WHEEL-DETAIL')->assertOk();
-    $russian->assertSee('8 × 18')->assertSee('5×112')->assertSee('66.6')->assertDontSee('Silver');
+    $russian
+        ->assertSee('8 × 18')
+        ->assertSee('5×112')
+        ->assertSee('66.6')
+        ->assertSee('Цена для интернет-заказа пока не настроена')
+        ->assertSee('Уточнить цену и наличие')
+        ->assertSee('href="'.route('storefront.preview.content.show', ['slug' => 'kontakt']).'"', false)
+        ->assertDontSee('Silver');
     expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.store.index'), 'Шины и диски'))->toBe(2);
 });
 

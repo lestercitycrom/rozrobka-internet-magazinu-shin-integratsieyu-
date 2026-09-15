@@ -88,8 +88,32 @@
 .storefront .et-catalog-sort__label,
 .storefront .et-product-label__value { margin: 0; }
 .storefront .et-breadcrumbs--muted { color: var(--et-muted); }
-.storefront .et-product-unavailable { margin-block-start: 1.2rem; }
+.storefront .et-product-price--unavailable {
+    max-width: 30rem;
+    color: var(--et-ink);
+    font-size: clamp(1rem, 2vw, 1.125rem);
+    letter-spacing: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.storefront .et-product-unavailable {
+    display: grid;
+    gap: .85rem;
+    margin-block-start: 1.2rem;
+}
+.storefront .et-product-unavailable__contact {
+    justify-self: start;
+    max-width: 100%;
+    white-space: normal;
+}
 .storefront .et-product-spec-heading { margin: 1.5rem 0 .8rem; }
+
+@media (max-width: 420px) {
+    .storefront .et-product-unavailable__contact {
+        width: 100%;
+        justify-content: center;
+    }
+}
 
 /* Checkout and receipt composition. */
 .storefront .et-checkout-form-alert,
