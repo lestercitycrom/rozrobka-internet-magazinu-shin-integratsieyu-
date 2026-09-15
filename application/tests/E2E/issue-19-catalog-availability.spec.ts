@@ -23,6 +23,7 @@ const copy = {
         missing: 'Lagerstatus ikke mottatt',
         missingDetail: 'NDI har ikke levert lagerstatus for denne varen ennå.',
         blocked: 'Varen kan ikke legges i handlekurven før pris og lagerstatus er bekreftet.',
+        demoDisclaimer: 'uten reell levering',
     },
     ru: {
         zero: 'Нет зарегистрированного остатка.',
@@ -31,6 +32,7 @@ const copy = {
         missing: 'Остаток ещё не получен',
         missingDetail: 'NDI ещё не передал складской остаток для этого товара.',
         blocked: 'Товар нельзя добавить в корзину, пока не подтверждены цена и актуальный остаток.',
+        demoDisclaimer: 'без реальной поставки',
     },
 } as const;
 
@@ -216,6 +218,7 @@ test('sandbox refresh restores the exact two-item purchase and rejects a forged 
     await expect(quantity).toHaveAttribute('readonly', '');
     await expect(quantity).toHaveAttribute('min', '2');
     await expect(quantity).toHaveAttribute('max', '2');
+    await expect(page.getByTestId('integration-test-quantity-note')).toContainText(messages.demoDisclaimer);
 
     await directCartPostIsRejected(page, prefix, sandboxSku, 1, messages.blocked);
 

@@ -127,6 +127,20 @@ test('sandbox quantity, explanation and purchase actions use separate readable r
         await expectNoGlobalOverflow(page);
     }
 
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto('/ru/produkter/NDI-TEST-4765205551649102');
+    const russianNote = page.getByTestId('integration-test-quantity-note');
+    await expect(russianNote).toContainText('без реальной поставки');
+    const russianNoteTypography = await russianNote.locator('small').evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+            lineHeight: Number.parseFloat(style.lineHeight),
+            height: element.getBoundingClientRect().height,
+        };
+    });
+    expect(russianNoteTypography.height).toBeLessThanOrEqual(russianNoteTypography.lineHeight * 4.2);
+    await expectNoGlobalOverflow(page);
+
     await page.goto('/produkter/000205550016');
     await expect(page.getByTestId('integration-test-quantity-note')).toHaveCount(0);
 });

@@ -71,7 +71,13 @@ test('the sandbox fixture is a searchable priced catalog product and refresh is 
     $this->get(route('storefront.products.show', ['sku' => 'NDI-TEST-4765205551649102']))
         ->assertOk()
         ->assertSee('data-testid="integration-test-quantity-note"', false)
+        ->assertSee('uten reell levering')
         ->assertSee(__('storefront.integration_test_quantity_note', ['quantity' => 2]));
+
+    config()->set('storefront.ru_preview_enabled', true);
+    $this->get('/ru/produkter/NDI-TEST-4765205551649102')
+        ->assertOk()
+        ->assertSee('без реальной поставки');
 
     $supplierSkuId = DB::table('supplier_skus')->where('external_sku', 'NDI-TEST-4765205551649102')->value('id');
     expect(DB::table('suppliers')->where('code', 'ndi-sandbox')->count())->toBe(1)
