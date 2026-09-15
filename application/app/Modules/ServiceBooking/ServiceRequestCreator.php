@@ -450,6 +450,16 @@ final class ServiceRequestCreator
         array $data,
         bool $allowStorageNumberChanges = false,
     ): void {
+        $canonicalVehiclesAreAuthoritative = $allowStorageNumberChanges
+            && is_array($request->vehicles)
+            && $request->vehicles !== []
+            && array_key_exists('vehicles', $data)
+            && $this->comparableVehicles($request->vehicles, true)
+                === $this->comparableVehicles($data['vehicles'], true);
+        $redundantVehicleMirrors = [
+            'vehicle', 'registration_number', 'tire_size', 'dekkhotell',
+            'dekkhotell_already_stored', 'dekkhotell_number',
+        ];
         $protected = [
             'service_slug', 'service_variant', 'fulfilment', 'preferred_date', 'preferred_window',
             'preferred_period_starts_at', 'preferred_period_ends_at', 'booking_slot_key', 'vehicles',
@@ -460,7 +470,9 @@ final class ServiceRequestCreator
             if (! array_key_exists($key, $data)) {
                 continue;
             }
-            if ($allowStorageNumberChanges && $key === 'dekkhotell_number') {
+            if ($allowStorageNumberChanges
+                && ($key === 'dekkhotell_number'
+                    || ($canonicalVehiclesAreAuthoritative && in_array($key, $redundantVehicleMirrors, true)))) {
                 continue;
             }
             $matches = $key === 'vehicles'

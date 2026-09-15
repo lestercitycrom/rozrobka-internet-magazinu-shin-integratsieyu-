@@ -35,13 +35,21 @@
 
         <section class="easytire-card rounded-2xl p-6">
             <h2 class="text-xl font-black">{{ __('clients.requests') }}</h2>
+            <p class="mt-2 text-sm text-easytire-muted">{{ __('clients.registration_history_notice') }}</p>
             @if($linkedRequests->isEmpty())
                 <p class="mt-5 text-easytire-muted">{{ __('clients.no_requests') }}</p>
             @else
                 <div class="mt-5 divide-y divide-easytire-border">
                     @foreach($linkedRequests as $request)
+                        @php
+                            $registrations = collect($request->vehicles ?? [])->pluck('registration_number')->filter();
+                            if (filled($request->registration_number)) {
+                                $registrations->prepend($request->registration_number);
+                            }
+                            $registrations = $registrations->unique()->values();
+                        @endphp
                         <div class="flex flex-col gap-2 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between">
-                            <div><a class="font-black underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.service-requests.show', $request) }}">{{ $request->reference }}</a><p class="mt-1 text-sm text-easytire-muted">{{ $serviceTitles[$request->service_slug] ?? $request->service_slug }} · {{ $request->created_at->format('Y-m-d H:i') }}</p></div>
+                            <div><a class="font-black underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.service-requests.show', $request) }}">{{ $request->reference }}</a><p class="mt-1 text-sm text-easytire-muted">{{ $serviceTitles[$request->service_slug] ?? $request->service_slug }} · {{ $request->created_at->format('Y-m-d H:i') }}</p>@if($registrations->isNotEmpty())<p class="mt-1 text-sm"><strong>{{ __('clients.registration_history_label') }}:</strong> {{ $registrations->join(', ') }}</p>@endif</div>
                             <span class="text-sm font-bold">{{ __('service_requests.status_'.$request->status->value) }}</span>
                         </div>
                     @endforeach

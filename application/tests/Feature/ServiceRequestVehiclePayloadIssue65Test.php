@@ -320,6 +320,81 @@ test('operations can add only a seasonal vehicle storage number after a public e
             ->map(static fn (object $message): array => (array) $message)->all())->toBe($outboxSnapshot);
 });
 
+test('booked seasonal contact save trusts unchanged canonical vehicles over stale mirrors', function (): void {
+    $service = issue65Service('issue-65-booked-stale-mirrors', ServiceRequestFlow::Seasonal);
+    $operations = User::factory()->operations()->create();
+    $date = CarbonImmutable::now('Europe/Oslo')->addDays(2)->startOfDay();
+    $vehicles = issue65Vehicles(1);
+    $vehicles[0]['storage_plan'] = 'renew';
+    $request = ServiceRequest::query()->create([
+        'reference' => 'SR-ISSUE-65-STALE-MIRRORS',
+        'locale' => 'nb',
+        'source' => 'public',
+        'service_slug' => $service->slug,
+        'fulfilment' => 'workshop',
+        'preferred_date' => $date->format('Y-m-d'),
+        'preferred_window' => '09:00–09:30',
+        'booking_slot_key' => 'b1-issue-65-stale-mirrors',
+        'booking_starts_at' => $date->setTime(8, 0)->utc(),
+        'booking_ends_at' => $date->setTime(8, 30)->utc(),
+        'vehicles' => $vehicles,
+        'vehicle' => 'Historical mirror vehicle',
+        'registration_number' => 'STALE6501',
+        'tire_size' => 'Historical mirror size',
+        'wheel_count' => 4,
+        'dekkhotell' => false,
+        'dekkhotell_already_stored' => true,
+        'dekkhotell_number' => 'STALE-TOP-LEVEL-65',
+        'quote_min_minor' => 160000,
+        'quote_max_minor' => 160000,
+        'quote_currency' => 'NOK',
+        'name' => 'Booked stale mirror customer',
+        'phone' => '90000000',
+        'phone_normalized' => '4790000000',
+        'status' => 'new',
+    ]);
+    $request->refresh();
+    $protectedKeys = [
+        'service_slug', 'fulfilment', 'preferred_date', 'preferred_window', 'booking_slot_key',
+        'booking_starts_at', 'booking_ends_at', 'vehicles', 'vehicle', 'registration_number',
+        'tire_size', 'wheel_count', 'dekkhotell', 'dekkhotell_already_stored',
+        'dekkhotell_number', 'quote_min_minor', 'quote_max_minor', 'quote_currency',
+    ];
+    $protectedSnapshot = array_intersect_key($request->getRawOriginal(), array_flip($protectedKeys));
+    $browserVehicles = $request->vehicles;
+    $browserVehicles[0]['storage_number'] = '';
+
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+        'vehicles' => $browserVehicles,
+        'name' => 'Booked stale mirror contact corrected',
+        'phone' => '91111111',
+        'status' => 'contacted',
+        'admin_note' => 'Browser-shaped contact and status save.',
+    ])->assertSessionHasNoErrors()->assertRedirect(route('admin.service-requests.show', $request));
+
+    $request->refresh();
+    expect($request->name)->toBe('Booked stale mirror contact corrected')
+        ->and($request->phone)->toBe('91111111')
+        ->and($request->status->value)->toBe('contacted')
+        ->and($request->admin_note)->toBe('Browser-shaped contact and status save.')
+        ->and(array_intersect_key($request->getRawOriginal(), array_flip($protectedKeys)))->toBe($protectedSnapshot);
+
+    $forgedVehicles = $browserVehicles;
+    $forgedVehicles[0]['registration_number'] = 'FORGED6501';
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+        'vehicles' => $forgedVehicles,
+        'name' => 'Forged update must not persist',
+        'phone' => '92222222',
+        'status' => 'closed',
+    ])->assertSessionHasErrors('vehicles');
+
+    $request->refresh();
+    expect($request->name)->toBe('Booked stale mirror contact corrected')
+        ->and($request->phone)->toBe('91111111')
+        ->and($request->status->value)->toBe('contacted')
+        ->and(array_intersect_key($request->getRawOriginal(), array_flip($protectedKeys)))->toBe($protectedSnapshot);
+});
+
 test('booked general storage updates do not require resubmitting a stored registration', function (): void {
     $service = issue65Service('dekkreparasjon', ServiceRequestFlow::Generic);
     $operations = User::factory()->operations()->create();

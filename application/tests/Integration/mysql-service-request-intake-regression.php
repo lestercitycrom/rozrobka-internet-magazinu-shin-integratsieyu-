@@ -8,6 +8,7 @@ use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
 use App\Modules\Outbox\Models\OutboxMessage;
 use App\Modules\ServiceBooking\BookingCalendar;
+use App\Modules\ServiceBooking\ClientDirectorySearch;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Models\BookingScheduleInterval;
 use App\Modules\ServiceBooking\Models\Client;
@@ -79,6 +80,26 @@ function intakePayload(ServicePage $service, array $override = []): array
     ], $override);
 }
 
+/** @param array<string, mixed> $override */
+function intakeLookupRequest(ServicePage $service, User $operations, string $reference, array $override = []): ServiceRequest
+{
+    return ServiceRequest::query()->create(array_replace([
+        'reference' => $reference,
+        'submission_token' => (string) Str::uuid(),
+        'locale' => 'nb',
+        'source' => ServiceRequestSource::AdminManual,
+        'created_by_user_id' => $operations->id,
+        'service_slug' => $service->slug,
+        'fulfilment' => 'workshop',
+        'preferred_date' => now()->addDays(3)->format('Y-m-d'),
+        'name' => 'MySQL lookup request snapshot',
+        'email' => null,
+        'phone' => '96666660',
+        'phone_normalized' => '4796666660',
+        'status' => 'new',
+    ], $override));
+}
+
 function intakeAssertOldApplicationCanRead(ServiceRequest $request): void
 {
     $oldPath = realpath((string) getenv('SCHEMA_REPAIR_OLD_APP_PATH'));
@@ -111,6 +132,16 @@ PHP;
         'reference' => $request->reference,
         'email' => null,
     ], 'Retained old application returned an unexpected service-request contract.', $result);
+}
+
+/** @return list<int> */
+function intakeClientIdsBySearch(ClientDirectorySearch $directory, string $needle): array
+{
+    return $directory->apply(Client::query(), $needle)
+        ->orderBy('clients.id')
+        ->pluck('clients.id')
+        ->map(static fn (mixed $id): int => (int) $id)
+        ->all();
 }
 
 try {
@@ -281,6 +312,95 @@ try {
     intakeAssert(ServiceRequest::query()->count() === 4, 'Unexpected request count after upgrade and intake flows.', ServiceRequest::query()->count());
     intakeAssert(OutboxMessage::query()->count() === 0, 'Manual requests published external events after exact-slot intake.');
 
+    $topRegistrationClient = Client::query()->create([
+        'name' => 'MySQL top registration client',
+        'phone' => '+47 966 66 661',
+        'phone_normalized' => '4796666661',
+        'created_by_user_id' => $operations->id,
+    ]);
+    $jsonRegistrationClient = Client::query()->create([
+        'name' => 'MySQL JSON registration client',
+        'phone' => '+47 966 66 662',
+        'phone_normalized' => '4796666662',
+        'created_by_user_id' => $operations->id,
+    ]);
+    $storageNumberDecoyClient = Client::query()->create([
+        'name' => 'MySQL storage-number decoy',
+        'phone' => '+47 966 66 663',
+        'phone_normalized' => '4796666663',
+        'created_by_user_id' => $operations->id,
+    ]);
+    $unlinkedDecoyClient = Client::query()->create([
+        'name' => 'MySQL unlinked-request decoy',
+        'phone' => '+47 966 66 664',
+        'phone_normalized' => '4796666664',
+        'created_by_user_id' => $operations->id,
+    ]);
+
+    intakeLookupRequest($service, $operations, 'SR-MYSQL-LOOKUP-TOP-66', [
+        'client_id' => $topRegistrationClient->id,
+        'registration_number' => 'MiXeD-Top-66',
+    ]);
+    intakeLookupRequest($service, $operations, 'SR-MYSQL-LOOKUP-JSON-66', [
+        'client_id' => $jsonRegistrationClient->id,
+        'vehicles' => [
+            ['vehicle' => 'First JSON car', 'registration_number' => 'JSON-FIRST-66', 'storage_number' => null],
+            ['vehicle' => 'Second JSON car', 'registration_number' => 'MiXeD-Second-66', 'storage_number' => null],
+            ['vehicle' => 'Third JSON car', 'registration_number' => 'MiXeD-Third-66', 'storage_number' => null],
+            ['vehicle' => 'Literal wildcard JSON car', 'registration_number' => 'MiXeD%_Literal-66', 'storage_number' => null],
+        ],
+    ]);
+    intakeLookupRequest($service, $operations, 'SR-MYSQL-LOOKUP-STORAGE-DECOY-66', [
+        'client_id' => $storageNumberDecoyClient->id,
+        'vehicles' => [[
+            'vehicle' => 'Storage-number decoy car',
+            'registration_number' => 'MiXeDXXLiteral-66',
+            'storage_number' => 'MiXeD-Storage-66',
+        ]],
+    ]);
+    intakeLookupRequest($service, $operations, 'SR-MYSQL-LOOKUP-UNLINKED-66', [
+        'client_id' => null,
+        'registration_number' => 'MiXeD-Unlinked-66',
+        'vehicles' => [[
+            'vehicle' => 'Unlinked JSON car',
+            'registration_number' => 'MiXeD-Unlinked-Json-66',
+            'storage_number' => null,
+        ]],
+    ]);
+
+    /** @var ClientDirectorySearch $directory */
+    $directory = app(ClientDirectorySearch::class);
+    intakeAssert(
+        intakeClientIdsBySearch($directory, 'mixed-top-66') === [$topRegistrationClient->id],
+        'Mixed-case top-level registration search crossed the explicit client boundary.',
+        intakeClientIdsBySearch($directory, 'mixed-top-66'),
+    );
+    intakeAssert(
+        intakeClientIdsBySearch($directory, 'mixed-second-66') === [$jsonRegistrationClient->id],
+        'Mixed-case second-vehicle registration was not found on MySQL.',
+        intakeClientIdsBySearch($directory, 'mixed-second-66'),
+    );
+    intakeAssert(
+        intakeClientIdsBySearch($directory, 'mixed-third-66') === [$jsonRegistrationClient->id],
+        'Mixed-case third-vehicle registration was not found on MySQL.',
+        intakeClientIdsBySearch($directory, 'mixed-third-66'),
+    );
+    intakeAssert(
+        intakeClientIdsBySearch($directory, 'mixed%_literal-66') === [$jsonRegistrationClient->id],
+        'Escaped registration wildcards broadened the MySQL lookup.',
+        intakeClientIdsBySearch($directory, 'mixed%_literal-66'),
+    );
+    intakeAssert(
+        intakeClientIdsBySearch($directory, 'mixed-storage-66') === [],
+        'Storage numbers were treated as registration ownership on MySQL.',
+        intakeClientIdsBySearch($directory, 'mixed-storage-66'),
+    );
+    intakeAssert(
+        intakeClientIdsBySearch($directory, 'mixed-unlinked') === [],
+        'An unlinked request was treated as client ownership on MySQL.',
+        intakeClientIdsBySearch($directory, 'mixed-unlinked'),
+    );
+
     intakeAssertOldApplicationCanRead($manual);
 
     fwrite(STDOUT, json_encode([
@@ -304,6 +424,10 @@ try {
             'client_snapshot_independence' => true,
             'structured_unconfirmed_period' => true,
             'manual_nullable_van_assignment' => true,
+            'client_registration_search_case_insensitive' => true,
+            'client_registration_search_escapes_wildcards' => true,
+            'client_registration_search_explicit_links_only' => true,
+            'client_registration_search_ignores_storage_numbers' => true,
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
 } catch (Throwable $exception) {

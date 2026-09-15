@@ -9,6 +9,7 @@ return [
     'service_addons' => 'Tilleggstjenester',
     'public_service_prices' => 'Offentlige priser',
     'service_requests' => 'Tjenesteforespørsler',
+    'operations_day' => 'Arbeidsdag',
     'clients' => 'Kunder',
     'content' => 'Innholdssider',
     'homepage_promotions' => 'Forsidetilbud',

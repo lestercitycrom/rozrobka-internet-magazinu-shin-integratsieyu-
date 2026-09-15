@@ -6,7 +6,10 @@
                 <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{{ __('service_requests.title') }}</h1>
                 <p class="mt-3 max-w-2xl leading-7 text-easytire-muted">{{ __('service_requests.intro') }}</p>
             </div>
-            <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.create') }}" data-testid="request-create">{{ __('service_requests.create') }}</a>
+            <div class="flex flex-wrap gap-3">
+                <a class="et-btn et-btn--outline" href="{{ route('admin.service-requests.day') }}">{{ __('service_requests.operations_day') }}</a>
+                <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.create') }}" data-testid="request-create">{{ __('service_requests.create') }}</a>
+            </div>
         </header>
 
         <nav class="flex flex-wrap gap-2" aria-label="{{ __('service_requests.views') }}" data-testid="request-views">
@@ -26,6 +29,7 @@
             <label class="block text-sm font-bold">{{ __('service_requests.district') }}<input class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="district" value="{{ $filters['district'] ?? '' }}"></label>
             <label class="block text-sm font-bold">{{ __('service_requests.dekkhotell') }}<select class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="dekkhotell"><option value="">{{ __('service_requests.all') }}</option><option value="1" @selected(($filters['dekkhotell'] ?? '') === '1')>{{ __('service_requests.yes') }}</option><option value="0" @selected(($filters['dekkhotell'] ?? '') === '0')>{{ __('service_requests.no') }}</option></select></label>
             <label class="block text-sm font-bold">{{ __('service_requests.assigned_van') }}<select class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" name="assigned_van"><option value="">{{ __('service_requests.all') }}</option>@foreach(['unassigned','van_1','van_2'] as $value)<option value="{{ $value }}" @selected(($filters['assigned_van'] ?? '') === $value)>{{ __('service_requests.assigned_van_'.$value) }}</option>@endforeach</select></label>
+            <label class="flex min-h-11 items-center gap-3 text-sm font-bold md:col-span-2 xl:col-span-4"><input type="checkbox" name="without_date" value="1" @checked(request()->boolean('without_date'))><span>{{ __('service_requests.without_date') }}</span></label>
             <div class="flex flex-wrap items-end gap-3 md:col-span-2 xl:col-span-2">
                 <button class="et-btn et-btn--primary" type="submit">{{ __('service_requests.apply_filters') }}</button>
                 <a class="et-btn et-btn--outline" href="{{ route('admin.service-requests.index', $activeView === 'all' ? [] : ['view' => $activeView]) }}">{{ __('service_requests.reset_filters') }}</a>
