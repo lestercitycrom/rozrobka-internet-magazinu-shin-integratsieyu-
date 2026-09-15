@@ -157,10 +157,24 @@
 
 /* Request composition. */
 .storefront .et-seasonal-vehicle {
+    position: relative;
     margin-block-start: 1rem;
     padding: 1rem;
 }
 .storefront .et-seasonal-vehicle__legend { padding-inline: .3rem; }
+.storefront .et-seasonal-vehicle__remove {
+    display: block;
+    margin: -.2rem 0 .8rem auto;
+}
+.storefront .et-seasonal-vehicle-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+.storefront .et-seasonal-vehicle-actions [data-vehicle-count-status] {
+    color: var(--et-muted);
+    font-size: .85rem;
+    font-weight: 700;
+}
 .storefront .et-request-review-note { margin-block-start: 1.1rem; }
 .storefront .et-request-summary-title {
     margin-block-start: .5rem;

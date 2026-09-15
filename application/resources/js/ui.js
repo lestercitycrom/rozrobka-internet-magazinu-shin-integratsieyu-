@@ -241,6 +241,7 @@ const initBookingFlow = () => {
         // global alert explains that the request needs attention.
         const hasServerErrors = Boolean(one('[data-testid="request-errors"]', root));
         let index = 0;
+        let syncBookingModeForVehicleCount = () => {};
         if (hasServerErrors) root.dataset.serverErrors = 'true';
 
         const availability = one('[data-booking-availability]', root);
@@ -259,9 +260,12 @@ const initBookingFlow = () => {
 
             const syncMode = () => {
                 const exactOption = modeSelect ? one('option[value="exact"]', modeSelect) : null;
-                if (exactOption) exactOption.disabled = !scheduleConfigured;
-                if (modeSelect && !scheduleConfigured && modeSelect.value === 'exact') modeSelect.value = 'period';
-                const exact = scheduleConfigured && modeSelect?.value === 'exact';
+                const tooManyVehicles = Number(one('[data-car-count]', root)?.value || 1) > 2;
+                const exactLimit = one('[data-exact-vehicle-limit]', root);
+                if (exactLimit) exactLimit.hidden = !tooManyVehicles;
+                if (exactOption) exactOption.disabled = !scheduleConfigured || tooManyVehicles;
+                if (modeSelect && (!scheduleConfigured || tooManyVehicles) && modeSelect.value === 'exact') modeSelect.value = 'period';
+                const exact = scheduleConfigured && !tooManyVehicles && modeSelect?.value === 'exact';
                 const period = modeSelect?.value === 'period';
                 if (slotContainer) slotContainer.hidden = !exact;
                 if (periodContainer) periodContainer.hidden = !period;
@@ -274,6 +278,7 @@ const initBookingFlow = () => {
                     input.required = period;
                 });
             };
+            syncBookingModeForVehicleCount = syncMode;
             const setConfigured = (configured) => {
                 scheduleConfigured = configured;
                 syncMode();
@@ -342,20 +347,22 @@ const initBookingFlow = () => {
 
         let seasonalPrices = {};
         try { seasonalPrices = JSON.parse(root.dataset.seasonalPrices || '{}'); } catch { seasonalPrices = {}; }
-        const secondVehicle = one('[data-seasonal-vehicle="2"]', root);
         const carCount = one('[data-car-count]', root);
+        const vehicleBlocks = all('[data-seasonal-vehicle]', root);
+        const addVehicle = one('[data-add-vehicle]', root);
+        const vehicleCountStatus = one('[data-vehicle-count-status]', root);
+        const activeVehicleBlocks = () => vehicleBlocks.filter((vehicle) => !vehicle.hidden);
         const syncStorageRegistrations = () => {
-            all('[data-seasonal-vehicle]', root).forEach((vehicle) => {
-                if (vehicle.hidden) return;
+            vehicleBlocks.forEach((vehicle) => {
                 const plan = one('[data-storage-plan]', vehicle);
                 const registration = one('[data-storage-registration]', vehicle);
-                if (registration) registration.required = plan?.value !== 'none';
+                if (registration) registration.required = !vehicle.hidden && plan?.value !== 'none';
             });
         };
         const syncVehicleTypeOptions = () => {
             const workshop = one('[name="fulfilment"]:checked', root)?.value === 'workshop';
-            ['vehicle_type', 'vehicle_type_2'].forEach((name) => {
-                const select = one(`[name="${name}"]`, root);
+            activeVehicleBlocks().forEach((vehicle) => {
+                const select = one('[data-vehicle-field="vehicle_type"]', vehicle);
                 if (!(select instanceof HTMLSelectElement)) return;
                 all('option', select).forEach((option) => {
                     option.disabled = workshop && option.value !== 'passenger';
@@ -363,18 +370,40 @@ const initBookingFlow = () => {
                 if (workshop && select.value !== 'passenger') select.value = 'passenger';
             });
         };
-        const toggleSecondVehicle = () => {
-            if (!secondVehicle || !carCount) return;
-            const enabled = carCount.value === '2';
-            secondVehicle.hidden = !enabled;
-            all('input, select, textarea', secondVehicle).forEach((field) => {
-                field.disabled = !enabled;
-                if (field.name === 'vehicle_2') field.required = enabled;
+        const resetVehicle = (vehicle) => {
+            all('[data-vehicle-field]', vehicle).forEach((field) => {
+                if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) return;
+                const defaults = { vehicle_type: 'passenger', rim_band: 'unknown', storage_plan: 'none' };
+                field.value = defaults[field.dataset.vehicleField] || '';
             });
-            syncStorageRegistrations();
         };
-        const priceRange = (suffix = '') => {
-            const value = (name, fallback) => one(`[name="${name}${suffix}"]`, root)?.value || fallback;
+        const copyVehicle = (source, target) => {
+            all('[data-vehicle-field]', target).forEach((targetField) => {
+                const sourceField = one(`[data-vehicle-field="${targetField.dataset.vehicleField}"]`, source);
+                if (sourceField && 'value' in sourceField && 'value' in targetField) targetField.value = sourceField.value;
+            });
+        };
+        const syncVehicles = () => {
+            if (!carCount || !vehicleBlocks.length) return;
+            const count = Math.max(1, Math.min(vehicleBlocks.length, Number(carCount.value || 1)));
+            carCount.value = String(count);
+            vehicleBlocks.forEach((vehicle, vehicleIndex) => {
+                const enabled = vehicleIndex < count;
+                vehicle.hidden = !enabled;
+                all('input, select, textarea', vehicle).forEach((field) => {
+                    field.disabled = !enabled;
+                    if (field.dataset.vehicleField) {
+                        field.required = enabled && ['vehicle', 'vehicle_type', 'rim_band', 'storage_plan'].includes(field.dataset.vehicleField);
+                    }
+                });
+            });
+            if (addVehicle) addVehicle.disabled = count >= vehicleBlocks.length;
+            if (vehicleCountStatus) vehicleCountStatus.textContent = `${count} / ${vehicleBlocks.length}`;
+            syncStorageRegistrations();
+            syncBookingModeForVehicleCount();
+        };
+        const priceRange = (vehicle) => {
+            const value = (name, fallback) => one(`[data-vehicle-field="${name}"]`, vehicle)?.value || fallback;
             const fulfilment = one('[name="fulfilment"]:checked', root)?.value || 'workshop';
             const vehicleType = value('vehicle_type', 'passenger');
             const rimBand = value('rim_band', 'unknown');
@@ -387,7 +416,7 @@ const initBookingFlow = () => {
                 const rims = rimBand === 'unknown' ? ['r15', 'r16-r18', 'r19'] : [rimBand];
                 baseCodes = rims.map((rim) => `${fulfilment}-${rim}`);
             }
-            const storageCodes = storagePlan === 'none'
+            const storageCodes = !['new', 'renew'].includes(storagePlan)
                 ? []
                 : (rimBand === 'unknown' ? ['r15', 'r16-r18', 'r19'] : [rimBand]).map((rim) => `hotel-${rim}`);
             const base = baseCodes.map((code) => Number(seasonalPrices[code])).filter(Number.isFinite);
@@ -400,8 +429,7 @@ const initBookingFlow = () => {
             const quoteText = one('[data-seasonal-quote-text]', root);
             const summary = one('[data-seasonal-summary-price]', root);
             if (!quote || !quoteText || !summary) return;
-            const ranges = [priceRange('')];
-            if (carCount?.value === '2') ranges.push(priceRange('_2'));
+            const ranges = activeVehicleBlocks().map(priceRange);
             let text = quote.dataset.unavailableTemplate || '—';
             if (ranges.every(Boolean)) {
                 const minimum = ranges.reduce((sum, range) => sum + range[0], 0) / 100;
@@ -433,7 +461,7 @@ const initBookingFlow = () => {
                 }
                 target.textContent = value;
             });
-            toggleSecondVehicle();
+            syncStorageRegistrations();
             syncVehicleTypeOptions();
             updateSeasonalQuote();
         };
@@ -464,11 +492,30 @@ const initBookingFlow = () => {
             if (panelIsValid()) show(index + 1, true);
         }));
         all('[data-booking-back]', root).forEach((button) => button.addEventListener('click', () => show(index - 1, true)));
+        addVehicle?.addEventListener('click', () => {
+            if (!carCount || Number(carCount.value) >= vehicleBlocks.length) return;
+            carCount.value = String(Number(carCount.value) + 1);
+            syncVehicles();
+            updateSummary();
+        });
+        all('[data-remove-vehicle]', root).forEach((button) => button.addEventListener('click', () => {
+            if (!carCount) return;
+            const count = Number(carCount.value || 1);
+            const block = button.closest('[data-seasonal-vehicle]');
+            const removeIndex = vehicleBlocks.indexOf(block);
+            if (removeIndex < 1 || removeIndex >= count) return;
+            for (let vehicleIndex = removeIndex; vehicleIndex < count - 1; vehicleIndex += 1) {
+                copyVehicle(vehicleBlocks[vehicleIndex + 1], vehicleBlocks[vehicleIndex]);
+            }
+            resetVehicle(vehicleBlocks[count - 1]);
+            carCount.value = String(Math.max(1, count - 1));
+            syncVehicles();
+            updateSummary();
+        }));
         root.addEventListener('input', updateSummary);
         root.addEventListener('change', updateSummary);
-        all('[data-storage-plan]', root).forEach((field) => field.addEventListener('change', syncStorageRegistrations));
         root.dataset.enhanced = 'true';
-        syncStorageRegistrations();
+        syncVehicles();
         show(index);
     });
 };

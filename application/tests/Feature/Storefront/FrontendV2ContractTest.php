@@ -75,10 +75,15 @@ final class FrontendV2ContractTest extends TestCase
         $view = file_get_contents(resource_path('views/storefront/requests/create.blade.php'));
 
         self::assertIsString($view);
-        foreach (['car_count', 'vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan', 'vehicle_2', 'storage_plan_2', 'fulfilment', 'address', 'preferred_date', 'preferred_window'] as $name) {
+        foreach (['car_count', 'fulfilment', 'address', 'preferred_date', 'preferred_window'] as $name) {
             self::assertStringContainsString('name="'.$name.'"', $view);
         }
-        self::assertStringContainsString("['none', 'new', 'renew']", $view);
+        foreach (['vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan'] as $name) {
+            self::assertStringContainsString('name="vehicles[{{ $vehicleIndex }}]['.$name.']"', $view);
+        }
+        self::assertStringContainsString("['none', 'new', 'renew', 'last']", $view);
+        self::assertStringContainsString('ServiceRequestVehiclePayload::MAX_VEHICLES', $view);
+        self::assertStringContainsString('data-add-vehicle', $view);
         self::assertStringContainsString('data-seasonal-quote', $view);
         self::assertStringNotContainsString('name="dekkhotell"', $view);
     }

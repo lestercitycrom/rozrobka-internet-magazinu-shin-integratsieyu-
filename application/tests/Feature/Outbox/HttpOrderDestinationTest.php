@@ -116,7 +116,7 @@ test('service request outbox types deliver actionable non PII snapshots to Notio
     $payload = [
         'event' => 'service_request_created', 'reference' => 'SR-TEST-123',
         'service_slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile',
-        'preferred_date' => '2026-10-10', 'car_count' => 2, 'dekkhotell' => true,
+        'preferred_date' => '2026-10-10', 'car_count' => 5, 'dekkhotell' => true,
         'quote_min_minor' => 230000, 'quote_max_minor' => 230000, 'currency' => 'NOK',
     ];
     $notion = OutboxMessage::create([
@@ -137,5 +137,5 @@ test('service request outbox types deliver actionable non PII snapshots to Notio
         && str_contains(json_encode($request->data(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), '2300.00 NOK'));
     Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'api.telegram.org')
         && str_contains((string) data_get($request->data(), 'text'), 'ny tjenesteforespørsel SR-TEST-123')
-        && str_contains((string) data_get($request->data(), 'text'), 'Biler: 2'));
+        && str_contains((string) data_get($request->data(), 'text'), 'Biler: 5'));
 });

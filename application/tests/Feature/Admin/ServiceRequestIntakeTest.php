@@ -229,8 +229,8 @@ test('full seasonal edit preserves vehicle sizes historical date and quote snaps
 
     $this->actingAs($staff)->get(route('admin.service-requests.edit', $request))
         ->assertOk()
-        ->assertSee('name="tire_size" value="255/45 R19"', false)
-        ->assertSee('name="tire_size_2" value="235/55 R18"', false)
+        ->assertSee('name="vehicles[0][tire_size]" value="255/45 R19"', false)
+        ->assertSee('name="vehicles[1][tire_size]" value="235/55 R18"', false)
         ->assertSee('min="'.$pastDate.'"', false);
 
     $this->actingAs($staff)->put(route('admin.service-requests.update', $request), [
@@ -269,6 +269,31 @@ test('full seasonal edit preserves vehicle sizes historical date and quote snaps
         ->and($request->quote_min_minor)->toBe(123400)
         ->and($request->quote_max_minor)->toBe(123400)
         ->and($request->quote_currency)->toBe('NOK');
+
+    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), [
+        'operational_form' => 1,
+        'service_slug' => $service->slug,
+        'fulfilment' => 'workshop',
+        'booking_mode' => 'manual',
+        'preferred_date' => $pastDate,
+        'preferred_window' => 'Ettermiddag',
+        'car_count' => 2,
+        'vehicles' => array_map(
+            static fn (array $vehicle): array => [...$vehicle, 'storage_number' => null],
+            $vehicles,
+        ),
+        'name' => 'Updated Again',
+        'email' => 'original@example.test',
+        'phone' => '90000000',
+        'note' => 'Original note',
+        'admin_note' => 'Browser-shaped contact correction',
+        'status' => 'contacted',
+    ])->assertRedirect(route('admin.service-requests.show', $request));
+
+    $request->refresh();
+    expect($request->vehicles)->toBe($vehicles)
+        ->and($request->quote_min_minor)->toBe(123400)
+        ->and($request->quote_max_minor)->toBe(123400);
 });
 
 test('partial seasonal edit with unchanged service preserves omitted multi vehicle details and quote', function (): void {

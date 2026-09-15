@@ -12,11 +12,53 @@
         </div>
 
         <section class="easytire-card rounded-2xl p-6"><h2 class="text-lg font-black">{{ __('service_requests.booking') }}</h2><dl class="mt-5 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3"><div><dt class="text-easytire-muted">{{ __('service_requests.service') }}</dt><dd class="mt-1 font-bold">{{ $serviceTitle }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.fulfilment') }}</dt><dd class="mt-1 font-bold">{{ __('service_requests.fulfilment_'.$request->fulfilment) }}</dd></div>@if($request->fulfilment === 'mobile')<div><dt class="text-easytire-muted">{{ __('service_requests.assigned_van') }}</dt><dd class="mt-1 font-bold">{{ __('service_requests.assigned_van_'.($request->assigned_van ?: 'unassigned')) }}</dd><p class="mt-1 text-easytire-muted">{{ __('service_requests.assigned_van_notice') }}</p></div>@endif<div><dt class="text-easytire-muted">{{ __('service_requests.preferred_date') }}</dt><dd class="mt-1">{{ $request->preferred_date?->format('Y-m-d') ?: __('service_requests.unconfirmed') }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.preferred_window') }}</dt><dd class="mt-1">{{ $request->preferred_window ?: __('service_requests.unconfirmed') }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.vehicle') }}</dt><dd class="mt-1">{{ $request->vehicle ?: __('service_requests.not_provided') }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.registration_number') }}</dt><dd class="mt-1">{{ $request->registration_number ?: __('service_requests.not_provided') }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.tire_size') }}</dt><dd class="mt-1">{{ $request->tire_size ?: __('service_requests.not_provided') }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.dekkhotell') }}</dt><dd class="mt-1">{{ $request->dekkhotell ? __('service_requests.yes') : __('service_requests.no') }}</dd></div>@if($request->quote_min_minor)<div><dt class="text-easytire-muted">{{ __('service_requests.calculated_quote') }}</dt><dd class="mt-1 font-bold">{{ number_format($request->quote_min_minor / 100, 0, ',', ' ') }}@if($request->quote_max_minor !== $request->quote_min_minor)–{{ number_format($request->quote_max_minor / 100, 0, ',', ' ') }}@endif {{ $request->quote_currency }}</dd></div>@endif</dl>
-            @if($request->dekkhotell && blank($request->vehicles))<div class="mt-5 text-sm" data-testid="general-storage-already"><span class="text-easytire-muted">{{ __('service_requests.form.dekkhotell_already_stored_question') }}:</span> <strong>{{ $request->dekkhotell_already_stored === null ? __('service_requests.not_provided') : ($request->dekkhotell_already_stored ? __('service_requests.yes') : __('service_requests.no')) }}</strong></div>@endif
-            @if($request->service_variant)@php($variantKey = 'project.request.'.$request->service_variant)<div class="mt-5 text-sm"><span class="text-easytire-muted">{{ __('service_requests.service_variant') }}:</span> <strong>{{ Illuminate\Support\Facades\Lang::has($variantKey) ? __($variantKey) : Illuminate\Support\Str::headline($request->service_variant) }}</strong></div>@endif
-            @if($request->additional_services)<div class="mt-3 text-sm"><span class="text-easytire-muted">{{ __('service_requests.additional_services') }}:</span> <strong>{{ collect($request->additional_services)->map(function ($item) { $key = 'project.request.'.$item; return Illuminate\Support\Facades\Lang::has($key) ? __($key) : Illuminate\Support\Str::headline($item); })->join(', ') }}</strong></div>@endif
-            @if($request->booking_starts_at)<div class="mt-6 border-l-4 border-easytire-brand pl-4" data-testid="request-booked-slot"><strong>{{ __('service_requests.exact_slot') }}</strong><p class="mt-1">{{ $request->booking_starts_at->setTimezone(config('service_booking.timezone'))->format('Y-m-d H:i') }}–{{ $request->booking_ends_at->setTimezone(config('service_booking.timezone'))->format('H:i') }}</p></div>@else<div class="mt-6 border-l-4 border-amber-400 pl-4"><strong>{{ __('service_requests.unconfirmed') }}</strong><p class="mt-1 text-sm text-easytire-muted">{{ __('service_requests.unconfirmed_intro') }}</p></div>@endif
-            @if($request->vehicles)<div class="mt-6 border-t border-easytire-border pt-5"><h3 class="font-black">{{ __('service_requests.vehicles') }}</h3><div class="mt-3 grid gap-3 sm:grid-cols-2">@foreach($request->vehicles as $index => $vehicle)<div class="border-l-2 border-easytire-brand pl-3 text-sm"><strong>{{ __('service_requests.vehicle_number', ['number' => $index + 1]) }}: {{ $vehicle['vehicle'] }}</strong><br>{{ $vehicle['registration_number'] ?: __('service_requests.not_provided') }} · {{ $vehicle['tire_size'] ?: __('service_requests.not_provided') }}<br>{{ __('service_requests.form.'.$vehicle['vehicle_type']) }} · {{ __('service_requests.form.rim_'.$vehicle['rim_band']) }} · {{ __('service_requests.form.storage_'.$vehicle['storage_plan']) }}</div>@endforeach</div></div>@endif
+            @php
+                $generalStoragePlan = \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::generalPlan(
+                    (bool) $request->dekkhotell,
+                    $request->dekkhotell_already_stored,
+                );
+            @endphp
+            @if(blank($request->vehicles) && ($request->dekkhotell || $request->dekkhotell_already_stored !== null || filled($request->dekkhotell_number)))
+                <div class="mt-5 grid gap-3 border-t border-easytire-border pt-5 text-sm sm:grid-cols-2" data-testid="general-storage-already">
+                    <div><span class="text-easytire-muted">{{ __('service_requests.form.storage_plan') }}:</span> <strong>{{ __('service_requests.form.storage_'.$generalStoragePlan) }}</strong></div>
+                    <div><span class="text-easytire-muted">{{ __('service_requests.form.storage_number') }}:</span> <strong>{{ $request->dekkhotell_number ?: __('service_requests.not_provided') }}</strong></div>
+                </div>
+            @endif
+            @if($request->service_variant)
+                @php
+                    $variantKey = 'project.request.'.$request->service_variant;
+                @endphp
+                <div class="mt-5 text-sm"><span class="text-easytire-muted">{{ __('service_requests.service_variant') }}:</span> <strong>{{ Illuminate\Support\Facades\Lang::has($variantKey) ? __($variantKey) : Illuminate\Support\Str::headline($request->service_variant) }}</strong></div>
+            @endif
+            @if($request->additional_services)
+                <div class="mt-3 text-sm"><span class="text-easytire-muted">{{ __('service_requests.additional_services') }}:</span> <strong>{{ collect($request->additional_services)->map(function ($item) { $key = 'project.request.'.$item; return Illuminate\Support\Facades\Lang::has($key) ? __($key) : Illuminate\Support\Str::headline($item); })->join(', ') }}</strong></div>
+            @endif
+            @if($request->booking_starts_at)
+                <div class="mt-6 border-l-4 border-easytire-brand pl-4" data-testid="request-booked-slot"><strong>{{ __('service_requests.exact_slot') }}</strong><p class="mt-1">{{ $request->booking_starts_at->setTimezone(config('service_booking.timezone'))->format('Y-m-d H:i') }}–{{ $request->booking_ends_at->setTimezone(config('service_booking.timezone'))->format('H:i') }}</p></div>
+            @else
+                <div class="mt-6 border-l-4 border-amber-400 pl-4"><strong>{{ __('service_requests.unconfirmed') }}</strong><p class="mt-1 text-sm text-easytire-muted">{{ __('service_requests.unconfirmed_intro') }}</p></div>
+            @endif
+            @if($request->vehicles)
+                <div class="mt-6 border-t border-easytire-border pt-5">
+                    <h3 class="font-black">{{ __('service_requests.vehicles') }}</h3>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                        @foreach($request->vehicles as $index => $vehicle)
+                            @php
+                                $vehicleType = $vehicle['vehicle_type'] ?? 'passenger';
+                                $rimBand = $vehicle['rim_band'] ?? 'unknown';
+                                $storagePlan = $vehicle['storage_plan'] ?? 'none';
+                            @endphp
+                            <div class="border-l-2 border-easytire-brand pl-3 text-sm" data-request-vehicle>
+                                <strong>{{ __('service_requests.vehicle_number', ['number' => $index + 1]) }}: {{ $vehicle['vehicle'] ?? __('service_requests.not_provided') }}</strong><br>
+                                {{ ($vehicle['registration_number'] ?? null) ?: __('service_requests.not_provided') }} · {{ ($vehicle['tire_size'] ?? null) ?: __('service_requests.not_provided') }}<br>
+                                {{ __('service_requests.form.'.$vehicleType) }} · {{ __('service_requests.form.rim_'.$rimBand) }}<br>
+                                {{ __('service_requests.form.storage_'.$storagePlan) }}<br>
+                                <span class="text-easytire-muted">{{ __('service_requests.form.storage_number') }}:</span> {{ ($vehicle['storage_number'] ?? null) ?: __('service_requests.not_provided') }}
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </section>
     </div>
 </x-layouts.admin>

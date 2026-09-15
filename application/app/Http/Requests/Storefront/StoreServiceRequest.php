@@ -4,13 +4,17 @@ namespace App\Http\Requests\Storefront;
 
 use App\Modules\Content\Enums\ServiceRequestFlow;
 use App\Modules\Content\Models\ServicePage;
+use App\Modules\ServiceBooking\ServiceRequestVehiclePayload;
 use App\Rules\CustomerPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreServiceRequest extends FormRequest
 {
+    private bool $usedLegacyVehiclePayload = false;
+
     public function rules(): array
     {
         $slug = mb_strtolower((string) $this->route('slug'));
@@ -18,9 +22,7 @@ class StoreServiceRequest extends FormRequest
         $isMounting = $slug === 'omlegging-balansering';
         $isBattery = $slug === 'bilbatteri';
         $workshopOnly = in_array($slug, ['omlegging-balansering', 'tpms-sensor'], true);
-        $secondVehicle = $isSeasonal && (int) $this->input('car_count', 1) === 2;
-        $firstUsesStorage = $isSeasonal && (string) $this->input('storage_plan', 'none') !== 'none';
-        $secondUsesStorage = $secondVehicle && (string) $this->input('storage_plan_2', 'none') !== 'none';
+        $vehicleCount = is_array($this->input('vehicles')) ? count($this->input('vehicles')) : 0;
         $seasonalVehicleTypes = $isSeasonal && $this->input('fulfilment') === 'workshop'
             ? ['passenger']
             : ['passenger', 'large_vehicle', 'six_wheels'];
@@ -38,22 +40,26 @@ class StoreServiceRequest extends FormRequest
             'booking_mode' => ['nullable', Rule::in(['period', 'exact'])],
             'preferred_time_start' => [Rule::requiredIf($bookingMode === 'period'), 'nullable', 'date_format:H:i'],
             'preferred_time_end' => [Rule::requiredIf($bookingMode === 'period'), 'nullable', 'date_format:H:i', 'after:preferred_time_start'],
-            'booking_slot_key' => [Rule::requiredIf($bookingMode === 'exact'), 'nullable', 'string', 'max:80'],
-            'car_count' => [Rule::requiredIf($isSeasonal), 'nullable', 'integer', Rule::in([1, 2])],
-            'vehicle' => [Rule::requiredIf($isSeasonal), 'nullable', 'string', 'max:120'],
-            'registration_number' => [Rule::requiredIf($isBattery || $firstUsesStorage), 'nullable', 'string', 'max:32'],
+            'booking_slot_key' => [Rule::requiredIf($bookingMode === 'exact' && $vehicleCount <= 2), 'nullable', 'string', 'max:80'],
+            'vehicle_payload_conflict' => ['prohibited'],
+            'internal_storage_payload' => ['prohibited'],
+            'car_count' => [Rule::requiredIf($isSeasonal), 'nullable', 'integer', 'between:1,'.ServiceRequestVehiclePayload::MAX_VEHICLES],
+            'vehicles' => [Rule::requiredIf($isSeasonal), Rule::prohibitedIf(! $isSeasonal), 'array', 'min:1', 'max:'.ServiceRequestVehiclePayload::MAX_VEHICLES],
+            'vehicles.*' => ['array:vehicle,registration_number,tire_size,vehicle_type,rim_band,storage_plan'],
+            'vehicles.*.vehicle' => ['required', 'string', 'max:120'],
+            'vehicles.*.registration_number' => ['nullable', 'string', 'max:32'],
+            'vehicles.*.tire_size' => ['nullable', 'string', 'max:64'],
+            'vehicles.*.vehicle_type' => ['required', Rule::in($seasonalVehicleTypes)],
+            'vehicles.*.rim_band' => ['required', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
+            'vehicles.*.storage_plan' => ['required', Rule::in(ServiceRequestVehiclePayload::STORAGE_PLANS)],
+            'vehicle' => [Rule::prohibitedIf($isSeasonal), 'nullable', 'string', 'max:120'],
+            'registration_number' => [Rule::prohibitedIf($isSeasonal), Rule::requiredIf($isBattery), 'nullable', 'string', 'max:32'],
             'tire_size' => [Rule::requiredIf($isMounting), 'nullable', 'string', 'max:64'],
-            'vehicle_type' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan' => [Rule::requiredIf($isSeasonal), 'nullable', Rule::in(['none', 'new', 'renew'])],
-            'vehicle_2' => [Rule::requiredIf($secondVehicle), 'nullable', 'string', 'max:120'],
-            'registration_number_2' => [Rule::requiredIf($secondUsesStorage), 'nullable', 'string', 'max:32'],
-            'tire_size_2' => ['nullable', 'string', 'max:64'],
-            'vehicle_type_2' => [Rule::requiredIf($secondVehicle), 'nullable', Rule::in($seasonalVehicleTypes)],
-            'rim_band_2' => [Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['unknown', 'r15', 'r16-r18', 'r19'])],
-            'storage_plan_2' => [Rule::requiredIf($secondVehicle), 'nullable', Rule::in(['none', 'new', 'renew'])],
             'wheel_count' => [Rule::requiredIf($isMounting), 'nullable', 'integer', 'between:1,4'],
             'dekkhotell' => ['nullable', 'boolean'],
+            'dekkhotell_already_stored' => ['prohibited'],
+            'dekkhotell_number' => ['prohibited'],
+            'storage_number' => ['prohibited'],
             'additional_services' => [Rule::prohibitedIf(! $supportsAdditionalServices), 'nullable', 'array', 'max:3'],
             'additional_services.*' => ['string', 'distinct', Rule::in(['air_filter', 'cabin_filter', 'wiper_blades'])],
             'name' => ['required', 'string', 'max:120'],
@@ -80,7 +86,58 @@ class StoreServiceRequest extends FormRequest
             'preferred_time_start.required' => __('service_requests.validation.period_start_required'),
             'preferred_time_end.required' => __('service_requests.validation.period_end_required'),
             'preferred_time_end.after' => __('service_requests.validation.period_order'),
+            'vehicle_payload_conflict.prohibited' => __('service_requests.validation.vehicle_payload_conflict'),
+            'internal_storage_payload.prohibited' => __('service_requests.validation.internal_storage_payload'),
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $vehicles = is_array($this->input('vehicles')) ? array_values($this->input('vehicles')) : [];
+            foreach ($vehicles as $index => $vehicle) {
+                if (! is_array($vehicle)) {
+                    continue;
+                }
+                if (($vehicle['storage_plan'] ?? 'none') !== 'none' && blank($vehicle['registration_number'] ?? null)) {
+                    $validator->errors()->add("vehicles.{$index}.registration_number", __('service_requests.validation.registration_required'));
+                }
+            }
+
+            if ($this->usedLegacyVehiclePayload) {
+                foreach ([
+                    0 => [
+                        'vehicle' => 'vehicle',
+                        'registration_number' => 'registration_number',
+                        'tire_size' => 'tire_size',
+                        'vehicle_type' => 'vehicle_type',
+                        'rim_band' => 'rim_band',
+                        'storage_plan' => 'storage_plan',
+                    ],
+                    1 => [
+                        'vehicle' => 'vehicle_2',
+                        'registration_number' => 'registration_number_2',
+                        'tire_size' => 'tire_size_2',
+                        'vehicle_type' => 'vehicle_type_2',
+                        'rim_band' => 'rim_band_2',
+                        'storage_plan' => 'storage_plan_2',
+                    ],
+                ] as $index => $aliases) {
+                    if (! isset($vehicles[$index])) {
+                        continue;
+                    }
+                    foreach ($aliases as $canonical => $legacy) {
+                        foreach ($validator->errors()->get("vehicles.{$index}.{$canonical}") as $message) {
+                            $validator->errors()->add($legacy, $message);
+                        }
+                    }
+                }
+            }
+
+            if (($this->input('booking_mode') ?? null) === 'exact' && count($vehicles) > 2) {
+                $validator->errors()->add('booking_mode', __('service_requests.validation.exact_vehicle_limit'));
+            }
+        });
     }
 
     protected function prepareForValidation(): void
@@ -94,12 +151,45 @@ class StoreServiceRequest extends FormRequest
             return;
         }
 
-        $this->merge([
-            'car_count' => $this->input('car_count', 1),
-            'vehicle_type' => $this->input('vehicle_type', 'passenger'),
-            'rim_band' => $this->input('rim_band', 'unknown'),
-            'storage_plan' => $this->input('storage_plan', $this->boolean('dekkhotell') ? 'new' : 'none'),
-        ]);
+        $input = $this->all();
+        $conflict = ServiceRequestVehiclePayload::hasConflictingPayload($input);
+        $this->usedLegacyVehiclePayload = ! is_array($input['vehicles'] ?? null)
+            && ServiceRequestVehiclePayload::legacyVehicles($input) !== [];
+        $vehicles = is_array($input['vehicles'] ?? null)
+            ? array_values($input['vehicles'])
+            : ServiceRequestVehiclePayload::legacyVehicles($input);
+        if ($vehicles === []) {
+            $vehicles = [[
+                'vehicle' => null,
+                'registration_number' => null,
+                'tire_size' => null,
+                'vehicle_type' => 'passenger',
+                'rim_band' => 'unknown',
+                'storage_plan' => $this->boolean('dekkhotell') ? 'new' : 'none',
+            ]];
+        }
+
+        $internalStoragePayload = false;
+        foreach ($vehicles as &$vehicle) {
+            if (is_array($vehicle) && array_key_exists('storage_number', $vehicle)) {
+                $internalStoragePayload = true;
+                unset($vehicle['storage_number']);
+            }
+        }
+        unset($vehicle);
+
+        foreach (['vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan', 'vehicle_2', 'registration_number_2', 'tire_size_2', 'vehicle_type_2', 'rim_band_2', 'storage_plan_2'] as $legacyField) {
+            unset($input[$legacyField]);
+        }
+        $input['vehicles'] = $vehicles;
+        $input['car_count'] = count($vehicles);
+        if ($conflict) {
+            $input['vehicle_payload_conflict'] = true;
+        }
+        if ($internalStoragePayload) {
+            $input['internal_storage_payload'] = true;
+        }
+        $this->replace($input);
     }
 
     private function isSeasonal(string $slug): bool

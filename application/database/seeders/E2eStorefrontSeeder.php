@@ -249,6 +249,42 @@ class E2eStorefrontSeeder extends Seeder
                 'status' => ServiceRequestStatus::New,
                 'consent_at' => now()->subMonth(),
             ]);
+
+            $exactStart = now()->addDays(20)->setTime(10, 0)->startOfMinute();
+            ServiceRequest::query()->updateOrCreate(['reference' => 'SR-E2E-EXACT-'.$surface], [
+                'submission_token' => (string) Str::uuid(),
+                'locale' => 'nb',
+                'source' => ServiceRequestSource::Public,
+                'created_by_user_id' => null,
+                'service_slug' => 'mobilt-dekkskift',
+                'fulfilment' => 'workshop',
+                'preferred_date' => $exactStart->format('Y-m-d'),
+                'preferred_window' => '10:00–10:30',
+                'booking_slot_key' => 'e2e-locked-'.$surface,
+                'booking_starts_at' => $exactStart,
+                'booking_ends_at' => $exactStart->copy()->addMinutes(30),
+                'vehicle' => 'E2E exact vehicle '.$surface,
+                'registration_number' => 'EXACT'.str_replace('-', '', $surface),
+                'tire_size' => '205/55 R16',
+                'dekkhotell' => true,
+                'vehicles' => [[
+                    'vehicle' => 'E2E exact vehicle '.$surface,
+                    'registration_number' => 'EXACT'.str_replace('-', '', $surface),
+                    'tire_size' => '205/55 R16',
+                    'vehicle_type' => 'passenger',
+                    'rim_band' => 'r16-r18',
+                    'storage_plan' => 'renew',
+                ]],
+                'quote_min_minor' => 135000,
+                'quote_max_minor' => 135000,
+                'quote_currency' => 'NOK',
+                'name' => 'E2E exact customer '.$surface,
+                'email' => null,
+                'phone' => '94444444',
+                'phone_normalized' => '4794444444',
+                'status' => ServiceRequestStatus::New,
+                'consent_at' => now()->subDay(),
+            ]);
         }
     }
 

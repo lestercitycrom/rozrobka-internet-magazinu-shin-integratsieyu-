@@ -1,9 +1,19 @@
 @php
     $editing = $request->exists;
     $vehicles = old('vehicles', $request->vehicles ?? []);
-    $vehicleOne = is_array($vehicles) ? ($vehicles[0] ?? []) : [];
-    $vehicleTwo = is_array($vehicles) ? ($vehicles[1] ?? []) : [];
+    $vehicles = is_array($vehicles) ? array_values($vehicles) : [];
+    if ($vehicles === []) {
+        $vehicles = [[
+            'vehicle' => $request->vehicle, 'registration_number' => $request->registration_number,
+            'tire_size' => $request->tire_size, 'vehicle_type' => 'passenger',
+            'rim_band' => 'unknown', 'storage_plan' => 'none', 'storage_number' => null,
+        ]];
+    }
+    $vehicles = array_slice($vehicles, 0, \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::MAX_VEHICLES);
+    $vehicleCount = max(1, count($vehicles));
     $currentService = old('service_slug', $request->service_slug ?: optional($serviceOptions->first())->slug);
+    $currentFlow = $serviceOptions->firstWhere('slug', $currentService)?->request_flow;
+    $currentIsSeasonal = ($currentFlow instanceof \BackedEnum ? $currentFlow->value : $currentFlow) === 'seasonal';
     $currentMode = old('booking_mode', $request->booking_slot_key ? 'exact' : ($request->preferred_period_starts_at ? 'period' : 'manual'));
     $currentStatus = old('status', $request->status?->value ?? 'new');
     $selectedAdditionalServices = old('additional_services', $request->additional_services ?? []);
@@ -14,9 +24,15 @@
     $minimumDate = $editing && filled($storedDate) && $storedDate < $today ? $storedDate : $today;
     $generalStorageSlugs = ['omlegging-balansering', 'dekkreparasjon', 'tpms-sensor'];
     $currentSupportsGeneralStorage = in_array($currentService, $generalStorageSlugs, true);
-    $alreadyStoredValue = old(
-        'dekkhotell_already_stored',
-        $request->dekkhotell_already_stored === null ? null : ($request->dekkhotell_already_stored ? '1' : '0'),
+    $storedGeneralPlan = \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::generalPlan(
+        (bool) $request->dekkhotell,
+        $request->dekkhotell_already_stored,
+    );
+    $generalStoragePlan = old('storage_plan', $storedGeneralPlan);
+    $generalStorageNumber = old('storage_number', $request->dekkhotell_number);
+    $lockedVehicles = is_array($request->vehicles) ? array_values($request->vehicles) : [];
+    $lockedSeasonalHasActiveStorage = collect($lockedVehicles)->contains(
+        fn ($vehicle) => is_array($vehicle) && in_array($vehicle['storage_plan'] ?? 'none', ['new', 'renew', 'last'], true),
     );
     $currentFulfilment = old('fulfilment', $request->fulfilment ?: 'workshop');
     $field = 'easytire-input mt-2 min-h-11 w-full rounded-lg px-3';
@@ -137,21 +153,40 @@
 
                     <div class="mt-6 border-t border-easytire-border pt-6" data-seasonal-fields hidden>
                         <h3 class="font-black">{{ __('service_requests.vehicles') }}</h3>
-                        <div class="mt-4 grid gap-5 sm:grid-cols-2">
-                            <label class="block text-sm font-bold">{{ __('service_requests.form.car_count') }}<select class="{{ $field }}" name="car_count" data-car-count><option value="1" @selected((int) old('car_count', count($vehicles) ?: 1) === 1)>{{ __('service_requests.form.one_car') }}</option><option value="2" @selected((int) old('car_count', count($vehicles) ?: 1) === 2)>{{ __('service_requests.form.two_cars') }}</option></select></label>
-                            <span></span>
-                            @foreach([1 => $vehicleOne, 2 => $vehicleTwo] as $number => $vehicleData)
-                                <div class="contents" data-vehicle="{{ $number }}" data-initial-storage-plan="{{ $vehicleData['storage_plan'] ?? 'none' }}" data-initial-registration="{{ $vehicleData['registration_number'] ?? ($number === 1 ? $request->registration_number : '') }}" @if($number === 2) hidden @endif>
-                                    <p class="font-black sm:col-span-2">{{ __('service_requests.vehicle_number', ['number' => $number]) }}</p>
-                                    <label class="block text-sm font-bold">{{ __('service_requests.form.vehicle') }}<input class="{{ $field }}" name="{{ $number === 1 ? 'vehicle' : 'vehicle_2' }}" value="{{ old($number === 1 ? 'vehicle' : 'vehicle_2', $vehicleData['vehicle'] ?? ($number === 1 ? $request->vehicle : null)) }}" maxlength="120"></label>
-                                    <label class="block text-sm font-bold">{{ __('service_requests.registration_number') }}<input class="{{ $field }}" name="{{ $number === 1 ? 'registration_number' : 'registration_number_2' }}" value="{{ old($number === 1 ? 'registration_number' : 'registration_number_2', $vehicleData['registration_number'] ?? ($number === 1 ? $request->registration_number : null)) }}" maxlength="32" data-storage-registration></label>
-                                    <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.tire_size') }}<input class="{{ $field }}" name="{{ $number === 1 ? 'tire_size' : 'tire_size_2' }}" value="{{ old($number === 1 ? 'tire_size' : 'tire_size_2', $vehicleData['tire_size'] ?? ($number === 1 ? $request->tire_size : null)) }}" maxlength="64"></label>
-                                    <label class="block text-sm font-bold">{{ __('service_requests.form.vehicle_type') }}<select class="{{ $field }}" name="{{ $number === 1 ? 'vehicle_type' : 'vehicle_type_2' }}">@foreach(['passenger','large_vehicle','six_wheels'] as $value)<option value="{{ $value }}" @selected(old($number === 1 ? 'vehicle_type' : 'vehicle_type_2', $vehicleData['vehicle_type'] ?? 'passenger') === $value)>{{ __('service_requests.form.'.$value) }}</option>@endforeach</select></label>
-                                    <label class="block text-sm font-bold">{{ __('service_requests.form.rim_band') }}<select class="{{ $field }}" name="{{ $number === 1 ? 'rim_band' : 'rim_band_2' }}">@foreach(['unknown','r15','r16-r18','r19'] as $value)<option value="{{ $value }}" @selected(old($number === 1 ? 'rim_band' : 'rim_band_2', $vehicleData['rim_band'] ?? 'unknown') === $value)>{{ __('service_requests.form.rim_'.$value) }}</option>@endforeach</select></label>
-                                    <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.form.storage_plan') }}<select class="{{ $field }}" name="{{ $number === 1 ? 'storage_plan' : 'storage_plan_2' }}" data-storage-plan>@foreach(['none','new','renew'] as $value)<option value="{{ $value }}" @selected(old($number === 1 ? 'storage_plan' : 'storage_plan_2', $vehicleData['storage_plan'] ?? 'none') === $value)>{{ __('service_requests.form.storage_'.$value) }}</option>@endforeach</select></label>
-                                </div>
-                            @endforeach
+                        <input type="hidden" name="car_count" value="{{ $vehicleCount }}" data-car-count>
+                        <p class="mt-2 text-sm text-easytire-muted">{{ __('service_requests.form.vehicle_limit_hint', ['max' => \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::MAX_VEHICLES]) }}</p>
+                        <div class="mt-4 space-y-5" data-admin-vehicles>
+                            @for($vehicleIndex = 0; $vehicleIndex < \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::MAX_VEHICLES; $vehicleIndex++)
+                                @php
+                                    $vehicleData = $vehicles[$vehicleIndex] ?? [
+                                        'vehicle' => '', 'registration_number' => '', 'tire_size' => '',
+                                        'vehicle_type' => 'passenger', 'rim_band' => 'unknown',
+                                        'storage_plan' => 'none', 'storage_number' => null,
+                                    ];
+                                    $number = $vehicleIndex + 1;
+                                @endphp
+                                <section class="border border-easytire-border p-4" data-vehicle="{{ $number }}" data-request-vehicle data-initial-storage-plan="{{ $vehicleData['storage_plan'] ?? 'none' }}" data-initial-registration="{{ $vehicleData['registration_number'] ?? '' }}" @if($vehicleIndex >= $vehicleCount) hidden @endif>
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <h4 class="font-black">{{ __('service_requests.vehicle_number', ['number' => $number]) }}</h4>
+                                        @if($vehicleIndex > 0)<button class="et-btn et-btn--link" type="button" data-remove-vehicle>{{ __('service_requests.form.remove_vehicle') }}</button>@endif
+                                    </div>
+                                    <div class="mt-4 grid gap-5 sm:grid-cols-2">
+                                        <label class="block text-sm font-bold">{{ __('service_requests.form.vehicle') }}<input class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][vehicle]" value="{{ $vehicleData['vehicle'] ?? '' }}" maxlength="120" data-vehicle-field="vehicle"></label>
+                                        <label class="block text-sm font-bold">{{ __('service_requests.registration_number') }}<input class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][registration_number]" value="{{ $vehicleData['registration_number'] ?? '' }}" maxlength="32" data-vehicle-field="registration_number" data-storage-registration></label>
+                                        <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.tire_size') }}<input class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][tire_size]" value="{{ $vehicleData['tire_size'] ?? '' }}" maxlength="64" data-vehicle-field="tire_size"></label>
+                                        <label class="block text-sm font-bold">{{ __('service_requests.form.vehicle_type') }}<select class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][vehicle_type]" data-vehicle-field="vehicle_type">@foreach(['passenger','large_vehicle','six_wheels'] as $value)<option value="{{ $value }}" @selected(($vehicleData['vehicle_type'] ?? 'passenger') === $value)>{{ __('service_requests.form.'.$value) }}</option>@endforeach</select></label>
+                                        <label class="block text-sm font-bold">{{ __('service_requests.form.rim_band') }}<select class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][rim_band]" data-vehicle-field="rim_band">@foreach(['unknown','r15','r16-r18','r19'] as $value)<option value="{{ $value }}" @selected(($vehicleData['rim_band'] ?? 'unknown') === $value)>{{ __('service_requests.form.rim_'.$value) }}</option>@endforeach</select></label>
+                                        <label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.form.storage_plan') }}<select class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][storage_plan]" data-vehicle-field="storage_plan" data-storage-plan>@foreach(['none','new','renew','last'] as $value)<option value="{{ $value }}" @selected(($vehicleData['storage_plan'] ?? 'none') === $value)>{{ __('service_requests.form.storage_'.$value) }}</option>@endforeach</select></label>
+                                        @unless($detailsLocked)<label class="block text-sm font-bold sm:col-span-2">{{ __('service_requests.form.storage_number') }}<input class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][storage_number]" value="{{ $vehicleData['storage_number'] ?? '' }}" maxlength="64" data-vehicle-field="storage_number"><span class="mt-2 block font-normal text-easytire-muted">{{ __('service_requests.form.storage_number_hint') }}</span></label>@endunless
+                                    </div>
+                                </section>
+                            @endfor
                         </div>
+                        <div class="mt-4 flex flex-wrap items-center gap-4">
+                            <button class="et-btn et-btn--outline" type="button" data-add-vehicle>{{ __('service_requests.form.add_vehicle') }}</button>
+                            <span class="text-sm text-easytire-muted" data-vehicle-count-status aria-live="polite"></span>
+                        </div>
+                        <div class="mt-4 border-l-2 border-easytire-brand bg-easytire-brand/5 p-4 text-sm" data-exact-vehicle-limit hidden>{{ __('service_requests.form.exact_vehicle_limit') }}</div>
                     </div>
 
                     <div class="mt-6 grid gap-5 border-t border-easytire-border pt-6 sm:grid-cols-2" data-general-vehicle-fields>
@@ -159,20 +194,17 @@
                         <label class="block text-sm font-bold">{{ __('service_requests.registration_number') }}<input class="{{ $field }}" name="registration_number" value="{{ old('registration_number', $request->registration_number) }}" maxlength="32"></label>
                         <label class="block text-sm font-bold">{{ __('service_requests.tire_size') }}<input class="{{ $field }}" name="tire_size" value="{{ old('tire_size', $request->tire_size) }}" maxlength="64" data-tire-size></label>
                         <label class="block text-sm font-bold">{{ __('service_requests.wheel_count') }}<input class="{{ $field }}" name="wheel_count" value="{{ old('wheel_count', $request->wheel_count) }}" min="1" max="4" type="number" data-wheel-count></label>
-                        <div class="sm:col-span-2" data-general-storage data-initial-selected="{{ $request->dekkhotell ? '1' : '0' }}" data-initial-registration="{{ $request->registration_number }}" @if(! $currentSupportsGeneralStorage) hidden @endif>
-                            <input name="dekkhotell_control" value="1" type="hidden" @disabled(! $currentSupportsGeneralStorage)>
-                            <label class="flex min-h-11 items-center gap-3 text-sm font-bold"><input name="dekkhotell" value="1" type="checkbox" data-general-storage-choice @checked(old('dekkhotell', $request->dekkhotell)) @disabled(! $currentSupportsGeneralStorage)>{{ __('service_requests.form.dekkhotell') }}</label>
-                            <p class="mt-1 text-sm text-easytire-muted">{{ __('service_requests.form.dekkhotell_registration_hint') }}</p>
-                            <fieldset class="mt-4 border-l-2 border-easytire-brand pl-4" data-general-storage-answer @if(! old('dekkhotell', $request->dekkhotell)) hidden @endif>
-                                <legend class="text-sm font-bold">{{ __('service_requests.form.dekkhotell_already_stored_question') }}</legend>
-                                <div class="mt-2 flex flex-wrap gap-x-6 gap-y-2">
-                                    <label class="flex min-h-11 items-center gap-2 text-sm font-bold"><input name="dekkhotell_already_stored" value="1" type="radio" @checked((string) $alreadyStoredValue === '1')>{{ __('service_requests.yes') }}</label>
-                                    <label class="flex min-h-11 items-center gap-2 text-sm font-bold"><input name="dekkhotell_already_stored" value="0" type="radio" @checked((string) $alreadyStoredValue === '0')>{{ __('service_requests.no') }}</label>
-                                </div>
-                                @if($editing && $request->dekkhotell && $request->dekkhotell_already_stored === null)
-                                    <p class="mt-1 text-sm text-easytire-muted">{{ __('service_requests.form.dekkhotell_already_stored_legacy') }}</p>
-                                @endif
-                            </fieldset>
+                        <div class="sm:col-span-2" data-general-storage data-initial-plan="{{ $storedGeneralPlan }}" data-initial-registration="{{ $request->registration_number }}" @if(! $currentSupportsGeneralStorage) hidden @endif>
+                            <div class="grid gap-5 sm:grid-cols-2">
+                                <label class="block text-sm font-bold">{{ __('service_requests.form.storage_plan') }}
+                                    <select class="{{ $field }}" name="storage_plan" data-general-storage-plan @disabled(! $currentSupportsGeneralStorage)>
+                                        @if($editing && $storedGeneralPlan === 'unknown')<option value="unknown" @selected($generalStoragePlan === 'unknown')>{{ __('service_requests.form.storage_unknown') }}</option>@endif
+                                        @foreach(['none','new','renew','last'] as $value)<option value="{{ $value }}" @selected($generalStoragePlan === $value)>{{ __('service_requests.form.storage_'.$value) }}</option>@endforeach
+                                    </select>
+                                </label>
+                                @unless($detailsLocked)<label class="block text-sm font-bold">{{ __('service_requests.form.storage_number') }}<input class="{{ $field }}" name="storage_number" value="{{ $generalStorageNumber }}" maxlength="64" data-general-storage-number @disabled(! $currentSupportsGeneralStorage)><span class="mt-2 block font-normal text-easytire-muted">{{ __('service_requests.form.storage_number_hint') }}</span></label>@endunless
+                            </div>
+                            <p class="mt-2 text-sm text-easytire-muted">{{ __('service_requests.form.storage_charge_note') }}</p>
                         </div>
                     </div>
 
@@ -188,6 +220,36 @@
                         </div>
                     </fieldset>
                 </fieldset>
+
+                @if($detailsLocked && (($currentIsSeasonal && $lockedSeasonalHasActiveStorage) || (! $currentIsSeasonal && $currentSupportsGeneralStorage)))
+                    <section class="easytire-card rounded-2xl p-6" data-testid="booked-storage-numbers">
+                        <h2 class="text-xl font-black">{{ __('service_requests.booked_storage_numbers_title') }}</h2>
+                        <p class="mt-2 text-sm leading-6 text-easytire-muted">{{ __('service_requests.booked_storage_numbers_intro') }}</p>
+
+                        @if($currentIsSeasonal)
+                            <div class="mt-5 space-y-5">
+                                @foreach($lockedVehicles as $vehicleIndex => $vehicleData)
+                                    @foreach(['vehicle', 'registration_number', 'tire_size', 'vehicle_type', 'rim_band', 'storage_plan'] as $identityField)
+                                        <input type="hidden" name="vehicles[{{ $vehicleIndex }}][{{ $identityField }}]" value="{{ $vehicleData[$identityField] ?? '' }}">
+                                    @endforeach
+                                    @if(in_array($vehicleData['storage_plan'] ?? 'none', ['new', 'renew', 'last'], true))
+                                        <div class="border border-easytire-border p-4">
+                                            <p class="font-black">{{ __('service_requests.vehicle_number', ['number' => $vehicleIndex + 1]) }} · {{ $vehicleData['vehicle'] ?? '' }}</p>
+                                            <label class="mt-4 block text-sm font-bold">{{ __('service_requests.form.storage_number') }}
+                                                <input class="{{ $field }}" name="vehicles[{{ $vehicleIndex }}][storage_number]" value="{{ old("vehicles.{$vehicleIndex}.storage_number", $vehicleData['storage_number'] ?? '') }}" maxlength="64" data-testid="booked-storage-number-{{ $vehicleIndex }}">
+                                            </label>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @else
+                            <label class="mt-5 block text-sm font-bold">{{ __('service_requests.form.storage_number') }}
+                                <input class="{{ $field }}" name="storage_number" value="{{ $generalStorageNumber }}" maxlength="64" data-testid="booked-storage-number-general">
+                            </label>
+                        @endif
+                        <p class="mt-3 text-sm text-easytire-muted">{{ __('service_requests.form.storage_number_hint') }}</p>
+                    </section>
+                @endif
             </div>
 
             <aside class="space-y-6">
@@ -238,15 +300,17 @@
                 const address = root.querySelector('input[name="address"]');
                 const registration = general?.querySelector('input[name="registration_number"]');
                 const generalStorage = root.querySelector('[data-general-storage]');
-                const generalStorageChoice = root.querySelector('[data-general-storage-choice]');
-                const generalStorageAnswer = root.querySelector('[data-general-storage-answer]');
+                const generalStoragePlan = root.querySelector('[data-general-storage-plan]');
                 const assignedVanField = root.querySelector('[data-assigned-van-field]');
                 const assignedVan = root.querySelector('[data-assigned-van]');
                 const problem = root.querySelector('textarea[name="note"]');
                 const tireSize = root.querySelector('[data-tire-size]');
                 const wheelCount = root.querySelector('[data-wheel-count]');
                 const carCount = root.querySelector('[data-car-count]');
-                const vehicleTwo = root.querySelector('[data-vehicle="2"]');
+                const vehicleBlocks = [...root.querySelectorAll('[data-vehicle]')];
+                const addVehicle = root.querySelector('[data-add-vehicle]');
+                const vehicleCountStatus = root.querySelector('[data-vehicle-count-status]');
+                const exactVehicleLimit = root.querySelector('[data-exact-vehicle-limit]');
                 const endpoint = @json(route('storefront.booking.availability'));
                 const oldSlot = @json(old('booking_slot_key', $request->booking_slot_key));
 
@@ -273,7 +337,7 @@
                     if (additional) additional.querySelectorAll('input').forEach(el => el.disabled = !supportsAddons);
                     if (generalStorage) {
                         generalStorage.hidden = !supportsStorage;
-                        generalStorage.querySelectorAll('input').forEach(el => el.disabled = !supportsStorage);
+                        generalStorage.querySelectorAll('input,select').forEach(el => el.disabled = !supportsStorage);
                     }
                     if (mobileOption) mobileOption.disabled = workshopOnly;
                     if (workshopOnly && fulfilment?.value === 'mobile') fulfilment.value = 'workshop';
@@ -284,6 +348,7 @@
                     if (problem) problem.required = requiresProblem;
                     updateFulfilment();
                     updateCars();
+                    updateMode();
                     updateGeneralStorageRegistration();
                 };
                 const updateFulfilment = () => {
@@ -293,10 +358,22 @@
                     if (assignedVan) assignedVan.disabled = !mobile;
                 };
                 const updateCars = () => {
-                    if (!vehicleTwo) return;
-                    const visible = seasonal && !seasonal.hidden && carCount?.value === '2';
-                    vehicleTwo.hidden = !visible;
-                    vehicleTwo.querySelectorAll('input,select').forEach(el => el.disabled = !visible);
+                    if (!carCount || !vehicleBlocks.length) return;
+                    const count = Math.max(1, Math.min(vehicleBlocks.length, Number(carCount.value || 1)));
+                    carCount.value = String(count);
+                    const seasonalEnabled = seasonal && !seasonal.hidden;
+                    vehicleBlocks.forEach((vehicle, index) => {
+                        const visible = seasonalEnabled && index < count;
+                        vehicle.hidden = !visible;
+                        vehicle.querySelectorAll('input,select,textarea').forEach(el => {
+                            el.disabled = !visible;
+                            if (el.dataset.vehicleField) {
+                                el.required = visible && ['vehicle', 'vehicle_type', 'rim_band', 'storage_plan'].includes(el.dataset.vehicleField);
+                            }
+                        });
+                    });
+                    if (addVehicle) addVehicle.disabled = !seasonalEnabled || count >= vehicleBlocks.length;
+                    if (vehicleCountStatus) vehicleCountStatus.textContent = `${count} / ${vehicleBlocks.length}`;
                     updateStorageRegistration();
                 };
                 const updateStorageRegistration = () => {
@@ -312,22 +389,12 @@
                 };
                 const updateGeneralStorageRegistration = () => {
                     const supportsStorage = !generalStorage?.hidden;
-                    const selected = generalStorageChoice?.checked === true;
-                    const initiallySelected = generalStorage?.dataset.initialSelected === '1';
-                    const changed = selected !== initiallySelected;
-                    const serviceChanged = service?.value !== root.dataset.initialService;
+                    const selected = ['new', 'renew', 'last'].includes(generalStoragePlan?.value);
+                    const changed = generalStoragePlan?.value !== generalStorage?.dataset.initialPlan;
                     const previouslyKnown = (generalStorage?.dataset.initialRegistration || '') !== '';
                     if (registration) {
                         registration.required = registration.dataset.serviceRequired === '1'
                             || (supportsStorage && selected && (changed || previouslyKnown));
-                    }
-                    if (generalStorageAnswer) {
-                        const enabled = supportsStorage && selected;
-                        generalStorageAnswer.hidden = !enabled;
-                        generalStorageAnswer.querySelectorAll('input').forEach(input => {
-                            input.disabled = !enabled;
-                            input.required = enabled && (changed || serviceChanged);
-                        });
                     }
                 };
                 const loadSlots = async () => {
@@ -358,6 +425,11 @@
                     }
                 };
                 const updateMode = () => {
+                    const tooManyVehicles = seasonal && !seasonal.hidden && Number(carCount?.value || 1) > 2;
+                    const exactOption = mode?.querySelector('option[value="exact"]');
+                    if (exactOption) exactOption.disabled = tooManyVehicles;
+                    if (tooManyVehicles && mode?.value === 'exact') mode.value = 'period';
+                    if (exactVehicleLimit) exactVehicleLimit.hidden = !tooManyVehicles;
                     const exactMode = mode?.value === 'exact';
                     const periodMode = mode?.value === 'period';
                     manual.hidden = exactMode || periodMode;
@@ -370,9 +442,37 @@
                     if (exactMode) loadSlots();
                 };
                 service?.addEventListener('change', updateService);
-                carCount?.addEventListener('change', updateCars);
+                const resetVehicle = vehicle => {
+                    vehicle.querySelectorAll('[data-vehicle-field]').forEach(field => {
+                        const defaults = {vehicle_type: 'passenger', rim_band: 'unknown', storage_plan: 'none'};
+                        field.value = defaults[field.dataset.vehicleField] || '';
+                    });
+                };
+                const copyVehicle = (source, target) => {
+                    target.querySelectorAll('[data-vehicle-field]').forEach(targetField => {
+                        const sourceField = source.querySelector(`[data-vehicle-field="${targetField.dataset.vehicleField}"]`);
+                        if (sourceField) targetField.value = sourceField.value;
+                    });
+                };
+                addVehicle?.addEventListener('click', () => {
+                    if (!carCount || Number(carCount.value) >= vehicleBlocks.length) return;
+                    carCount.value = String(Number(carCount.value) + 1);
+                    updateCars();
+                    updateMode();
+                });
+                root.querySelectorAll('[data-remove-vehicle]').forEach(button => button.addEventListener('click', () => {
+                    if (!carCount) return;
+                    const count = Number(carCount.value || 1);
+                    const removeIndex = vehicleBlocks.indexOf(button.closest('[data-vehicle]'));
+                    if (removeIndex < 1 || removeIndex >= count) return;
+                    for (let index = removeIndex; index < count - 1; index += 1) copyVehicle(vehicleBlocks[index + 1], vehicleBlocks[index]);
+                    resetVehicle(vehicleBlocks[count - 1]);
+                    carCount.value = String(Math.max(1, count - 1));
+                    updateCars();
+                    updateMode();
+                }));
                 root.querySelectorAll('[data-storage-plan]').forEach(el => el.addEventListener('change', updateStorageRegistration));
-                generalStorageChoice?.addEventListener('change', updateGeneralStorageRegistration);
+                generalStoragePlan?.addEventListener('change', updateGeneralStorageRegistration);
                 mode?.addEventListener('change', updateMode);
                 date?.addEventListener('change', loadSlots);
                 fulfilment?.addEventListener('change', () => {

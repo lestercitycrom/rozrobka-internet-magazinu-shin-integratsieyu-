@@ -156,10 +156,11 @@ test('general tyre storage records both explicit already-stored answers and pres
         ->and($request->registration_number)->toBe('ZH12345');
     $this->actingAs($operations)->get(route('admin.service-requests.show', $request))
         ->assertOk()->assertSee('data-testid="general-storage-already"', false)
-        ->assertSee('Er hjulene allerede lagret hos EasyTire?');
+        ->assertSee('Hva skal skje med hjulsettet?')
+        ->assertSee('Hent lagret hjulsett og lagre det avmonterte settet videre');
     $this->actingAs($operations)->get(route('admin.service-requests.edit', $request))
-        ->assertOk()->assertSee('data-general-storage-answer', false)
-        ->assertSee('name="dekkhotell_already_stored"', false);
+        ->assertOk()->assertSee('data-general-storage-plan', false)
+        ->assertSee('name="storage_plan"', false);
 
     $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
         ...$payload, 'registration_number' => 'ZH12345', 'dekkhotell_already_stored' => '0',
@@ -182,9 +183,9 @@ test('general tyre storage records both explicit already-stored answers and pres
         'phone' => '90000000', 'phone_normalized' => '4790000000', 'status' => ServiceRequestStatus::New,
     ]);
     $this->actingAs($operations)->get(route('admin.service-requests.show', $legacy))
-        ->assertOk()->assertSee('Er hjulene allerede lagret hos EasyTire?')->assertSee('Ikke oppgitt');
+        ->assertOk()->assertSee('Hva skal skje med hjulsettet?')->assertSee('Ikke registrert i den tidligere forespørselen');
     $this->actingAs($operations)->get(route('admin.service-requests.edit', $legacy))
-        ->assertOk()->assertSee('Ikke registrert i den tidligere forespørselen.');
+        ->assertOk()->assertSee('Ikke registrert i den tidligere forespørselen');
     $this->actingAs($operations)->patch(route('admin.service-requests.update', $legacy), [
         'name' => 'Legacy contact corrected', 'phone' => '91111111', 'status' => 'contacted',
     ])->assertRedirect();
