@@ -67,6 +67,8 @@
     --et-space-10: 2.5rem;
     --et-space-12: 3rem;
     --et-space-16: 4rem;
+    --et-space-20: 5rem;
+    --et-space-24: 6rem;
     --et-section-space: clamp(4.5rem, 8vw, 7.5rem);
     --et-section-space-generous: clamp(5rem, 9vw, 8.5rem);
     --et-section-space-hero: clamp(4.5rem, 9vw, 8rem);
@@ -169,4 +171,50 @@
     --easytire-muted: var(--et-muted);
     --easytire-shadow: var(--et-shadow-sm);
     --easytire-shadow-hover: var(--et-shadow);
+}
+
+/* Public DS-1 / DS-2. Keep admin's compact scale unchanged. */
+.storefront {
+    --et-font-display: var(--et-font-body-system);
+    --et-container-gutter: 4rem;
+    --et-container-gutter-mobile: 2rem;
+    --et-section-space: var(--et-space-20);
+    --et-section-space-generous: var(--et-space-20);
+    --et-section-space-hero: var(--et-space-12);
+    --et-section-space-compact: var(--et-space-12);
+    --et-layout-gap: var(--et-space-6);
+    --et-section-heading-gap: var(--et-space-8);
+    --et-control-height: 48px;
+    --et-type-h1: 2.5rem;
+    --et-type-h2: 2.5rem;
+    --et-type-h3: 1.5rem;
+    --et-type-hero: 4rem;
+    --et-type-heading-weight: 700;
+    --et-type-heading-leading: 1.2;
+    --et-type-heading-tracking: 0;
+}
+
+@media (max-width: 1199px) {
+    .storefront {
+        --et-container-gutter: 3rem;
+        --et-section-space: var(--et-space-16);
+        --et-section-space-generous: var(--et-space-16);
+        --et-section-space-compact: var(--et-space-10);
+        --et-section-heading-gap: 1.75rem;
+        --et-type-hero: 3.5rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .storefront {
+        --et-container-gutter: 2rem;
+        --et-section-space: var(--et-space-12);
+        --et-section-space-generous: var(--et-space-12);
+        --et-section-space-compact: var(--et-space-8);
+        --et-section-heading-gap: var(--et-space-6);
+        --et-type-h1: 2rem;
+        --et-type-h2: 1.75rem;
+        --et-type-h3: 1.25rem;
+        --et-type-hero: clamp(2.25rem, 9.5vw, 2.5rem);
+    }
 }

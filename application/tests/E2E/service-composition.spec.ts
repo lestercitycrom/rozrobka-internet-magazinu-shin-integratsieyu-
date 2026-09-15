@@ -320,11 +320,11 @@ test('service detail and request transitions keep one CTA hierarchy, balanced re
 
         const contextBox = await context.boundingBox();
         const cardBox = await card.boundingBox();
-        if (requestCase.width >= 900) {
-            expect(contextBox?.x ?? 0).toBeLessThan(cardBox?.x ?? 0);
+        if (requestCase.width >= 1200) {
+            expect(contextBox?.x ?? 0).toBeGreaterThan((cardBox?.x ?? 0) + (cardBox?.width ?? 0));
             expect(Math.abs((contextBox?.y ?? 0) - (cardBox?.y ?? 0))).toBeLessThanOrEqual(2);
         } else {
-            expect(contextBox?.y ?? 0).toBeLessThan(cardBox?.y ?? 0);
+            expect(contextBox?.y ?? 0).toBeGreaterThanOrEqual((cardBox?.y ?? 0) + (cardBox?.height ?? 0));
         }
 
         await capture(page, `after-request-${requestCase.locale}-${requestCase.width}x${requestCase.height}-default.jpg`);

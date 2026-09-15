@@ -244,7 +244,7 @@
 <x-layouts.storefront :title="__('storefront.site_title')" :description="__('storefront.site_description')">
     <section class="et-v3-hero" data-testid="home-hero">
         <picture>
-            <source media="(max-width: 640px)" srcset="{{ $heroMobileImage }}">
+            <source media="(max-width: 767px)" srcset="{{ $heroMobileImage }}">
             <img class="et-v3-hero__photo" src="{{ $heroImage }}" width="1920" height="1080" alt="{{ $heroImageAlt }}" fetchpriority="high">
         </picture>
         <div class="et-v3-hero__shade" aria-hidden="true"></div>

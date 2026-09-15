@@ -1,10 +1,16 @@
 # EasyTire permanent decisions
 
-Updated: 2026-09-13
+Updated: 2026-09-15
 
 Only decisions that must survive closed Issues belong here. Implementation detail stays in code/As-Built docs; discussion stays in Issues and PRs.
 
+## GOV-000 — Simplified implementation and release cycle
+
+[Owner/PM decision #44, comment 5670860452](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5670860452) supersedes conflicting procedural gates below and in historical tasks. Implement → focused checks and one concise result → PM review → merge and whole staging-release permission in one decision → deploy/verify/handover. Routine engineering steps need no repeated owner confirmation. Data, access, price, booking and integration boundaries remain in force. See [WORKFLOW.md](WORKFLOW.md).
+
 ## GOV-001 — GitHub is the canonical engineering gateway
+
+Design-only preview exception to the general release sequence above: [PM #44, comment 5673643971](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5673643971) allows published unmerged design SHAs on existing staging after build/focused checks, with direct visual review and no migrations, seeds, pruning or integration changes. Previous and accepted releases are retained; final acceptance remains separate.
 
 - `origin/main` is the accepted code baseline.
 - One bounded task uses one Issue, one branch and one PR.

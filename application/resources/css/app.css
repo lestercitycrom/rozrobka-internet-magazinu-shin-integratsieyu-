@@ -99,6 +99,11 @@
     --et-focus-color: var(--et-color-ink);
 }
 
+/* Light panels inside dark sections must not inherit the white focus ring. */
+.storefront :where(.et-quick-finder, .et-page-hero--light) {
+    --et-focus-color: var(--et-focus-color-light);
+}
+
 .admin-shell :focus-visible, .et-admin-shell :focus-visible { outline: 3px solid var(--easytire-brand); outline-offset: 3px; }
 .easytire-card { border: 1px solid var(--easytire-border); background: var(--easytire-panel); box-shadow: var(--easytire-shadow); }
 .easytire-interactive {

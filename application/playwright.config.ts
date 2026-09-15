@@ -12,7 +12,7 @@ const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 const phpTempDirectory = (process.env.PLAYWRIGHT_PHP_TEMP_DIR ?? `${process.cwd()}/storage/framework/playwright-tmp`).replace(/\\/g, '/');
 const phpTempDirectoryForPhp = phpTempDirectory.replace(/'/g, "\\'");
 const phpCommand = `"${phpBinary}" -d "sys_temp_dir=${phpTempDirectory}" -d "upload_tmp_dir=${phpTempDirectory}"`;
-const buyerSpecs = /(?:^|[\\/])(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|home-hero-process|homepage-feedback|homepage-content-collections|homepage-composition|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts$/;
+const buyerSpecs = /(?:^|[\\/])(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|design-foundation|header-navigation|home-hero-process|homepage-feedback|homepage-content-collections|homepage-composition|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts$/;
 
 export default defineConfig({
     testDir: './tests/E2E',
@@ -40,7 +40,7 @@ export default defineConfig({
         {
             name: 'buyer-mobile-320',
             use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 320, height: 844 } },
-            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|header-navigation|homepage-content-collections|homepage-composition|interaction-shell|map-overflow|product-detail|project-content|service-requests|storefront-style)\.spec\.ts/,
+            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|design-foundation|header-navigation|homepage-content-collections|homepage-composition|interaction-shell|map-overflow|product-detail|project-content|service-requests|storefront-style)\.spec\.ts/,
         },
         {
             name: 'buyer-ru-preview',

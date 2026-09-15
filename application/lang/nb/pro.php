@@ -224,7 +224,7 @@ return [
     ],
     'booking' => [
         'kicker' => 'Forespørsel om tjeneste',
-        'seasonal_title' => 'Bestill dekkskift steg for steg.',
+        'seasonal_title' => 'Bestill dekkskift',
         'generic_title' => 'Fortell hva du trenger hjelp med.',
         'seasonal_intro' => 'Fyll inn ønskene dine. Dette er en forespørsel, og tidspunktet bekreftes av EasyTire.',
         'generic_intro' => 'Gi oss nok informasjon til å vurdere tjenesten og følge deg opp.',
@@ -232,6 +232,7 @@ return [
         'generic_service_label' => 'Valgt tjeneste',
         'generic_form_intro' => 'Den valgte tjenesten er allerede koblet til forespørselen. Fyll inn kontaktinformasjon og de opplysningene du kjenner.',
         'generic_problem_label' => 'Beskriv hva du trenger hjelp med',
+        'step_progress' => 'Steg :number av :total',
         'step_1' => 'Sted',
         'step_2' => 'Bil og lagring',
         'step_3' => 'Tid',

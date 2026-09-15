@@ -1,13 +1,12 @@
 # Current task
 
-- Issue: [#44 — Implement customer homepage and navigation revision](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44)
-- State: `in-progress`
-- Branch: `codex/issue-44-mysql-schema-repair`
-- PR: [#53 — `[TASK-44] Recover partial homepage schema migration on MySQL`](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/53) (Draft; relates to #44 and must not close it before release acceptance).
-- Exact base: `fc695b63f3721e98ac665b4c0e505f313592afbd`.
-- Scope: repair MySQL error 1118 with a comment-preserving prerequisite conversion of four legacy URL columns to `TEXT`; make the homepage composition migration resumable and fail-closed for exact foreign-key/index semantics; and prove fresh/update/partial/repeat/conflict, scoped-content rollback and retained-application compatibility paths on real MySQL 8.
-- Known pending materials: exact `003 muzik.mp4` and a confirmed Snapchat destination. The staging review must use the poster fallback and omit Snapchat until supplied or explicitly deferred.
-- Runtime boundary: code and isolated CI work only. Staging remains stopped at active `f70f358f06af384364973951eaab8d4fac2b2203`; no replay/deploy, server migration/DDL/restore, `current` switch, service start, integration call, payment, notification or real customer submission is authorised before a new exact-SHA PM runtime gate.
-- Review gate: satisfy the `CHANGES_REQUESTED` review on PR #53 comment `5650755371`, then return one ENGINEER UPDATE with the exact PR head, migration diff, real-MySQL regression evidence, complete CI result, backward-compatibility facts and protected failed-candidate/backup retention plan.
+- Issue: [#44 — design v2 handoff, comment 5673452462](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5673452462).
+- Branch: `codex/issue-44-design-v2`, fresh clone `shop-ndi-design`.
+- Accepted base: `origin/main` at `bf7f03e3d3265174e4e4307064769a742dd087cc`.
+- Scope: public presentation only. Owner follow-up on 2026-09-15 requests the complete design assignment without waiting for intermediate S1 external approval, followed by one customer-requirement/improvement list and staging handover for owner/ChatGPT Pro review.
+- Source: `EasyTire_UNIFIED_TZ_v2_2026-09-15.zip`, SHA-256 `4234EE9F20D5946A42E56E21DA0CDF4EB56B365446823ADC92596CF253923E90`.
+- Workflow: [simplified review cycle, comment 5670860452](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5670860452). One focused implementation/review result; no process-only stage.
+- Boundary: preserve the old working folder, accepted functionality and data. QA uses a fresh local synthetic database with external integrations off. [PM 5673643971](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5673643971) permits intermediate published-SHA design previews on staging without merge, migrations, seeds or pruning, retaining accepted and previous releases. Final acceptance/merge remains independent.
+- Video source received separately: `003 muzik.mp4`, SHA-256 `899B30B01FE0D5358EB873639E036C11201E3D8F1EE0A5F02245276D94CEA5F0`; optimisation/poster in progress. Snapchat URL and final media/promotion confirmations remain open. Do not fabricate them.
 
-Issue #44 comment `5654071478` continues the existing bounded PR #53 repair after the PM review; it adds no runtime authority. This file is only a pointer.
+This is a pointer, not proof of live runtime state. The accepted server checkpoint and handoff are recorded in #44, not in the superseded task text.

@@ -100,8 +100,8 @@
             request()->routeIs($routePrefix.'content.show') && $contentSlug === 'kontakt' => 'contact',
             default => null,
         };
-        $storeHref = $storeRoute ?: route($routePrefix.'store.index');
-        $storeNavigationLabel = $storeLabel ?: __('pro.nav.store');
+        $storeHref = route($routePrefix.'store.index');
+        $storeNavigationLabel = __('pro.nav.store');
         $servicesHref = route($routePrefix.'services.index');
         $seasonalHref = route($routePrefix.'seo-services.show', 'dekkskift-tromso');
         $hotelHref = route($routePrefix.'seo-services.show', 'dekkhotell-tromso');

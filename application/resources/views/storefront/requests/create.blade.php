@@ -57,18 +57,18 @@
 @endphp
 
 <x-layouts.storefront :title="__('booking.title')" active-section="services">
-    <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
+    <section class="et-page-hero et-page-hero--light et-page-hero--transactional et-request-intro">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span><a href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ $service->title }}</a></span><span>{{ __('booking.title') }}</span></div>
                 <p class="et-eyebrow">{{ __('pro.booking.kicker') }}</p>
-                <h1 class="et-h1">{{ $isSeasonal ? __('pro.booking.seasonal_title') : __('pro.booking.generic_title') }}</h1>
+                <h1 class="et-h1">{{ $isSeasonal ? __('pro.booking.seasonal_title') : $service->title }}</h1>
                 <p class="et-lead">{{ $isSeasonal ? __('pro.booking.seasonal_intro') : __('pro.booking.generic_intro') }}</p>
             </div>
         </div>
     </section>
 
-    <section class="et-section et-section--compact">
+    <section class="et-section et-section--compact et-request-section">
         <div class="et-container">
             @if (is_array($fitmentContext))
                 <div class="et-alert et-alert--info et-fitment-request-context" data-testid="fitment-request-context">
@@ -85,16 +85,12 @@
 
                     <div class="et-booking-shell">
                         <div class="et-booking-card">
-                            <div class="et-booking-card__head">
-                                <p class="et-caption">{{ $service->title }}</p>
-                                <h2 class="et-h3">{{ __('booking.title') }}</h2>
-                            </div>
                             <div class="et-booking-card__body">
                                 <div class="et-stepper" aria-label="{{ __('booking.title') }}" data-testid="seasonal-stepper">
                                     @foreach ([__('pro.booking.step_1'), __('pro.booking.step_2'), __('pro.booking.step_3'), __('pro.booking.step_4'), __('pro.booking.step_5')] as $index => $stepLabel)
                                         <div class="et-stepper__item" data-booking-step @if($index === 0) aria-current="step" @endif>
                                             <div class="et-stepper__bar"></div>
-                                            <span class="et-stepper__label">{{ $stepLabel }}</span>
+                                            <span class="et-stepper__label"><span class="et-stepper__progress">{{ __('pro.booking.step_progress', ['number' => $index + 1, 'total' => 5]) }} · </span>{{ $stepLabel }}</span>
                                         </div>
                                     @endforeach
                                 </div>
@@ -323,24 +319,6 @@
                     <input type="hidden" name="service_slug" value="{{ $service->slug }}">
 
                     <div class="et-request-layout">
-                        <aside class="et-request-context" data-testid="request-service-context" data-media-kind="{{ $serviceMedia['kind'] }}" data-media-source="{{ $serviceMedia['source'] }}">
-                            <div class="et-request-context__media et-request-context__media--{{ $serviceMedia['crop'] }}">
-                                @if ($serviceMedia['url'])
-                                    <img src="{{ $serviceMedia['url'] }}" width="720" height="560" alt="{{ $serviceMedia['alt'] }}">
-                                @else
-                                    <div class="et-request-context__fallback">
-                                        <img src="/brand/easytire-mark.svg" width="96" height="96" alt="">
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="et-request-context__body">
-                                <p class="et-eyebrow">{{ __('pro.booking.generic_service_label') }}</p>
-                                <h2 class="et-h3">{{ $service->title }}</h2>
-                                @if ($service->excerpt)<p class="et-copy">{{ $service->excerpt }}</p>@endif
-                                <a class="et-btn et-btn--link" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
-                            </div>
-                        </aside>
-
                         <div class="et-booking-card et-request-form-card">
                         <div class="et-booking-card__head">
                             <p class="et-caption">{{ __('pro.booking.generic_service_label') }}</p>
@@ -460,6 +438,24 @@
                             <button class="et-btn et-btn--primary et-request-submit" type="submit" data-testid="generic-submit">{{ __('pro.booking.submit') }}</button>
                         </div>
                         </div>
+
+                        <aside class="et-request-context" data-testid="request-service-context" data-media-kind="{{ $serviceMedia['kind'] }}" data-media-source="{{ $serviceMedia['source'] }}">
+                            <div class="et-request-context__media et-request-context__media--{{ $serviceMedia['crop'] }}">
+                                @if ($serviceMedia['url'])
+                                    <img src="{{ $serviceMedia['url'] }}" width="720" height="560" alt="{{ $serviceMedia['alt'] }}">
+                                @else
+                                    <div class="et-request-context__fallback">
+                                        <img src="/brand/easytire-mark.svg" width="96" height="96" alt="">
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="et-request-context__body">
+                                <p class="et-eyebrow">{{ __('pro.booking.generic_service_label') }}</p>
+                                <h2 class="et-h3">{{ $service->title }}</h2>
+                                @if ($service->excerpt)<p class="et-copy">{{ $service->excerpt }}</p>@endif
+                                <a class="et-btn et-btn--link" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
+                            </div>
+                        </aside>
                     </div>
                 </form>
             @endif

@@ -65,7 +65,7 @@ test('mobile footer links remain comfortable touch targets', async ({ page }, te
     await expectNoGlobalOverflow(page);
 });
 
-test('desktop catalog uses the available canvas without compressing filters or products', async ({ page }, testInfo) => {
+test('desktop catalog uses the DS-1 container, filter and product grid', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'Desktop geometry contract');
 
     await page.setViewportSize({ width: 1920, height: 1080 });
@@ -97,13 +97,13 @@ test('desktop catalog uses the available canvas without compressing filters or p
         };
     });
 
-    expect(geometry.layoutWidth / geometry.viewportWidth).toBeGreaterThanOrEqual(.88);
-    expect(geometry.sideGutter).toBeLessThanOrEqual(100);
-    expect(geometry.sidebarWidth).toBeGreaterThanOrEqual(320);
-    expect(geometry.resultsWidth).toBeGreaterThanOrEqual(1300);
-    expect(geometry.searchWidth).toBeGreaterThanOrEqual(270);
-    expect(geometry.firstCardWidth).toBeGreaterThanOrEqual(320);
-    expect(geometry.cardColumns).toBe(4);
+    expect(geometry.layoutWidth).toBeCloseTo(1280, 0);
+    expect(geometry.sideGutter).toBeCloseTo((geometry.viewportWidth - 1280) / 2, 0);
+    expect(geometry.sidebarWidth).toBeCloseTo(280, 0);
+    expect(geometry.resultsWidth).toBeGreaterThanOrEqual(970);
+    expect(geometry.searchWidth).toBeGreaterThanOrEqual(230);
+    expect(geometry.firstCardWidth).toBeGreaterThanOrEqual(300);
+    expect(geometry.cardColumns).toBe(3);
     await expectNoGlobalOverflow(page);
 
     for (const viewport of [
@@ -125,8 +125,9 @@ test('desktop catalog uses the available canvas without compressing filters or p
             };
         });
 
-        expect(responsiveGeometry.layoutWidth / viewport.width, `catalog utilization at ${viewport.width}px`).toBeGreaterThanOrEqual(.9);
-        expect(responsiveGeometry.sidebarWidth, `filter width at ${viewport.width}px`).toBeGreaterThanOrEqual(260);
+        const expectedWidth = Math.min(viewport.width - (viewport.width >= 1200 ? 64 : 48), 1280);
+        expect(responsiveGeometry.layoutWidth, `catalog width at ${viewport.width}px`).toBeCloseTo(expectedWidth, 0);
+        expect(responsiveGeometry.sidebarWidth, `filter width at ${viewport.width}px`).toBeCloseTo(280, 0);
         expect(responsiveGeometry.cardWidth, `card width at ${viewport.width}px`).toBeGreaterThanOrEqual(280);
         expect(responsiveGeometry.columns, `column count at ${viewport.width}px`).toBe(viewport.columns);
         await expectNoGlobalOverflow(page);
