@@ -1763,7 +1763,7 @@
 
 .et-v3-review-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
 }
 
@@ -1832,10 +1832,12 @@
 
 .et-v3-review {
     display: flex;
+    min-width: 0;
     min-height: 260px;
+    overflow-wrap: anywhere;
     flex-direction: column;
     border-radius: var(--v3-radius);
-    padding: 1.6rem;
+    padding: min(1.6rem, 26px);
     background: #fff;
     box-shadow: var(--et-storefront-surface-shadow, none);
 }
@@ -4622,7 +4624,7 @@
 .et-v3-logistics-media__video { opacity: 0; }
 .et-v3-logistics-media.is-video-playing .et-v3-logistics-media__video { opacity: 1; }
 .et-v3-logistics-media__control { position: absolute; top: 1rem; right: 1rem; z-index: 3; min-height: 48px; border: 1px solid rgb(255 255 255 / .6); padding: .65rem 1rem; background: rgb(8 8 9 / .85); color: #fff; font-size: .9375rem; font-weight: 600; }
-.et-v3-logistics-card__content { position: relative; z-index: 2; width: 100%; padding: 2rem; }
+.et-v3-logistics-card__content { position: relative; z-index: 2; min-width: 0; width: 100%; overflow-wrap: anywhere; padding: 2rem; }
 .et-v3-logistics-card__content h3 { margin: .65rem 0 0; font-family: var(--et-font-display); font-size: 2rem; font-weight: 700; line-height: 1.2; letter-spacing: 0; }
 .et-v3-logistics-card__content > p:not(.et-eyebrow) { max-width: 58ch; margin: 1rem 0 0; color: rgb(255 255 255 / .86); font-size: 1rem; line-height: 1.5; }
 .et-v3-logistics-card__content > a,
@@ -4647,6 +4649,8 @@
 }
 
 .et-v3-contact__business-copy {
+    min-width: 0;
+    overflow-wrap: anywhere;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -4731,7 +4735,7 @@
 
 @media (max-width: 640px) {
     .et-v3-logistics-card { min-height: 430px; }
-    .et-v3-logistics-card__content { padding: 1.5rem; }
+    .et-v3-logistics-card__content { padding: min(1.5rem, 24px); }
     .et-v3-logistics-card__content h3 { font-size: 1.5rem; }
 
     .et-v3-dialog {
@@ -4754,7 +4758,8 @@
     .et-v3-process__step > div { grid-column: 2; grid-row: 1 / span 2; }
 
     .et-v3-contact__business {
-        padding: 1.4rem;
+        min-width: 0;
+        padding: min(1.4rem, 22px);
     }
 
     .et-v3-partners--contact a,
