@@ -2,6 +2,9 @@
 
 Review only the final Issue #19 handoff branch against accepted base `f25a005ac0277ce0ef03c303a2e7c9a997a83a48`. The exact candidate head and PR are published in Issue #19 when ready.
 
+- PR: [#72 — Finish Issue #19 catalogue handoff](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/72).
+- Exact review head: recorded in PR #72 and the latest Issue #19 engineer update; reviewers must verify that immutable SHA before acceptance.
+
 ## Required invariants
 
 - Published active real products remain browseable and detail-visible when stock is missing, stale or zero.

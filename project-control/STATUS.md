@@ -10,7 +10,7 @@ Updated: 2026-09-16 — Issue #19 final catalogue handoff
 - The accepted runtime report is [Issue #19 comment 5687006070](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5687006070); the PM verdict is [comment 5687038642](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5687038642).
 - Production and DNS changes are not authorised.
 
-## Last accepted staging read-back
+## Runtime gates (last accepted staging read-back)
 
 - Active application and staging Git: `f25a005ac0277ce0ef03c303a2e7c9a997a83a48`.
 - Immediate retained predecessor: `405f3f0a551c65d4ce13c5f1b192991ce3625371`; an additional retained rollback is `980fdc117d27a7bcf5d0d0cd950e31e74cee1497`.
