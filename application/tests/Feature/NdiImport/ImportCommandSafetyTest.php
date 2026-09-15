@@ -49,6 +49,13 @@ test('manual parser replay preserves the original bundle observation time', func
         $this->artisan('ndi:import', ['files' => $files])->assertSuccessful();
         DB::table('products')->update(['publication_status' => PublicationStatus::Published->value]);
         $firstObservation = DB::table('current_stock')->max('observed_at');
+        $firstPrices = DB::table('sku_prices')
+            ->orderBy('supplier_sku_id')
+            ->orderBy('price_list_id')
+            ->get(['supplier_sku_id', 'price_list_id', 'amount', 'observed_at', 'source_artifact_id'])
+            ->map(fn (object $price): array => (array) $price)
+            ->all();
+        $firstPriceHistoryCount = DB::table('sku_price_history')->count();
         $sku = SupplierSku::query()->where('external_sku', '0001234567890')->firstOrFail();
         $firstItem = app(CatalogReadService::class)->findPublicSku($sku->external_sku);
         expect(Carbon::parse($firstObservation)->timestamp)->toBe($historicalAt)
@@ -67,6 +74,13 @@ test('manual parser replay preserves the original bundle observation time', func
         expect(DB::table('import_runs')->where('status', 'succeeded')->count())->toBe(2)
             ->and(DB::table('current_stock')->max('observed_at'))->toBe($firstObservation)
             ->and(DB::table('current_stock')->min('observed_at'))->toBe($firstObservation)
+            ->and(DB::table('sku_prices')
+                ->orderBy('supplier_sku_id')
+                ->orderBy('price_list_id')
+                ->get(['supplier_sku_id', 'price_list_id', 'amount', 'observed_at', 'source_artifact_id'])
+                ->map(fn (object $price): array => (array) $price)
+                ->all())->toBe($firstPrices)
+            ->and(DB::table('sku_price_history')->count())->toBe($firstPriceHistoryCount)
             ->and($replayedItem)->not->toBeNull()
             ->and($replayedItem->stock->canPurchase(1))->toBeFalse()
             ->and(app(SystemHealth::class)->report()['ndi_fresh'])->toBeFalse();

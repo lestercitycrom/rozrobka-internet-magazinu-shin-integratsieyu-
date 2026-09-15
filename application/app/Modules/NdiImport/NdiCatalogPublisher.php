@@ -164,26 +164,57 @@ class NdiCatalogPublisher
                 'valid_from' => self::CURRENT_PRICE_LIST_VALID_FROM,
             ]);
             $amount = $row['prices'][$taxMode->value];
-            $currentPrice = SkuPrice::query()->firstOrNew([
-                'supplier_sku_id' => $sku->id,
-                'price_list_id' => $priceList->id,
-            ]);
-
-            $this->persistTracked($currentPrice, [
-                'amount' => $amount,
-                'observed_at' => $observedAt,
-                'source_artifact_id' => $artifactId,
-            ], $runId, $artifactId, $summary);
-
-            SkuPriceHistory::query()->firstOrCreate([
-                'source_artifact_id' => $artifactId,
-                'supplier_sku_id' => $sku->id,
-                'price_list_id' => $priceList->id,
-            ], [
-                'amount' => $amount,
-                'observed_at' => $observedAt,
-            ]);
+            $this->publishPriceValue(
+                $sku,
+                $priceList,
+                $amount,
+                $runId,
+                $artifactId,
+                $observedAt,
+                $summary,
+            );
         }
+    }
+
+    private function publishPriceValue(
+        SupplierSku $sku,
+        PriceList $priceList,
+        string $amount,
+        string $runId,
+        string $artifactId,
+        CarbonImmutable $observedAt,
+        PublishSummary $summary,
+    ): void {
+        SkuPriceHistory::query()->firstOrCreate([
+            'source_artifact_id' => $artifactId,
+            'supplier_sku_id' => $sku->id,
+            'price_list_id' => $priceList->id,
+        ], [
+            'amount' => $amount,
+            'observed_at' => $observedAt,
+        ]);
+
+        $identity = [
+            'supplier_sku_id' => $sku->id,
+            'price_list_id' => $priceList->id,
+        ];
+        $current = SkuPrice::query()
+            ->where($identity)
+            ->lockForUpdate()
+            ->first() ?? new SkuPrice($identity);
+        if ($current->exists
+            && $current->observed_at !== null
+            && CarbonImmutable::instance($current->observed_at)->isAfter($observedAt)) {
+            $summary->skipped++;
+
+            return;
+        }
+
+        $this->persistTracked($current, [
+            'amount' => $amount,
+            'observed_at' => $observedAt,
+            'source_artifact_id' => $artifactId,
+        ], $runId, $artifactId, $summary);
     }
 
     private function publishMediaSource(Product $product, ?string $sourceUrl, string $artifactId): void
