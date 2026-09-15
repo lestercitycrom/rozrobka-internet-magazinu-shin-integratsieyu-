@@ -105,6 +105,7 @@ return [
         'finder_registration_tab' => 'Госномер',
         'finder_registration_tab_compact' => 'Госномер',
         'finder_size_tab' => 'Размер шины',
+        'finder_size_tab_compact' => 'Размер',
         'finder_width' => 'Ширина',
         'finder_aspect' => 'Профиль',
         'finder_rim' => 'Диаметр',

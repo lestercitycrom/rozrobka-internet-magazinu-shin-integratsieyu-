@@ -133,13 +133,18 @@ test('mobile finder labels stay readable while preserving full accessible tab na
         await expect(compactLabel).toBeVisible();
         await expect(compactLabel).toHaveText('Reg.nr.');
         await expect(registration.locator('.et-quick-finder__tab-full')).toBeHidden();
-        const isSingleLine = () => compactLabel.evaluate((element) => {
+        const isSingleLine = (label = compactLabel) => label.evaluate((element) => {
             const range = document.createRange();
             range.selectNodeContents(element);
             return range.getClientRects().length === 1;
         });
         expect(await isSingleLine()).toBe(true);
-        await page.getByRole('tab', { name: 'Dekkdimensjon', exact: true }).click();
+        const dimension = page.getByRole('tab', { name: 'Dekkdimensjon', exact: true });
+        const compactDimension = dimension.locator('.et-quick-finder__tab-compact');
+        await expect(compactDimension).toBeVisible();
+        await expect(compactDimension).toHaveText('Dimensjon');
+        expect(await isSingleLine(compactDimension)).toBe(true);
+        await dimension.click();
         await expect(page.getByTestId('finder-width')).toBeVisible();
         await registration.click();
         await expect(registration).toHaveAttribute('aria-selected', 'true');
@@ -147,6 +152,7 @@ test('mobile finder labels stay readable while preserving full accessible tab na
 
         await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
         expect(await isSingleLine()).toBe(true);
+        expect(await isSingleLine(compactDimension)).toBe(true);
         const clippedCategories = await page.locator('.et-shop-categories a').evaluateAll((links) => links.filter((link) => link.scrollWidth > link.clientWidth + 1).length);
         expect(clippedCategories).toBe(0);
         await expectNoGlobalOverflow(page);

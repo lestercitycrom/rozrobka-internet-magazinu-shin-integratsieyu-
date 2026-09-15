@@ -24,9 +24,10 @@
             <span class="et-quick-finder__tab-full" aria-hidden="true">{{ __('pro.home.finder_registration_tab') }}</span>
             <span class="et-quick-finder__tab-compact" aria-hidden="true">{{ __('pro.home.finder_registration_tab_compact') }}</span>
         </button>
-        <button id="{{ $finderId }}-size-tab" type="button" role="tab" aria-selected="false" aria-controls="{{ $finderId }}-size-panel" tabindex="-1">
+        <button id="{{ $finderId }}-size-tab" type="button" role="tab" aria-label="{{ __('pro.home.finder_size_tab') }}" aria-selected="false" aria-controls="{{ $finderId }}-size-panel" tabindex="-1">
             <x-icon name="tire" :size="19" />
-            {{ __('pro.home.finder_size_tab') }}
+            <span class="et-quick-finder__tab-full" aria-hidden="true">{{ __('pro.home.finder_size_tab') }}</span>
+            <span class="et-quick-finder__tab-compact" aria-hidden="true">{{ __('pro.home.finder_size_tab_compact') }}</span>
         </button>
     </div>
 

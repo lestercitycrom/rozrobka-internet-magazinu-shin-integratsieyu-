@@ -105,6 +105,7 @@ return [
         'finder_registration_tab' => 'Registreringsnummer',
         'finder_registration_tab_compact' => 'Reg.nr.',
         'finder_size_tab' => 'Dekkdimensjon',
+        'finder_size_tab_compact' => 'Dimensjon',
         'finder_width' => 'Bredde',
         'finder_aspect' => 'Profil',
         'finder_rim' => 'Felg',
