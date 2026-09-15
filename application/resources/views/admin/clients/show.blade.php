@@ -1,4 +1,7 @@
 <x-layouts.admin :title="$client->name">
+    @php
+        $statusTone = ['new' => 'attention', 'contacted' => 'info', 'closed' => 'success', 'cancelled' => 'neutral'];
+    @endphp
     <div class="max-w-6xl space-y-8">
         <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -50,7 +53,7 @@
                         @endphp
                         <div class="flex flex-col gap-2 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between">
                             <div><a class="font-black underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ route('admin.service-requests.show', $request) }}">{{ $request->reference }}</a><p class="mt-1 text-sm text-easytire-muted">{{ $serviceTitles[$request->service_slug] ?? $request->service_slug }} · {{ $request->created_at->format('Y-m-d H:i') }}</p>@if($registrations->isNotEmpty())<p class="mt-1 text-sm"><strong>{{ __('clients.registration_history_label') }}:</strong> {{ $registrations->join(', ') }}</p>@endif</div>
-                            <span class="text-sm font-bold">{{ __('service_requests.status_'.$request->status->value) }}</span>
+                            <span class="et-admin-status et-admin-status--{{ $statusTone[$request->status->value] ?? 'neutral' }}">{{ __('service_requests.status_'.$request->status->value) }}</span>
                         </div>
                     @endforeach
                 </div>

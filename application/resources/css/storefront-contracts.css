@@ -156,6 +156,47 @@
 .storefront .et-store-brands { margin-block-start: 2.5rem; }
 
 /* Request composition. */
+.storefront .et-request-intro .et-lead {
+    max-width: 65ch;
+    margin-top: .75rem;
+    font-size: 1rem;
+}
+.storefront .et-request-section { padding-block-start: 2rem; }
+.storefront .et-booking-shell { gap: 1.5rem; }
+.storefront .et-radio-card {
+    min-height: 0;
+    align-items: start;
+    padding: 1rem;
+}
+.storefront .et-radio-card small { font-size: .875rem; }
+.storefront .et-stepper__label {
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: normal;
+    overflow: visible;
+}
+.storefront .et-stepper__progress { display: none; }
+
+@media (max-width: 767px) {
+    .storefront .et-request-section { padding-block-start: 1rem; }
+    .storefront .et-booking-card__body { padding: 1.25rem; }
+    .storefront .et-stepper {
+        position: relative;
+        padding-top: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .storefront .et-stepper__label { display: none; }
+    .storefront .et-stepper__item[aria-current='step'] .et-stepper__label {
+        position: absolute;
+        inset: 0 0 auto;
+        display: block;
+        margin: 0;
+        color: var(--et-color-text-secondary);
+        font-size: .875rem;
+    }
+    .storefront .et-stepper__progress { display: inline; }
+}
+
 .storefront .et-seasonal-vehicle {
     position: relative;
     margin-block-start: 1rem;

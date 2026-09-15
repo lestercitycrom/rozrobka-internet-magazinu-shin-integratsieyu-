@@ -118,6 +118,11 @@ test('the thirteen-service index is image-led, deterministic, accessible and com
         const inventory = await cards.evaluateAll((elements) => elements.map((element) => {
             const link = element.querySelector<HTMLAnchorElement>('.et-service-card__content h2 > a');
             const rect = element.getBoundingClientRect();
+            const media = element.querySelector<HTMLElement>('.et-service-card__media');
+            const content = element.querySelector<HTMLElement>('.et-service-card__content');
+            const description = content?.querySelector<HTMLElement>(':scope > p:not(.et-service-card__meta)');
+            const mediaRect = media?.getBoundingClientRect();
+            const contentRect = content?.getBoundingClientRect();
 
             return {
                 slug: element.getAttribute('data-service-slug'),
@@ -126,6 +131,15 @@ test('the thirteen-service index is image-led, deterministic, accessible and com
                 href: link?.getAttribute('href'),
                 width: Math.round(rect.width),
                 height: Math.round(rect.height),
+                bottom: Math.round(rect.bottom),
+                mediaHeight: Math.round(mediaRect?.height ?? 0),
+                mediaBottom: Math.round(mediaRect?.bottom ?? 0),
+                contentTop: Math.round(contentRect?.top ?? 0),
+                contentBottom: Math.round(contentRect?.bottom ?? 0),
+                contentClientHeight: content?.clientHeight ?? 0,
+                contentScrollHeight: content?.scrollHeight ?? 0,
+                descriptionClientHeight: description?.clientHeight ?? 0,
+                descriptionScrollHeight: description?.scrollHeight ?? 0,
             };
         }));
 
@@ -136,8 +150,15 @@ test('the thirteen-service index is image-led, deterministic, accessible and com
         expect(inventory.every((item) => Boolean(item.source))).toBeTruthy();
 
         if (viewport.width <= 390) {
-            expect(Math.max(...inventory.map((item) => item.height))).toBeLessThanOrEqual(230);
             expect(Math.min(...inventory.map((item) => item.width))).toBeGreaterThanOrEqual(viewport.width - 34);
+            for (const item of inventory) {
+                expect(item.mediaHeight, `${item.slug} media height`).toBeCloseTo(180, 0);
+                expect(item.contentTop, `${item.slug} content must start below its media`).toBeGreaterThanOrEqual(item.mediaBottom - 1);
+                expect(item.contentBottom, `${item.slug} content must remain inside its card`).toBeLessThanOrEqual(item.bottom + 1);
+                expect(item.contentScrollHeight, `${item.slug} content must use its natural height`).toBeLessThanOrEqual(item.contentClientHeight + 1);
+                expect(item.descriptionScrollHeight, `${item.slug} description must not be clipped`).toBeLessThanOrEqual(item.descriptionClientHeight + 1);
+                expect(item.height, `${item.slug} card must include media and natural content`).toBeGreaterThan(item.mediaHeight);
+            }
         }
 
         const firstCard = cards.first();
@@ -243,12 +264,11 @@ test('service detail and request transitions keep one CTA hierarchy, balanced re
         const finalAction = page.locator('.et-service-final-action');
         await expect(top).toBeVisible();
         await expect(intro).toBeVisible();
-        await expect(aside).toBeVisible();
+        await expect(aside).toHaveCount(0);
         await expect(continuation).toBeVisible();
         await expect(finalAction).toBeVisible();
         await expect(page.locator('.et-service-anchor .et-btn')).toHaveCount(0);
         await expect(page.locator('main a.et-btn--primary[href$="/tjenester/bilbatteri/foresporsel"]')).toHaveCount(2);
-        await expect(page.locator('.et-service-conversion a.et-btn--outline[href$="/tjenester/bilbatteri/foresporsel"]')).toHaveCount(1);
 
         const boxes = await page.evaluate(() => {
             const box = (selector: string) => {
@@ -270,17 +290,14 @@ test('service detail and request transitions keep one CTA hierarchy, balanced re
 
         expect(boxes.top).not.toBeNull();
         expect(boxes.intro).not.toBeNull();
-        expect(boxes.aside).not.toBeNull();
+        expect(boxes.aside).toBeNull();
         expect(boxes.continuation).not.toBeNull();
         if (viewport.width >= 1280) {
-            expect((boxes.intro?.width ?? 0) / (boxes.aside?.width ?? 1)).toBeGreaterThan(1.6);
-            expect(Math.abs((boxes.intro?.y ?? 0) - (boxes.aside?.y ?? 0))).toBeLessThanOrEqual(2);
-            expect((boxes.continuation?.width ?? 0) / (boxes.top?.width ?? 1)).toBeGreaterThan(.64);
+            expect(boxes.intro?.width ?? 0).toBeLessThanOrEqual(920);
+            expect((boxes.continuation?.width ?? 0) / (boxes.top?.width ?? 1)).toBeGreaterThan(.95);
             expect(boxes.primaryPositions.filter((y) => y < viewport.height)).toHaveLength(1);
-        } else {
-            expect(boxes.intro?.y ?? 0).toBeLessThan(boxes.aside?.y ?? 0);
-            expect(boxes.aside?.y ?? 0).toBeLessThan(boxes.continuation?.y ?? 0);
         }
+        expect(boxes.intro?.y ?? 0).toBeLessThan(boxes.continuation?.y ?? 0);
 
         geometry.push({ viewport, ...boxes });
         await capture(page, `after-service-detail-${viewport.width}x${viewport.height}.jpg`);
@@ -320,11 +337,11 @@ test('service detail and request transitions keep one CTA hierarchy, balanced re
 
         const contextBox = await context.boundingBox();
         const cardBox = await card.boundingBox();
-        if (requestCase.width >= 900) {
-            expect(contextBox?.x ?? 0).toBeLessThan(cardBox?.x ?? 0);
+        if (requestCase.width >= 1200) {
+            expect(contextBox?.x ?? 0).toBeGreaterThan((cardBox?.x ?? 0) + (cardBox?.width ?? 0));
             expect(Math.abs((contextBox?.y ?? 0) - (cardBox?.y ?? 0))).toBeLessThanOrEqual(2);
         } else {
-            expect(contextBox?.y ?? 0).toBeLessThan(cardBox?.y ?? 0);
+            expect(contextBox?.y ?? 0).toBeGreaterThanOrEqual((cardBox?.y ?? 0) + (cardBox?.height ?? 0));
         }
 
         await capture(page, `after-request-${requestCase.locale}-${requestCase.width}x${requestCase.height}-default.jpg`);

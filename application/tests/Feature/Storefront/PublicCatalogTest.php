@@ -365,7 +365,7 @@ test('product detail normalizes confirmed tire data and hides uncontracted suppl
         ->assertDontSee('PCR radial tyre > 240 km/h')
         ->assertDontSee('Winter tyre type')
         ->assertDontSee('Vintertype');
-    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.tires.index'), 'Dekk'))->toBe(2);
+    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.store.index'), 'Dekk og felger'))->toBe(2);
 
     $russian = $this->get('/ru/produkter/063965255551871001')->assertOk();
     $russian
@@ -375,7 +375,7 @@ test('product detail normalizes confirmed tire data and hides uncontracted suppl
         ->assertDontSee('PCR radial tyre > 240 km/h')
         ->assertDontSee('Winter tyre type')
         ->assertDontSee('Тип зимней шины');
-    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.tires.index'), 'Шины'))->toBe(2);
+    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.store.index'), 'Шины и диски'))->toBe(2);
 });
 
 test('wheel detail normalizes fitment values and marks the wheel navigation in NB and RU', function (): void {
@@ -395,11 +395,11 @@ test('wheel detail normalizes fitment values and marks the wheel navigation in N
         ->assertDontSee('112.00')
         ->assertDontSee('Silver')
         ->assertDontSee('Supplier drilling text');
-    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.wheels.index'), 'Felger'))->toBe(2);
+    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.store.index'), 'Dekk og felger'))->toBe(2);
 
     $russian = $this->get('/ru/produkter/SKU-WHEEL-DETAIL')->assertOk();
     $russian->assertSee('8 × 18')->assertSee('5×112')->assertSee('66.6')->assertDontSee('Silver');
-    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.wheels.index'), 'Диски'))->toBe(2);
+    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.store.index'), 'Шины и диски'))->toBe(2);
 });
 
 function storefrontProduct(ProductType $type, string $skuCode, array $spec, string $supplierCode = 'storefront-ndi'): SupplierSku

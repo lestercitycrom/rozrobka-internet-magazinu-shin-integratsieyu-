@@ -33,11 +33,12 @@ test('empty cart has one compact recovery action across the full viewport matrix
             };
         });
         expect(state.width).toBeGreaterThanOrEqual(Math.min(1280, viewport.width - (viewport.width <= 900 ? 40 : 140)));
-        expect(state.height).toBeLessThanOrEqual(280);
+        // DS-1 keeps the narrow empty state compact with a full 48px action.
+        expect(state.height).toBeLessThanOrEqual(288);
         expect(state.borderTopStyle).toBe('solid');
         expect(state.borderLeftWidth).toBe('0px');
         expect(state.display).toBe('grid');
-        expect(await actions.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+        expect(await actions.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(48);
         await expectNoGlobalOverflow(page);
     }
 });

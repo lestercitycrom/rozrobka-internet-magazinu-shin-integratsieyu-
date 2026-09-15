@@ -182,10 +182,10 @@ test('homepage renders the final approved order copy links logos and hidden Russ
         ->assertSeeInOrder([
             'data-testid="home-hero"',
             'data-testid="home-dekkhotell"',
+            'data-testid="home-prices"',
             'data-testid="homepage-promotions"',
             'data-testid="homepage-additional-services"',
             'data-testid="home-process"',
-            'data-testid="home-prices"',
             'data-testid="homepage-wheel-services"',
             'data-testid="homepage-reviews"',
             'class="et-v3-contact"',
@@ -201,7 +201,10 @@ test('homepage renders the final approved order copy links logos and hidden Russ
         ->assertSee('https://carsoe.com/', false)
         ->assertSee('https://www.avis.no/', false)
         ->assertSee('data-dekkhotell-dialog', false)
-        ->assertDontSee('data-homepage-video-element', false);
+        ->assertSee('data-homepage-video-element', false)
+        ->assertSee('data-src="/brand/easytire-workshop-loop.mp4"', false)
+        ->assertSee('preload="none"', false)
+        ->assertDontSee('autoplay', false);
 
     config()->set('storefront.ru_preview_enabled', true);
     $this->get('/ru')

@@ -13,6 +13,7 @@ test('administrator can sign in, persist Russian, and log out', async ({ page })
     await page.getByRole('button', { name: /logg inn/i }).click();
 
     await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.locator('.et-admin-shell')).toHaveCSS('display', 'grid');
     await ensureAdminLocale(page, 'nb');
     await expect(page.getByRole('heading', { name: 'Det som trenger oppfølging nå.' })).toBeVisible();
     await page.getByRole('navigation').getByRole('link', { name: 'Tjenesteforespørsler', exact: true }).click();

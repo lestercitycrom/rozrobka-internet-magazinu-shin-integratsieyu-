@@ -1,11 +1,29 @@
 # EasyTire staging deployment
 
+## Design and limited admin-polish preview (Issue #44)
+
+[PM comment 5673643971](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5673643971) permits unmerged published design candidates on the existing staging host; [PM comment 5678136657](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5678136657) extends that exact handoff with the reviewed CRM/browser verification and limited admin polish. Do **not** use the main-branch post-receive flow for this preview: it runs migrations and scoped seeding.
+
+After committing/pushing `codex/issue-44-design-v2` to GitHub and passing the build/focused checks, push the same exact branch/SHA to the existing server bare repository (the main-only hook ignores it). Run the committed `deploy/preview-staging.sh SHA --check`, then `--deploy`, as `easytire-deploy`. The narrow script validates an explicit exact-path allowlist, requires the reviewed preview to still be active before replacement, uses the existing deploy lock, builds with isolated candidate storage/environment, preserves current runtime settings and shared storage, and atomically activates a separate release. `/design-revision.txt` exposes the opened SHA. Accepted `bf7f03e` and the previous preview are retained; there are no migrations, seeds, pruning, tests on shared storage or service restarts. A failed post-switch HTTP check restores the previous code/assets pointer, never the database.
+
+Post the exact opened version and review pages in the design PR; do not silently replace a version while it is being reviewed. These previews are not final design acceptance.
+
+Run the script directly from the received commit, not an uncommitted upload or an older current checkout (replace `PUBLISHED_SHA` with the verified 40-character GitHub SHA):
+
+```bash
+set -o pipefail
+git --git-dir=/srv/git/shop-ndi.git show PUBLISHED_SHA:deploy/preview-staging.sh | bash -s -- PUBLISHED_SHA --check
+git --git-dir=/srv/git/shop-ndi.git show PUBLISHED_SHA:deploy/preview-staging.sh | bash -s -- PUBLISHED_SHA --deploy
+```
+
+The exact same branch is first pushed to GitHub, then to `easytire-deploy@95.217.153.189:/srv/git/shop-ndi.git` as `codex/issue-44-design-v2` (never `main`). Compiled Blade templates are release-local; shared templates/media are neither replaced nor flushed. Catchable interruptions during activation restore the previous pointer; an uncatchable process kill requires inspecting `REVISION`/`PREVIOUS_RELEASE` before retrying.
+
 The one-time bootstrap also installs two systemd units:
 
 - `easytire-queue.service` keeps the database queue worker alive and restarts it after failure;
 - `easytire-schedule.timer` runs Laravel's scheduler every minute.
 
-Every activated release calls `queue:restart`, so the long-running worker switches to the new code without granting the deploy hook unrestricted `sudo` access.
+Every release activated by the main-branch hook calls `queue:restart`, so the long-running worker switches to the new code without granting the deploy hook unrestricted `sudo` access. Design-only previews do not restart workers.
 
 Verify them after bootstrap or a server change:
 

@@ -45,7 +45,7 @@
                     {{ __('operations_day.requests_without_date') }}
                 </a>
             </div>
-            <nav class="mt-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5" aria-label="{{ __('operations_day.resource_navigation') }}">
+            <nav class="mt-4 hidden min-w-0 grid-cols-1 gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-5" aria-label="{{ __('operations_day.resource_navigation') }}">
                 @foreach(['all', 'workshop', 'van_1', 'van_2', 'mobile_unassigned'] as $value)
                     @php
                         $resourceParameters = ['date' => $date, 'resource' => $value];

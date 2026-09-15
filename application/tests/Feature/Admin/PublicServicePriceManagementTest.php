@@ -11,10 +11,21 @@ test('public price seed publishes the current price groups in Norwegian and Russ
     $this->seed(PublicServicePriceSeeder::class);
 
     expect(PublicServicePrice::query()->published()->count())->toBe(11);
-    $this->get('/priser')->assertOk()->assertSee('Dekkskift på verksted')->assertSee('550 NOK')->assertSee('data-testid="public-price-row"', false);
+    $workshopUrl = route('storefront.requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']);
+    $mobileUrl = route('storefront.requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']);
+    $hotelUrl = route('storefront.requests.create', ['slug' => 'dekkhotell']);
+
+    $this->get('/priser')
+        ->assertOk()
+        ->assertSee('Dekkskift på verksted')
+        ->assertSee('550 kr')
+        ->assertSee('data-testid="public-price-row"', false)
+        ->assertSee('href="'.e($workshopUrl).'"', false)
+        ->assertSee('href="'.e($mobileUrl).'"', false)
+        ->assertSee('href="'.e($hotelUrl).'"', false);
 
     config()->set('storefront.ru_preview_enabled', true);
-    $this->get('/ru/priser')->assertOk()->assertSee('Замена колёс в мастерской')->assertSee('550 NOK');
+    $this->get('/ru/priser')->assertOk()->assertSee('Замена колёс в мастерской')->assertSee('550 kr');
 });
 
 test('administrator can create edit hide and delete a public service price', function (): void {

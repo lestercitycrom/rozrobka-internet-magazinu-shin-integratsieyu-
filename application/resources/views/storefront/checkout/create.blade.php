@@ -131,21 +131,21 @@
                 <div class="et-stack et-order-summary__lines">
                     @forelse($cart->lines as $line)
                         @php($lineTitle = filled($line->item->modelName) ? trim($line->item->brand.' '.$line->item->modelName) : $line->item->title)
-                        <div class="et-order-summary__row"><span>{{ $lineTitle }} × {{ $line->quantity }}</span><strong>{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</strong></div>
+                        <div class="et-order-summary__row"><span>{{ $lineTitle }} × {{ $line->quantity }}</span><strong><x-storefront-money :minor="$line->total()->minor" :currency="$line->total()->currency" /></strong></div>
                     @empty
                         <p class="et-caption">{{ __('commerce.empty') }}</p>
                     @endforelse
                     @foreach($cart->serviceLines as $line)
-                        <div class="et-order-summary__row" data-testid="checkout-service-item"><span>{{ $line->title(app()->getLocale()) }} × {{ $line->quantity }}</span><strong>{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</strong></div>
+                        <div class="et-order-summary__row" data-testid="checkout-service-item"><span>{{ $line->title(app()->getLocale()) }} × {{ $line->quantity }}</span><strong><x-storefront-money :minor="$line->total()->minor" :currency="$line->total()->currency" /></strong></div>
                     @endforeach
                 </div>
                 <dl class="et-order-summary__breakdown">
-                    <div class="et-order-summary__row"><dt>{{ __('commerce.products_total') }}</dt><dd><strong>{{ number_format($cart->productsTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->productsTotal()->currency }}</strong></dd></div>
-                    @if ($cart->servicesTotal()->minor > 0)<div class="et-order-summary__row"><dt>{{ __('commerce.services_total') }}</dt><dd><strong>{{ number_format($cart->servicesTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->servicesTotal()->currency }}</strong></dd></div>@endif
-                    <div class="et-order-summary__row" data-testid="checkout-vat-summary"><dt>{{ __('commerce.vat_included') }}</dt><dd><strong>{{ number_format($vatMinor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</strong></dd></div>
+                    <div class="et-order-summary__row"><dt>{{ __('commerce.products_total') }}</dt><dd><strong><x-storefront-money :minor="$cart->productsTotal()->minor" :currency="$cart->productsTotal()->currency" /></strong></dd></div>
+                    @if ($cart->servicesTotal()->minor > 0)<div class="et-order-summary__row"><dt>{{ __('commerce.services_total') }}</dt><dd><strong><x-storefront-money :minor="$cart->servicesTotal()->minor" :currency="$cart->servicesTotal()->currency" /></strong></dd></div>@endif
+                    <div class="et-order-summary__row" data-testid="checkout-vat-summary"><dt>{{ __('commerce.vat_included') }}</dt><dd><strong><x-storefront-money :minor="$vatMinor" :currency="$cart->total->currency" /></strong></dd></div>
                     <div class="et-order-summary__row"><dt>{{ __('commerce.mandatory_fees') }}</dt><dd><strong>{{ __('commerce.no_mandatory_fees') }}</strong></dd></div>
                 </dl>
-                <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span>{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</span></div>
+                <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span><x-storefront-money :minor="$cart->total->minor" :currency="$cart->total->currency" /></span></div>
                 <p class="et-help et-order-summary__note">{{ __('commerce.fulfilment_summary') }}</p>
                 <div class="et-alert et-alert--info et-order-summary__note"><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ config('payments.enabled') ? __('commerce.payment_summary_notice') : __('commerce.pending') }}</div></div>
                 <p class="et-help et-order-summary__note" data-testid="checkout-merchant-identity">{{ __('commerce.merchant_identity') }}</p>

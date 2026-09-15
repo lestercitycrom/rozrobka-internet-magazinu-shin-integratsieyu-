@@ -88,6 +88,20 @@
     border-radius: var(--et-admin-radius-control);
 }
 
+.et-admin-body .et-admin-topbar__title {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.et-admin-body .et-admin-topbar__title > div {
+    min-width: 0;
+}
+
+.et-admin-body .et-admin-menu {
+    min-width: 44px;
+    flex: 0 0 44px;
+}
+
 .et-admin-body .et-admin-locale__button:hover {
     background: var(--et-admin-panel-muted);
     color: var(--et-color-ink);
@@ -113,7 +127,10 @@
 
 .et-admin-body .et-admin-content > :where(.space-y-10, .space-y-8, .space-y-6) {
     width: 100%;
-    max-width: none;
+}
+
+.et-admin-body .et-admin-content > :where(.space-y-10, .space-y-8, .space-y-6)[class*='max-w-'] {
+    margin-inline: auto;
 }
 
 .et-admin-body .et-admin-content > :where(.space-y-10, .space-y-8) > :not([hidden]) ~ :not([hidden]) {
@@ -190,6 +207,21 @@
     box-shadow: none;
     outline: var(--et-focus-width) solid var(--et-focus-color-light);
     outline-offset: var(--et-focus-offset);
+}
+
+.et-admin-body .et-admin-content :where(input:not([type='checkbox']):not([type='radio']), select, textarea)[aria-invalid='true'],
+.et-admin-body .et-admin-content :where(input:not([type='checkbox']):not([type='radio']), select, textarea).border-red-600 {
+    border-color: var(--et-color-error);
+    background: var(--et-color-error-soft);
+}
+
+.et-admin-field-error {
+    display: block;
+    margin-top: .45rem;
+    color: var(--et-color-error);
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.35;
 }
 
 .et-admin-body .et-admin-content :where(a, button)[class*='bg-easytire-brand'],
@@ -459,6 +491,16 @@
 }
 
 @media (max-width: 680px) {
+    .et-admin-body .et-admin-user > form:last-child .et-btn {
+        min-width: 0;
+        padding-inline: .6rem;
+        font-size: .72rem;
+    }
+
+    .et-admin-body .et-admin-user > form:last-child .et-btn::before {
+        content: none;
+    }
+
     .et-admin-body .et-admin-content {
         max-width: 100vw;
         padding: 1rem .8rem 1.5rem;
@@ -489,6 +531,12 @@
     .et-admin-work-link:nth-last-child(-n + 2) { min-height: 0; border-right: 0; border-bottom: 1px solid var(--et-admin-border); }
     .et-admin-work-link:last-child { border-bottom: 0; }
     .et-admin-context { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 420px) {
+    .et-admin-body .et-admin-avatar {
+        display: none;
+    }
 }
 
 @media (max-width: 360px) {

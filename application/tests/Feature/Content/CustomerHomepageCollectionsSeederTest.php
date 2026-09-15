@@ -48,10 +48,10 @@ test('customer homepage manifest seeds the exact four offers and two independent
         ->assertOk()
         ->assertSeeInOrder([
             'data-testid="home-dekkhotell"',
+            'data-testid="home-prices"',
             'data-testid="homepage-promotions"',
             'data-testid="homepage-additional-services"',
             'data-testid="home-process"',
-            'data-testid="home-prices"',
             'data-testid="homepage-wheel-services"',
         ], false)
         ->assertSee('data-total="4"', false);

@@ -17,14 +17,13 @@
 @endphp
 
 <x-layouts.storefront :title="$pageTitle" :description="$pageDescription" :canonical="$canonical" active-section="store">
-    <section class="et-page-hero {{ $isStoreLanding ? 'et-page-hero--store' : '' }}">
-        <img class="et-page-hero__photo" src="/brand/workshop-alt.webp" width="1400" height="900" alt="{{ __('pro.content.workshop_image_alt') }}">
+    <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
                 <div class="et-breadcrumbs"><span><a href="{{ route($routePrefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $pageHeading }}</span></div>
-                <p class="et-eyebrow et-eyebrow--light">{{ __('pro.fitment.kicker') }}</p>
+                <p class="et-eyebrow">{{ __('pro.fitment.kicker') }}</p>
                 <h1 class="et-h1">{{ $pageHeading }}</h1>
-                <p class="et-lead et-lead--light">{{ $pageLead }}</p>
+                <p class="et-lead">{{ $pageLead }}</p>
             </div>
         </div>
     </section>
@@ -135,19 +134,6 @@
     </section>
 
     @if ($isStoreLanding)
-        <section class="et-section" aria-labelledby="store-categories-title">
-            <div class="et-container">
-                <p class="et-eyebrow">{{ __('seo_store.categories_kicker') }}</p>
-                <h2 class="et-h2" id="store-categories-title">{{ __('seo_store.categories_title') }}</h2>
-                <p class="et-copy et-store-category-lead">{{ __('seo_store.categories_lead') }}</p>
-                <div class="et-grid-3 et-store-card-grid">
-                    <a class="et-card et-card--interactive" href="{{ route($routePrefix.'tires.index') }}"><div class="et-card__body"><span class="et-step-index">01</span><h3 class="et-h3">{{ __('seo_store.tires_title') }}</h3><p>{{ __('seo_store.tires_text') }}</p><strong>{{ __('seo_store.explore') }} →</strong></div></a>
-                    <a class="et-card et-card--interactive" href="{{ route($routePrefix.'wheels.index') }}"><div class="et-card__body"><span class="et-step-index">02</span><h3 class="et-h3">{{ __('seo_store.wheels_title') }}</h3><p>{{ __('seo_store.wheels_text') }}</p><strong>{{ __('seo_store.explore') }} →</strong></div></a>
-                    <a class="et-card et-card--interactive" href="{{ route($routePrefix.'requests.create', ['slug' => 'omlegging-balansering']) }}"><div class="et-card__body"><span class="et-step-index">03</span><h3 class="et-h3">{{ __('seo_store.packages_title') }}</h3><p>{{ __('seo_store.packages_text') }}</p><strong>{{ __('seo_store.ask_us') }} →</strong></div></a>
-                </div>
-            </div>
-        </section>
-
         <section class="et-section et-section--ink" aria-labelledby="store-process-title">
             <div class="et-container">
                 <p class="et-eyebrow et-eyebrow--light">{{ __('seo_store.advantages_kicker') }}</p>

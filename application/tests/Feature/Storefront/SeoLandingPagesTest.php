@@ -108,7 +108,7 @@ test('mounting landing renders its editable price category when customer amounts
         ->assertOk()
         ->assertSee('data-testid="service-price-list"', false)
         ->assertSee('Omlegging og balansering')
-        ->assertSee('1 234 NOK');
+        ->assertSee('1 234 kr');
 });
 
 test('store and pricing landing pages are available in Norwegian and gated Russian QA', function (): void {
@@ -131,7 +131,7 @@ test('store and pricing landing pages are available in Norwegian and gated Russi
         'is_active' => true,
         'sort_order' => 1,
     ]);
-    $this->get('/priser')->assertOk()->assertSee('149 NOK')->assertSee('data-testid="public-price-list"', false);
+    $this->get('/priser')->assertOk()->assertSee('149 kr')->assertSee('data-testid="public-price-list"', false);
 
     config()->set('storefront.ru_preview_enabled', true);
     $this->get('/ru/dekk-og-felger')->assertOk()->assertSee('Шины и диски для вашего автомобиля')->assertSee('noindex,nofollow', false);

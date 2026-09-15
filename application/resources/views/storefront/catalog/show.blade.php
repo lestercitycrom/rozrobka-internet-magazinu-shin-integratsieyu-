@@ -69,7 +69,7 @@
 
                         @if ($sellingPrice && $item->stock->quantity > 0 && $item->stock->isFresh())
                             <div class="et-product-price">
-                                {{ number_format($sellingPrice->money->minor / 100, 2, ',', ' ') }} {{ $sellingPrice->money->currency }}
+                                <x-storefront-money :minor="$sellingPrice->money->minor" :currency="$sellingPrice->money->currency" />
                                 <small>{{ __('storefront.selling_price_note') }}</small>
                             </div>
                             <form class="et-product-purchase" method="post" action="{{ route($prefix.'cart.add') }}" data-testid="product-cart-form">

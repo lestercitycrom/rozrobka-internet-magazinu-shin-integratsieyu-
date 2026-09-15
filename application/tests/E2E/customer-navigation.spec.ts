@@ -76,7 +76,13 @@ test('customer header, finder and footer stay coherent across the required viewp
         const heroContentBox = await page.locator('.et-v3-hero__content').boundingBox();
         expect(finderBox).not.toBeNull();
         expect(heroContentBox).not.toBeNull();
-        if (desktop) expect(finderBox!.y).toBeGreaterThanOrEqual(heroContentBox!.y + heroContentBox!.height);
+        if (viewport.width >= 1200) {
+            expect(finderBox!.x).toBeGreaterThanOrEqual(heroContentBox!.x + heroContentBox!.width);
+            expect(finderBox!.width).toBeGreaterThanOrEqual(360);
+            expect(finderBox!.width).toBeLessThanOrEqual(400);
+        } else {
+            expect(finderBox!.y).toBeGreaterThanOrEqual(heroContentBox!.y + heroContentBox!.height);
+        }
         expect(finderBox!.x).toBeGreaterThanOrEqual(0);
         expect(finderBox!.x + finderBox!.width).toBeLessThanOrEqual(viewport.width + 1);
 

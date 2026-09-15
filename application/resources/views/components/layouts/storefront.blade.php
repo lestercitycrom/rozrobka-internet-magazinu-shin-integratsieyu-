@@ -100,8 +100,8 @@
             request()->routeIs($routePrefix.'content.show') && $contentSlug === 'kontakt' => 'contact',
             default => null,
         };
-        $storeHref = $storeRoute ?: route($routePrefix.'store.index');
-        $storeNavigationLabel = $storeLabel ?: __('pro.nav.store');
+        $storeHref = route($routePrefix.'store.index');
+        $storeNavigationLabel = __('pro.nav.store');
         $servicesHref = route($routePrefix.'services.index');
         $seasonalHref = route($routePrefix.'seo-services.show', 'dekkskift-tromso');
         $hotelHref = route($routePrefix.'seo-services.show', 'dekkhotell-tromso');
@@ -227,6 +227,8 @@
     <link rel="icon" href="/favicon-96x96.png" sizes="96x96" type="image/png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
+    <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-700-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
     @foreach ($schemas as $schema)
         <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
     @endforeach

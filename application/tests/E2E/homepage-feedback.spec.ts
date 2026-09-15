@@ -3,6 +3,7 @@ import { expectNoGlobalOverflow } from './helpers';
 
 test('approved homepage composition stays coherent at the priority desktop and mobile widths', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial multi-viewport visual contract is enough');
+    test.setTimeout(120_000);
 
     for (const viewport of [
         { width: 1440, height: 1000 },
@@ -34,23 +35,43 @@ test('approved homepage composition stays coherent at the priority desktop and m
         await expectNoGlobalOverflow(page);
 
         const firstPromotion = page.getByTestId('homepage-promotion').first();
-        const promotionDetails = firstPromotion.locator('.et-v3-promotion__details');
         const promotionDisclosure = firstPromotion.locator('[data-promotion-disclosure]');
+        const promotionDialog = firstPromotion.locator('[data-promotion-details]');
+        const cardDocumentBox = () => firstPromotion.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            return { x: rect.x + scrollX, y: rect.y + scrollY, width: rect.width, height: rect.height };
+        });
+        const initialCardBox = await cardDocumentBox();
         await expect(firstPromotion).toBeVisible();
+        await expect(promotionDisclosure).toBeVisible();
+        await expect(promotionDialog).not.toHaveAttribute('open', '');
+        await expect(promotionDisclosure).toHaveAttribute('aria-expanded', 'false');
 
         if (viewport.width > 767) {
+            await firstPromotion.scrollIntoViewIfNeeded();
             await page.mouse.move(0, 0);
-            await expect(promotionDetails).not.toBeVisible();
             await firstPromotion.hover();
-            await expect(promotionDetails).toBeVisible();
+            const hoverPreview = page.locator('body > .et-promotion-hover-preview.is-visible');
+            await expect(hoverPreview).toBeVisible();
+            await expect(hoverPreview).toHaveAttribute('aria-hidden', 'true');
+            await expect(promotionDialog).not.toHaveAttribute('open', '');
+            expect(await cardDocumentBox()).toEqual(initialCardBox);
             await page.mouse.move(0, 0);
-            await promotionDisclosure.focus();
-            await expect(promotionDetails).toBeVisible();
+            await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
         } else {
-            await expect(promotionDetails).not.toBeVisible();
-            await promotionDisclosure.click();
-            await expect(promotionDetails).toBeVisible();
+            await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
         }
+
+        await promotionDisclosure.click();
+        await expect(promotionDialog).toHaveAttribute('open', '');
+        await expect(promotionDialog).toBeVisible();
+        await expect(promotionDisclosure).toHaveAttribute('aria-expanded', 'true');
+        await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
+        expect(await cardDocumentBox()).toEqual(initialCardBox);
+        await page.keyboard.press('Escape');
+        await expect(promotionDialog).not.toHaveAttribute('open', '');
+        await expect(promotionDisclosure).toHaveAttribute('aria-expanded', 'false');
+        await expect(promotionDisclosure).toBeFocused();
 
         const ordering = await page.evaluate(() => {
             const y = (selector: string) => document.querySelector<HTMLElement>(selector)?.getBoundingClientRect().top
@@ -62,8 +83,8 @@ test('approved homepage composition stays coherent at the priority desktop and m
                 prices: y('[data-testid="home-prices"]'),
             };
         });
-        expect(ordering.dekkhotell).toBeLessThan(ordering.process);
-        expect(ordering.process).toBeLessThan(ordering.prices);
+        expect(ordering.dekkhotell).toBeLessThan(ordering.prices);
+        expect(ordering.prices).toBeLessThan(ordering.process);
 
         const mapHeight = await page.getByTestId('map-card').evaluate((element) => element.getBoundingClientRect().height);
         expect(mapHeight).toBeGreaterThanOrEqual(viewport.width <= 640 ? 300 : 400);

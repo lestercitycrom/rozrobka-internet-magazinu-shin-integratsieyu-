@@ -48,6 +48,15 @@ test('owners manage weekly intervals and blackouts in the custom admin', functio
     expect($blackout->starts_at->utc()->format('Y-m-d H:i'))->toBe('2026-10-01 07:00')
         ->and($blackout->reason)->toBe('Ferie');
 
+    $this->actingAs($admin)->get('/admin/booking-calendar/intervals/'.$interval->id.'/edit')
+        ->assertOk()
+        ->assertSee('aria-current="page"', false)
+        ->assertSee(__('booking_calendar.admin.delete_interval_confirm'));
+    $this->actingAs($admin)->get('/admin/booking-calendar/blackouts/'.$blackout->id.'/edit')
+        ->assertOk()
+        ->assertSee('aria-current="page"', false)
+        ->assertSee(__('booking_calendar.admin.delete_blackout_confirm'));
+
     $this->actingAs($admin)->put('/admin/booking-calendar/intervals/'.$interval->id, [
         'weekday' => 2,
         'location' => 'mobile',
