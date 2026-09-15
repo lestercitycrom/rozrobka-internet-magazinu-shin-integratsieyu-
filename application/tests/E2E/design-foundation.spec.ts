@@ -147,6 +147,8 @@ test('mobile finder labels stay readable while preserving full accessible tab na
 
         await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
         expect(await isSingleLine()).toBe(true);
+        const clippedCategories = await page.locator('.et-shop-categories a').evaluateAll((links) => links.filter((link) => link.scrollWidth > link.clientWidth + 1).length);
+        expect(clippedCategories).toBe(0);
         await expectNoGlobalOverflow(page);
     }
 });
