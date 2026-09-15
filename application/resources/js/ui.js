@@ -551,163 +551,76 @@ const initRequestErrorFocus = () => {
     });
 };
 
-const initPromotionCarousels = () => {
-    all('[data-promotion-carousel]').forEach((root) => {
-        const track = one('[data-promotion-track]', root);
-        const cards = track ? all('[data-testid="homepage-promotion"]', track) : [];
-        const section = root.closest('[data-testid="homepage-promotions"]');
-        const previous = section ? one('[data-promotion-previous]', section) : null;
-        const next = section ? one('[data-promotion-next]', section) : null;
-        const status = one('[data-promotion-status]', root);
-        if (!track || cards.length <= 3 || !previous || !next) return;
+let modalScrollLockDepth = 0;
+let modalScrollSnapshot = null;
 
-        let firstVisible = 0;
-        let resizeFrame = 0;
-        const visibleCount = () => {
-            if (window.matchMedia('(min-width: 1121px)').matches) return 3;
-            if (window.matchMedia('(min-width: 768px)').matches) return 2;
-            return 1;
+const lockModalBackground = () => {
+    if (modalScrollLockDepth === 0) {
+        const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+        modalScrollSnapshot = {
+            overflow: document.body.style.overflow,
+            paddingRight: document.body.style.paddingRight,
         };
-        const render = () => {
-            const visible = visibleCount();
-            const maximum = Math.max(0, cards.length - visible);
-            firstVisible = Math.min(Math.max(0, firstVisible), maximum);
-            root.style.setProperty('--cards-visible', String(visible));
-
-            const firstCard = cards[0];
-            const computedTrack = window.getComputedStyle(track);
-            const gap = Number.parseFloat(computedTrack.columnGap || computedTrack.gap || '0') || 0;
-            const step = firstCard.getBoundingClientRect().width + gap;
-            track.style.transform = `translate3d(-${firstVisible * step}px, 0, 0)`;
-            previous.disabled = firstVisible === 0;
-            next.disabled = firstVisible === maximum;
-
-            cards.forEach((card, index) => {
-                const visibleNow = index >= firstVisible && index < firstVisible + visible;
-                card.toggleAttribute('inert', !visibleNow);
-                card.setAttribute('aria-hidden', String(!visibleNow));
-            });
-
-            if (status) {
-                const range = visible === 1
-                    ? String(firstVisible + 1)
-                    : `${firstVisible + 1}–${Math.min(firstVisible + visible, cards.length)}`;
-                status.textContent = (status.dataset.statusTemplate || '')
-                    .replace('__CURRENT__', range)
-                    .replace('__TOTAL__', String(cards.length));
-            }
-        };
-
-        previous.addEventListener('click', () => {
-            firstVisible -= 1;
-            render();
-        });
-        next.addEventListener('click', () => {
-            firstVisible += 1;
-            render();
-        });
-        window.addEventListener('resize', () => {
-            window.cancelAnimationFrame(resizeFrame);
-            resizeFrame = window.requestAnimationFrame(render);
-        }, { passive: true });
-
-        root.classList.add('is-enhanced');
-        render();
-    });
+        const currentPadding = Number.parseFloat(window.getComputedStyle(document.body).paddingRight || '0') || 0;
+        document.body.style.overflow = 'hidden';
+        if (scrollbarWidth > 0) document.body.style.paddingRight = `${currentPadding + scrollbarWidth}px`;
+    }
+    modalScrollLockDepth += 1;
 };
 
-const initPromotionDisclosures = () => {
-    all('[data-promotion-disclosure]').forEach((button) => {
-        const panelId = button.getAttribute('aria-controls');
-        const panel = panelId ? document.getElementById(panelId) : null;
-        const card = button.closest('[data-testid="homepage-promotion"]');
-        if (!panel || !card) return;
-
-        const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)');
-        let hovering = false;
-        let focused = false;
-        let pinnedOpen = false;
-        let ambientSuppressed = false;
-
-        const setOpen = (open) => {
-            button.setAttribute('aria-expanded', String(open));
-            panel.setAttribute('aria-hidden', String(!open));
-            panel.setAttribute('tabindex', open ? '0' : '-1');
-            panel.classList.toggle('is-open', open);
-            card.style.removeProperty('min-height');
-            if (!open) panel.scrollTop = 0;
-        };
-
-        const render = () => setOpen(pinnedOpen || (!ambientSuppressed && (hovering || focused)));
-
-        card.addEventListener('pointerenter', (event) => {
-            if (!hoverCapable.matches || event.pointerType === 'touch') return;
-            hovering = true;
-            ambientSuppressed = false;
-            render();
-        });
-        card.addEventListener('pointerleave', () => {
-            hovering = false;
-            if (!focused) ambientSuppressed = false;
-            render();
-        });
-        card.addEventListener('focusin', () => {
-            if (!focused && !hovering) ambientSuppressed = false;
-            focused = true;
-            render();
-        });
-        card.addEventListener('focusout', () => window.requestAnimationFrame(() => {
-            focused = card.matches(':focus-within');
-            if (!focused && !hovering) ambientSuppressed = false;
-            render();
-        }));
-        button.addEventListener('click', () => {
-            if (pinnedOpen) {
-                pinnedOpen = false;
-                ambientSuppressed = true;
-            } else {
-                pinnedOpen = true;
-                ambientSuppressed = false;
-            }
-            render();
-        });
-        card.addEventListener('keydown', (event) => {
-            if (event.key !== 'Escape' || button.getAttribute('aria-expanded') !== 'true') return;
-            event.preventDefault();
-            pinnedOpen = false;
-            ambientSuppressed = true;
-            setOpen(false);
-            button.focus();
-        });
-        hoverCapable.addEventListener('change', () => {
-            hovering = false;
-            if (!focused) ambientSuppressed = false;
-            render();
-        });
-        setOpen(false);
-    });
+const unlockModalBackground = () => {
+    modalScrollLockDepth = Math.max(0, modalScrollLockDepth - 1);
+    if (modalScrollLockDepth !== 0 || !modalScrollSnapshot) return;
+    document.body.style.overflow = modalScrollSnapshot.overflow;
+    document.body.style.paddingRight = modalScrollSnapshot.paddingRight;
+    modalScrollSnapshot = null;
 };
 
-const initDekkhotellDialog = () => {
-    const dialog = one('[data-dekkhotell-dialog]');
-    const openers = all('[data-dekkhotell-dialog-open]');
-    if (typeof HTMLDialogElement === 'undefined' || !(dialog instanceof HTMLDialogElement) || openers.length === 0) return;
+const notifyModalState = () => {
+    window.dispatchEvent(new CustomEvent('et:modal-statechange', {
+        detail: { open: modalScrollLockDepth > 0, depth: modalScrollLockDepth },
+    }));
+};
+
+const dialogFocusable = (dialog) => all(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    dialog,
+).filter((element) => {
+    if (!(element instanceof HTMLElement) || element.hidden) return false;
+    const style = window.getComputedStyle(element);
+    const bounds = element.getBoundingClientRect();
+    return style.display !== 'none' && style.visibility !== 'hidden' && bounds.width > 0 && bounds.height > 0;
+});
+
+const createModalDialog = (dialog, { closeSelector, onOpen = () => {}, onClose = () => {} }) => {
+    if (typeof HTMLDialogElement === 'undefined' || !(dialog instanceof HTMLDialogElement)) return null;
 
     let returnFocus = null;
+    let ownsScrollLock = false;
+
     const close = () => {
         if (dialog.open) dialog.close();
     };
-
-    openers.forEach((button) => button.addEventListener('click', () => {
-        returnFocus = button;
+    const open = (opener) => {
+        if (dialog.open) return;
+        returnFocus = opener instanceof HTMLElement ? opener : document.activeElement;
         dialog.showModal();
-        one('[data-dekkhotell-dialog-close]', dialog)?.focus();
-    }));
-    all('[data-dekkhotell-dialog-close]', dialog).forEach((button) => button.addEventListener('click', close));
+        lockModalBackground();
+        ownsScrollLock = true;
+        notifyModalState();
+        onOpen();
+        (one(closeSelector, dialog) || dialogFocusable(dialog)[0] || dialog).focus();
+    };
+
+    all(closeSelector, dialog).forEach((button) => button.addEventListener('click', close));
     dialog.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close();
+            return;
+        }
         if (event.key !== 'Tab') return;
-        const focusable = all('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', dialog)
-            .filter((element) => element instanceof HTMLElement && !element.hidden);
+        const focusable = dialogFocusable(dialog);
         if (focusable.length === 0) {
             event.preventDefault();
             dialog.focus();
@@ -727,8 +640,260 @@ const initDekkhotellDialog = () => {
         if (event.target === dialog) close();
     });
     dialog.addEventListener('close', () => {
-        if (returnFocus instanceof HTMLElement) returnFocus.focus();
+        if (ownsScrollLock) {
+            unlockModalBackground();
+            ownsScrollLock = false;
+            notifyModalState();
+        }
+        onClose();
+        if (returnFocus instanceof HTMLElement && returnFocus.isConnected) returnFocus.focus();
+        returnFocus = null;
     });
+
+    return { open, close };
+};
+
+const initPromotionMediaFallbacks = () => {
+    all('[data-media-fallback-image]').forEach((image) => {
+        if (!(image instanceof HTMLImageElement)) return;
+        const card = image.closest('[data-testid="homepage-promotion"]');
+        if (!card) return;
+        const showFallback = () => {
+            image.hidden = true;
+            card.classList.add('has-media-error');
+        };
+        image.addEventListener('error', showFallback, { once: true });
+        if (image.complete && image.naturalWidth === 0) showFallback();
+    });
+};
+
+const initPromotionCarousels = () => {
+    all('[data-promotion-carousel]').forEach((root) => {
+        const track = one('[data-promotion-track]', root);
+        const cards = track ? all('[data-testid="homepage-promotion"]', track) : [];
+        const section = root.closest('[data-testid="homepage-promotions"]');
+        const previous = section ? one('[data-promotion-previous]', section) : null;
+        const next = section ? one('[data-promotion-next]', section) : null;
+        const controls = section ? one('[data-promotion-controls]', section) : null;
+        const status = one('[data-promotion-status]', root);
+        if (!track || cards.length < 2 || !previous || !next) return;
+
+        let firstVisible = 0;
+        let resizeFrame = 0;
+        let touchStart = null;
+        const visibleCount = () => {
+            if (window.matchMedia('(min-width: 1200px)').matches) return 3;
+            if (window.matchMedia('(min-width: 768px)').matches) return 2;
+            return 1;
+        };
+        const render = () => {
+            const visible = Math.min(cards.length, visibleCount());
+            const maximum = Math.max(0, cards.length - visible);
+            const hasOverflow = maximum > 0;
+            firstVisible = Math.min(Math.max(0, firstVisible), maximum);
+            root.style.setProperty('--cards-visible', String(visible));
+
+            const firstCard = cards[0];
+            const computedTrack = window.getComputedStyle(track);
+            const gap = Number.parseFloat(computedTrack.columnGap || computedTrack.gap || '0') || 0;
+            const step = firstCard.getBoundingClientRect().width + gap;
+            track.style.transform = hasOverflow ? `translate3d(-${firstVisible * step}px, 0, 0)` : '';
+            if (controls) controls.hidden = !hasOverflow;
+            previous.hidden = !hasOverflow;
+            next.hidden = !hasOverflow;
+            previous.disabled = firstVisible === 0;
+            next.disabled = firstVisible === maximum;
+
+            cards.forEach((card, index) => {
+                const visibleNow = index >= firstVisible && index < firstVisible + visible;
+                card.toggleAttribute('inert', !visibleNow);
+                card.setAttribute('aria-hidden', String(!visibleNow));
+            });
+
+            if (status) {
+                status.hidden = !hasOverflow;
+                const range = visible === 1
+                    ? String(firstVisible + 1)
+                    : `${firstVisible + 1}–${Math.min(firstVisible + visible, cards.length)}`;
+                status.textContent = (status.dataset.statusTemplate || '')
+                    .replace('__CURRENT__', range)
+                    .replace('__TOTAL__', String(cards.length));
+            }
+        };
+
+        const move = (direction) => {
+            const maximum = Math.max(0, cards.length - Math.min(cards.length, visibleCount()));
+            firstVisible = Math.min(maximum, Math.max(0, firstVisible + direction));
+            render();
+        };
+
+        previous.addEventListener('click', () => move(-1));
+        next.addEventListener('click', () => move(1));
+        track.addEventListener('touchstart', (event) => {
+            if (event.touches.length !== 1) {
+                touchStart = null;
+                return;
+            }
+            touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+        }, { passive: true });
+        track.addEventListener('touchend', (event) => {
+            if (!touchStart || event.changedTouches.length !== 1) {
+                touchStart = null;
+                return;
+            }
+            const deltaX = event.changedTouches[0].clientX - touchStart.x;
+            const deltaY = event.changedTouches[0].clientY - touchStart.y;
+            const threshold = Math.max(36, root.getBoundingClientRect().width * 0.08);
+            touchStart = null;
+            if (Math.abs(deltaX) < threshold || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) return;
+            move(deltaX < 0 ? 1 : -1);
+        }, { passive: true });
+        track.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
+        window.addEventListener('resize', () => {
+            window.cancelAnimationFrame(resizeFrame);
+            resizeFrame = window.requestAnimationFrame(render);
+        }, { passive: true });
+
+        root.classList.add('is-enhanced');
+        render();
+    });
+};
+
+const initPromotionDisclosures = () => {
+    if (typeof HTMLDialogElement === 'undefined') return;
+
+    all('[data-promotion-disclosure]').forEach((button) => {
+        const dialogId = button.getAttribute('aria-controls');
+        const dialog = dialogId ? document.getElementById(dialogId) : null;
+        const card = button.closest('[data-testid="homepage-promotion"]');
+        const preview = card ? one('[data-promotion-preview]', card) : null;
+        const nativeDetails = card ? one('[data-promotion-native-details]', card) : null;
+        if (!(dialog instanceof HTMLDialogElement) || !card) return;
+
+        const hoverCapable = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)');
+        let previewTimer = 0;
+        let floatingPreview = null;
+
+        const removeFloatingPreview = ({ immediate = false } = {}) => {
+            const target = floatingPreview;
+            floatingPreview = null;
+            card.classList.remove('is-previewing');
+            if (!target) return;
+            target.classList.remove('is-visible');
+            if (immediate) {
+                target.remove();
+                return;
+            }
+            window.setTimeout(() => target.remove(), 220);
+        };
+        const hidePreview = (options) => {
+            window.clearTimeout(previewTimer);
+            previewTimer = 0;
+            removeFloatingPreview(options);
+        };
+        const showFloatingPreview = () => {
+            if (!preview || dialog.open || !card.matches(':hover')) return;
+            removeFloatingPreview({ immediate: true });
+
+            const clone = preview.cloneNode(true);
+            clone.removeAttribute('id');
+            clone.removeAttribute('data-promotion-preview');
+            clone.className = 'et-promotion-hover-preview';
+            clone.setAttribute('aria-hidden', 'true');
+            clone.style.position = 'fixed';
+            clone.style.visibility = 'hidden';
+            clone.style.width = `${Math.min(320, window.innerWidth - 32)}px`;
+            clone.style.left = '0';
+            clone.style.top = '0';
+            document.body.append(clone);
+
+            const cardBounds = card.getBoundingClientRect();
+            const previewBounds = clone.getBoundingClientRect();
+            const margin = 16;
+            const gap = 8;
+            const clamp = (value, minimum, maximum) => Math.min(Math.max(value, minimum), maximum);
+            const vertical = clamp(cardBounds.top, margin, window.innerHeight - previewBounds.height - margin);
+            const horizontal = clamp(cardBounds.left, margin, window.innerWidth - previewBounds.width - margin);
+            const placements = [
+                { left: cardBounds.right + gap, top: vertical },
+                { left: cardBounds.left - previewBounds.width - gap, top: vertical },
+                { left: horizontal, top: cardBounds.top - previewBounds.height - gap },
+                { left: horizontal, top: cardBounds.bottom + gap },
+            ];
+            const placement = placements.find(({ left, top }) => left >= margin
+                && top >= margin
+                && left + previewBounds.width <= window.innerWidth - margin
+                && top + previewBounds.height <= window.innerHeight - margin);
+
+            if (!placement) {
+                clone.remove();
+                return;
+            }
+            clone.style.left = `${placement.left}px`;
+            clone.style.top = `${placement.top}px`;
+            clone.style.visibility = '';
+            floatingPreview = clone;
+            card.classList.add('is-previewing');
+            window.requestAnimationFrame(() => {
+                if (floatingPreview === clone && !dialog.open) clone.classList.add('is-visible');
+            });
+        };
+        const schedulePreview = () => {
+            hidePreview({ immediate: true });
+            if (!preview || !hoverCapable.matches || dialog.open) return;
+            previewTimer = window.setTimeout(() => {
+                previewTimer = 0;
+                showFloatingPreview();
+            }, 180);
+        };
+        const modal = createModalDialog(dialog, {
+            closeSelector: '[data-promotion-dialog-close]',
+            onOpen: () => {
+                hidePreview({ immediate: true });
+                button.setAttribute('aria-expanded', 'true');
+            },
+            onClose: () => {
+                button.setAttribute('aria-expanded', 'false');
+                hidePreview({ immediate: true });
+            },
+        });
+        if (!modal) return;
+
+        card.addEventListener('pointerenter', (event) => {
+            if (!hoverCapable.matches || event.pointerType === 'touch') return;
+            schedulePreview();
+        });
+        card.addEventListener('pointerleave', () => hidePreview());
+        button.addEventListener('click', () => {
+            hidePreview({ immediate: true });
+            modal.open(button);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || (!previewTimer && !card.classList.contains('is-previewing'))) return;
+            hidePreview();
+        });
+        hoverCapable.addEventListener('change', () => {
+            hidePreview({ immediate: true });
+        });
+        window.addEventListener('scroll', () => hidePreview({ immediate: true }), { passive: true });
+        window.addEventListener('resize', () => hidePreview({ immediate: true }), { passive: true });
+        button.setAttribute('aria-expanded', 'false');
+        if (nativeDetails) nativeDetails.hidden = true;
+        button.hidden = false;
+        hidePreview({ immediate: true });
+    });
+};
+
+const initDekkhotellDialog = () => {
+    if (typeof HTMLDialogElement === 'undefined') return;
+
+    const dialog = one('[data-dekkhotell-dialog]');
+    const openers = all('[data-dekkhotell-dialog-open]');
+    if (!(dialog instanceof HTMLDialogElement) || openers.length === 0) return;
+
+    const modal = createModalDialog(dialog, { closeSelector: '[data-dekkhotell-dialog-close]' });
+    if (!modal) return;
+    openers.forEach((button) => button.addEventListener('click', () => modal.open(button)));
 };
 
 const initHomepageVideos = () => {
@@ -738,6 +903,13 @@ const initHomepageVideos = () => {
         if (!(video instanceof HTMLVideoElement) || !(control instanceof HTMLButtonElement)) return;
 
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let visible = false;
+        let userPaused = false;
+        let manualPlayOverride = false;
+        let loadStarted = Boolean(video.currentSrc || video.getAttribute('src'));
+        let failed = false;
+        let playRequest = 0;
+
         const render = () => {
             const paused = video.paused;
             const label = paused ? control.dataset.playLabel : control.dataset.pauseLabel;
@@ -746,36 +918,110 @@ const initHomepageVideos = () => {
             control.setAttribute('aria-pressed', String(paused));
         };
         const failSafe = () => {
+            failed = true;
+            video.pause();
             video.hidden = true;
             control.hidden = true;
+            root.classList.remove('is-video-playing', 'is-video-blocked');
             root.classList.add('has-video-error');
         };
-        const respectMotionPreference = () => {
-            if (reducedMotion.matches) {
+        const loadSource = () => {
+            if (loadStarted || failed) return;
+            const source = video.dataset.src;
+            if (!source) {
+                failSafe();
+                return;
+            }
+            loadStarted = true;
+            video.src = source;
+            video.load();
+        };
+        const shouldPlay = () => visible
+            && document.visibilityState === 'visible'
+            && (!reducedMotion.matches || manualPlayOverride)
+            && !userPaused
+            && modalScrollLockDepth === 0
+            && !failed;
+        const updatePlayback = () => {
+            if (!shouldPlay()) {
+                playRequest += 1;
                 video.pause();
-                video.currentTime = 0;
-            } else {
-                video.play().catch(() => {
-                    if (video.error) failSafe();
-                    else render();
+                root.classList.remove('is-video-playing');
+                render();
+                return;
+            }
+            loadSource();
+            if (failed) return;
+            const request = ++playRequest;
+            const playback = video.play();
+            if (playback && typeof playback.catch === 'function') {
+                playback.catch(() => {
+                    if (request !== playRequest) return;
+                    if (video.error) {
+                        failSafe();
+                        return;
+                    }
+                    root.classList.remove('is-video-playing');
+                    root.classList.add('is-video-blocked');
+                    render();
                 });
             }
-            render();
+        };
+        const revealAfterFrame = () => {
+            const reveal = () => {
+                if (video.paused || failed) return;
+                root.classList.remove('is-video-blocked');
+                root.classList.add('is-video-playing');
+                render();
+            };
+            if (typeof video.requestVideoFrameCallback === 'function') video.requestVideoFrameCallback(reveal);
+            else window.requestAnimationFrame(reveal);
         };
 
         control.addEventListener('click', () => {
-            if (video.paused) video.play().catch(failSafe);
-            else video.pause();
+            if (video.paused) {
+                userPaused = false;
+                manualPlayOverride = true;
+                root.classList.remove('is-video-blocked');
+                updatePlayback();
+            } else {
+                userPaused = true;
+                manualPlayOverride = false;
+                video.pause();
+            }
         });
-        video.addEventListener('play', render);
-        video.addEventListener('pause', render);
+        video.addEventListener('playing', revealAfterFrame);
+        video.addEventListener('pause', () => {
+            root.classList.remove('is-video-playing');
+            render();
+        });
         video.addEventListener('error', failSafe);
-        reducedMotion.addEventListener('change', respectMotionPreference);
-        if (video.error) {
+        reducedMotion.addEventListener('change', () => {
+            manualPlayOverride = false;
+            updatePlayback();
+        });
+        window.addEventListener('et:modal-statechange', updatePlayback);
+        document.addEventListener('visibilitychange', updatePlayback);
+        if (video.error || (!loadStarted && !video.dataset.src)) {
             failSafe();
             return;
         }
-        respectMotionPreference();
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        control.hidden = false;
+        render();
+
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                visible = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.15);
+                updatePlayback();
+            }, { threshold: [0, 0.15, 0.5] });
+            observer.observe(root);
+        } else {
+            visible = true;
+            updatePlayback();
+        }
     });
 };
 
@@ -823,6 +1069,7 @@ initTabs();
 initBookingFlow();
 initConditionalAddress();
 initRequestErrorFocus();
+initPromotionMediaFallbacks();
 initPromotionCarousels();
 initPromotionDisclosures();
 initDekkhotellDialog();

@@ -75,8 +75,8 @@
                                     </div>
                                 </div>
                                 <dl class="et-cart-item__price">
-                                    <div><dt class="et-caption">{{ __('commerce.unit_price') }}</dt><dd>{{ number_format($line->price->money->minor / 100, 2, ',', ' ') }} {{ $line->price->money->currency }}</dd></div>
-                                    <div class="et-cart-line-total"><dt class="et-caption">{{ __('commerce.line_total') }}</dt><dd class="et-price">{{ number_format($line->total()->minor / 100, 2, ',', ' ') }} {{ $line->total()->currency }}</dd></div>
+                                    <div><dt class="et-caption">{{ __('commerce.unit_price') }}</dt><dd><x-storefront-money :minor="$line->price->money->minor" :currency="$line->price->money->currency" /></dd></div>
+                                    <div class="et-cart-line-total"><dt class="et-caption">{{ __('commerce.line_total') }}</dt><dd class="et-price"><x-storefront-money :minor="$line->total()->minor" :currency="$line->total()->currency" /></dd></div>
                                 </dl>
                             </article>
                         @endforeach
@@ -123,7 +123,7 @@
                                                         @if ($option->selected)<span class="et-badge et-badge--red">{{ __('commerce.service_selected') }}</span>@endif
                                                     </div>
                                                     <small>{{ __('commerce.service_'.$option->billingMode->value) }} · {{ __('commerce.quantity') }}: {{ $option->quantity }}</small>
-                                                    <div class="et-price et-cart-addon-price">{{ number_format($option->total()->minor / 100, 2, ',', ' ') }} {{ $option->total()->currency }}</div>
+                                                    <div class="et-price et-cart-addon-price"><x-storefront-money :minor="$option->total()->minor" :currency="$option->total()->currency" /></div>
                                                 </div>
                                                 <form method="post" action="{{ route($prefix.($option->selected ? 'cart.services.remove' : 'cart.services.add')) }}">
                                                     @csrf
@@ -157,10 +157,10 @@
                     <aside class="et-order-summary">
                         <p class="et-eyebrow">{{ __('commerce.cart_total') }}</p>
                         <dl>
-                            <div class="et-order-summary__row"><dt>{{ __('commerce.products_total') }}</dt><dd><strong>{{ number_format($cart->productsTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->productsTotal()->currency }}</strong></dd></div>
-                            @if ($cart->servicesTotal()->minor > 0)<div class="et-order-summary__row"><dt>{{ __('commerce.services_total') }}</dt><dd><strong>{{ number_format($cart->servicesTotal()->minor / 100, 2, ',', ' ') }} {{ $cart->servicesTotal()->currency }}</strong></dd></div>@endif
+                            <div class="et-order-summary__row"><dt>{{ __('commerce.products_total') }}</dt><dd><strong><x-storefront-money :minor="$cart->productsTotal()->minor" :currency="$cart->productsTotal()->currency" /></strong></dd></div>
+                            @if ($cart->servicesTotal()->minor > 0)<div class="et-order-summary__row"><dt>{{ __('commerce.services_total') }}</dt><dd><strong><x-storefront-money :minor="$cart->servicesTotal()->minor" :currency="$cart->servicesTotal()->currency" /></strong></dd></div>@endif
                         </dl>
-                        <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span>{{ number_format($cart->total->minor / 100, 2, ',', ' ') }} {{ $cart->total->currency }}</span></div>
+                        <div class="et-order-summary__total"><span>{{ __('commerce.cart_total') }}</span><span><x-storefront-money :minor="$cart->total->minor" :currency="$cart->total->currency" /></span></div>
                         @if ($cart->issues !== [] || $cart->serviceIssues !== [])
                             <div class="et-alert et-alert--warning et-cart-summary-action" role="alert"><span class="et-alert__icon" aria-hidden="true">!</span><div>{{ __('commerce.issues') }}</div></div>
                         @else

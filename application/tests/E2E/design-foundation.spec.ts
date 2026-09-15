@@ -24,18 +24,18 @@ async function box(locator: Locator): Promise<Box> {
     return bounds!;
 }
 
-async function expectFunctionalType(page: Page, route: string, viewport: { width: number; height: number }, expectedH1: number, expectedH3: number) {
+async function expectFunctionalType(page: Page, route: string, viewport: { width: number; height: number }, expectedH1: number, expectedH2: number) {
     await page.setViewportSize(viewport);
     await page.goto(route);
     const h1 = await typography(page.locator('main h1').first());
-    const h3 = await typography(page.locator('main .et-h3').first());
+    const h2 = await typography(page.locator('main .et-service-detail__intro .et-h2'));
 
     expect(h1.family).toMatch(/^Barlow\b/i);
     expect(h1.size).toBeCloseTo(expectedH1, 1);
     expect(h1.weight).toBe('700');
-    expect(h3.family).toMatch(/^Barlow\b/i);
-    expect(h3.size).toBeCloseTo(expectedH3, 1);
-    expect(h3.weight).toBe('700');
+    expect(h2.family).toMatch(/^Barlow\b/i);
+    expect(h2.size).toBeCloseTo(expectedH2, 1);
+    expect(h2.weight).toBe('700');
     await expectNoGlobalOverflow(page);
 }
 
@@ -86,11 +86,46 @@ test('DS-1 typography and responsive home composition stay on the approved scale
     await expectNoGlobalOverflow(page);
 });
 
+test('home hero and finder preserve content at 200 percent reflow and text-only proxies', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic zoom proxy pass is sufficient');
+
+    const expectSeparatedHero = async () => {
+        const content = await box(page.locator('.et-v3-hero__content'));
+        const finder = await box(page.getByTestId('quick-finder'));
+        expect(finder.y).toBeGreaterThanOrEqual(content.y + content.height - 1);
+        expect(finder.x).toBeGreaterThanOrEqual(0);
+        expect(finder.x + finder.width).toBeLessThanOrEqual(await page.evaluate(() => document.documentElement.clientWidth));
+        await expectNoGlobalOverflow(page);
+    };
+
+    await page.setViewportSize({ width: 720, height: 450 });
+    await page.goto('/');
+    await expectSeparatedHero();
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+    await expectSeparatedHero();
+    const headerOverlaps = await page.locator('[data-site-header]').evaluate((header) => {
+        const items = [...header.querySelectorAll('a, button')].filter((element) => {
+            const style = getComputedStyle(element);
+            const bounds = element.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden' && bounds.width > 0;
+        });
+        return items.flatMap((first, index) => items.slice(index + 1).filter((second) => {
+            const a = first.getBoundingClientRect();
+            const b = second.getBoundingClientRect();
+            return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        }).map((second) => [(first.textContent || first.getAttribute('aria-label') || '').trim(), (second.textContent || second.getAttribute('aria-label') || '').trim()]));
+    });
+    expect(headerOverlaps).toEqual([]);
+});
+
 test('functional reference pages keep DS-1 headings and the store header label stays stable', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic multi-route DS-1 pass is sufficient');
 
-    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 1440, height: 900 }, 40, 24);
-    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 390, height: 844 }, 32, 20);
+    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 1440, height: 900 }, 40, 40);
+    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 390, height: 844 }, 32, 28);
 
     for (const route of ['/dekk', '/felger']) {
         await page.setViewportSize({ width: 1440, height: 900 });

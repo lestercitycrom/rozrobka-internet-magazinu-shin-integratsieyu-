@@ -95,7 +95,8 @@
     $hotelVideoAsset = $storefrontSettings?->hotelVideoMedia;
     $hotelVideoUrl = $hotelVideoAsset
         ? \Illuminate\Support\Facades\Storage::disk($hotelVideoAsset->disk)->url($hotelVideoAsset->path)
-        : null;
+        : '/brand/easytire-workshop-loop.mp4';
+    $hotelVideoPoster = $hotelVideoAsset ? $mobileImage : '/brand/easytire-workshop-poster.webp';
     $storedSocialLinks = app(\App\Modules\Content\ReadModel\StorefrontSettingsReadService::class)->socialLinks();
     $socialLinks = collect([
         ['label' => __('pro.home.social_facebook'), 'url' => $storedSocialLinks['facebook_url']],
@@ -284,10 +285,10 @@
                 </article>
                 <article class="et-v3-logistics-card et-v3-logistics-card--video">
                     <div class="et-v3-logistics-media" data-homepage-video>
-                        <img class="et-v3-logistics-media__poster" src="{{ $mobileImage }}" width="1200" height="900" loading="eager" alt="{{ $mobileImageAlt }}">
+                        <img class="et-v3-logistics-media__poster" src="{{ $hotelVideoPoster }}" width="720" height="1280" loading="lazy" alt="{{ $mobileImageAlt }}">
                         @if ($hotelVideoUrl)
-                            <video class="et-v3-logistics-media__video" src="{{ $hotelVideoUrl }}" poster="{{ $mobileImage }}" autoplay muted loop playsinline preload="metadata" aria-label="{{ __('project.home.hotel_video_label') }}" data-homepage-video-element></video>
-                            <button class="et-v3-logistics-media__control" type="button" aria-pressed="false" data-homepage-video-control data-pause-label="{{ __('project.home.video_pause') }}" data-play-label="{{ __('project.home.video_play') }}">{{ __('project.home.video_pause') }}</button>
+                            <video class="et-v3-logistics-media__video" data-src="{{ $hotelVideoUrl }}" poster="{{ $hotelVideoPoster }}" muted loop playsinline preload="none" aria-label="{{ __('project.home.hotel_video_label') }}" data-homepage-video-element></video>
+                            <button class="et-v3-logistics-media__control" type="button" aria-pressed="false" hidden data-homepage-video-control data-pause-label="{{ __('project.home.video_pause') }}" data-play-label="{{ __('project.home.video_play') }}">{{ __('project.home.video_pause') }}</button>
                         @endif
                     </div>
                     <div class="et-v3-logistics-card__content">
@@ -314,6 +315,35 @@
             <a class="et-btn et-btn--primary" href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}">{{ $storefrontValue('hotel_cta_'.$homepageLocale, __('pro.home.hotel_link')) }}</a>
         </div>
     </dialog>
+
+    <section class="et-home-prices" aria-labelledby="home-prices-title" data-testid="home-prices">
+        <div class="et-container et-home-prices__inner">
+            <header>
+                <p class="et-eyebrow">{{ __('pro.home.price_kicker') }}</p>
+                <h2 id="home-prices-title">{{ __('pro.home.price_title') }}</h2>
+            </header>
+            <div class="et-home-prices__list">
+                @forelse ($homepagePriceGroups as $price)
+                    @php
+                        $priceRequestUrl = match ((string) $price->category_code) {
+                            'workshop' => route($routePrefix.'requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']),
+                            'mobile' => route($routePrefix.'requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']),
+                            'hotel' => route($routePrefix.'requests.create', ['slug' => 'dekkhotell']),
+                            default => route($routePrefix.'pricing.index'),
+                        };
+                    @endphp
+                    <a href="{{ $priceRequestUrl }}">
+                        <span>{{ $price->localized('category_title', $homepageLocale) }}</span>
+                        <strong><small>{{ __('pro.home.price_from') }}</small> <x-storefront-money :minor="$price->price_minor" :currency="$price->currency" :decimals="0" /></strong>
+                        <x-icon name="arrow" :size="18" />
+                    </a>
+                @empty
+                    <a href="{{ route($routePrefix.'pricing.index') }}"><span>{{ __('pro.home.price_pending') }}</span><strong>{{ __('pro.home.price_all') }}</strong><x-icon name="arrow" :size="18" /></a>
+                @endforelse
+            </div>
+            <a class="et-home-prices__all" href="{{ route($routePrefix.'pricing.index') }}">{{ __('pro.home.price_all') }} <x-icon name="arrow" :size="17" /></a>
+        </div>
+    </section>
 
     @include('storefront._homepage-promotions')
 
@@ -381,27 +411,6 @@
                 @endforeach
             </div>
             <a class="et-btn et-btn--primary et-v3-process-strip__cta" href="{{ $bookingUrl }}?fulfilment=mobile">{{ $storefrontValue('process_cta_'.$homepageLocale, __('project.home.process_cta')) }} <x-icon name="arrow" :size="18" /></a>
-        </div>
-    </section>
-
-    <section class="et-home-prices" aria-labelledby="home-prices-title" data-testid="home-prices">
-        <div class="et-container et-home-prices__inner">
-            <header>
-                <p class="et-eyebrow">{{ __('pro.home.price_kicker') }}</p>
-                <h2 id="home-prices-title">{{ __('pro.home.price_title') }}</h2>
-            </header>
-            <div class="et-home-prices__list">
-                @forelse ($homepagePriceGroups as $price)
-                    <a href="{{ route($routePrefix.'pricing.index') }}">
-                        <span>{{ $price->localized('category_title', $homepageLocale) }}</span>
-                        <strong><small>{{ __('pro.home.price_from') }}</small> {{ number_format($price->price_minor / 100, 0, ',', ' ') }} kr</strong>
-                        <x-icon name="arrow" :size="18" />
-                    </a>
-                @empty
-                    <a href="{{ route($routePrefix.'pricing.index') }}"><span>{{ __('pro.home.price_pending') }}</span><strong>{{ __('pro.home.price_all') }}</strong><x-icon name="arrow" :size="18" /></a>
-                @endforelse
-            </div>
-            <a class="et-home-prices__all" href="{{ route($routePrefix.'pricing.index') }}">{{ __('pro.home.price_all') }} <x-icon name="arrow" :size="17" /></a>
         </div>
     </section>
 

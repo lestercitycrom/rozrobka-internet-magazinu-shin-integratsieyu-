@@ -23,7 +23,7 @@ git --git-dir="$REPO" merge-base --is-ancestor "$BASE" "$revision" || fail 'Cand
 while IFS= read -r -d '' file; do
     case "$file" in
         application/resources/css/app.css|application/resources/css/design-tokens.css|application/resources/css/pro-design.css|application/resources/css/storefront-v3.css|application/resources/css/storefront-contracts.css|application/resources/views/storefront/*|application/resources/views/components/layouts/storefront.blade.php|application/resources/views/components/icon.blade.php|application/resources/views/welcome.blade.php|application/resources/js/ui.js|application/resources/js/catalog-live.js|application/resources/js/product-media.js|application/lang/nb/pro.php|application/lang/ru/pro.php|application/tests/*|application/playwright.config.ts|project-control/*|evidence/*|deploy/preview-staging.sh|deploy/tests/preview-staging-safety.sh|deploy/README.md) ;;
-        application/public/brand/*.webp|application/public/brand/*.jpg|application/public/brand/*.jpeg|application/public/brand/*.png|application/public/brand/*.avif|application/public/brand/*.svg|application/public/brand/*.mp4|application/public/brand/*.webm|application/public/brand/*.woff2) ;;
+        application/resources/views/components/storefront-money.blade.php|application/public/brand/*.webp|application/public/brand/*.jpg|application/public/brand/*.jpeg|application/public/brand/*.png|application/public/brand/*.avif|application/public/brand/*.svg|application/public/brand/*.mp4|application/public/brand/*.webm|application/public/brand/*.woff2) ;;
         *) fail "Outside presentation-only preview scope: $file" ;;
     esac
 done < <(git --git-dir="$REPO" diff --name-only -z "$BASE" "$revision")

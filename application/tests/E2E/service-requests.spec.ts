@@ -28,8 +28,8 @@ test('seasonal quote updates to the exact public price for one car', async ({ pa
     await vehicleField(page, 0, 'storage_plan').selectOption('none');
 
     const quote = page.locator('[data-seasonal-quote-text]');
-    await expect(quote).toContainText(/600\s*NOK/);
-    await expect(page.locator('[data-seasonal-summary-price]')).toContainText(/600\s*NOK/);
+    await expect(quote).toContainText(/600\s*kr/);
+    await expect(page.locator('[data-seasonal-summary-price]')).toContainText(/600\s*kr/);
     await expectNoGlobalOverflow(page);
 });
 
@@ -51,12 +51,12 @@ test('seasonal quote includes both cars and a renewed six-month hotel period', a
     await vehicleField(page, 1, 'rim_band').selectOption('r19');
     await vehicleField(page, 1, 'storage_plan').selectOption('none');
 
-    await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/2\s*300\s*NOK/);
-    await expect(page.locator('[data-seasonal-summary-price]')).toContainText(/2\s*300\s*NOK/);
+    await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/2\s*300\s*kr/);
+    await expect(page.locator('[data-seasonal-summary-price]')).toContainText(/2\s*300\s*kr/);
 
     await vehicleField(page, 0, 'rim_band').selectOption('unknown');
     await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/[–-]/);
-    await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/NOK/);
+    await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/kr/);
     await expectNoGlobalOverflow(page);
 });
 
@@ -78,7 +78,7 @@ test('seasonal form handles five cars and LAST without a new hotel period', asyn
         await vehicleField(page, index, 'storage_plan').selectOption(index === 0 ? 'last' : 'none');
     }
 
-    await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/3\s*000\s*NOK/);
+    await expect(page.locator('[data-seasonal-quote-text]')).toContainText(/3\s*000\s*kr/);
     await expect(field(page, 'booking_mode')).toHaveValue('period');
     await expect(page.locator('[data-exact-vehicle-limit]')).toBeVisible();
     await expect(page.locator('[name$="[storage_number]"]')).toHaveCount(0);

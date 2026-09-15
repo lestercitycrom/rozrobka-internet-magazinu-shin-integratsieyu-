@@ -203,7 +203,7 @@
                                     </div>
                                     <div class="et-alert et-alert--info et-request-notice" data-exact-vehicle-limit hidden><span class="et-alert__icon" aria-hidden="true">i</span><div>{{ __('service_requests.form.exact_vehicle_limit') }}</div></div>
 
-                                    <div class="et-alert et-alert--info et-request-notice" data-seasonal-quote data-exact-template="{{ __('service_requests.form.quote_exact') }}" data-range-template="{{ __('service_requests.form.quote_range') }}" data-unavailable-template="{{ __('service_requests.form.quote_unavailable') }}"><span class="et-alert__icon" aria-hidden="true">i</span><div data-seasonal-quote-text>{{ __('service_requests.form.quote_unavailable') }}</div></div>
+                                    <div class="et-alert et-alert--info et-request-notice" data-seasonal-quote data-exact-template="{{ str_replace('NOK', 'kr', __('service_requests.form.quote_exact')) }}" data-range-template="{{ str_replace('NOK', 'kr', __('service_requests.form.quote_range')) }}" data-unavailable-template="{{ __('service_requests.form.quote_unavailable') }}"><span class="et-alert__icon" aria-hidden="true">i</span><div data-seasonal-quote-text>{{ __('service_requests.form.quote_unavailable') }}</div></div>
                                     <div class="et-step-actions"><button class="et-btn et-btn--outline" type="button" data-booking-back>{{ __('pro.booking.back') }}</button><button class="et-btn et-btn--primary" type="button" data-booking-next>{{ __('pro.booking.next') }}</button></div>
                                 </section>
 

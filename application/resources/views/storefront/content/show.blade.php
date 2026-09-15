@@ -36,14 +36,13 @@
 <x-layouts.storefront :title="$page->metaTitle ?? ('EasyTire | '.$page->title)" :description="$page->metaDescription" :active-section="$isAbout ? 'about' : ($isContact ? 'contact' : null)">
     @if ($isContact)
         <article>
-            <section class="et-page-hero">
-                <img data-testid="page-hero" class="et-page-hero__photo" src="{{ $heroUrl }}" width="1400" height="900" alt="{{ $heroAlt }}" @if($page->hero) loading="eager" @else loading="lazy" @endif>
+            <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
                 <div class="et-container et-page-hero__inner">
                     <div class="et-page-hero__content">
                         <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $page->title }}</span></div>
-                        <p class="et-eyebrow et-eyebrow--light">{{ __('pro.content.contact_kicker') }}</p>
+                        <p class="et-eyebrow">{{ __('pro.content.contact_kicker') }}</p>
                         <h1 class="et-h1">{{ __('pro.content.contact_title') }}</h1>
-                        <p class="et-lead et-lead--light">{{ $page->excerpt ?: __('pro.content.contact_intro') }}</p>
+                        <p class="et-lead">{{ $page->excerpt ?: __('pro.content.contact_intro') }}</p>
                     </div>
                 </div>
             </section>
@@ -85,6 +84,9 @@
                         </div>
                     </div>
 
+                    @if ($page->hero)
+                        <img data-testid="page-hero" class="et-cms-hero et-content-followup" src="{{ $heroUrl }}" alt="{{ $heroAlt }}" loading="lazy">
+                    @endif
                     @if ($page->body)
                         <div class="et-card et-card--flat et-content-followup">
                             <div class="et-card__body et-richtext">{!! \Illuminate\Support\Str::markdown($page->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
@@ -100,14 +102,13 @@
         </article>
     @elseif ($isAbout)
         <article>
-            <section class="et-page-hero">
-                <img data-testid="page-hero" class="et-page-hero__photo" src="{{ $heroUrl }}" width="1400" height="1050" alt="{{ $heroAlt }}" @if($page->hero) loading="eager" @else loading="lazy" @endif>
+            <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
                 <div class="et-container et-page-hero__inner">
                     <div class="et-page-hero__content">
                         <div class="et-breadcrumbs"><span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span><span>{{ $page->title }}</span></div>
-                        <p class="et-eyebrow et-eyebrow--light">{{ __('pro.content.about_kicker') }}</p>
+                        <p class="et-eyebrow">{{ __('pro.content.about_kicker') }}</p>
                         <h1 class="et-h1">{{ $page->title }}</h1>
-                        @if ($page->excerpt)<p class="et-lead et-lead--light">{{ $page->excerpt }}</p>@endif
+                        @if ($page->excerpt)<p class="et-lead">{{ $page->excerpt }}</p>@endif
                     </div>
                 </div>
             </section>
@@ -115,7 +116,7 @@
             <section class="et-section et-section--white">
                 <div class="et-container et-split">
                     <div class="et-photo-pair">
-                        <div class="et-photo-pair__main"><img src="/brand/founders.webp" width="1400" height="1050" loading="lazy" alt="{{ __('pro.content.about_image_alt') }}"></div>
+                        <div class="et-photo-pair__main"><img @if($page->hero) data-testid="page-hero" @endif src="{{ $heroUrl }}" width="1400" height="1050" loading="lazy" alt="{{ $heroAlt }}"></div>
                         <div class="et-photo-pair__small"><img src="/brand/mobile-service.webp" width="1200" height="900" loading="lazy" alt="{{ __('pro.content.mobile_image_alt') }}"></div>
                     </div>
                     <div>

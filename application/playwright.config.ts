@@ -40,7 +40,8 @@ export default defineConfig({
         {
             name: 'buyer-mobile-320',
             use: { ...devices['iPhone 13'], browserName: 'chromium', viewport: { width: 320, height: 844 } },
-            testMatch: /(catalog-live|catalog-mobile-layout|customer-navigation|design-foundation|header-navigation|homepage-content-collections|homepage-composition|interaction-shell|map-overflow|product-detail|project-content|service-requests|storefront-style)\.spec\.ts/,
+            // Keep admin.service-requests in its dedicated dependency-ordered admin matrices.
+            testMatch: /(?:^|[\\/])(catalog-live|catalog-mobile-layout|customer-navigation|design-foundation|header-navigation|homepage-content-collections|homepage-composition|interaction-shell|map-overflow|product-detail|project-content|service-requests|storefront-style)\.spec\.ts$/,
         },
         {
             name: 'buyer-ru-preview',

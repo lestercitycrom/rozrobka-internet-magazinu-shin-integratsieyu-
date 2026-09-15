@@ -25,6 +25,22 @@ async function expectContained(
     expect(geometry.verticalEnd).toBeLessThanOrEqual(2);
 }
 
+async function limitHomepageOffers(page: import('@playwright/test').Page, maximum: number): Promise<void> {
+    await page.route((url) => ['/', '/ru'].includes(url.pathname), async (route) => {
+        if (route.request().resourceType() !== 'document') {
+            await route.continue();
+            return;
+        }
+        const response = await route.fetch();
+        let seen = 0;
+        const body = (await response.text()).replace(
+            /<article\b[^>]*data-testid="homepage-promotion"[\s\S]*?<\/article>/g,
+            (card) => { seen += 1; return seen <= maximum ? card : ''; },
+        );
+        await route.fulfill({ response, body });
+    });
+}
+
 test('offers and both independently managed service collections render in NB and RU', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     await page.goto(prefix || '/');
@@ -39,7 +55,7 @@ test('offers and both independently managed service collections render in NB and
     await expect(additional.locator('.et-v3-service--feature')).toHaveCount(2);
     await expect(wheels.locator('.et-v3-service--feature')).toHaveCount(2);
     for (const image of [
-        promotions.getByTestId('homepage-promotion').first().locator('img'),
+        promotions.getByTestId('homepage-promotion').first().locator('[data-media-fallback-image]'),
         additional.locator('.et-v3-service--feature img').first(),
         wheels.locator('.et-v3-service--feature img').first(),
     ]) {
@@ -54,10 +70,10 @@ test('offers and both independently managed service collections render in NB and
         const top = (selector: string) => document.querySelector<HTMLElement>(selector)?.offsetTop ?? Number.POSITIVE_INFINITY;
         return [
             top('[data-testid="home-dekkhotell"]'),
+            top('[data-testid="home-prices"]'),
             top('[data-testid="homepage-promotions"]'),
             top('[data-testid="homepage-additional-services"]'),
             top('[data-testid="home-process"]'),
-            top('[data-testid="home-prices"]'),
             top('[data-testid="homepage-wheel-services"]'),
         ];
     });
@@ -65,36 +81,43 @@ test('offers and both independently managed service collections render in NB and
 
     const firstOffer = promotions.getByTestId('homepage-promotion').first();
     const disclosure = firstOffer.locator('[data-promotion-disclosure]');
-    const details = firstOffer.locator('.et-v3-promotion__details');
-    const initialCardHeight = (await firstOffer.boundingBox())?.height;
+    const detailsDialog = firstOffer.locator('[data-promotion-details]');
+    const cardDocumentBox = () => firstOffer.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { x: rect.x + scrollX, y: rect.y + scrollY, width: rect.width, height: rect.height };
+    });
+    const initialCardBox = await cardDocumentBox();
     await expect(firstOffer.locator('.et-v3-promotion__short')).toBeVisible();
     await expect(firstOffer.locator('.et-v3-promotion__cta')).toBeVisible();
-    await expect(details).toHaveAttribute('aria-hidden', 'true');
-    await expect.poll(async () => details.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return { maxHeight: style.maxHeight, opacity: style.opacity };
-    })).toEqual({ maxHeight: '0px', opacity: '0' });
-    await firstOffer.hover();
-    const supportsHover = await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)').matches);
-    await expect(details).toHaveAttribute('aria-hidden', supportsHover ? 'false' : 'true');
-    await expect(disclosure).toHaveAttribute('aria-expanded', supportsHover ? 'true' : 'false');
-    await expect.poll(async () => details.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return { maxHeight: style.maxHeight, opacity: Number(style.opacity) };
-    })).toEqual(supportsHover ? { maxHeight: '176px', opacity: 1 } : { maxHeight: '0px', opacity: 0 });
-    if (supportsHover) {
-        expect((await firstOffer.boundingBox())?.height).toBeCloseTo(initialCardHeight ?? 0, 2);
-    }
-    await disclosure.click();
-    await expect(details).toHaveAttribute('aria-hidden', 'false');
-    await expect(details).toBeVisible();
-    if (supportsHover) {
-        expect((await firstOffer.boundingBox())?.height).toBeCloseTo(initialCardHeight ?? 0, 2);
-    }
-    await page.keyboard.press('Escape');
+    await expect(detailsDialog).not.toHaveAttribute('open', '');
     await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
-    await expect(details).toHaveAttribute('aria-hidden', 'true');
-    await expect(details).not.toHaveClass(/is-open/);
+    const supportsHover = await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)').matches);
+    if (supportsHover) {
+        await firstOffer.scrollIntoViewIfNeeded();
+        await page.mouse.move(0, 0);
+        await firstOffer.hover();
+        const hoverPreview = page.locator('body > .et-promotion-hover-preview.is-visible');
+        await expect(hoverPreview).toBeVisible();
+        await expect(hoverPreview).toHaveAttribute('aria-hidden', 'true');
+        await expect(detailsDialog).not.toHaveAttribute('open', '');
+        await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+        expect(await cardDocumentBox()).toEqual(initialCardBox);
+        await page.mouse.move(0, 0);
+        await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
+    } else {
+        await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
+    }
+
+    await disclosure.click();
+    await expect(detailsDialog).toHaveAttribute('open', '');
+    await expect(detailsDialog).toBeVisible();
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
+    expect(await cardDocumentBox()).toEqual(initialCardBox);
+    await page.keyboard.press('Escape');
+    await expect(detailsDialog).not.toHaveAttribute('open', '');
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+    await expect(disclosure).toBeFocused();
     await expectNoGlobalOverflow(page);
 
     if (process.env.CAPTURE_VISUALS === '1' && testInfo.project.name === 'buyer-ru-preview') {
@@ -107,8 +130,9 @@ test('offers and both independently managed service collections render in NB and
     }
 });
 
-test('exactly two offers form one readable column at 390 and 320 in NB and RU', async ({ page }, testInfo) => {
+test('exactly two offers remain reachable in the one-slot mobile carousel in NB and RU', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic DOM cardinality probe covers the CSS cascade');
+    await limitHomepageOffers(page, 2);
 
     for (const route of ['/', '/ru']) {
         for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 844 }]) {
@@ -116,28 +140,35 @@ test('exactly two offers form one readable column at 390 and 320 in NB and RU', 
             await page.goto(route);
             const carousel = page.locator('[data-promotion-carousel]');
             const track = carousel.locator('[data-promotion-track]');
-            await track.getByTestId('homepage-promotion').evaluateAll((cards) => {
-                cards.slice(2).forEach((card) => card.remove());
-            });
-            await carousel.evaluate((element) => {
-                element.classList.remove('is-enhanced');
-                element.setAttribute('data-total', '2');
-                const trackElement = element.querySelector<HTMLElement>('[data-promotion-track]');
-                trackElement?.style.removeProperty('transform');
-            });
-
             const cards = track.getByTestId('homepage-promotion');
+            const controls = page.locator('[data-promotion-controls]');
+            const previous = page.locator('[data-promotion-previous]');
+            const next = page.locator('[data-promotion-next]');
+            const status = carousel.locator('[data-promotion-status]');
             await expect(cards).toHaveCount(2);
-            const first = await cards.nth(0).boundingBox();
-            const second = await cards.nth(1).boundingBox();
-            expect(first).not.toBeNull();
-            expect(second).not.toBeNull();
-            expect(second?.y ?? 0).toBeGreaterThan((first?.y ?? 0) + (first?.height ?? 0));
-            expect(second?.x ?? 0).toBeCloseTo(first?.x ?? 0, 1);
-            for (const card of [cards.nth(0), cards.nth(1)]) {
-                await expectContained(track, card);
+            await expect(carousel).toHaveClass(/is-enhanced/);
+            await expect.poll(() => carousel.evaluate((element) => element.style.getPropertyValue('--cards-visible'))).toBe('1');
+            await expect(controls).toBeVisible();
+            await expect(status).toBeVisible();
+            await expect(previous).toBeDisabled();
+            await expect(next).toBeEnabled();
+
+            for (const [index, advance] of [[0, false], [1, true]] as const) {
+                if (advance) await next.click();
+                const card = cards.nth(index);
+                await expect(card).toHaveAttribute('aria-hidden', 'false');
                 await expectContained(card, card.locator('.et-v3-promotion__cta'));
+                const dimensions = await card.evaluate((element) => ({
+                    height: element.getBoundingClientRect().height,
+                    clientHeight: element.clientHeight,
+                    scrollHeight: element.scrollHeight,
+                }));
+                expect(dimensions.height).toBeGreaterThan(0);
+                expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.clientHeight + 1);
             }
+            await expect(cards.nth(0)).toHaveAttribute('aria-hidden', 'true');
+            await expect(previous).toBeEnabled();
+            await expect(next).toBeDisabled();
             await expectNoGlobalOverflow(page);
         }
     }

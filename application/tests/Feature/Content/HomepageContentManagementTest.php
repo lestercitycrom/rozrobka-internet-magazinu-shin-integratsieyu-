@@ -35,9 +35,9 @@ test('homepage keeps the stable offer anchor in the approved conversion order wi
         ->assertSeeInOrder([
             'class="et-v3-hero"',
             'data-testid="home-dekkhotell"',
+            'data-testid="home-prices"',
             'data-testid="homepage-promotions"',
             'data-testid="home-process"',
-            'data-testid="home-prices"',
         ], false)
         ->assertDontSee('class="et-v3-trust', false)
         ->assertDontSee('class="et-v3-story', false);
@@ -145,7 +145,7 @@ test('homepage offers render zero through five records with controls only above 
         if ($count === 0) {
             $response->assertSee('data-testid="homepage-promotions-empty"', false);
         }
-        if ($count <= 3) {
+        if ($count <= 1) {
             $response->assertDontSee('data-promotion-previous', false);
         } else {
             $response->assertSee('data-promotion-previous', false)->assertSee('data-promotion-next', false);

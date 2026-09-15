@@ -1,17 +1,17 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
-import { expectNoGlobalOverflow, isRussianProject, localePrefix } from './helpers';
+import { expectNoGlobalOverflow, isRussianProject, localePrefix, overlapArea } from './helpers';
 
 const evidenceRoot = path.resolve(process.cwd(), '..', 'evidence', 'issue-47');
 
 const composition = [
     '[data-testid="home-hero"]',
     '[data-testid="home-dekkhotell"]',
+    '[data-testid="home-prices"]',
     '[data-testid="homepage-promotions"]',
     '[data-testid="homepage-additional-services"]',
     '[data-testid="home-process"]',
-    '[data-testid="home-prices"]',
     '[data-testid="homepage-wheel-services"]',
     '[data-testid="homepage-reviews"]',
     '.et-v3-contact',
@@ -104,14 +104,22 @@ test('homepage detail dialog is keyboard operable and returns focus', async ({ p
     await expect(opener).toBeFocused();
 });
 
-test('homepage video autoplays muted, can be paused and respects reduced motion', async ({ page }, testInfo) => {
+test('homepage video lazy-loads muted, can be paused and allows manual play with reduced motion', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic media pass is sufficient');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
+    const root = page.locator('[data-homepage-video]');
     const video = page.locator('[data-homepage-video-element]');
     const control = page.locator('[data-homepage-video-control]');
     await expect(video).toBeVisible();
     await expect(video).toHaveJSProperty('muted', true);
-    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeFalsy();
+    await expect(video).toHaveAttribute('preload', 'none');
+    await expect(video).not.toHaveAttribute('autoplay', '');
+    await expect(video).not.toHaveAttribute('src', /.+/);
+    await root.scrollIntoViewIfNeeded();
+    await expect.poll(() => video.getAttribute('src')).toBeTruthy();
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.readyState)).toBeGreaterThanOrEqual(2);
+    await expect.poll(() => root.evaluate((element) => element.classList.contains('is-video-playing'))).toBeTruthy();
     await control.click();
     await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeTruthy();
     await expect(control).toHaveAttribute('aria-pressed', 'true');
@@ -119,10 +127,16 @@ test('homepage video autoplays muted, can be paused and respects reduced motion'
     await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeFalsy();
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeTruthy();
     await page.reload();
-    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => ({ paused: node.paused, currentTime: node.currentTime })))
-        .toEqual({ paused: true, currentTime: 0 });
+    await root.scrollIntoViewIfNeeded();
+    await expect(video).not.toHaveAttribute('src', /.+/);
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeTruthy();
     await expect(control).toHaveAttribute('aria-pressed', 'true');
+    await control.click();
+    await expect.poll(() => video.getAttribute('src')).toBeTruthy();
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.readyState)).toBeGreaterThanOrEqual(2);
+    await expect.poll(() => video.evaluate((node: HTMLVideoElement) => node.paused)).toBeFalsy();
 });
 
 test('homepage video failure keeps the poster and copy usable', async ({ page }, testInfo) => {
@@ -130,9 +144,14 @@ test('homepage video failure keeps the poster and copy usable', async ({ page },
     await page.route('**/homepage-loop.mp4*', (route) => route.abort('connectionfailed'));
     await page.goto('/');
     const root = page.locator('[data-homepage-video]');
+    const video = root.locator('[data-homepage-video-element]');
+    await root.scrollIntoViewIfNeeded();
+    await expect.poll(() => video.getAttribute('src')).toBeTruthy();
     await expect(root).toHaveClass(/has-video-error/, { timeout: 10_000 });
-    await expect(root.locator('.et-v3-logistics-media__poster')).toBeVisible();
-    await expect(root.locator('[data-homepage-video-element]')).toBeHidden();
+    const poster = root.locator('.et-v3-logistics-media__poster');
+    await expect(poster).toBeVisible();
+    await expect.poll(() => poster.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+    await expect(video).toBeHidden();
     await expect(root.locator('[data-homepage-video-control]')).toBeHidden();
     await expect(page.getByTestId('home-dekkhotell')).toContainText('Vi ordner hele hjulskiftet.');
 });
@@ -155,9 +174,26 @@ test('homepage cards keep the intended 4/2/1 responsive structure at the accepta
         expect(columns).toBe(viewport.width <= 640 ? 1 : viewport.width <= 900 ? 2 : 4);
         const partnerColumns = await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
         expect(partnerColumns).toBe(viewport.width <= 420 ? 1 : viewport.width <= 900 ? 2 : 4);
-        const stepHeights = await steps.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().height)));
-        expect(Math.max(...stepHeights) - Math.min(...stepHeights)).toBeLessThanOrEqual(1);
-        measurements.push({ viewport, columns, partnerColumns, stepHeights });
+        const stepGeometry = await steps.evaluateAll((nodes) => nodes.map((node) => {
+            const rect = node.getBoundingClientRect();
+            return {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+                clientHeight: node.clientHeight,
+                scrollHeight: node.scrollHeight,
+            };
+        }));
+        const expectedRows = 4 / columns;
+        expect(new Set(stepGeometry.map(({ y }) => Math.round(y))).size).toBe(expectedRows);
+        expect(stepGeometry.every(({ height, clientHeight, scrollHeight }) => height > 0 && scrollHeight <= clientHeight + 1)).toBeTruthy();
+        for (let first = 0; first < stepGeometry.length; first += 1) {
+            for (let second = first + 1; second < stepGeometry.length; second += 1) {
+                expect(overlapArea(stepGeometry[first], stepGeometry[second])).toBe(0);
+            }
+        }
+        measurements.push({ viewport, columns, partnerColumns, stepGeometry });
 
         if (process.env.CAPTURE_ISSUE_47 === '1') {
             await page.screenshot({ path: path.join(evidenceRoot, `homepage-${viewport.width}x${viewport.height}.jpg`), type: 'jpeg', quality: 82, fullPage: true });

@@ -1,4 +1,6 @@
-@php($prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.')
+@php
+    $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
+@endphp
 
 <x-layouts.storefront :title="__('public_pricing.title')" :description="__('public_pricing.description')" :canonical="route('storefront.pricing.index')" active-section="services">
     <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
@@ -17,7 +19,15 @@
             @if ($prices->isNotEmpty())
                 <div class="et-public-prices" data-testid="public-price-list">
                     @foreach ($prices as $categoryPrices)
-                        @php($category = $categoryPrices->first())
+                        @php
+                            $category = $categoryPrices->first();
+                            $categoryAction = match ((string) $category->category_code) {
+                                'workshop' => [route($prefix.'requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']), __('services.workshop_intent_cta')],
+                                'mobile' => [route($prefix.'requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']), __('services.mobile_intent_cta')],
+                                'hotel' => [route($prefix.'requests.create', ['slug' => 'dekkhotell']), __('services.request_cta')],
+                                default => [route($prefix.'services.index'), __('public_pricing.cta')],
+                            };
+                        @endphp
                         <article class="et-public-price-group">
                             <header class="et-public-price-group__head">
                                 <p class="et-eyebrow">{{ __('public_pricing.category_kicker') }}</p>
@@ -31,8 +41,9 @@
                                             @if ($description = $price->localized('description', app()->getLocale()))
                                                 <p>{{ $description }}</p>
                                             @endif
+                                            <a class="et-btn et-btn--link et-btn--small" href="{{ $categoryAction[0] }}">{{ $categoryAction[1] }}</a>
                                         </div>
-                                        <strong class="et-public-price-row__amount">{{ number_format($price->price_minor / 100, 0, ',', ' ') }} {{ $price->currency }}</strong>
+                                        <strong class="et-public-price-row__amount"><x-storefront-money :minor="$price->price_minor" :currency="$price->currency" :decimals="0" /></strong>
                                     </div>
                                 @endforeach
                             </div>

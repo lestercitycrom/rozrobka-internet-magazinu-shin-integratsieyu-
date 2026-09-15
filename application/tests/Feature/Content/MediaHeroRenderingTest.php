@@ -10,23 +10,48 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
-test('norwegian published page renders assigned hero once with norwegian alt', function (): void {
+test('generic norwegian published page renders assigned hero once with norwegian alt', function (): void {
     Storage::fake('public');
-    $page = heroPage('om-oss');
+    $page = heroPage('personvern');
     $asset = heroAsset('Norsk alt', 'Русский alt');
     assignHero($page, $asset);
-    $this->get('/om-oss')->assertOk()->assertSee($asset->path, false)->assertSee('alt="Norsk alt"', false)->assertSee($asset->path, false);
+    $this->get('/personvern')->assertOk()->assertSee($asset->path, false)->assertSee('alt="Norsk alt"', false)->assertSee($asset->path, false);
 });
 
-test('russian preview uses russian alt then norwegian fallback', function (): void {
+test('generic russian preview uses russian alt then norwegian fallback', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+    Storage::fake('public');
+    $page = heroPage('kjopsvilkar');
+    $asset = heroAsset('Fallback', 'Русский alt');
+    assignHero($page, $asset);
+    $this->get('/ru/kjopsvilkar')->assertOk()->assertSee('alt="Русский alt"', false);
+    $asset->update(['alt_ru' => null]);
+    $this->get('/ru/kjopsvilkar')->assertOk()->assertSee('alt="Fallback"', false);
+});
+
+test('special about page keeps assigned media once in its content body with norwegian alt', function (): void {
+    Storage::fake('public');
+    $page = heroPage('om-oss');
+    $asset = heroAsset('Om oss foto', 'Фото о нас');
+    assignHero($page, $asset);
+
+    $response = $this->get('/om-oss')->assertOk()->assertSee('alt="Om oss foto"', false);
+
+    expect(substr_count($response->getContent(), $asset->path))->toBe(1)
+        ->and(substr_count($response->getContent(), 'data-testid="page-hero"'))->toBe(1);
+});
+
+test('special contact preview keeps assigned media once below the contact grid with russian alt', function (): void {
     config()->set('storefront.ru_preview_enabled', true);
     Storage::fake('public');
     $page = heroPage('kontakt');
-    $asset = heroAsset('Fallback', 'Русский alt');
+    $asset = heroAsset('Kontaktfoto', 'Фото контактов');
     assignHero($page, $asset);
-    $this->get('/ru/kontakt')->assertOk()->assertSee('alt="Русский alt"', false);
-    $asset->update(['alt_ru' => null]);
-    $this->get('/ru/kontakt')->assertOk()->assertSee('alt="Fallback"', false);
+
+    $response = $this->get('/ru/kontakt')->assertOk()->assertSee('alt="Фото контактов"', false);
+
+    expect(substr_count($response->getContent(), $asset->path))->toBe(1)
+        ->and(substr_count($response->getContent(), 'data-testid="page-hero"'))->toBe(1);
 });
 
 test('unassigned published page has no broken hero image and unpublished remains 404', function (): void {

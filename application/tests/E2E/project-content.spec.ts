@@ -17,8 +17,8 @@ test('approved homepage structure, current prices and compact business contact r
     const dekkhotellBox = await page.getByTestId('home-dekkhotell').boundingBox();
     const processBox = await page.getByTestId('home-process').boundingBox();
     const pricesBox = await page.getByTestId('home-prices').boundingBox();
-    expect(dekkhotellBox?.y).toBeLessThan(processBox?.y ?? 0);
-    expect(processBox?.y).toBeLessThan(pricesBox?.y ?? 0);
+    expect(dekkhotellBox?.y).toBeLessThan(pricesBox?.y ?? 0);
+    expect(pricesBox?.y).toBeLessThan(processBox?.y ?? 0);
     await expectNoGlobalOverflow(page);
 
     await page.goto(`${prefix}/priser`);
@@ -64,6 +64,10 @@ test('legacy shop route resolves to the populated store landing in both QA local
 
 test('company, contact and legal pages are published and localized', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
+    await page.route(/^https:\/\/www\.google\.com\/maps(?:\?|$)/, (route) => route.fulfill({
+        contentType: 'text/html; charset=utf-8',
+        body: '<!doctype html><html><body>Google Maps test fixture</body></html>',
+    }));
 
     for (const slug of ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar']) {
         const response = await page.goto(`${prefix}/${slug}`);

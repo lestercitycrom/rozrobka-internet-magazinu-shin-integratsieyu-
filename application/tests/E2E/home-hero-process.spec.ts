@@ -4,7 +4,6 @@ import { expect, test } from '@playwright/test';
 import { expectNoGlobalOverflow, overlapArea } from './helpers';
 
 type Box = { x: number; y: number; width: number; height: number };
-type FocalRegion = { left: number; top: number; right: number; bottom: number };
 
 const viewports = [
     { width: 1920, height: 1080 },
@@ -15,20 +14,9 @@ const viewports = [
     { width: 320, height: 800 },
 ];
 
-const focalContracts: Record<string, { brand: FocalRegion; vehicle: FocalRegion }> = {
-    '/brand/hero-service-desktop.webp': {
-        brand: { left: .66, top: .21, right: .89, bottom: .42 },
-        vehicle: { left: .21, top: .29, right: .59, bottom: .71 },
-    },
-    '/brand/hero-service-mobile.webp': {
-        brand: { left: 0, top: .19, right: .37, bottom: .38 },
-        vehicle: { left: .23, top: .18, right: 1, bottom: .82 },
-    },
-};
-
 const evidenceRoot = path.resolve(process.cwd(), '..', 'evidence', 'issue-30');
 
-test('home hero keeps the approved media focal regions clear at every required viewport', async ({ page }, testInfo) => {
+test('home hero keeps full-area media and primary paths clear at every required viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
     test.setTimeout(180_000);
 
@@ -39,18 +27,20 @@ test('home hero keeps the approved media focal regions clear at every required v
         await page.setViewportSize(viewport);
         await page.goto('/');
         const hero = page.getByTestId('home-hero');
+        const picture = hero.locator(':scope > picture');
         const media = hero.locator('.et-v3-hero__photo');
         const finder = hero.getByTestId('quick-finder');
         const content = hero.locator('.et-v3-hero__content');
         const primaryAction = hero.locator('.et-v3-hero__primary-action');
 
         await expect(hero).toBeVisible();
+        await expect(picture).toBeVisible();
         await expect(media).toBeVisible();
         await expect(finder).toBeVisible();
         await expect(primaryAction).toBeVisible();
         await expect.poll(() => media.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
 
-        const geometry = await media.evaluate((image: HTMLImageElement, contracts) => {
+        const geometry = await media.evaluate((image: HTMLImageElement) => {
             const roundBox = (rect: DOMRect): Box => ({
                 x: Math.round(rect.x),
                 y: Math.round(rect.y),
@@ -59,70 +49,61 @@ test('home hero keeps the approved media focal regions clear at every required v
             });
             const imageBox = roundBox(image.getBoundingClientRect());
             const currentPath = new URL(image.currentSrc || image.src, location.href).pathname;
-            const contract = contracts[currentPath];
             const style = getComputedStyle(image);
-            const position = style.objectPosition.split(/\s+/);
-            const percentage = (value: string | undefined, fallback: number) => value?.endsWith('%')
-                ? Number.parseFloat(value) / 100
-                : fallback;
-            const scale = Math.max(imageBox.width / image.naturalWidth, imageBox.height / image.naturalHeight);
-            const renderedWidth = image.naturalWidth * scale;
-            const renderedHeight = image.naturalHeight * scale;
-            const offsetX = imageBox.x + ((imageBox.width - renderedWidth) * percentage(position[0], .5));
-            const offsetY = imageBox.y + ((imageBox.height - renderedHeight) * percentage(position[1], .5));
-            const project = (region?: FocalRegion): Box | null => region ? {
-                x: Math.round(offsetX + region.left * renderedWidth),
-                y: Math.round(offsetY + region.top * renderedHeight),
-                width: Math.round((region.right - region.left) * renderedWidth),
-                height: Math.round((region.bottom - region.top) * renderedHeight),
-            } : null;
 
             return {
                 asset: currentPath,
-                contractFound: Boolean(contract),
                 objectFit: style.objectFit,
                 media: imageBox,
-                brand: project(contract?.brand),
-                vehicle: project(contract?.vehicle),
             };
-        }, focalContracts);
+        });
 
-        expect(geometry.contractFound, `approved focal contract missing for ${geometry.asset}`).toBeTruthy();
+        expect(geometry.asset).toBe(viewport.width <= 767
+            ? '/brand/hero-service-mobile.webp'
+            : '/brand/hero-service-desktop.webp');
         expect(geometry.objectFit).toBe('cover');
-        expect(geometry.brand).not.toBeNull();
-        expect(geometry.vehicle).not.toBeNull();
 
+        const heroBox = await hero.boundingBox();
+        const pictureBox = await picture.boundingBox();
         const finderBox = await finder.boundingBox();
         const contentBox = await content.boundingBox();
         const actionBox = await primaryAction.boundingBox();
+        expect(heroBox).not.toBeNull();
+        expect(pictureBox).not.toBeNull();
         expect(finderBox).not.toBeNull();
         expect(contentBox).not.toBeNull();
         expect(actionBox).not.toBeNull();
-        expect(overlapArea(finderBox!, geometry.brand!)).toBe(0);
-        expect(overlapArea(finderBox!, geometry.vehicle!)).toBe(0);
         expect(overlapArea(finderBox!, contentBox!)).toBe(0);
-        expect(actionBox!.y).toBeLessThan(viewport.height);
+        expect(actionBox!.y + actionBox!.height).toBeLessThanOrEqual(viewport.height);
 
         measurements.push({
             viewport,
             asset: geometry.asset,
+            hero: heroBox,
+            picture: pictureBox,
             media: geometry.media,
-            brand: geometry.brand,
-            vehicle: geometry.vehicle,
             finder: finderBox,
             content: contentBox,
             primaryAction: actionBox,
-            finderBrandOverlapArea: overlapArea(finderBox!, geometry.brand!),
-            finderVehicleOverlapArea: overlapArea(finderBox!, geometry.vehicle!),
             finderContentOverlapArea: overlapArea(finderBox!, contentBox!),
         });
 
-        if (viewport.width >= 901) {
-            const visibleBrand = overlapArea(geometry.media, geometry.brand!) / (geometry.brand!.width * geometry.brand!.height);
-            const visibleVehicle = overlapArea(geometry.media, geometry.vehicle!) / (geometry.vehicle!.width * geometry.vehicle!.height);
-            expect(visibleBrand, 'desktop crop must keep the EasyTire van branding visible').toBeGreaterThan(.9);
-            expect(visibleVehicle, 'desktop crop must keep the vehicle/work focal region visible').toBeGreaterThan(.9);
+        if (viewport.width >= 1200) {
+            expect(Math.abs(pictureBox!.x - heroBox!.x)).toBeLessThanOrEqual(1);
+            expect(Math.abs(pictureBox!.y - heroBox!.y)).toBeLessThanOrEqual(1);
+            expect(Math.abs(pictureBox!.width - heroBox!.width)).toBeLessThanOrEqual(1);
+            expect(Math.abs(pictureBox!.height - heroBox!.height)).toBeLessThanOrEqual(1);
+            expect(finderBox!.x).toBeGreaterThanOrEqual(contentBox!.x + contentBox!.width);
+            expect(finderBox!.width).toBeGreaterThanOrEqual(360);
+            expect(finderBox!.width).toBeLessThanOrEqual(400);
+            expect(finderBox!.y + finderBox!.height).toBeLessThanOrEqual(viewport.height);
             await expect(finder.locator('input[name="registration"]')).toBeInViewport();
+        } else if (viewport.width <= 767) {
+            expect(pictureBox!.height).toBeGreaterThanOrEqual(180);
+            expect(pictureBox!.height).toBeLessThanOrEqual(220);
+            expect(contentBox!.y).toBeGreaterThanOrEqual(pictureBox!.y + pictureBox!.height - 1);
+            expect(actionBox!.y).toBeLessThan(finderBox!.y);
+            expect(finderBox!.y).toBeGreaterThanOrEqual(contentBox!.y + contentBox!.height - 1);
         }
 
         await expectNoGlobalOverflow(page);
@@ -148,7 +129,10 @@ test('home process renders four substantial customer steps without a mechanical 
     if (process.env.CAPTURE_ISSUE_30 === '1') await mkdir(evidenceRoot, { recursive: true });
     const measurements: Record<string, unknown>[] = [];
 
-    for (const viewport of viewports.filter(({ width }) => [1440, 1280, 390, 320].includes(width))) {
+    for (const viewport of [
+        ...viewports.filter(({ width }) => [1440, 1280, 390, 320].includes(width)),
+        { width: 800, height: 900 },
+    ]) {
         await page.setViewportSize(viewport);
         await page.goto('/');
         const processStrip = page.getByTestId('home-process');
@@ -165,10 +149,25 @@ test('home process renders four substantial customer steps without a mechanical 
         expect(processBox).not.toBeNull();
         const stepBoxes = await steps.evaluateAll((elements) => elements.map((element) => {
             const box = element.getBoundingClientRect();
-            return { x: box.x, y: box.y, width: box.width, height: box.height };
+            return {
+                x: box.x,
+                y: box.y,
+                width: box.width,
+                height: box.height,
+                clientHeight: element.clientHeight,
+                scrollHeight: element.scrollHeight,
+            };
         }));
-        expect(Math.min(...stepBoxes.map(({ height }) => height))).toBeGreaterThanOrEqual(viewport.width <= 640 ? 270 : 320);
-        expect(new Set(stepBoxes.map(({ y }) => Math.round(y))).size).toBe(viewport.width <= 640 ? 4 : 1);
+        const columns = await processStrip.locator('.et-v3-process').evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
+        const expectedColumns = viewport.width <= 640 ? 1 : viewport.width <= 900 ? 2 : 4;
+        expect(columns).toBe(expectedColumns);
+        expect(new Set(stepBoxes.map(({ y }) => Math.round(y))).size).toBe(4 / expectedColumns);
+        expect(stepBoxes.every(({ height, clientHeight, scrollHeight }) => height > 0 && scrollHeight <= clientHeight + 1)).toBeTruthy();
+        for (let first = 0; first < stepBoxes.length; first += 1) {
+            for (let second = first + 1; second < stepBoxes.length; second += 1) {
+                expect(overlapArea(stepBoxes[first], stepBoxes[second])).toBe(0);
+            }
+        }
         measurements.push({ viewport, processStrip: processBox, steps: stepBoxes });
         await expectNoGlobalOverflow(page);
 

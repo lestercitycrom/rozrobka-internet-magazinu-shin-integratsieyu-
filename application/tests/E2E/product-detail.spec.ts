@@ -108,7 +108,8 @@ test('sandbox quantity, explanation and purchase actions use separate readable r
         expect(addBox).not.toBeNull();
         expect(buyBox).not.toBeNull();
         expect(quantityBox!.width).toBeGreaterThanOrEqual(96);
-        expect(noteBox!.width).toBeGreaterThanOrEqual(Math.min(240, viewport.width - 40));
+        // At 320px: DS-1 outer gutters (32) + panel padding/border (50).
+        expect(noteBox!.width).toBeGreaterThanOrEqual(Math.min(240, viewport.width - 82));
         expect(addBox!.width).toBeGreaterThanOrEqual(viewport.width <= 390 ? 150 : 130);
         expect(buyBox!.width).toBeGreaterThanOrEqual(viewport.width <= 390 ? 150 : 130);
         expect(overlapArea(quantityBox!, noteBox!)).toBe(0);

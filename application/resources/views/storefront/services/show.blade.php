@@ -62,7 +62,7 @@
         <div class="et-service-anchor">
             <div class="et-container et-service-anchor__inner">
                 <nav aria-label="{{ $service->title }}">
-                    <a href="#service-details">{{ __('storefront.product_information') }}</a>
+                    <a href="#service-details">{{ __('pro.services.detail_heading') }}</a>
                     <a href="#service-request-final">{{ __('pro.services.request_kicker') }}</a>
                 </nav>
             </div>
@@ -72,29 +72,13 @@
             <div class="et-container">
                 <div class="et-service-detail__top">
                     <div class="et-service-detail__intro">
-                    <p class="et-eyebrow">{{ __('pro.services.kicker') }}</p>
-                    <h2 class="et-h2">{{ $service->title }}</h2>
+                    <h2 class="et-h2">{{ __('pro.services.detail_heading') }}</h2>
                     @if ($introBody)
                         <div class="et-richtext et-service-detail__copy">{!! \Illuminate\Support\Str::markdown($introBody, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
                     @elseif ($service->excerpt)
                         <p class="et-lead">{{ $service->excerpt }}</p>
                     @endif
                     </div>
-                    <aside class="et-service-conversion" id="service-request">
-                        <p class="et-eyebrow">{{ __('pro.services.request_kicker') }}</p>
-                        <h2 class="et-h3">{{ __('pro.services.request_title') }}</h2>
-                        <p class="et-copy">{{ __('services.request_note') }}</p>
-                        <div class="et-alert et-alert--info">
-                            <span class="et-alert__icon" aria-hidden="true">i</span>
-                            <div>{{ __('booking.intro') }}</div>
-                        </div>
-                        @if ($hasSeasonalIntentChoice)
-                            <a class="et-btn et-btn--outline et-btn--full" href="{{ $mobileRequestHref }}" data-testid="service-aside-mobile">{{ __('services.mobile_intent_cta') }}</a>
-                            <a class="et-btn et-btn--link et-btn--full" href="{{ $workshopRequestHref }}" data-testid="service-aside-workshop">{{ __('services.workshop_intent_cta') }}</a>
-                        @else
-                            <a class="et-btn et-btn--outline et-btn--full" href="{{ $primaryCtaHref }}" data-testid="{{ $isPhoneOnlyService ? 'service-aside-call' : 'service-aside-request' }}">{{ $primaryCtaLabel }}</a>
-                        @endif
-                    </aside>
                 </div>
 
                 @if ($remainingBody || ($servicePrices ?? collect())->isNotEmpty())
@@ -106,12 +90,20 @@
                             <section class="et-price-panel" aria-labelledby="service-price-heading" data-testid="service-price-list">
                                 <h2 class="et-h3" id="service-price-heading">{{ __('services.current_prices') }}</h2>
                                 @foreach ($servicePrices as $categoryPrices)
-                                    @php($category = $categoryPrices->first())
+                                    @php
+                                        $category = $categoryPrices->first();
+                                        $categoryAction = match ((string) $category->category_code) {
+                                            'workshop' => [route($prefix.'requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'workshop']), __('services.workshop_intent_cta')],
+                                            'mobile' => [route($prefix.'requests.create', ['slug' => 'mobilt-dekkskift', 'fulfilment' => 'mobile']), __('services.mobile_intent_cta')],
+                                            'hotel' => [route($prefix.'requests.create', ['slug' => 'dekkhotell']), __('services.request_cta')],
+                                            default => [route($prefix.'pricing.index'), __('services.all_prices')],
+                                        };
+                                    @endphp
                                     <h3>{{ $category->localized('category_title', app()->getLocale()) }}</h3>
                                     @foreach ($categoryPrices as $price)
                                         <div class="et-public-price-row">
-                                            <div><strong>{{ $price->localized('title', app()->getLocale()) }}</strong>@if($description = $price->localized('description', app()->getLocale()))<p>{{ $description }}</p>@endif</div>
-                                            <strong class="et-public-price-row__amount">{{ number_format($price->price_minor / 100, 0, ',', ' ') }} {{ $price->currency }}</strong>
+                                            <div><strong>{{ $price->localized('title', app()->getLocale()) }}</strong>@if($description = $price->localized('description', app()->getLocale()))<p>{{ $description }}</p>@endif<a class="et-btn et-btn--link et-btn--small" href="{{ $categoryAction[0] }}">{{ $categoryAction[1] }}</a></div>
+                                            <strong class="et-public-price-row__amount"><x-storefront-money :minor="$price->price_minor" :currency="$price->currency" :decimals="0" /></strong>
                                         </div>
                                     @endforeach
                                 @endforeach

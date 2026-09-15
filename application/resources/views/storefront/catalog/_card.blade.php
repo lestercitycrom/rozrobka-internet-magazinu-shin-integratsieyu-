@@ -22,7 +22,7 @@
         <div class="et-product-card__footer">
             <div class="et-product-card__price-block">
                 @if ($sellingPrice)
-                    <div class="et-price">{{ number_format($sellingPrice->money->minor / 100, 2, ',', ' ') }} <small>{{ $sellingPrice->money->currency }}</small></div>
+                    <div class="et-price"><x-storefront-money :minor="$sellingPrice->money->minor" :currency="$sellingPrice->money->currency" /></div>
                 @else
                     <p class="et-caption"><strong>{{ __('storefront.price_unavailable') }}</strong></p>
                 @endif

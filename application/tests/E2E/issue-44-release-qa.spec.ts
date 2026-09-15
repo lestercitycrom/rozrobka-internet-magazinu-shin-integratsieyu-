@@ -173,9 +173,10 @@ test('Dekkhotell dialog opens and closes through real touch and its mobile conte
     }
 });
 
-test('poster-only cumulative homepage remains readable at the focused native viewports in NB and RU', async ({ page }, testInfo) => {
+test('reduced-motion homepage preserves its video poster at the focused native viewports in NB and RU', async ({ page }, testInfo) => {
     test.skip(!isDesktopPass(testInfo.project.name), 'One deterministic native-resolution evidence pass is sufficient.');
     test.setTimeout(180_000);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     if (process.env.CAPTURE_ISSUE_44 === '1') await mkdir(evidenceRoot, { recursive: true });
     const records: Record<string, unknown>[] = [];
 
@@ -189,7 +190,7 @@ test('poster-only cumulative homepage remains readable at the focused native vie
             await page.goto(locale.route, { waitUntil: 'domcontentloaded' });
             if (process.env.CAPTURE_ISSUE_44 === '1') {
                 await page.screenshot({
-                    path: path.join(evidenceRoot, `homepage-poster-only-${locale.code}-${viewport.width}x${viewport.height}.jpg`),
+                    path: path.join(evidenceRoot, `homepage-reduced-motion-${locale.code}-${viewport.width}x${viewport.height}.jpg`),
                     type: 'jpeg',
                     quality: 78,
                     fullPage: true,
@@ -198,25 +199,28 @@ test('poster-only cumulative homepage remains readable at the focused native vie
             const hotel = page.getByTestId('home-dekkhotell');
             await hotel.scrollIntoViewIfNeeded();
             await expect(hotel.locator('.et-v3-logistics-media__poster')).toBeVisible();
-            await expect(hotel.locator('[data-homepage-video-element]')).toHaveCount(0);
-            await expect(hotel.locator('[data-homepage-video-control]')).toHaveCount(0);
+            const video = hotel.locator('[data-homepage-video-element]');
+            await expect(video).toHaveCount(1);
+            await expect(video).toHaveAttribute('data-src', /\.mp4(?:\?|$)/);
+            await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+            await expect(hotel.locator('[data-homepage-video-control]')).toBeVisible();
             await expect(hotel.locator('[data-dekkhotell-dialog-open]')).toBeVisible();
             await expectNoGlobalOverflow(page);
             const geometry = await hotel.evaluate((element) => {
                 const rect = element.getBoundingClientRect();
                 return { top: rect.top, width: rect.width, height: rect.height };
             });
-            records.push({ locale: locale.code, viewport, hotel: geometry, videoAssigned: false });
+            records.push({ locale: locale.code, viewport, hotel: geometry, videoAssigned: true, reducedMotion: true });
 
             if (process.env.CAPTURE_ISSUE_44 === '1') {
                 await hotel.screenshot({
-                    path: path.join(evidenceRoot, `poster-only-dekkhotell-${locale.code}-${viewport.width}x${viewport.height}.png`),
+                    path: path.join(evidenceRoot, `reduced-motion-dekkhotell-${locale.code}-${viewport.width}x${viewport.height}.png`),
                 });
             }
         }
     }
 
     if (process.env.CAPTURE_ISSUE_44 === '1') {
-        await writeFile(path.join(evidenceRoot, 'poster-only-measurements.json'), `${JSON.stringify(records, null, 2)}\n`);
+        await writeFile(path.join(evidenceRoot, 'reduced-motion-measurements.json'), `${JSON.stringify(records, null, 2)}\n`);
     }
 });

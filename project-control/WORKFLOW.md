@@ -2,6 +2,14 @@
 
 Updated: 2026-09-15. Authority: [owner/PM decision in #44, comment 5670860452](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5670860452). This supersedes conflicting procedural requirements in V1.1.
 
+Version: 1.1 (retained governance contract; execution sequence amended by the linked owner decisions).
+
+## Three truth domains
+
+Requirements and acceptance are recorded in the authorised Issue; implementation is proven by the exact Git SHA and its tests; runtime is proven by a fresh server read-back. Neither a document nor a merge substitutes for runtime evidence.
+
+## Merge and runtime gates
+
 1. Implement the assigned user-visible result in one bounded branch/PR from accepted `origin/main`.
 2. Run focused local checks for changed scenarios. Run final CI on the final candidate; do not repeat passed unrelated matrices or unchanged screenshots.
 3. Send one concise result with the PR/version, checks and real remaining work. Routine branches, commits, PRs, CI and relevant documentation need no separate permission or prescribed report title.

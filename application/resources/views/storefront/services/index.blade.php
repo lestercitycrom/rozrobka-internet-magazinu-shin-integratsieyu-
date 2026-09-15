@@ -10,7 +10,7 @@
 @endphp
 
 <x-layouts.storefront :title="__('storefront.services_title')" active-section="services">
-    <section class="et-page-hero">
+    <section class="et-page-hero et-page-hero--transactional">
         <img class="et-page-hero__photo" src="/brand/mobile-service.webp" width="1200" height="900" alt="{{ __('pro.home.hero_image_alt') }}">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
@@ -24,13 +24,6 @@
 
     <section class="et-v3-section et-v3-section--white" id="additional-services">
         <div class="et-container">
-            <div class="et-v3-section-head">
-                <div>
-                    <p class="et-eyebrow">{{ __('pro.services.kicker') }}</p>
-                    <h2 class="et-h2">{{ __('pro.home.services_title') }}</h2>
-                    <p class="et-lead">{{ __('pro.home.services_text') }}</p>
-                </div>
-            </div>
             <div class="et-services-catalog" data-testid="services-catalog">
                 @forelse ($services as $index => $service)
                     @php
@@ -53,7 +46,7 @@
                             <p class="et-service-card__meta">{{ __('pro.services.kicker') }}</p>
                             <h2><a href="{{ $destination }}">{{ $service->title }}</a></h2>
                             @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
-                            <span class="et-service-card__link" aria-hidden="true">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></span>
+                            <a class="et-service-card__link" href="{{ $destination }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
                         </div>
                     </article>
                 @empty

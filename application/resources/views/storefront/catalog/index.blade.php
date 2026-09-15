@@ -64,6 +64,7 @@
     $activeFilters = collect($query)
         ->only(array_keys($filterLabels))
         ->filter(fn ($value) => $value !== null && $value !== '' && $value !== '0');
+    $hasSearchFilters = $activeFilters->except('sort')->isNotEmpty();
     $matchesValue = fn (string $field, string $value): bool => rtrim(rtrim(str_replace(',', '.', $query[$field] ?? ''), '0'), '.') === rtrim(rtrim($value, '0'), '.');
     $formatOption = fn (string $value): string => rtrim(rtrim($value, '0'), '.');
     $seasonLabel = fn (string $value): string => match (strtolower($value)) {
@@ -290,12 +291,17 @@
                 @endif
 
                 @if ($items->items === [])
-                    <div class="et-empty-state" data-testid="catalog-empty">
+                    <div class="et-empty-state" data-testid="catalog-empty" data-empty-reason="{{ $hasSearchFilters ? 'no-match' : 'no-published-products' }}">
                         <div>
                             <div class="et-empty-state__icon" aria-hidden="true">⌕</div>
-                            <h2 class="et-h3 et-empty-state__heading">{{ __('storefront.empty_title') }}</h2>
-                            <p>{{ __('storefront.empty_text') }}</p>
-                            <a class="et-btn et-btn--primary" href="{{ $baseUrl }}" data-catalog-live-link>{{ __('storefront.all_catalog') }}</a>
+                            <h2 class="et-h3 et-empty-state__heading">{{ $hasSearchFilters ? __('storefront.empty_title') : __('pro.catalog.empty_available_title') }}</h2>
+                            <p>{{ $hasSearchFilters ? __('storefront.empty_text') : __('pro.catalog.empty_available_text') }}</p>
+                            <div class="et-page-actions">
+                                @if ($hasSearchFilters)
+                                    <a class="et-btn et-btn--primary" href="{{ $baseUrl }}" data-catalog-live-link>{{ __('storefront.reset_all') }}</a>
+                                @endif
+                                <a class="et-btn {{ $hasSearchFilters ? 'et-btn--outline' : 'et-btn--primary' }}" href="{{ route($routePrefix.'requests.create', 'dekk-felg-og-hjulpakker') }}">{{ __('pro.catalog.empty_help') }}</a>
+                            </div>
                         </div>
                     </div>
                 @else

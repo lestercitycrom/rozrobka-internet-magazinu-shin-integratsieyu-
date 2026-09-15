@@ -64,9 +64,8 @@ test('stored long short copy and a stored legacy offer without short copy remain
             const longShort = longShortCard.locator('.et-v3-promotion__short');
             const longShortCta = longShortCard.locator('.et-v3-promotion__cta');
 
-            await tabTo(page, longShort);
-            await page.keyboard.press('End');
-            await expect.poll(() => longShort.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 2)).toBe(true);
+            await longShort.scrollIntoViewIfNeeded();
+            await expect.poll(() => longShort.evaluate((element) => element.scrollHeight <= element.clientHeight + 2)).toBe(true);
             await expect(longShort).toContainText(locale.shortEnd);
             await expect(longShortCta).toBeVisible();
             await expectContained(longShortCard, longShortCta);
@@ -84,17 +83,21 @@ test('stored long short copy and a stored legacy offer without short copy remain
             const disclosure = legacyCard.locator('[data-promotion-disclosure]');
             const details = legacyCard.locator('[data-promotion-details]');
             const legacyCta = legacyCard.locator('.et-v3-promotion__cta');
-            await expect(legacyCard.locator('.et-v3-promotion__short')).toHaveCount(0);
+            await expect(legacyCard.locator('.et-v3-promotion__short')).toBeVisible();
+            await expect(legacyCard.locator('.et-v3-promotion__short')).not.toContainText(locale.legacyEnd);
 
             await tabTo(page, disclosure);
             await page.keyboard.press('Enter');
             await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
-            await expect(details).toHaveAttribute('aria-hidden', 'false');
-            await page.keyboard.press('Tab');
-            await expect(details).toBeFocused();
-            await page.keyboard.press('End');
+            await expect(details).toHaveAttribute('open', '');
+            await expect(details.locator('[data-promotion-dialog-close]')).toBeFocused();
+            await details.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: 'instant' }));
             await expect.poll(() => details.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 2)).toBe(true);
             await expect(details).toContainText(locale.legacyEnd);
+            await expect(details.locator('.et-btn')).toBeInViewport();
+            await page.keyboard.press('Escape');
+            await expect(details).not.toHaveAttribute('open', '');
+            await expect(disclosure).toBeFocused();
             await expect(legacyCta).toBeVisible();
             await expectContained(legacyCard, legacyCta);
             await expectNoGlobalOverflow(page);
