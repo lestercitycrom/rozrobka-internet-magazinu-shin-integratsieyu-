@@ -3,6 +3,7 @@
 namespace App\Modules\NdiImport;
 
 use App\Modules\NdiImport\Data\StoredArtifact;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\DB;
@@ -12,8 +13,13 @@ use RuntimeException;
 
 final class NdiArtifactStore
 {
-    public function store(int $supplierId, string $supplierCode, string $sourcePath, bool $isRedacted = false): StoredArtifact
-    {
+    public function store(
+        int $supplierId,
+        string $supplierCode,
+        string $sourcePath,
+        bool $isRedacted = false,
+        ?CarbonImmutable $receivedAt = null,
+    ): StoredArtifact {
         if (! is_file($sourcePath) || ! is_readable($sourcePath)) {
             throw new RuntimeException('The NDI source artifact is not a readable file.');
         }
@@ -49,7 +55,7 @@ final class NdiArtifactStore
                     'storage_key' => $storageKey,
                     'byte_size' => $byteSize,
                     'sha256' => $sha256,
-                    'received_at' => now(),
+                    'received_at' => $receivedAt ?? CarbonImmutable::now(),
                     'content_type' => $extension === 'xlsx'
                         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                         : 'application/octet-stream',
@@ -81,6 +87,7 @@ final class NdiArtifactStore
             (int) $record->byte_size,
             $record->sha256,
             $record->content_type ?? 'application/octet-stream',
+            CarbonImmutable::parse($record->received_at),
         );
     }
 

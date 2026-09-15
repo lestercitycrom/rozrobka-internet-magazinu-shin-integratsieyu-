@@ -15,6 +15,7 @@ use App\Modules\Catalog\Models\SupplierSku;
 use App\Modules\Catalog\Models\Warehouse;
 use App\Modules\Catalog\ReadModel\CatalogQuery;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
+use App\Modules\Catalog\ReadModel\CatalogStockState;
 use App\Modules\Content\Models\MediaAsset;
 use App\Modules\Content\Models\MediaAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,10 +50,107 @@ test('it excludes unpublished and quarantined catalog rows', function (): void {
     publicCatalogSku('STOCK-ONLY-01', catalogState: CatalogState::StockOnly);
     publicCatalogSku('INACTIVE-SUPPLIER-01', supplierActive: false);
 
-    $result = app(CatalogReadService::class)->search(new CatalogQuery(search: '01'));
+    $service = app(CatalogReadService::class);
+    $result = $service->search(new CatalogQuery(search: '01'));
 
     expect($result->total)->toBe(1)
-        ->and($result->items[0]->sku)->toBe('PUBLIC-01');
+        ->and($result->items[0]->sku)->toBe('PUBLIC-01')
+        ->and($service->findPublicSku('DRAFT-01'))->toBeNull()
+        ->and($service->findPublicSku('HIDDEN-01'))->toBeNull()
+        ->and($service->findPublicSku('QUARANTINE-01'))->toBeNull()
+        ->and($service->findPublicSku('STOCK-ONLY-01'))->toBeNull()
+        ->and($service->findPublicSku('INACTIVE-SUPPLIER-01'))->toBeNull();
+});
+
+test('stock state preserves public catalog identity while the in-stock filter stays strict', function (): void {
+    config()->set('storefront.stock_max_age_minutes', 180);
+
+    $fresh = publicCatalogSku('AVAIL-FRESH', spec: ['width_mm' => '205.00']);
+    $zero = publicCatalogSku('AVAIL-ZERO', spec: ['width_mm' => '215.00']);
+    $stale = publicCatalogSku('AVAIL-STALE', spec: ['width_mm' => '225.00']);
+    $missing = publicCatalogSku('AVAIL-MISSING', spec: ['width_mm' => '235.00'], withStock: false);
+    CurrentStock::query()->where('supplier_sku_id', $zero->id)->update(['quantity' => 0]);
+    CurrentStock::query()->where('supplier_sku_id', $stale->id)->update(['observed_at' => now()->subMinutes(181)]);
+
+    $service = app(CatalogReadService::class);
+    $catalog = $service->search(new CatalogQuery(search: 'AVAIL-'));
+    $inStock = $service->search(new CatalogQuery(search: 'AVAIL-', inStockOnly: true));
+    $options = $service->filterOptions(ProductType::Tire);
+    $suggestions = collect($service->suggestions(ProductType::Tire, 'AVAIL-'))->pluck('sku')->all();
+
+    expect(collect($catalog->items)->pluck('sku')->all())->toEqualCanonicalizing([
+        'AVAIL-FRESH', 'AVAIL-ZERO', 'AVAIL-STALE', 'AVAIL-MISSING',
+    ])
+        ->and(collect($inStock->items)->pluck('sku')->all())->toBe(['AVAIL-FRESH'])
+        ->and($options['widths'])->toEqualCanonicalizing(['205', '215', '225', '235'])
+        ->and($suggestions)->toEqualCanonicalizing(['AVAIL-FRESH', 'AVAIL-ZERO', 'AVAIL-STALE', 'AVAIL-MISSING'])
+        ->and($service->findPublicSku($fresh->external_sku)?->stock->state())->toBe(CatalogStockState::Remote)
+        ->and($service->findPublicSku($zero->external_sku)?->stock->state())->toBe(CatalogStockState::OutOfStock)
+        ->and($service->findPublicSku($stale->external_sku)?->stock->state())->toBe(CatalogStockState::Stale)
+        ->and($service->findPublicSku($missing->external_sku)?->stock->state())->toBe(CatalogStockState::Missing);
+});
+
+test('a fresh secondary warehouse cannot mask stale national or physical stock', function (): void {
+    config()->set('storefront.stock_max_age_minutes', 180);
+
+    $national = publicCatalogSku('MIXED-NATIONAL');
+    $freshRemote = Warehouse::create([
+        'supplier_id' => $national->supplier_id,
+        'code' => 'trondheim',
+        'name' => 'Trondheim',
+        'is_active' => true,
+    ]);
+    CurrentStock::query()
+        ->where('supplier_sku_id', $national->id)
+        ->update(['quantity' => 20, 'observed_at' => now()->subMinutes(181)]);
+    CurrentStock::create([
+        'supplier_sku_id' => $national->id,
+        'warehouse_id' => $freshRemote->id,
+        'quantity' => 1,
+        'observed_at' => now(),
+        'source_artifact_id' => storefrontCatalogArtifact($national->supplier_id),
+    ]);
+
+    $physical = publicCatalogSku('MIXED-PHYSICAL', withStock: false);
+    $freshLocal = Warehouse::create([
+        'supplier_id' => $physical->supplier_id,
+        'code' => 'tromso',
+        'name' => 'Tromso',
+        'is_active' => true,
+    ]);
+    $staleRemote = Warehouse::create([
+        'supplier_id' => $physical->supplier_id,
+        'code' => 'vestby',
+        'name' => 'Vestby',
+        'is_active' => true,
+    ]);
+    $artifact = storefrontCatalogArtifact($physical->supplier_id);
+    CurrentStock::create([
+        'supplier_sku_id' => $physical->id,
+        'warehouse_id' => $freshLocal->id,
+        'quantity' => 2,
+        'observed_at' => now(),
+        'source_artifact_id' => $artifact,
+    ]);
+    CurrentStock::create([
+        'supplier_sku_id' => $physical->id,
+        'warehouse_id' => $staleRemote->id,
+        'quantity' => 4,
+        'observed_at' => now()->subMinutes(181),
+        'source_artifact_id' => $artifact,
+    ]);
+
+    $service = app(CatalogReadService::class);
+    $nationalItem = $service->findPublicSku('MIXED-NATIONAL');
+    $physicalItem = $service->findPublicSku('MIXED-PHYSICAL');
+    $inStock = $service->search(new CatalogQuery(search: 'MIXED-', inStockOnly: true));
+
+    expect($nationalItem?->stock->quantity)->toBe(20)
+        ->and($nationalItem?->stock->state())->toBe(CatalogStockState::Stale)
+        ->and($nationalItem?->stock->canPurchase())->toBeFalse()
+        ->and($physicalItem?->stock->state())->toBe(CatalogStockState::Stale)
+        ->and($physicalItem?->stock->canPurchase())->toBeFalse()
+        ->and($inStock->items)->toBe([]);
 });
 
 test('it filters to an active primary product image without duplicating catalog rows', function (): void {
@@ -140,6 +238,24 @@ function addPublicStock(SupplierSku $sku, int $quantity): void
     DB::table('source_artifacts')->insert(['id' => $artifactId, 'supplier_id' => $sku->supplier_id, 'kind' => 'fixture', 'original_filename' => 'stock.xlsx', 'storage_key' => "fixtures/{$artifactId}.xlsx", 'byte_size' => 1, 'sha256' => hash('sha256', $artifactId), 'received_at' => now(), 'is_redacted' => true]);
     $warehouse = Warehouse::create(['supplier_id' => $sku->supplier_id, 'code' => 'norway', 'name' => 'National availability', 'is_active' => true]);
     CurrentStock::create(['supplier_sku_id' => $sku->id, 'warehouse_id' => $warehouse->id, 'quantity' => $quantity, 'observed_at' => now(), 'source_artifact_id' => $artifactId]);
+}
+
+function storefrontCatalogArtifact(int $supplierId): string
+{
+    $artifactId = (string) Str::ulid();
+    DB::table('source_artifacts')->insert([
+        'id' => $artifactId,
+        'supplier_id' => $supplierId,
+        'kind' => 'fixture',
+        'original_filename' => 'mixed-stock.xlsx',
+        'storage_key' => "fixtures/{$artifactId}.xlsx",
+        'byte_size' => 1,
+        'sha256' => hash('sha256', $artifactId),
+        'received_at' => now(),
+        'is_redacted' => true,
+    ]);
+
+    return $artifactId;
 }
 
 function addPublicPriceAndStock(SupplierSku $sku): void

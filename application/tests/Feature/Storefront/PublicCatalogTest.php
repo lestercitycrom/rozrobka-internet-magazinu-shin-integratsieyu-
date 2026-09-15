@@ -257,7 +257,8 @@ test('product detail presents supplier technical data and EU tyre label', functi
         ->assertSee('69 dB');
 });
 
-test('public catalog suppresses zero stock and distinguishes Tromso from remote NDI stock', function (): void {
+test('public catalog retains fresh zero stock while keeping inactive suppliers hidden', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
     $local = storefrontProduct(ProductType::Tire, 'SKU-LOCAL-STOCK', [
         'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
         'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer',
@@ -289,6 +290,11 @@ test('public catalog suppresses zero stock and distinguishes Tromso from remote 
         'source_artifact_id' => storefrontArtifact($remote->supplier_id),
     ]);
     CurrentStock::query()->where('supplier_sku_id', $hidden->id)->update(['quantity' => 0]);
+    PricingRule::create([
+        'name' => 'Public', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'public',
+        'currency' => 'NOK', 'markup_basis_points' => 0, 'fixed_markup_minor' => 0,
+        'rounding_increment_minor' => 1, 'priority' => 1, 'is_active' => true,
+    ]);
 
     $this->get('/dekk')
         ->assertOk()
@@ -296,20 +302,37 @@ test('public catalog suppresses zero stock and distinguishes Tromso from remote 
         ->assertSee('På lager i Tromsø')
         ->assertSee('SKU-REMOTE-STOCK')
         ->assertSee('Tilgjengelig fra annet NDI-lager')
-        ->assertDontSee('SKU-ZERO-STOCK')
+        ->assertSee('SKU-ZERO-STOCK')
+        ->assertSee(__('storefront.stock_none'))
         ->assertDontSee('SKU-INACTIVE-SUPPLIER')
+        ->assertSee('value="195"', false)
         ->assertDontSee('value="225"', false);
+
+    $this->get('/dekk?in_stock=1')
+        ->assertOk()
+        ->assertSee('SKU-LOCAL-STOCK')
+        ->assertSee('SKU-REMOTE-STOCK')
+        ->assertDontSee('SKU-ZERO-STOCK')
+        ->assertDontSee('SKU-INACTIVE-SUPPLIER');
 
     $this->get('/produkter/SKU-LOCAL-STOCK')->assertOk()->assertSee('2 på lager i Tromsø');
     $this->get('/produkter/SKU-REMOTE-STOCK')->assertOk()->assertSee('På annet NDI-lager');
-    $this->get('/produkter/SKU-ZERO-STOCK')->assertNotFound();
+    $this->get('/produkter/SKU-ZERO-STOCK')
+        ->assertOk()
+        ->assertSee(__('storefront.stock_none'))
+        ->assertDontSee('data-testid="product-cart-form"', false);
+    $this->get('/ru/produkter/SKU-ZERO-STOCK')
+        ->assertOk()
+        ->assertSee('Нет зарегистрированного остатка.')
+        ->assertDontSee('data-testid="product-cart-form"', false);
     $this->get('/produkter/SKU-INACTIVE-SUPPLIER')->assertNotFound();
-    $this->getJson('/dekk/suggestions?q=SKU-ZERO')->assertOk()->assertExactJson(['suggestions' => []]);
+    $this->getJson('/dekk/suggestions?q=SKU-ZERO')->assertOk()->assertJsonFragment(['sku' => 'SKU-ZERO-STOCK']);
     $this->getJson('/dekk/suggestions?q=SKU-INACTIVE')->assertOk()->assertExactJson(['suggestions' => []]);
-    $this->get('/sitemap.xml')->assertDontSee('SKU-ZERO-STOCK')->assertDontSee('SKU-INACTIVE-SUPPLIER')->assertSee('SKU-LOCAL-STOCK');
+    $this->get('/sitemap.xml')->assertSee('SKU-ZERO-STOCK')->assertDontSee('SKU-INACTIVE-SUPPLIER')->assertSee('SKU-LOCAL-STOCK');
 });
 
-test('all public catalog surfaces exclude stale stock while fresh stock remains available', function (): void {
+test('all public catalog surfaces retain stale and missing stock but purchasing fails closed', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
     storefrontProduct(ProductType::Tire, 'SKU-FRESH-STOCK', [
         'width_mm' => '205.00', 'aspect_ratio' => '55.00', 'rim_diameter_in' => '16.00',
         'load_index' => '91', 'speed_symbol' => 'V', 'season' => 'Summer',
@@ -320,6 +343,12 @@ test('all public catalog surfaces exclude stale stock while fresh stock remains 
     ]);
     $staleBrand = Brand::create(['canonical_name' => 'StaleOnly', 'slug' => 'stale-only']);
     $stale->product()->update(['brand_id' => $staleBrand->id]);
+    $missing = storefrontProduct(ProductType::Tire, 'SKU-MISSING-STOCK', [
+        'width_mm' => '315.00', 'aspect_ratio' => '30.00', 'rim_diameter_in' => '22.00',
+        'load_index' => '105', 'speed_symbol' => 'Y', 'season' => 'Summer',
+    ]);
+    $missingBrand = Brand::create(['canonical_name' => 'MissingOnly', 'slug' => 'missing-only']);
+    $missing->product()->update(['brand_id' => $missingBrand->id]);
     PricingRule::create([
         'name' => 'Public', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'public',
         'currency' => 'NOK', 'markup_basis_points' => 0, 'fixed_markup_minor' => 0,
@@ -327,25 +356,59 @@ test('all public catalog surfaces exclude stale stock while fresh stock remains 
     ]);
     config()->set('storefront.stock_max_age_minutes', 180);
     CurrentStock::query()->where('supplier_sku_id', $stale->id)->update(['observed_at' => now()->subMinutes(181)]);
+    CurrentStock::query()->where('supplier_sku_id', $missing->id)->delete();
 
     $this->get('/dekk')
         ->assertOk()
         ->assertSee('SKU-FRESH-STOCK')
+        ->assertSee('SKU-STALE-STOCK')
+        ->assertSee('SKU-MISSING-STOCK')
+        ->assertSee('StaleOnly')
+        ->assertSee('MissingOnly')
+        ->assertSee('value="305"', false)
+        ->assertSee('value="315"', false)
+        ->assertSee(__('storefront.stock_stale'))
+        ->assertSee(__('storefront.stock_missing'));
+    $this->get('/dekk?in_stock=1')
+        ->assertOk()
+        ->assertSee('SKU-FRESH-STOCK')
         ->assertDontSee('SKU-STALE-STOCK')
-        ->assertDontSee('StaleOnly')
-        ->assertDontSee('value="305"', false);
+        ->assertDontSee('SKU-MISSING-STOCK');
     $this->get('/produkter/SKU-FRESH-STOCK')->assertOk();
-    $this->get('/produkter/SKU-STALE-STOCK')->assertNotFound();
+    $this->get('/produkter/SKU-STALE-STOCK')
+        ->assertOk()
+        ->assertSee(__('storefront.stock_stale_detail'))
+        ->assertDontSee('data-testid="product-cart-form"', false);
+    $this->get('/produkter/SKU-MISSING-STOCK')
+        ->assertOk()
+        ->assertSee(__('storefront.stock_missing_detail'))
+        ->assertDontSee('data-testid="product-cart-form"', false);
+    $this->get('/ru/produkter/SKU-STALE-STOCK')
+        ->assertOk()
+        ->assertSee('Последние данные об остатках устарели и не используются для оформления.')
+        ->assertDontSee('data-testid="product-cart-form"', false);
+    $this->get('/ru/produkter/SKU-MISSING-STOCK')
+        ->assertOk()
+        ->assertSee('NDI ещё не передал складской остаток для этого товара.')
+        ->assertDontSee('data-testid="product-cart-form"', false);
     $this->getJson('/dekk/suggestions?q=SKU-FRESH')->assertOk()->assertJsonFragment(['sku' => 'SKU-FRESH-STOCK']);
-    $this->getJson('/dekk/suggestions?q=SKU-STALE')->assertOk()->assertExactJson(['suggestions' => []]);
-    $this->get('/sitemap.xml')->assertSee('SKU-FRESH-STOCK')->assertDontSee('SKU-STALE-STOCK');
+    $this->getJson('/dekk/suggestions?q=SKU-STALE')->assertOk()->assertJsonFragment(['sku' => 'SKU-STALE-STOCK']);
+    $this->getJson('/dekk/suggestions?q=SKU-MISSING')->assertOk()->assertJsonFragment(['sku' => 'SKU-MISSING-STOCK']);
+    $this->get('/sitemap.xml')->assertSee('SKU-FRESH-STOCK')->assertSee('SKU-STALE-STOCK')->assertSee('SKU-MISSING-STOCK');
 
-    app(SessionCart::class)->add('SKU-STALE-STOCK', 1);
+    $sessionCart = app(SessionCart::class);
+    $sessionCart->add('SKU-STALE-STOCK', 1);
+    $sessionCart->add('SKU-MISSING-STOCK', 1);
     $cart = app(CartResolver::class)->resolve();
     expect($cart->lines)->toBe([])
-        ->and($cart->issues)->toHaveCount(1)
-        ->and($cart->issues[0]->reason)->toBe('product_unavailable')
+        ->and($cart->issues)->toHaveCount(2)
+        ->and(collect($cart->issues)->pluck('reason')->all())->toEqualCanonicalizing(['stock_stale', 'stock_missing'])
         ->and($cart->isCheckoutReady())->toBeFalse();
+
+    $this->withSession(['storefront.cart.lines' => ['SKU-STALE-STOCK' => 1]])
+        ->get('/kasse')
+        ->assertRedirect('/handlekurv')
+        ->assertSessionHas('cart_error');
 });
 
 test('product detail normalizes confirmed tire data and hides uncontracted supplier text in NB and RU', function (): void {

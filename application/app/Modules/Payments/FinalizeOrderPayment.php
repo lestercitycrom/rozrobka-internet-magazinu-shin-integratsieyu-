@@ -30,6 +30,7 @@ final class FinalizeOrderPayment
     public function execute(Order $order): PaymentAttempt
     {
         $order = Order::query()->findOrFail($order->getKey());
+        PaymentBoundaryGuard::assertOrderAllowed($order);
         if ($order->payment_status === PaymentStatus::Paid) {
             return PaymentAttempt::query()->where('order_id', $order->id)->firstOrFail();
         }

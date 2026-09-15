@@ -9,8 +9,10 @@ use App\Modules\Cart\Data\CartServiceLine;
 use App\Modules\Cart\Data\CartServiceOption;
 use App\Modules\Cart\Data\CartSnapshot;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
+use App\Modules\Catalog\ReadModel\CatalogStockState;
 use App\Modules\Commerce\Enums\ServiceAddonBillingMode;
 use App\Modules\Commerce\Models\ServiceAddon;
+use App\Modules\NdiApi\NdiSandboxContract;
 use App\Modules\Pricing\SellingPriceService;
 use App\Modules\Pricing\ValueObjects\Money;
 
@@ -37,7 +39,13 @@ final class CartResolver
                 continue;
             }
 
-            if (! $item->stock->isFresh()) {
+            if ($item->stock->state() === CatalogStockState::Missing) {
+                $issues[] = new CartIssue($sku, $quantity, 'stock_missing');
+
+                continue;
+            }
+
+            if ($item->stock->state() === CatalogStockState::Stale) {
                 $issues[] = new CartIssue($sku, $quantity, 'stock_stale');
 
                 continue;
@@ -56,8 +64,8 @@ final class CartResolver
                 continue;
             }
 
-            if ($item->isIntegrationTest && $quantity !== (int) config('ndi_api.sandbox.quantity', 2)) {
-                $issues[] = new CartIssue($sku, $quantity, 'sandbox_quantity_required', (int) config('ndi_api.sandbox.quantity', 2));
+            if ($item->isIntegrationTest && $quantity !== NdiSandboxContract::QUANTITY) {
+                $issues[] = new CartIssue($sku, $quantity, 'sandbox_quantity_required', NdiSandboxContract::QUANTITY);
 
                 continue;
             }
@@ -75,6 +83,8 @@ final class CartResolver
         }
 
         $profiles = collect($lines)->pluck('item.integrationProfile')->unique()->values();
+        $integrationTestOnly = $lines !== []
+            && collect($lines)->every(fn (CartLine $line): bool => $line->item->isIntegrationTest);
         if ($profiles->count() > 1) {
             foreach ($lines as $line) {
                 $issues[] = new CartIssue($line->item->sku, $line->quantity, 'mixed_integration_profiles');
@@ -90,6 +100,12 @@ final class CartResolver
         $serviceIssues = [];
 
         foreach ($selectedCodes as $code) {
+            if ($integrationTestOnly) {
+                $serviceIssues[] = new CartServiceIssue($code, 'integration_test_forbidden');
+
+                continue;
+            }
+
             /** @var ServiceAddon|null $addon */
             $addon = $selectedAddons->get($code);
             if ($addon === null || ! $this->isAvailable($addon)) {
@@ -117,30 +133,32 @@ final class CartResolver
         }
 
         $selectedValidCodes = collect($serviceLines)->pluck('code')->all();
-        $serviceOptions = ServiceAddon::query()
-            ->available()
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get()
-            ->map(function (ServiceAddon $addon) use ($lines, $selectedValidCodes): ?CartServiceOption {
-                $quantity = $this->applicableQuantity($addon, $lines);
-                if ($quantity === 0) {
-                    return null;
-                }
+        $serviceOptions = $integrationTestOnly
+            ? []
+            : ServiceAddon::query()
+                ->available()
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
+                ->map(function (ServiceAddon $addon) use ($lines, $selectedValidCodes): ?CartServiceOption {
+                    $quantity = $this->applicableQuantity($addon, $lines);
+                    if ($quantity === 0) {
+                        return null;
+                    }
 
-                return new CartServiceOption(
-                    code: $addon->code,
-                    titleNb: $addon->title_nb,
-                    titleRu: $addon->title_ru,
-                    billingMode: $addon->billing_mode,
-                    unitPrice: new Money($addon->price_minor, $addon->currency),
-                    quantity: $addon->billing_mode === ServiceAddonBillingMode::PerOrder ? 1 : $quantity,
-                    selected: in_array($addon->code, $selectedValidCodes, true),
-                );
-            })
-            ->filter()
-            ->values()
-            ->all();
+                    return new CartServiceOption(
+                        code: $addon->code,
+                        titleNb: $addon->title_nb,
+                        titleRu: $addon->title_ru,
+                        billingMode: $addon->billing_mode,
+                        unitPrice: new Money($addon->price_minor, $addon->currency),
+                        quantity: $addon->billing_mode === ServiceAddonBillingMode::PerOrder ? 1 : $quantity,
+                        selected: in_array($addon->code, $selectedValidCodes, true),
+                    );
+                })
+                ->filter()
+                ->values()
+                ->all();
 
         return new CartSnapshot(
             lines: $lines,

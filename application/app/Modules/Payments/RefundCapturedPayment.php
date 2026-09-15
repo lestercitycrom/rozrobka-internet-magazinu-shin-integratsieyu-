@@ -34,6 +34,7 @@ final class RefundCapturedPayment
         ?string $note = null,
     ): PaymentAttempt {
         PaymentBoundaryGuard::assertEnabled();
+        PaymentBoundaryGuard::assertOrderAllowed($order);
         $provider = PaymentBoundaryGuard::provider($this->gateway->provider());
         $idempotencyKey = PaymentBoundaryGuard::idempotencyKey($idempotencyKey);
         $paymentOrder = Order::query()->with(['items', 'serviceItems'])->findOrFail($order->getKey());

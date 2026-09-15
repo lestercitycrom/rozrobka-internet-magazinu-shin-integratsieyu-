@@ -17,8 +17,9 @@ Schedule::command('ndi:media:sync --limit=25')
     ->withoutOverlapping();
 Schedule::command('ndi:inbox:sync --limit=20')
     ->everyTenMinutes()
-    ->when(fn (): bool => filled(config('ndi.inbox_path')))
-    ->withoutOverlapping();
+    // Always execute so a lost inbox path becomes an operational failure instead
+    // of silently suppressing the supplier feed forever.
+    ->withoutOverlapping(45);
 Schedule::command('ndi:sandbox-catalog')
     ->hourly()
     ->when(fn (): bool => ! app()->environment('production') && (bool) config('ndi_api.sandbox.enabled'))

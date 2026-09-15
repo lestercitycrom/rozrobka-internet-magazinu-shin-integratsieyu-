@@ -4,6 +4,9 @@
     $season = $presenter->season();
     $specification = $presenter->summary();
     $cardTitle = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
+    $requiredQuantity = $item->isIntegrationTest ? \App\Modules\NdiApi\NdiSandboxContract::QUANTITY : 1;
+    $canPurchase = $sellingPrice !== null && $item->stock->canPurchase($requiredQuantity);
+    $stockState = $item->stock->state();
 @endphp
 <article class="et-product-card" data-testid="catalog-product" data-product-sku="{{ $item->sku }}">
     <a class="et-product-card__media" href="{{ route($prefix.'products.show', ['sku' => $item->sku]) }}" tabindex="-1" aria-hidden="true">
@@ -12,7 +15,7 @@
         </div>
         <div class="et-product-card__badges">
             @if ($item->isIntegrationTest)<span class="et-badge et-badge--red">{{ __('storefront.integration_test_product') }}</span>@elseif ($item->tire && $season)<span class="et-badge et-badge--red">{{ $season }}</span>@else<span></span>@endif
-            <span @class(['et-badge', 'et-badge--success' => $item->stock->isFresh()])>{{ ! $item->stock->isFresh() ? __('storefront.stock_stale') : ($item->stock->isAvailableLocally() ? __('storefront.stock_tromso') : __('storefront.stock_remote')) }}</span>
+            <span @class(['et-badge', 'et-badge--success' => in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote], true)])>{{ $presenter->availabilityLabel() }}</span>
         </div>
     </a>
     <div class="et-product-card__body">
@@ -27,11 +30,11 @@
                     <p class="et-caption"><strong>{{ __('storefront.price_unavailable') }}</strong></p>
                 @endif
             </div>
-            @if ($sellingPrice && $item->stock->quantity > 0 && $item->stock->isFresh())
+            @if ($canPurchase)
                 <form method="post" action="{{ route($prefix.'cart.add') }}">
                     @csrf
                     <input type="hidden" name="sku" value="{{ $item->sku }}">
-                    <input type="hidden" name="quantity" value="{{ $item->isIntegrationTest ? (int) config('ndi_api.sandbox.quantity', 2) : 1 }}">
+                    <input type="hidden" name="quantity" value="{{ $requiredQuantity }}">
                     <button class="et-product-card__buy" type="submit" aria-label="{{ __('storefront.add_to_cart') }}: {{ $item->title }}" data-testid="catalog-add-to-cart"><x-icon name="cart" :size="19" /><span>{{ __('storefront.add_to_cart') }}</span></button>
                 </form>
             @else

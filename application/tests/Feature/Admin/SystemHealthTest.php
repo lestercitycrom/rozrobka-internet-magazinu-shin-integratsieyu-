@@ -17,8 +17,11 @@ use Illuminate\Support\Str;
 uses(RefreshDatabase::class);
 
 test('health is visible to administrators and hides sensitive storage details', function (): void {
+    $privateInbox = base_path('private/supplier-inbox');
+    config()->set('ndi.inbox_path', $privateInbox);
+
     $this->actingAs(User::factory()->owner()->create())->get('/admin/health')
-        ->assertOk()->assertSee('Systemhelse')->assertSee('Database')->assertSee('Køforbindelse')->assertSee('Dintero-betaling')->assertSee('Notion')->assertDontSee(base_path());
+        ->assertOk()->assertSee('Systemhelse')->assertSee('Database')->assertSee('Køforbindelse')->assertSee('NDI-innboks')->assertSee('Dintero-betaling')->assertSee('Notion')->assertDontSee($privateInbox)->assertDontSee(base_path());
 });
 
 test('enabled Dintero is healthy only with environment credentials and protected callbacks', function (): void {
@@ -45,27 +48,54 @@ test('enabled Dintero is healthy only with environment credentials and protected
     expect(app(SystemHealth::class)->report()['payment_callback_protected'])->toBeTrue();
 });
 
+test('an unavailable inbox is rendered as an error even before a live catalog exists', function (): void {
+    config()->set('ndi.inbox_path', null);
+
+    $response = $this->actingAs(User::factory()->owner()->create())->get('/admin/health')->assertOk();
+
+    expect($response->getContent())->toMatch('/data-testid="ndi-inbox-health"[\s\S]*?et-health-value--error/');
+});
+
 test('guests and customers cannot read system health', function (): void {
     $this->get('/admin/health')->assertRedirect(route('admin.login'));
     $this->actingAs(User::factory()->customer()->create())->get('/admin/health')->assertForbidden();
 });
 
 test('health command emits only a short redacted summary', function (): void {
-    $this->artisan('easytire:health')->expectsOutputToContain('db=')->doesntExpectOutputToContain(base_path());
+    $privateInbox = base_path('private/supplier-inbox');
+    config()->set('ndi.inbox_path', $privateInbox);
+
+    $this->artisan('easytire:health')
+        ->expectsOutputToContain('inbox_configured=yes')
+        ->doesntExpectOutputToContain($privateInbox)
+        ->doesntExpectOutputToContain(base_path());
 });
 
 test('health reports a non-negative whole-minute age for the last successful NDI import', function (): void {
     $this->freezeTime();
     $supplierId = DB::table('suppliers')->insertGetId([
-        'code' => 'ndi-health',
+        'code' => 'ndi',
         'name' => 'NDI Health Test',
         'is_active' => true,
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
+    $artifactId = (string) Str::ulid();
+    DB::table('source_artifacts')->insert([
+        'id' => $artifactId,
+        'supplier_id' => $supplierId,
+        'kind' => 'stock',
+        'original_filename' => 'stock.xlsx',
+        'storage_key' => 'health/'.$artifactId.'.xlsx',
+        'byte_size' => 1,
+        'sha256' => hash('sha256', $artifactId),
+        'received_at' => now()->subMinutes(15),
+        'is_redacted' => true,
+    ]);
+    $runId = (string) Str::ulid();
     DB::table('import_runs')->insert([
-        'id' => (string) Str::ulid(),
+        'id' => $runId,
         'supplier_id' => $supplierId,
         'run_type' => 'bundle',
         'status' => 'succeeded',
@@ -76,6 +106,13 @@ test('health reports a non-negative whole-minute age for the last successful NDI
         'created_at' => now()->subMinutes(16),
         'updated_at' => now()->subMinutes(15),
     ]);
+    DB::table('import_run_artifacts')->insert([
+        'import_run_id' => $runId,
+        'source_artifact_id' => $artifactId,
+        'dataset_role' => 'stock',
+        'parser_version' => 'test',
+    ]);
+    createAdminHealthStockObservation($supplierId, $artifactId, 15);
 
     expect(app(SystemHealth::class)->report()['ndi_age_minutes'])->toBe(15);
 });
@@ -83,17 +120,32 @@ test('health reports a non-negative whole-minute age for the last successful NDI
 test('a duplicate bundle run does not make old NDI data appear fresh', function (): void {
     $this->freezeTime();
     $supplierId = DB::table('suppliers')->insertGetId([
-        'code' => 'ndi-health-duplicate', 'name' => 'NDI Duplicate Health', 'is_active' => true,
+        'code' => 'ndi', 'name' => 'NDI Duplicate Health', 'is_active' => true,
         'created_at' => now(), 'updated_at' => now(),
     ]);
 
     foreach ([['succeeded', 120], ['duplicate', 5]] as [$status, $minutes]) {
+        $artifactId = (string) Str::ulid();
+        DB::table('source_artifacts')->insert([
+            'id' => $artifactId, 'supplier_id' => $supplierId, 'kind' => 'stock',
+            'original_filename' => $status.'.xlsx', 'storage_key' => 'health/'.$artifactId.'.xlsx',
+            'byte_size' => 1, 'sha256' => hash('sha256', $artifactId),
+            'received_at' => now()->subMinutes($minutes), 'is_redacted' => true,
+        ]);
+        $runId = (string) Str::ulid();
         DB::table('import_runs')->insert([
-            'id' => (string) Str::ulid(), 'supplier_id' => $supplierId, 'run_type' => 'bundle',
+            'id' => $runId, 'supplier_id' => $supplierId, 'run_type' => 'bundle',
             'status' => $status, 'trigger' => 'test', 'parser_version' => 'test',
             'started_at' => now()->subMinutes($minutes + 1), 'finished_at' => now()->subMinutes($minutes),
             'created_at' => now()->subMinutes($minutes + 1), 'updated_at' => now()->subMinutes($minutes),
         ]);
+        DB::table('import_run_artifacts')->insert([
+            'import_run_id' => $runId, 'source_artifact_id' => $artifactId,
+            'dataset_role' => 'stock', 'parser_version' => 'test',
+        ]);
+        if ($status === 'succeeded') {
+            createAdminHealthStockObservation($supplierId, $artifactId, $minutes);
+        }
     }
 
     expect(app(SystemHealth::class)->report()['ndi_age_minutes'])->toBe(120);
@@ -101,6 +153,7 @@ test('a duplicate bundle run does not make old NDI data appear fresh', function 
 
 test('health detects live and stale scheduler and queue workers', function (): void {
     $this->freezeTime();
+    config()->set('ndi.inbox_path', base_path('tests/Fixtures'));
     config()->set('health.require_heartbeats', true);
     config()->set('health.heartbeat_max_age_minutes', 5);
     config()->set('health.disk_free_warning_bytes', 0);
@@ -152,3 +205,33 @@ test('health exposes and fails on supplier media download failures', function ()
         ->and($report['ndi_media_pending'])->toBe(0)
         ->and(app(SystemHealth::class)->healthy())->toBeFalse();
 });
+
+function createAdminHealthStockObservation(int $supplierId, string $artifactId, int $ageMinutes): void
+{
+    $skuId = DB::table('supplier_skus')->insertGetId([
+        'supplier_id' => $supplierId,
+        'product_id' => null,
+        'external_sku' => 'ADMIN-HEALTH-'.$artifactId,
+        'catalog_state' => 'stock_only',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    $warehouseId = DB::table('warehouses')->insertGetId([
+        'supplier_id' => $supplierId,
+        'code' => 'norway',
+        'name' => 'Norway',
+        'country_code' => 'NO',
+        'is_active' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('current_stock')->insert([
+        'supplier_sku_id' => $skuId,
+        'warehouse_id' => $warehouseId,
+        'quantity' => 1,
+        'observed_at' => now()->subMinutes($ageMinutes),
+        'source_artifact_id' => $artifactId,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}

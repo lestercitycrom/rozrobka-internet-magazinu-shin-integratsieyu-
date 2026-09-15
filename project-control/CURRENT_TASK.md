@@ -1,14 +1,19 @@
 # Current task
 
-- Issue: [#44 — design v2 handoff, final closeout comment 5678136657](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5678136657).
-- PR: [#69 — published design v2](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/69), branch `codex/issue-44-design-v2`, dedicated clone `shop-ndi-design`.
-- Accepted base: `origin/main` at `bf7f03e3d3265174e4e4307064769a742dd087cc`.
-- Deployed application code: `980fdc117d27a7bcf5d0d0cd950e31e74cee1497` on staging; immediate rollback `33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b` and the accepted base remain retained.
-- Scope completed: public design v2 plus the reviewed CRM/browser verification and limited admin presentation/accessibility polish. No new business logic, schema, dependency or integration behaviour was added.
-- Source: `EasyTire_UNIFIED_TZ_v2_2026-09-15.zip`, SHA-256 `4234EE9F20D5946A42E56E21DA0CDF4EB56B365446823ADC92596CF253923E90`.
-- Verification boundary: synthetic local data and external integrations off for automated tests; staging checks are read-only. The preview deploy performed no migration, seed, pruning, runtime-setting change or service restart.
-- Handoff: implementation and exact-SHA staging preview are complete. Detailed result, 64-row QA register, operational instruction and versioned Playwright screenshots are the canonical evidence.
-- Remaining decision: independent owner/PM/ChatGPT Pro review, then an explicit merge/production decision. Further functional development is stopped for this handoff.
-- Open external inputs remain explicit: official Snapchat URL, two untranscribed audio messages, final media-rights manifest and commercial promotion confirmations. Do not fabricate them.
+- Issue: [#19 — catalogue availability recovery](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19).
+- Branch: `codex/issue-19-catalog-availability` in the dedicated `shop-ndi-design` clone.
+- Accepted base: `origin/main` at `47dfdee2bb9538ba70742b0c88cf1edd4a85707c`.
+- Application candidate: uncommitted working tree on the Issue branch. It has no immutable candidate SHA and is not deployed.
+- Active staging application: `980fdc117d27a7bcf5d0d0cd950e31e74cee1497`; immediate rollback `33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b` remains retained.
+- Observed problem: 1,574 published active real NDI catalogue rows exist and 918 have a positive recorded quantity, but none has fresh stock. The latest live stock observation is `2026-08-12 00:47:54`.
+- Ingestion state: a restricted SFTP inbox already exists and contains three historical files from 12 August, but active `NDI_INBOX_PATH` configuration is empty and no newer supplier file has arrived. Paths, filenames, credentials and file contents remain redacted.
+- Candidate contract: keep published active real products browseable when stock is missing, stale or zero, with an honest availability state; require fresh sufficient positive stock for cart, checkout and payment readiness. An isolated fresh secondary warehouse row cannot mask stale authoritative Norway or contributing physical stock.
+- Operations contract: an unconfigured inbox is an explicit sync failure. Health derives freshness only from successful live, non-test NDI stock imports, cannot outlive storefront stock freshness and exposes only redacted inbox readiness/receipt state.
+- Sandbox contract: immutable SKU `NDI-TEST-4765205551649102`, quantity `2`, unit price `10 NOK`, total `20 NOK`; payment is Dintero-test-only and remains isolated from production and ordinary orders.
+- Import freshness contract: stock freshness uses the retained stored-artifact observation timestamp, initially derived from source-file filesystem modification time (mtime), never processing or replay time. Inbox duplicate detection is parser-version agnostic; retained artifact time and older-observation guards also prevent a same-content manual replay or touched already-stored duplicate from renewing freshness. Future observations are rejected and an older delivery cannot overwrite newer current stock.
+- Verified candidate: full Laravel `589 passed / 5,550 assertions / 1 expected Windows symlink skip`; standard Playwright `251 passed / 132 expected skips / 0 failures`; dedicated Issue #19 Playwright `11 passed / 4 expected skips`; supplemental map/content `56 passed` and sequential admin dependency chain `16 passed`; Pint and production asset build are clean. An independent code audit found no blocking or material defect.
+- Still pending: an immutable commit/PR SHA, CI, exact-SHA review and deployment. Future ingestion configuration repair is planned separately.
+- Conservative limitation: a byte-identical supplier delivery cannot establish a new observation until a trusted delivery identifier/sequence is available and implemented, and a full bundle uses its oldest constituent mtime. Both cases keep commerce blocked rather than risk selling against stale data.
+- External boundary: a new authoritative NDI delivery remains required for fresh real inventory and purchasing. It is not a blocker to browse/demo recovery after the candidate is accepted and deployed.
 
-This file identifies the completed staging handoff; runtime facts belong to `project-control/STATUS.md` and the Issue #44 evidence.
+Canonical redacted evidence: `evidence/issue-19/catalog-recovery.md`. Runtime facts belong to `project-control/STATUS.md`.

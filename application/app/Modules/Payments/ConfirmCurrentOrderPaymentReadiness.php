@@ -26,7 +26,7 @@ final class ConfirmCurrentOrderPaymentReadiness implements OrderPaymentReadiness
         $currentTotal = 0;
         foreach ($order->items as $line) {
             $item = $this->catalog->findPublicSku((string) $line->external_sku);
-            if ($item === null || $item->stock->quantity < $line->quantity) {
+            if ($item === null || ! $item->stock->canPurchase($line->quantity)) {
                 throw new PaymentOperationRejected('Current product availability must be confirmed before payment.');
             }
 

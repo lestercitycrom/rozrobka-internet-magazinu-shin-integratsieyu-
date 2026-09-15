@@ -28,7 +28,9 @@ final readonly class CartSnapshot
             && $this->issues === []
             && $this->serviceIssues === []
             && $this->total->minor > 0
-            && collect($this->lines)->every(fn (CartLine $line): bool => $line->price->money->minor > 0 && $line->total()->minor > 0);
+            && collect($this->lines)->every(fn (CartLine $line): bool => $line->price->money->minor > 0
+                && $line->total()->minor > 0
+                && $line->item->stock->canPurchase($line->quantity));
     }
 
     public function quantity(): int

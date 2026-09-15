@@ -61,7 +61,7 @@
                                             <input type="hidden" name="sku" value="{{ $line->item->sku }}">
                                             <div>
                                                 <label class="et-label" for="{{ $quantityId }}">{{ __('commerce.quantity') }}</label>
-                                                @php $requiredTestQuantity = (int) config('ndi_api.sandbox.quantity', 2); @endphp
+                                                @php $requiredTestQuantity = \App\Modules\NdiApi\NdiSandboxContract::QUANTITY; @endphp
                                                 <input class="et-input easytire-input et-cart-quantity" id="{{ $quantityId }}" name="quantity" data-testid="cart-line-quantity" type="number" min="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : min(40, $line->item->stock->quantity) }}" value="{{ $line->quantity }}" inputmode="numeric" {{ $line->item->isIntegrationTest ? 'readonly' : '' }}>
                                             </div>
                                             <button class="et-btn et-btn--dark et-btn--small et-cart-action" type="submit" data-testid="cart-line-update">{{ __('commerce.update') }}</button>

@@ -5,6 +5,7 @@ use App\Modules\Cart\SessionCart;
 use App\Modules\Commerce\Enums\ServiceAddonApplicability;
 use App\Modules\Commerce\Enums\ServiceAddonBillingMode;
 use App\Modules\Commerce\Models\ServiceAddon;
+use App\Modules\NdiApi\NdiSandboxCatalogManager;
 use Database\Seeders\E2eStorefrontSeeder;
 use Database\Seeders\ServiceAddonSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -118,6 +119,37 @@ test('service selection routes validate and toggle the session independently fro
 
     $this->delete('/handlekurv/tjenester', ['code' => 'balancing'])->assertRedirect();
     expect(app(SessionCart::class)->serviceAddons())->toBe([]);
+});
+
+test('the isolated sandbox product cannot expose or persist service add-ons', function (): void {
+    config()->set([
+        'ndi_api.sandbox.enabled' => true,
+        'ndi_api.sandbox.party_id' => '1220000',
+        'ndi_api.sandbox.article_id' => '4765205551649102',
+        'ndi_api.sandbox.quantity' => 2,
+        'ndi_api.sandbox.price_minor' => 1000,
+    ]);
+    app(NdiSandboxCatalogManager::class)->refresh();
+    $addon = serviceAddonFixture('sandbox-forbidden', ServiceAddonApplicability::Tire, ServiceAddonBillingMode::PerOrder, 2500);
+    $cart = app(SessionCart::class);
+    $cart->add('NDI-TEST-4765205551649102', 2);
+
+    $clean = app(CartResolver::class)->resolve();
+    expect($clean->serviceOptions)->toBe([])
+        ->and($clean->isCheckoutReady())->toBeTrue();
+
+    $this->from('/handlekurv')->post('/handlekurv/tjenester', ['code' => $addon->code])
+        ->assertRedirect('/handlekurv')
+        ->assertSessionHas('cart_error', __('commerce.sandbox_services_forbidden'));
+    expect($cart->serviceAddons())->toBe([]);
+
+    $cart->addServiceAddon($addon->code);
+    $blocked = app(CartResolver::class)->resolve();
+    expect($blocked->serviceLines)->toBe([])
+        ->and($blocked->serviceOptions)->toBe([])
+        ->and($blocked->serviceIssues)->toHaveCount(1)
+        ->and($blocked->serviceIssues[0]->reason)->toBe('integration_test_forbidden')
+        ->and($blocked->isCheckoutReady())->toBeFalse();
 });
 
 function serviceAddonFixture(

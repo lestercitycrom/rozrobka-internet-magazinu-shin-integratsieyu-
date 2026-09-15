@@ -138,6 +138,9 @@ jobs:
       - name: Run buyer and admin E2E
         run: npm run test:e2e
 
+      - name: Run Issue 19 catalog safety E2E
+        run: npm run test:e2e:issue19
+
       - name: Upload Playwright failure evidence
         if: failure()
         uses: actions/upload-artifact@v7
@@ -146,6 +149,7 @@ jobs:
           path: |
             application/playwright-report
             application/test-results
+            application/tmp/issue-19/playwright-results
           if-no-files-found: ignore
           retention-days: 7
 

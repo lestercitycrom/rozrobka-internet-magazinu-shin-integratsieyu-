@@ -25,6 +25,7 @@ final class VoidAuthorizedPayment
     public function execute(Order $order, string $idempotencyKey, ?int $actorUserId = null, ?string $note = null): PaymentAttempt
     {
         PaymentBoundaryGuard::assertEnabled();
+        PaymentBoundaryGuard::assertOrderAllowed($order);
         $provider = PaymentBoundaryGuard::provider($this->gateway->provider());
         $idempotencyKey = PaymentBoundaryGuard::idempotencyKey($idempotencyKey);
 

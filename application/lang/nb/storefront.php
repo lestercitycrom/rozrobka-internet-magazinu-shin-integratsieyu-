@@ -18,6 +18,8 @@ return [
     'stock_remote_detail' => 'På annet NDI-lager. Leveringstid bekreftes før bestilling.',
     'stock_stale' => 'Lagerstatus oppdateres',
     'stock_stale_detail' => 'Sist mottatte lagerstatus er for gammel til å brukes ved bestilling.',
+    'stock_missing' => 'Lagerstatus ikke mottatt',
+    'stock_missing_detail' => 'NDI har ikke levert lagerstatus for denne varen ennå.',
     'quantity' => 'Antall',
     'price_unavailable' => 'Pris er ikke klar for netthandel',
     'selling_price_note' => 'Pris beregnet etter den aktive prisregelen.',

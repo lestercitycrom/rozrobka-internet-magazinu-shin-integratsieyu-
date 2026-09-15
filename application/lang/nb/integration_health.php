@@ -11,5 +11,6 @@ return [
     'disabled' => 'Deaktivert',
     'test' => 'testmiljø',
     'production' => 'produksjon',
+    'invalid' => 'ugyldig miljø',
     'notion_after_capture' => 'Betalte ordrer sendes først etter faktisk belastning.',
 ];

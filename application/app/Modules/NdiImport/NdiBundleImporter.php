@@ -10,6 +10,7 @@ use App\Modules\NdiImport\Enums\DatasetRole;
 use App\Modules\NdiImport\Exceptions\NdiImportAlreadyRunning;
 use App\Modules\NdiImport\Exceptions\NdiPublishFailed;
 use App\Modules\NdiImport\Exceptions\UnknownWorkbookSchema;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,8 @@ use Throwable;
 
 final class NdiBundleImporter
 {
+    private const MAX_FUTURE_OBSERVATION_MINUTES = 5;
+
     public function __construct(
         private readonly NdiArtifactStore $artifactStore,
         private readonly NdiWorkbookParser $parser,
@@ -30,9 +33,14 @@ final class NdiBundleImporter
     /**
      * @param  list<string>  $sourcePaths
      */
-    public function import(array $sourcePaths, string $trigger = 'manual', bool $isRedacted = false, bool $allowStockDrop = false): ImportOutcome
-    {
-        return $this->importWithMode($sourcePaths, $trigger, $isRedacted, true, false, $allowStockDrop);
+    public function import(
+        array $sourcePaths,
+        string $trigger = 'manual',
+        bool $isRedacted = false,
+        bool $allowStockDrop = false,
+        ?CarbonImmutable $observedAt = null,
+    ): ImportOutcome {
+        return $this->importWithMode($sourcePaths, $trigger, $isRedacted, true, false, $allowStockDrop, $observedAt);
     }
 
     /** @param list<string> $sourcePaths */
@@ -42,8 +50,9 @@ final class NdiBundleImporter
         bool $isRedacted = false,
         bool $allowStockDrop = false,
         bool $refreshDuplicate = false,
+        ?CarbonImmutable $observedAt = null,
     ): ImportOutcome {
-        return $this->importWithMode($sourcePaths, $trigger, $isRedacted, false, $refreshDuplicate, $allowStockDrop);
+        return $this->importWithMode($sourcePaths, $trigger, $isRedacted, false, $refreshDuplicate, $allowStockDrop, $observedAt);
     }
 
     /** @param list<string> $sourcePaths */
@@ -54,9 +63,14 @@ final class NdiBundleImporter
         bool $requireComplete,
         bool $refreshDuplicate,
         bool $allowStockDrop,
+        ?CarbonImmutable $observedAt,
     ): ImportOutcome {
         if ($sourcePaths === []) {
             throw new InvalidArgumentException('At least one NDI source artifact is required.');
+        }
+        $observedAt ??= $this->oldestSourceModification($sourcePaths);
+        if ($observedAt?->isAfter(CarbonImmutable::now()->addMinutes(self::MAX_FUTURE_OBSERVATION_MINUTES))) {
+            throw new InvalidArgumentException('NDI observation time is too far in the future.');
         }
 
         $supplierCode = (string) config('ndi.supplier_code');
@@ -70,7 +84,7 @@ final class NdiBundleImporter
         }
 
         try {
-            return $this->performImport($sourcePaths, $trigger, $isRedacted, $requireComplete, $refreshDuplicate, $allowStockDrop);
+            return $this->performImport($sourcePaths, $trigger, $isRedacted, $requireComplete, $refreshDuplicate, $allowStockDrop, $observedAt);
         } finally {
             $this->releaseLock($lock);
         }
@@ -86,6 +100,7 @@ final class NdiBundleImporter
         bool $requireComplete,
         bool $refreshDuplicate,
         bool $allowStockDrop,
+        ?CarbonImmutable $observedAt,
     ): ImportOutcome {
         $supplierCode = (string) config('ndi.supplier_code');
         $parserVersion = (string) config('ndi.parser_version');
@@ -98,11 +113,23 @@ final class NdiBundleImporter
         $stored = [];
 
         foreach ($sourcePaths as $sourcePath) {
-            $artifact = $this->artifactStore->store($supplier->id, $supplierCode, $sourcePath, $isRedacted);
+            $artifact = $this->artifactStore->store(
+                $supplier->id,
+                $supplierCode,
+                $sourcePath,
+                $isRedacted,
+                $observedAt,
+            );
             $stored[] = [
                 'artifact' => $artifact,
                 'path' => Storage::disk((string) config('ndi.raw_disk'))->path($artifact->storageKey),
             ];
+        }
+
+        foreach ($stored as $item) {
+            if ($observedAt === null || $item['artifact']->receivedAt->isBefore($observedAt)) {
+                $observedAt = $item['artifact']->receivedAt;
+            }
         }
 
         $runId = (string) Str::ulid();
@@ -272,8 +299,8 @@ final class NdiBundleImporter
             $currency = preg_match('/^[A-Z]{3}$/D', $currency) === 1 ? $currency : 'NOK';
 
             try {
-                DB::transaction(function () use ($supplier, $runId, $prepared, $currency): void {
-                    $summary = $this->publisher->publish($supplier, $runId, $prepared, $currency);
+                DB::transaction(function () use ($supplier, $runId, $prepared, $currency, $observedAt): void {
+                    $summary = $this->publisher->publish($supplier, $runId, $prepared, $currency, $observedAt);
                     $this->finishRun(
                         $runId,
                         'succeeded',
@@ -426,5 +453,26 @@ final class NdiBundleImporter
         } catch (Throwable) {
             // The short-lived process lock expires automatically if its backing store disappears.
         }
+    }
+
+    /** @param list<string> $sourcePaths */
+    private function oldestSourceModification(array $sourcePaths): ?CarbonImmutable
+    {
+        $oldest = null;
+        foreach ($sourcePaths as $sourcePath) {
+            clearstatcache(true, $sourcePath);
+            $modifiedAt = is_file($sourcePath) && is_readable($sourcePath)
+                ? filemtime($sourcePath)
+                : false;
+            if ($modifiedAt === false) {
+                continue;
+            }
+            $candidate = CarbonImmutable::createFromTimestamp($modifiedAt);
+            if ($oldest === null || $candidate->isBefore($oldest)) {
+                $oldest = $candidate;
+            }
+        }
+
+        return $oldest;
     }
 }

@@ -25,6 +25,7 @@ use App\Modules\Content\Models\MediaAssignment;
 use App\Modules\NdiImport\Data\PreparedDataset;
 use App\Modules\NdiImport\Data\PublishSummary;
 use App\Modules\NdiImport\Enums\DatasetRole;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -38,10 +39,15 @@ class NdiCatalogPublisher
     /**
      * @param  array<string, PreparedDataset>  $datasets
      */
-    public function publish(Supplier $supplier, string $runId, array $datasets, string $currency): PublishSummary
-    {
+    public function publish(
+        Supplier $supplier,
+        string $runId,
+        array $datasets,
+        string $currency,
+        ?CarbonImmutable $observedAt = null,
+    ): PublishSummary {
         $summary = new PublishSummary;
-        $observedAt = now();
+        $observedAt ??= CarbonImmutable::now();
 
         foreach ([DatasetRole::Tires, DatasetRole::Wheels] as $role) {
             if (! isset($datasets[$role->value])) {
@@ -86,7 +92,7 @@ class NdiCatalogPublisher
         array $row,
         string $artifactId,
         string $currency,
-        mixed $observedAt,
+        CarbonImmutable $observedAt,
         PublishSummary $summary,
     ): void {
         $productType = $row['role'] === DatasetRole::Tires->value ? ProductType::Tire : ProductType::Wheel;
@@ -222,7 +228,7 @@ class NdiCatalogPublisher
         Supplier $supplier,
         string $runId,
         PreparedDataset $dataset,
-        mixed $observedAt,
+        CarbonImmutable $observedAt,
         PublishSummary $summary,
     ): void {
         $warehouses = collect($this->warehouseNames())->mapWithKeys(function (string $name, string $code) use ($supplier): array {
@@ -296,7 +302,7 @@ class NdiCatalogPublisher
         int $quantity,
         string $runId,
         string $artifactId,
-        mixed $observedAt,
+        CarbonImmutable $observedAt,
         PublishSummary $summary,
     ): void {
         StockSnapshot::query()->firstOrCreate([
@@ -313,6 +319,13 @@ class NdiCatalogPublisher
             'supplier_sku_id' => $sku->id,
             'warehouse_id' => $warehouse->id,
         ]);
+        if ($current->exists
+            && $current->observed_at !== null
+            && CarbonImmutable::instance($current->observed_at)->isAfter($observedAt)) {
+            $summary->skipped++;
+
+            return;
+        }
         $this->persistTracked($current, [
             'quantity' => $quantity,
             'observed_at' => $observedAt,

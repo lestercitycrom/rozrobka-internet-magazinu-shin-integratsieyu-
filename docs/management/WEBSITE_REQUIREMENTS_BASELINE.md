@@ -1,6 +1,6 @@
 # EasyTire website requirements baseline
 
-Updated: 2026-08-29
+Updated: 2026-09-15
 
 Scope: the website initiative only; Notion is postponed
 
@@ -49,9 +49,11 @@ Nothing is promoted from an idea to a requirement without customer/owner accepta
 
 - Users can start from registration lookup or manual tyre/wheel dimensions, browse categories and use live filters/autocomplete without a full-page submit loop.
 - Catalogue cards expose season, dimensions, brand/model, availability/lead-time meaning, price, honest image state and cart action in a spacious responsive grid.
-- NDI products are normalized into a local catalogue. Real products may be published only while the supplier feed is inside the configured freshness window; stale stock must fail closed.
-- One isolated sandbox product may participate in the full staging purchase flow without contaminating production NDI records.
-- Local vs remote supplier stock and tentative lead time must be communicated honestly; final availability is confirmed before fulfilment.
+- NDI products are normalized into a local catalogue. Published active real product identities remain browseable when their stock is missing, stale or zero; those states must be shown honestly and must not be presented as available.
+- Stock freshness and sufficient positive quantity are purchase gates, not catalogue-identity visibility gates. Cart mutation, checkout and payment readiness fail closed for missing, stale, zero or insufficient stock; the explicit in-stock filter returns only fresh positive stock.
+- An authoritative Norway aggregate uses its own timestamp for freshness; a newer secondary warehouse row cannot mask it. Without that aggregate, every physical warehouse row contributing to quantity must be current.
+- One isolated sandbox product may participate only in the staging Dintero test flow without contaminating production NDI records. Its immutable contract is SKU `NDI-TEST-4765205551649102`, quantity `2`, unit price `10 NOK` and total `20 NOK`; mutable configuration cannot change that payment contract, and production excludes it even if fixture rows exist.
+- Local vs remote supplier stock, missing/stale/zero states and tentative lead time must be communicated honestly; final availability is confirmed before fulfilment.
 - Automatic tyre size guidance may use Statens lookup when configured. Wheels/full kits must not claim compatibility without licensed PCD/DIA/fitment data (`EXT-02`).
 - TPMS is informational/opt-in until official applicability and programming data exists (`EXT-03`).
 - Production image coverage depends on official NDI/customer assets (`EXT-04`).
@@ -64,12 +66,14 @@ Nothing is promoted from an idea to a requirement without customer/owner accepta
 - Service forms retain the SEO-workbook-specific fields and validate contact details server-side. The battery form specifically requires problem, registration number, desired date, name and phone.
 - Booking capacity must account for two mobile vans. The allocation algorithm remains a deliberate decision: area allocation or fill one van before the second (`DEC-03`).
 - The custom admin, not Filament, manages catalogue/imports, service requests, bookings, orders/payment operations, pricing/settings, home content/promotions and activity history within role/CSRF/auth boundaries.
-- The site must keep queue, scheduler, database, cache, supplier freshness and disk health observable. A stale supplier feed must not silently present stale stock.
+- The site must keep queue, scheduler, database, cache, supplier freshness, redacted inbox readiness and disk health observable. Supplier freshness is derived only from successful live non-test NDI stock imports; sandbox or unrelated imports cannot mask missing/stale live data, and the health freshness window cannot outlive the storefront stock-purchase window.
+- An empty or unavailable `NDI_INBOX_PATH` is an explicit operational failure. Health may expose configuration/directory/readability and receipt status/count/age, but never inbox paths, filenames, credentials or payload content.
 - Notion and Telegram adapters remain disabled in this website initiative. Notion is postponed (`STALE-02`); Telegram activation requires credentials and a separate decision (`EXT-09`).
 
 ### Checkout, Dintero and NDI fulfilment — `CART-*`, `CHECKOUT-*`, `PAY-*`, `NDI-*`, `LEGAL-*`
 
-- Cart quantity is editable within stock/business rules. Checkout validates Norwegian contact/address data, shows VAT/merchant/legal facts and records required consents.
+- Cart quantity is editable only within fresh-stock/business rules. Availability and price are revalidated at cart, checkout and payment boundaries; an already stored unavailable line never becomes checkout-ready merely because its catalogue identity remains browseable.
+- Checkout validates Norwegian contact/address data, shows VAT/merchant/legal facts and records required consents.
 - Dintero sandbox supports the complete staging authorization flow. Production real-money activation requires production KYC/account/client/profile/signature approval (`EXT-06`).
 - Payment is authorize-first. NDI goods are delivered to EasyTire, not directly to the buyer. Capture happens only after the order is genuinely ready under the accepted fulfilment rules; void/refund/reconcile remain auditable admin operations.
 - A durable production customer confirmation must be delivered after the authoritative order state transition (`EXT-07`).
@@ -80,14 +84,19 @@ Nothing is promoted from an idea to a requirement without customer/owner accepta
 
 | ID | Priority | Current exception | Bounded resolution |
 |---|---:|---|---|
-| `FND-01` | P1 | The staging NDI dataset is beyond the freshness threshold, so the correct fail-closed gate hides the real catalogue and leaves only the isolated test SKU public. | Restore supplier inbox/feed delivery and a successful import; verify freshness monitoring, tyres, wheels and images without weakening the gate. |
+| `FND-01` | P1 | Active staging still hides 1,574 published active real rows because none has fresh positive stock; 918 have a positive historical quantity. The Issue #19 candidate separates safe browsing from purchasing but is not deployed. Active `NDI_INBOX_PATH` is empty, the restricted inbox has only three historical 12 August files, and no newer supplier delivery has arrived. | Commit the fully tested candidate, pass CI and exact-SHA review, then deploy it; separately configure the existing restricted inbox. Verify real catalogue browsing with unavailable states and fail-closed commerce. A new accepted authoritative delivery/import is still required before real inventory can become fresh and purchasable. |
 | `FND-02` | P2 | Battery service request currently allows registration number and desired date to be omitted, contrary to the SEO workbook. | Make the two fields required for this service on UI and server, add localized validation and tests. |
 | `FND-03` | P2 | Staging disk is below its configured warning threshold. | Reclaim safe space, preserve releases/logs/backups according to runbook and re-run health verification. |
+
+`FND-01` therefore has two acceptance milestones: deploying the browse-safe code restores catalogue demo capability, while repairing runtime configuration and receiving a new accepted external NDI delivery are prerequisites for restoring fresh purchasable inventory. The second milestone must not be misreported as a blocker to the first.
+
+Feed freshness intentionally remains conservative: processing, same-content replay, parser changes or touching an already-stored duplicate cannot renew an old observation. A byte-identical new delivery needs a trusted delivery identifier/sequence to be available and implemented, and a full bundle is dated by its oldest constituent mtime; either case may keep commerce closed but cannot expose stale stock for sale.
 
 ## Explicitly outside the current implementation pass
 
 - Notion workspace restructuring or activation.
 - Production payment, supplier or messaging credentials.
+- Runtime inbox reconfiguration and the supplier's next authoritative file delivery; both are follow-up operations, not changes performed by the current code candidate.
 - Unapproved promotion values, DOT policy or booking allocation algorithm.
 - Unlicensed wheel/full-kit or TPMS compatibility claims.
 - Unauthorized partner logos or fabricated product images.
