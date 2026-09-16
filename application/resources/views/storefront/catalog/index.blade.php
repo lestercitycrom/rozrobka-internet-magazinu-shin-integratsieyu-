@@ -83,6 +83,9 @@
                 <p class="et-eyebrow">{{ __('pro.catalog.kicker') }}</p>
                 <h1 class="et-h1">{{ $heading }}</h1>
                 <p>{{ $description }}</p>
+                @if (\App\Modules\Catalog\CatalogDataMode::isSnapshot())
+                    <p class="et-help" data-testid="snapshot-catalog-notice">{{ __('storefront.snapshot_catalog_notice') }}</p>
+                @endif
             </div>
             <div class="et-v3-catalog-hero__note">
                 <x-icon name="check" :size="20" />

@@ -39,6 +39,7 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <!-- Tests must remain hermetic even when a staging .env enables integrations. -->
+        <env name="NDI_CATALOG_MODE" value="live"/>
         <env name="NDI_INQUIRY_ENABLED" value="false"/>
         <env name="NDI_ORDER_ENABLED" value="false"/>
         <env name="NDI_C1_TEST_MODE" value="false"/>

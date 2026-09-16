@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Modules\Catalog\CatalogDataMode;
 use App\Modules\NdiApi\NdiIntegrationProfile;
 use App\Modules\NdiImport\NdiBundleImporter;
 use Carbon\CarbonImmutable;
@@ -17,6 +18,17 @@ final class SyncNdiInbox extends Command
 
     public function handle(NdiBundleImporter $importer): int
     {
+        if (! CatalogDataMode::isValid()) {
+            $this->components->error('Invalid NDI catalogue mode. Snapshot is allowed only outside production.');
+
+            return self::FAILURE;
+        }
+        if (CatalogDataMode::isSnapshot()) {
+            $this->components->info('NDI inbox paused: staging snapshot mode. No supplier files were processed.');
+
+            return self::SUCCESS;
+        }
+
         $path = trim((string) config('ndi.inbox_path'));
         if ($path === '') {
             $this->components->error('NDI inbox is not configured.');

@@ -81,3 +81,11 @@ The staging full-cycle fixture is limited to PartyID `1220000`, article `4765205
 - A new authoritative NDI delivery remains an external prerequisite for making stale real products purchasable; it is not a prerequisite for browsing or design work.
 
 Source: [Issue #19 final handoff scope, comment 5689353790](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5689353790).
+
+## COM-004 — Explicit non-production historical-price preview
+
+Owner decision 2026-09-16, [Issue #75](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/75): allow `NDI_CATALOG_MODE=snapshot` on staging/local/testing only. Saved dated source prices may be calculated through the existing active markup rule for clearly labelled test display. Original dates and raw stale health remain intact; automated inbox processing pauses and manual bundle import is rejected. Real commerce receives no eligible price, regardless of stock/date; the independently guarded sandbox contract is unchanged.
+
+This is a display-only extension to COM-003, not permission to sell stale goods or retrospectively claim a working supplier feed. `live` restores ordinary freshness enforcement and import commands but is not sufficient for go-live: actual provider delivery/schema/cadence and unchanged-content-versus-replay acceptance remain required. See [runbook](../docs/operations/NDI_DELIVERY_CONNECTION.md).
+
+Owner specifically authorised the no-migration snapshot staging activation on top of the current unmerged designer preview, after checks and a fresh backup. This bounded exception neither merges/accepts #74 nor authorises production, DNS, provider messages or commercial calls.

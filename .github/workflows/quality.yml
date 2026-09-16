@@ -123,6 +123,10 @@ jobs:
         working-directory: .
         run: bash deploy/tests/post-receive-storage-isolation.sh
 
+      - name: Verify snapshot deployment safety
+        working-directory: .
+        run: bash deploy/tests/staging-catalog-snapshot-safety.sh
+
       - name: Check PHP formatting
         run: vendor/bin/pint --test
 
@@ -141,6 +145,9 @@ jobs:
       - name: Run Issue 19 catalog safety E2E
         run: npm run test:e2e:issue19
 
+      - name: Run snapshot catalog safety E2E
+        run: npx playwright test --config=playwright.snapshot.config.ts
+
       - name: Upload Playwright failure evidence
         if: failure()
         uses: actions/upload-artifact@v7
@@ -150,6 +157,7 @@ jobs:
             application/playwright-report
             application/test-results
             application/tmp/issue-19/playwright-results
+            application/tmp/snapshot/playwright-results
           if-no-files-found: ignore
           retention-days: 7
 

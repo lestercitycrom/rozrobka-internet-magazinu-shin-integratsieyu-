@@ -5,6 +5,10 @@
             <h1 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{{ __('health.title') }}</h1>
             <p class="mt-3 max-w-2xl leading-7 text-easytire-muted">{{ __('health.intro') }}</p>
         </header>
+        <section class="easytire-card p-5" data-testid="ndi-catalog-mode" aria-label="{{ __('health.catalog_mode') }}">
+            <h2 class="text-lg font-bold">{{ __('health.catalog_mode') }}: {{ __('health.catalog_modes.'.$health['ndi_catalog_mode']) }}</h2>
+            <p class="mt-2 text-sm leading-6 text-easytire-muted">{{ __('health.catalog_mode_help.'.$health['ndi_catalog_mode']) }}</p>
+        </section>
         <section class="et-health-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="{{ __('health.title') }}">
             <article class="easytire-card rounded-2xl p-5"><p class="text-sm font-bold text-easytire-muted">{{ __('health.database') }}</p><p @class(['et-health-value mt-3 text-xl font-black', 'et-health-value--success' => $health['database'], 'et-health-value--error' => ! $health['database']])>{{ $health['database'] ? __('health.ok') : __('health.fail') }}</p></article>
             <article class="easytire-card rounded-2xl p-5"><p class="text-sm font-bold text-easytire-muted">{{ __('health.queue') }}</p><p class="et-health-value et-health-value--neutral mt-3 text-xl font-black">{{ $health['queue'] ?: __('health.none') }}</p></article>

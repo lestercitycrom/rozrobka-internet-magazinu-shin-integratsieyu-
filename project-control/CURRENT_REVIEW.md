@@ -1,5 +1,22 @@
 # Current review
 
+Current scope: [Issue #75](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/75), branch `codex/staging-catalog-snapshot`, base designer preview `274a1610829f87ed8521f65d62ac0789fc86ec28`. The snapshot PR and exact candidate SHA are linked in Issue #75 after checks. This task does not independently accept design PR #74.
+
+- PR: single snapshot PR linked from Issue #75; the older #72 below is retained history only.
+
+Required current invariants:
+
+- Snapshot only on staging/local/testing; unknown mode or production snapshot fails closed.
+- Positive dated historical source and the existing active rule for display only; no timestamp rewrites, supplier-cost exposure or real-product Offer schema.
+- Real cart/checkout/payment readiness rejects snapshot prices even with fresh stock. Permanent sandbox remains 2 × 10 NOK and no real delivery.
+- Inbox command reports an intentional pause; manual bundle import rejects; admin retains raw stale health.
+- NB/RU tyre/wheel listing/detail and admin checked at 1440, 390 and 320 px. Direct requests only in isolated local fixtures; live smoke read-only.
+- Release-local mode change, fresh gzip-valid backup, atomic activation/rollback, no migrations/seeds/imports/pruning. Check for in-flight old import commands; this mode does not cancel already-started work.
+
+Owner directly authorised this staging activation. Final PM acceptance and production/provider-delivery acceptance remain separate.
+
+## Historical Issue #19 review (superseded as current task)
+
 Review only the final Issue #19 handoff branch against accepted base `f25a005ac0277ce0ef03c303a2e7c9a997a83a48`. The exact candidate head and PR are published in Issue #19 when ready.
 
 - PR: [#72 — Finish Issue #19 catalogue handoff](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/72).

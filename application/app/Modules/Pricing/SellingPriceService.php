@@ -2,6 +2,7 @@
 
 namespace App\Modules\Pricing;
 
+use App\Modules\Catalog\CatalogDataMode;
 use App\Modules\Catalog\ReadModel\CatalogItem;
 use App\Modules\Pricing\Data\SellingPrice;
 use App\Modules\Pricing\Enums\PricingRuleScope;
@@ -33,6 +34,25 @@ final class SellingPriceService
         return $prices;
     }
 
+    /** Display-only prices may use historical sources in an explicitly allowed snapshot environment. */
+    public function forDisplay(CatalogItem $item): ?SellingPrice
+    {
+        return $this->calculate($item, $this->activeRules(), forDisplay: true);
+    }
+
+    /** @param iterable<CatalogItem> $items @return list<SellingPrice|null> */
+    public function forDisplayItems(iterable $items): array
+    {
+        $rules = $this->activeRules();
+        $prices = [];
+
+        foreach ($items as $item) {
+            $prices[] = $this->calculate($item, $rules, forDisplay: true);
+        }
+
+        return $prices;
+    }
+
     /** @return Collection<int, PricingRule> */
     private function activeRules(): Collection
     {
@@ -45,8 +65,16 @@ final class SellingPriceService
     }
 
     /** @param Collection<int, PricingRule> $rules */
-    private function calculate(CatalogItem $item, Collection $rules): ?SellingPrice
+    private function calculate(CatalogItem $item, Collection $rules, bool $forDisplay = false): ?SellingPrice
     {
+        $isSnapshot = $forDisplay && ! $item->isIntegrationTest && CatalogDataMode::isSnapshot();
+
+        // Commercial callers must never receive a real-item price outside explicit live mode,
+        // even when an old snapshot contains apparently fresh price and stock timestamps.
+        if (! $item->isIntegrationTest && ! CatalogDataMode::isLive() && ! $isSnapshot) {
+            return null;
+        }
+
         foreach ($this->matchingRules($rules, $item) as $rule) {
             $source = collect($item->prices)->first(fn ($price): bool => $price->priceListCode === $rule->source_price_list_code
                 && strtoupper($price->currency) === strtoupper($rule->currency)
@@ -59,12 +87,15 @@ final class SellingPriceService
             if ($source === null) {
                 continue;
             }
-            if (! $this->isFresh($source->observedAt)) {
+            if ($isSnapshot ? ! $this->isHistoricalSource($source->observedAt) : ! $this->isFresh($source->observedAt)) {
                 return null;
             }
 
             try {
                 $sourceMoney = Money::fromDecimal($source->amount, strtoupper($source->currency));
+                if ($sourceMoney->minor < 1) {
+                    return null;
+                }
                 $sellingMoney = $sourceMoney
                     ->addBasisPoints($rule->markup_basis_points)
                     ->addMinor($rule->fixed_markup_minor)
@@ -84,6 +115,7 @@ final class SellingPriceService
                 ruleName: $rule->name,
                 sourcePriceListCode: $source->priceListCode,
                 sourceObservedAt: $source->observedAt,
+                isSnapshot: $isSnapshot,
             );
         }
 
@@ -123,6 +155,25 @@ final class SellingPriceService
                 now()->subMinutes((int) config('storefront.price_max_age_minutes', 1560)),
                 now()->addMinutes(5),
             );
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    private function isHistoricalSource(?string $observedAt): bool
+    {
+        // Accept dated source records, not relative strings or dates PHP silently normalizes.
+        if ($observedAt === null || preg_match('/^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})?)?$/D', $observedAt) !== 1) {
+            return false;
+        }
+
+        $parts = date_parse($observedAt);
+        if ($parts['warning_count'] !== 0 || $parts['error_count'] !== 0) {
+            return false;
+        }
+
+        try {
+            return CarbonImmutable::parse($observedAt)->lessThanOrEqualTo(now());
         } catch (Throwable) {
             return false;
         }
