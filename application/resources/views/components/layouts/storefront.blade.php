@@ -85,8 +85,10 @@
         try {
             $cartCount = array_sum(app(\App\Modules\Cart\SessionCart::class)->items());
         } catch (\Throwable) {
-            $cartCount = 0;
+            $cartCount = null;
         }
+        $cartCountLabel = $cartCount ?? __('pro.nav.cart_count_unavailable');
+        $cartCountDisplay = $cartCount === null ? '–' : ($cartCount > 99 ? '99+' : (string) $cartCount);
 
         $contentSlug = request()->route('slug');
         $activeSection = $activeSection ?? match (true) {
@@ -229,6 +231,7 @@
     <link rel="manifest" href="/site.webmanifest">
     <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-700-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
     @foreach ($schemas as $schema)
         <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
     @endforeach
@@ -305,9 +308,9 @@
                     </div>
                 </div>
                 <a class="et-btn et-btn--primary min-h-11" href="tel:{{ $phoneHref }}" data-testid="header-call"><x-icon name="phone" :size="17" />{{ __('pro.nav.call') }}</a>
-                <a class="et-cart min-h-11" href="{{ route($routePrefix.'cart.index') }}" aria-label="{{ __('pro.nav.cart') }}: {{ $cartCount }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="header-cart">
+                <a class="et-cart min-h-11" href="{{ route($routePrefix.'cart.index') }}" aria-label="{{ __('pro.nav.cart') }}: {{ $cartCountLabel }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="header-cart">
                     <x-icon name="cart" :size="22" />
-                    <span class="et-cart__count">{{ $cartCount }}</span>
+                    <span class="et-cart__count" aria-hidden="true">{{ $cartCountDisplay }}</span>
                 </a>
                 <button class="et-menu-button min-h-11" type="button" aria-label="{{ __('pro.menu_open') }}" aria-expanded="false" data-menu-toggle><span></span></button>
             </div>
@@ -339,7 +342,7 @@
                     <datalist id="mobile-catalog-suggestions"></datalist>
                 </form>
                 <a class="min-h-11" href="tel:{{ $phoneHref }}" data-testid="mobile-call-link">{{ __('pro.nav.call') }}</a>
-                <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link">{{ __('pro.nav.cart') }} ({{ $cartCount }})</a>
+                <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link">{{ __('pro.nav.cart') }} ({{ $cartCountLabel }})</a>
             </nav>
         </div>
     </header>

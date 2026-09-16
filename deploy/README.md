@@ -1,10 +1,12 @@
 # EasyTire staging deployment
 
-## Design and limited admin-polish preview (Issue #44)
+## Storefront UI-polish preview (Issue #73)
 
-[PM comment 5673643971](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5673643971) permits unmerged published design candidates on the existing staging host; [PM comment 5678136657](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5678136657) extends that exact handoff with the reviewed CRM/browser verification and limited admin polish. Do **not** use the main-branch post-receive flow for this preview: it runs migrations and scoped seeding.
+Issue #73 uses the narrow unmerged-preview flow for storefront UI polish on the existing staging host. Do **not** use the main-branch post-receive flow for this preview: it runs migrations and scoped seeding.
 
-After committing/pushing `codex/issue-44-design-v2` to GitHub and passing the build/focused checks, push the same exact branch/SHA to the existing server bare repository (the main-only hook ignores it). Run the committed `deploy/preview-staging.sh SHA --check`, then `--deploy`, as `easytire-deploy`. The narrow script validates an explicit exact-path allowlist, requires the reviewed preview to still be active before replacement, uses the existing deploy lock, builds with isolated candidate storage/environment, preserves current runtime settings and shared storage, and atomically activates a separate release. `/design-revision.txt` exposes the opened SHA. Accepted `bf7f03e` and the previous preview are retained; there are no migrations, seeds, pruning, tests on shared storage or service restarts. A failed post-switch HTTP check restores the previous code/assets pointer, never the database.
+After committing/pushing `codex/ui-polish-v1` to GitHub and passing the build/focused checks, push the same exact branch/SHA to the existing server bare repository (the main-only hook ignores it). Run the committed `deploy/preview-staging.sh SHA --check`, then `--deploy`, as `easytire-deploy`. The script accepts only the three storefront CSS files, existing public storefront Blade surfaces, the Bokmål/Russian `pro.php` copy, tests, Playwright configuration, project-control/evidence records, and these preview-deploy files. Admin, JavaScript, backend, configuration, dependency and content mutations fail closed.
+
+The accepted main commit is `3b8ae190512dd897cd0133aa3c2771d0e890196c`; the accepted active runtime is squash commit `95a1b76086e2d51e1aebb01911bc83a683bf78ea`. The script requires those commits to have identical Git trees, requires that exact runtime to still be active before replacement, and requires a retained release whose `REVISION` is the accepted runtime SHA. It uses the existing deploy lock, builds with isolated candidate storage/environment, preserves current runtime settings and shared storage, and atomically activates a separate release. `/design-revision.txt` exposes the opened SHA. The accepted runtime and previous preview are retained; there are no migrations, seeds, pruning, tests on shared storage or service restarts. A failed post-switch HTTP check restores the previous code/assets pointer, never the database.
 
 Post the exact opened version and review pages in the design PR; do not silently replace a version while it is being reviewed. These previews are not final design acceptance.
 
@@ -16,7 +18,7 @@ git --git-dir=/srv/git/shop-ndi.git show PUBLISHED_SHA:deploy/preview-staging.sh
 git --git-dir=/srv/git/shop-ndi.git show PUBLISHED_SHA:deploy/preview-staging.sh | bash -s -- PUBLISHED_SHA --deploy
 ```
 
-The exact same branch is first pushed to GitHub, then to `easytire-deploy@95.217.153.189:/srv/git/shop-ndi.git` as `codex/issue-44-design-v2` (never `main`). Compiled Blade templates are release-local; shared templates/media are neither replaced nor flushed. Catchable interruptions during activation restore the previous pointer; an uncatchable process kill requires inspecting `REVISION`/`PREVIOUS_RELEASE` before retrying.
+The exact same branch is first pushed to GitHub, then to `easytire-deploy@95.217.153.189:/srv/git/shop-ndi.git` as `codex/ui-polish-v1` (never `main`). Compiled Blade templates are release-local; shared templates/media are neither replaced nor flushed. Catchable interruptions during activation restore the previous pointer; an uncatchable process kill requires inspecting `REVISION`/`PREVIOUS_RELEASE` before retrying.
 
 The one-time bootstrap also installs two systemd units:
 

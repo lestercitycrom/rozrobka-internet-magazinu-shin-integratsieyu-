@@ -73,8 +73,8 @@
 
                     <section class="et-receipt-section" data-testid="receipt-legal-evidence">
                         <p class="et-eyebrow">{{ __('commerce.receipt_legal') }}</p>
-                        <p class="et-receipt-meta"><a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('commerce.terms_version', ['version' => $order->terms_version]) }}</a><br><a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('commerce.privacy_version', ['version' => $order->privacy_version]) }}</a></p>
-                        <p class="et-receipt-download"><a class="et-btn et-btn--ghost et-btn--small" href="/dokumenter/angreskjema-easytire.pdf" download>{{ __('commerce.withdrawal_form') }}</a></p>
+                        <p class="et-receipt-meta"><a class="et-inline-link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}">{{ __('commerce.terms_version', ['version' => $order->terms_version]) }}</a><br><a class="et-inline-link" href="{{ route($prefix.'content.show', 'personvern') }}">{{ __('commerce.privacy_version', ['version' => $order->privacy_version]) }}</a></p>
+                        <p class="et-receipt-download"><a class="et-btn et-btn--outline et-btn--small" href="/dokumenter/angreskjema-easytire.pdf" download>{{ __('commerce.withdrawal_form') }}</a></p>
                     </section>
                 </div>
             </div>

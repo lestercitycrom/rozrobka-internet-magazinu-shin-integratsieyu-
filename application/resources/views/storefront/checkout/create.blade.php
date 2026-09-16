@@ -99,7 +99,7 @@
                             <label class="et-check" data-testid="checkout-privacy">
                                 <input required type="checkbox" name="consent" value="1" @checked(old('consent')) aria-label="{{ __('commerce.consent') }}" aria-describedby="checkout-consent-error" aria-invalid="{{ $errors->has('consent') ? 'true' : 'false' }}">
                                 @if (isset($legalPages['personvern']))
-                                    <span>{{ __('commerce.privacy_acknowledgement') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}" target="_blank" rel="noopener">{{ __('legal.privacy') }}</a>.</span>
+                                    <span>{{ __('commerce.privacy_acknowledgement') }} <a class="et-inline-link" href="{{ route($prefix.'content.show', 'personvern') }}" target="_blank" rel="noopener">{{ __('legal.privacy') }}</a>.</span>
                                 @else
                                     <span>{{ __('commerce.consent') }}</span>
                                 @endif
@@ -109,7 +109,7 @@
                             <label class="et-check" data-testid="checkout-terms">
                                 <input required type="checkbox" name="terms" value="1" @checked(old('terms')) aria-label="{{ __('commerce.terms') }}" aria-describedby="checkout-terms-error" aria-invalid="{{ $errors->has('terms') ? 'true' : 'false' }}">
                                 @if (isset($legalPages['kjopsvilkar']))
-                                    <span>{{ __('legal.terms_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}" target="_blank" rel="noopener">{{ __('legal.terms') }}</a> ({{ \App\Modules\Orders\LegalDocumentVersions::TERMS }}).</span>
+                                    <span>{{ __('legal.terms_prefix') }} <a class="et-inline-link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}" target="_blank" rel="noopener">{{ __('legal.terms') }}</a> ({{ \App\Modules\Orders\LegalDocumentVersions::TERMS }}).</span>
                                 @else
                                     <span>{{ __('commerce.terms') }}</span>
                                 @endif

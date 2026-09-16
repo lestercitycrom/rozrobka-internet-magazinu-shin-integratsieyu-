@@ -17,7 +17,7 @@
         @if ($homepagePromotions->isEmpty())
             <div class="et-v3-promotions-empty" data-testid="homepage-promotions-empty">
                 <p>{{ __('pro.home.promotions_empty') }}</p>
-                <a class="et-v3-text-link" href="{{ route($routePrefix.'services.index') }}">{{ __('pro.home.services_all') }} <x-icon name="arrow" :size="18" /></a>
+                <a class="et-action-link" href="{{ route($routePrefix.'services.index') }}"><span class="et-action-link__label">{{ __('pro.home.services_all') }}</span><x-icon name="arrow" :size="16" /></a>
             </div>
         @else
             <div class="et-promotion-carousel" data-promotion-carousel data-total="{{ $homepagePromotions->count() }}">
@@ -48,16 +48,15 @@
                                 <span class="et-v3-promotion__shade" aria-hidden="true"></span>
                                 <div class="et-v3-promotion__preview" aria-hidden="true" data-promotion-preview>{{ \Illuminate\Support\Str::limit($body, 160) }}</div>
                                 <div class="et-v3-promotion__content">
-                                    <span class="et-v3-promotion__number">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                                     <h3 id="{{ $titleId }}">{{ $title }}</h3>
                                     @if ($hasSeparateDetails)
                                         <p class="et-v3-promotion__short">{{ $storedShortBody }}</p>
                                     @else
                                         <p class="et-v3-promotion__short">{{ \Illuminate\Support\Str::limit($body, 100) }}</p>
                                     @endif
-                                    <button class="et-v3-promotion__disclosure" type="button" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ $detailsId }}" data-promotion-disclosure>{{ __('pro.home.promotion_details') }} <x-icon name="arrow" :size="16" /></button>
+                                    <button class="et-v3-promotion__disclosure et-action-link" type="button" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ $detailsId }}" data-promotion-disclosure><span class="et-action-link__label">{{ __('pro.home.promotion_details') }}</span><x-icon name="arrow" :size="16" /></button>
                                     <details data-promotion-native-details><summary>{{ __('pro.home.promotion_details') }}</summary><p>{{ $body }}</p></details>
-                                    <a class="et-v3-promotion__cta" href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif>{{ $ctaLabel }} <x-icon name="arrow" :size="18" /></a>
+                                    <a class="et-v3-promotion__cta et-action-link" href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif><span class="et-action-link__label">{{ $ctaLabel }}</span><x-icon name="arrow" :size="16" /></a>
                                 </div>
                                 <dialog class="et-v3-dialog" id="{{ $detailsId }}" aria-labelledby="{{ $detailsId }}-title" data-promotion-details>
                                     <div class="et-v3-dialog__surface">

@@ -254,6 +254,9 @@ test('catalogue search keeps exactly one token-backed keyboard focus treatment',
             const input = searchRoot.locator('input[name="q"]');
             const submit = searchRoot.locator('button[type="submit"]');
             const wrapper = input.locator('..');
+            // The desktop panel returns focus after its existing opening transition.
+            // Wait for that handoff before starting another keyboard traversal.
+            if (mode.name === 'desktop') await expect(input).toBeFocused();
             await tabTo(page, input);
             const initialGeometry = await wrapper.boundingBox();
 

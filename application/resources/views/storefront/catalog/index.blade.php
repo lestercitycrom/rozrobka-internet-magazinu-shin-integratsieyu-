@@ -148,7 +148,7 @@
                             @if (isset($query['sort']))<input type="hidden" name="sort" value="{{ $query['sort'] }}">@endif
                             <div class="et-production-filter__body">
                                 <details class="et-filter-section et-filter-group et-filter-section--search" open data-testid="catalog-filter-group-search">
-                                    <summary class="et-filter-group__summary"><span><b>00</b>{{ __('catalog_correction.search_group') }}</span></summary>
+                                    <summary class="et-filter-group__summary"><span>{{ __('catalog_correction.search_group') }}</span></summary>
                                     <div class="et-filter-group__body">
                                     <div class="et-field">
                                         <label class="et-label" for="q">{{ __('storefront.search') }}</label>
@@ -170,7 +170,7 @@
 
                                 @if ($isTire)
                                     <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-dimensions">
-                                        <summary class="et-filter-group__summary"><span><b>01</b>{{ __('pro.catalog.dimensions') }}</span></summary>
+                                        <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.dimensions') }}</span></summary>
                                         <div class="et-filter-group__body">
                                         <div class="et-size-builder et-size-builder--tire">
                                         @foreach (['width' => 'widths', 'aspect' => 'aspects'] as $field => $optionKey)
@@ -197,7 +197,7 @@
                                     </details>
                                 @else
                                     <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-wheel-size">
-                                        <summary class="et-filter-group__summary"><span><b>01</b>{{ __('pro.catalog.wheel_size') }}</span></summary>
+                                        <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.wheel_size') }}</span></summary>
                                         <div class="et-filter-group__body">
                                         <div class="et-form-grid">
                                         @foreach (['width' => 'widths', 'diameter' => 'diameters'] as $field => $optionKey)
@@ -207,7 +207,7 @@
                                         </div>
                                     </details>
                                     <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-fitment">
-                                        <summary class="et-filter-group__summary"><span><b>02</b>{{ __('pro.catalog.fitment') }}</span></summary>
+                                        <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.fitment') }}</span></summary>
                                         <div class="et-filter-group__body">
                                         <div class="et-form-grid">
                                         @foreach (['bolt_holes' => 'bolt_holes', 'pcd' => 'pcds'] as $field => $optionKey)
@@ -224,7 +224,7 @@
                                 @endif
 
                                 <details class="et-filter-section et-filter-group et-filter-availability" open data-testid="catalog-filter-group-availability">
-                                    <summary class="et-filter-group__summary"><span><b>{{ $isTire ? '02' : '03' }}</b>{{ __('pro.catalog.availability') }}</span></summary>
+                                    <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.availability') }}</span></summary>
                                     <div class="et-filter-group__body">
                                         <label class="et-check et-filter-toggle"><input type="checkbox" name="in_stock" value="1" @checked(($query['in_stock'] ?? null) === '1')><span>{{ __('storefront.in_stock') }}</span></label>
                                         <label class="et-check et-filter-toggle"><input type="checkbox" name="has_image" value="1" @checked(($query['has_image'] ?? null) === '1')><span>{{ __('storefront.has_image') }}</span></label>
@@ -286,7 +286,7 @@
                                 {{ $filterLabels[$key] }}: {{ $displayValue }} <span aria-hidden="true">×</span><span class="sr-only">{{ __('storefront.remove_filter') }}</span>
                             </a>
                         @endforeach
-                        <a class="et-btn et-btn--link et-btn--small" href="{{ $baseUrl }}" data-catalog-live-link data-testid="catalog-filter-reset-all">{{ __('storefront.reset_all') }}</a>
+                        <a class="et-action-link et-action-link--small" href="{{ $baseUrl }}" data-catalog-live-link data-testid="catalog-filter-reset-all"><span class="et-action-link__label">{{ __('storefront.reset_all') }}</span><x-icon name="arrow" :size="16" /></a>
                     </div>
                 @endif
 
