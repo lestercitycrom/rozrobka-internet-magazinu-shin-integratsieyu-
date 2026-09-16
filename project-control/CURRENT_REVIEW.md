@@ -1,6 +1,6 @@
 # Current review
 
-- PR: the exact filter-consistency candidate is linked in [Issue #77](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/77) when published; base is #76, not older main.
+- PR: [#78 — Catalogue filter consistency](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/78), linked from [Issue #77](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/77); base is #76, not older main. The latest PR result records the exact review/deployment SHA.
 - Branch/base: `codex/catalog-filter-consistency` above `d6938f318052c58842bb66a610ea1bf7a2542943`.
 
 Review the query, visible controls and actual products together. `/dekk?width=125&aspect=35&rim=13` must retain all three selected dimensions and honestly show no matching products; it must never display Alle while silently applying width125. Integer and decimal dimensions must agree, including profile60, rim20, PCD120, signed/zero ET and decimal wheel width.
