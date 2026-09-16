@@ -51,20 +51,56 @@ const setDraftState = (form, dirty) => {
     form.dataset.catalogDraft = dirty ? 'true' : 'false';
 };
 
-const syncFilterState = (root, target) => {
+const resetFilterState = (root) => {
     const form = root.querySelector('[data-catalog-live-form]');
     if (!(form instanceof HTMLFormElement)) return;
 
     form.querySelectorAll('[name]').forEach((control) => {
         if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement)) return;
-        const value = target.searchParams.get(control.name) ?? '';
 
         if (control instanceof HTMLInputElement && control.type === 'checkbox') {
-            control.checked = target.searchParams.getAll(control.name).includes(control.value);
+            control.checked = false;
             return;
         }
 
-        control.value = value;
+        control.value = '';
+    });
+};
+
+// The response has already validated and canonicalized the applied query. Copy
+// that state rather than assigning raw URL values (60 vs 60.00, unknown facets)
+// to old controls. Keep the form itself so focus, drawer state and listeners stay.
+const syncFilterState = (root, nextRoot) => {
+    const form = root.querySelector('[data-catalog-live-form]');
+    const nextForm = nextRoot.querySelector('[data-catalog-live-form]');
+    if (!(form instanceof HTMLFormElement) || !(nextForm instanceof HTMLFormElement)) {
+        throw new Error('Catalog response is missing its filter form');
+    }
+
+    const controls = Array.from(form.querySelectorAll('[name]'));
+    nextForm.querySelectorAll('[name]').forEach((nextControl) => {
+        if (!(nextControl instanceof HTMLInputElement || nextControl instanceof HTMLSelectElement)) return;
+        const control = controls.find(candidate => candidate.name === nextControl.name
+            && candidate.tagName === nextControl.tagName
+            && (!(nextControl instanceof HTMLInputElement) || candidate.type === nextControl.type)
+            && (!(nextControl instanceof HTMLInputElement && nextControl.type === 'checkbox') || candidate.value === nextControl.value));
+
+        if (!control) {
+            // A sort selected after the first page load must survive a subsequent
+            // filter change even when the earlier form had no hidden sort input.
+            if (nextControl instanceof HTMLInputElement && nextControl.type === 'hidden') {
+                form.append(nextControl.cloneNode(true));
+            }
+            return;
+        }
+
+        if (control instanceof HTMLSelectElement && nextControl instanceof HTMLSelectElement) {
+            control.replaceChildren(...Array.from(nextControl.childNodes, child => child.cloneNode(true)));
+            control.value = nextControl.value;
+        } else if (control instanceof HTMLInputElement && nextControl instanceof HTMLInputElement) {
+            if (control.type === 'checkbox') control.checked = nextControl.checked;
+            else control.value = nextControl.value;
+        }
     });
 };
 
@@ -122,7 +158,7 @@ const bindCatalog = (root, preserveMobileOpen = null) => {
         reset?.addEventListener('click', (event) => {
             if (!usesDeferredMobileFilters()) return;
             event.preventDefault();
-            syncFilterState(root, new URL(filters.action, window.location.href));
+            resetFilterState(root);
             filters.querySelector('datalist')?.replaceChildren();
             setDraftState(filters, true);
             setFilterError(root, false);
@@ -181,7 +217,7 @@ const loadCatalog = async (target, historyMode, { closeMobileFilters = false, pr
         if (!results || !nextResults) throw new Error('Catalog response is missing its results region');
 
         syncFilterCounter(root, nextRoot);
-        syncFilterState(root, new URL(response.url));
+        syncFilterState(root, nextRoot);
         results.replaceChildren(...nextResults.childNodes);
         document.title = page.title || document.title;
         if (historyMode === 'push' && response.url !== window.location.href) history.pushState({ catalog: true }, '', response.url);

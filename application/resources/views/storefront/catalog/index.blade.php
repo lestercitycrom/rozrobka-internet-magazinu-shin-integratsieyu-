@@ -63,10 +63,10 @@
     ];
     $activeFilters = collect($query)
         ->only(array_keys($filterLabels))
-        ->filter(fn ($value) => $value !== null && $value !== '' && $value !== '0');
+        ->filter(fn ($value) => $value !== null && $value !== '');
     $hasSearchFilters = $activeFilters->except('sort')->isNotEmpty();
-    $matchesValue = fn (string $field, string $value): bool => rtrim(rtrim(str_replace(',', '.', $query[$field] ?? ''), '0'), '.') === rtrim(rtrim($value, '0'), '.');
-    $formatOption = fn (string $value): string => rtrim(rtrim($value, '0'), '.');
+    $matchesValue = fn (string $field, string $value): bool => ($query[$field] ?? null) === $value;
+    $formatOption = fn (string $value): string => $value;
     $seasonLabel = fn (string $value): string => match (strtolower($value)) {
         'summer' => __('storefront.season_summer'),
         'winter' => __('storefront.season_winter'),
@@ -148,7 +148,7 @@
                         </div>
 
                         <form method="GET" action="{{ $baseUrl }}" data-testid="catalog-filters" data-catalog-live-form>
-                            @if (isset($query['sort']))<input type="hidden" name="sort" value="{{ $query['sort'] }}">@endif
+                            <input type="hidden" name="sort" value="{{ $query['sort'] ?? '' }}">
                             <div class="et-production-filter__body">
                                 <details class="et-filter-section et-filter-group et-filter-section--search" open data-testid="catalog-filter-group-search">
                                     <summary class="et-filter-group__summary"><span>{{ __('catalog_correction.search_group') }}</span></summary>

@@ -1,10 +1,12 @@
 # EasyTire status
 
-Updated: 2026-09-16 — Issue #75 explicit staging catalogue snapshot
+Updated: 2026-09-16 — Issue #77 catalogue filter consistency
 
 ## Current work
 
-Owner authorised the saved-price staging mode in [#75](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/75). Implementation is stacked on deployed designer preview `274a1610829f87ed8521f65d62ac0789fc86ec28` (#73 / #74); accepted `main` remains `3b8ae190512dd897cd0133aa3c2771d0e890196c`. Final candidate checks and activation evidence belong to the #75 PR, not to the historical read-backs below.
+Active work is [#77](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/77): finish filter consistency and adjacent browser checks. Branch `codex/catalog-filter-consistency` preserves active snapshot/design release `d6938f318052c58842bb66a610ea1bf7a2542943`. The previous #75/#76 snapshot activation is complete and its exact-head CI is fully green (run35051457360). Accepted `main` remains `3b8ae190512dd897cd0133aa3c2771d0e890196c`; older main is not the deployment source.
+
+Latest pre-filter runtime read-back: 1,082 real tyres, 491 real wheels, one sandbox item; 3,168 real price rows and 16,128 stock rows unchanged, including observation hashes. Queue/scheduler running, no queued/failed jobs or in-flight imports; 30 complete backups and no partials. Snapshot prices display only, real commerce remains closed. Designer predecessor `274a1610829f87ed8521f65d62ac0789fc86ec28` retained. The #77 PR will record its own fresh release evidence, not reuse this read-back as proof of a later deployment.
 
 Read-only supplier investigation: three succeeded XLSX receipts; real price/stock observations remain August 12, with zero fresh real commercial prices. Queue/scheduler operate, but this does not prove regular supplier delivery. SFTP password/chroot/list access was checked locally; actual NDI upload and recurring-import acceptance remain open. See [connection runbook](../docs/operations/NDI_DELIVERY_CONNECTION.md).
 
@@ -32,7 +34,7 @@ Catalogue handoff complete: [PM5690161142](https://github.com/lestercitycrom/roz
 
 These are dated accepted observations, not a substitute for a fresh runtime read-back before a later deployment.
 
-## Active closeout
+## Historical Issue #19 closeout (not current work)
 
 - Issue [#19](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19) is reopened only for the bounded final handoff in [comment 5689353790](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5689353790).
 - Branch: `codex/issue-19-final-handoff`, created directly from the accepted baseline above.

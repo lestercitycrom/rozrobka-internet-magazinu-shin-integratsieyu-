@@ -127,8 +127,9 @@ final class CatalogReadService
         }
 
         $query->when($filters->productType, fn (Builder $q, $type) => $q->where('products.product_type', $type->value))
-            ->when($filters->brand, fn (Builder $q, $brand) => $q->where('brands.canonical_name', $brand))
-            ->when($filters->search, function (Builder $q, string $search): void {
+            ->when($filters->brand !== null, fn (Builder $q) => $q->where('brands.canonical_name', $filters->brand))
+            ->when($filters->search !== null, function (Builder $q) use ($filters): void {
+                $search = $filters->search;
                 $q->where(function (Builder $nested) use ($search): void {
                     $nested->where('supplier_skus.external_sku', $search)
                         ->orWhere('supplier_skus.supplier_item_id', $search)
@@ -140,12 +141,12 @@ final class CatalogReadService
             ->when($filters->tireWidthMm, fn (Builder $q, $value) => $q->where('tire_specs.width_mm', $value))
             ->when($filters->tireAspectRatio, fn (Builder $q, $value) => $q->where('tire_specs.aspect_ratio', $value))
             ->when($filters->tireRimDiameterIn, fn (Builder $q, $value) => $q->where('tire_specs.rim_diameter_in', $value))
-            ->when($filters->tireSeason, fn (Builder $q, $value) => $q->where('tire_specs.season', $value))
+            ->when($filters->tireSeason !== null, fn (Builder $q) => $q->where('tire_specs.season', $filters->tireSeason))
             ->when($filters->wheelWidthIn, fn (Builder $q, $value) => $q->where('wheel_specs.width_in', $value))
             ->when($filters->wheelDiameterIn, fn (Builder $q, $value) => $q->where('wheel_specs.diameter_in', $value))
             ->when($filters->wheelBoltHoles, fn (Builder $q, $value) => $q->where('wheel_specs.bolt_holes', $value))
             ->when($filters->wheelPcdMm, fn (Builder $q, $value) => $q->where('wheel_specs.pcd_mm', $value))
-            ->when($filters->wheelOffsetEtMm, fn (Builder $q, $value) => $q->where('wheel_specs.offset_et_mm', $value))
+            ->when($filters->wheelOffsetEtMm !== null, fn (Builder $q) => $q->where('wheel_specs.offset_et_mm', $filters->wheelOffsetEtMm))
             ->when($filters->wheelCenterBoreMm, fn (Builder $q, $value) => $q->where('wheel_specs.center_bore_mm', $value));
 
         return $query;
