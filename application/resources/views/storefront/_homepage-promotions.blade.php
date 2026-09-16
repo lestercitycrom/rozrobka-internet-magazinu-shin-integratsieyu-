@@ -48,6 +48,9 @@
                                 <span class="et-v3-promotion__shade" aria-hidden="true"></span>
                                 <div class="et-v3-promotion__preview" aria-hidden="true" data-promotion-preview>{{ \Illuminate\Support\Str::limit($body, 160) }}</div>
                                 <div class="et-v3-promotion__content">
+                                    @if (config('storefront.design_profile') === 'classic')
+                                        <span class="et-v3-promotion__number" aria-hidden="true">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                                    @endif
                                     <h3 id="{{ $titleId }}">{{ $title }}</h3>
                                     @if ($hasSeparateDetails)
                                         <p class="et-v3-promotion__short">{{ $storedShortBody }}</p>

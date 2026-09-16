@@ -28,8 +28,14 @@
                             @else
                                 <div class="et-v3-service__fallback" data-testid="homepage-service-media-fallback"><img src="/brand/easytire-mark.svg" width="96" height="96" alt=""><span>{{ __('pro.services.media_unavailable') }}</span></div>
                             @endif
+                            @if (config('storefront.design_profile') === 'classic')
+                                <span class="et-v3-service__shade" aria-hidden="true"></span>
+                            @endif
                         @endif
                         <div class="et-v3-service__content">
+                            @if (config('storefront.design_profile') === 'classic')
+                                <span class="et-v3-service__number" aria-hidden="true">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                            @endif
                             <h3>{{ $title }}</h3>
                             <p>{{ $cardDescription }}</p>
                             <a class="et-action-link" href="{{ $destination }}" @if($external) target="_blank" rel="noopener" @endif aria-label="{{ $cta }}: {{ $title }}"><span class="et-action-link__label">{{ $cta }}</span><x-icon name="arrow" :size="16" /></a>

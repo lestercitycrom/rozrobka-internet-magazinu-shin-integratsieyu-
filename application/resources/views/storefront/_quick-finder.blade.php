@@ -9,7 +9,14 @@
 
 <div class="et-quick-finder" data-tabs data-testid="quick-finder">
     <div class="et-quick-finder__head">
-        <h2>{{ __('pro.home.finder_title') }}</h2>
+        @if (config('storefront.design_profile') === 'classic')
+            <div>
+                <span>{{ __('pro.home.finder_kicker') }}</span>
+                <h2>{{ __('pro.home.finder_title') }}</h2>
+            </div>
+        @else
+            <h2>{{ __('pro.home.finder_title') }}</h2>
+        @endif
         @if ($showStoreLink)
             <a class="et-action-link et-action-link--small" href="{{ route($routePrefix.'store.index') }}"><span class="et-action-link__label">{{ __('pro.home.finder_store_link') }}</span><x-icon name="arrow" :size="16" /></a>
         @endif
@@ -48,7 +55,7 @@
         </form>
     </div>
 
-    <p class="et-quick-finder__note">{{ __('pro.home.finder_note') }}</p>
+    <p class="et-quick-finder__note">@if (config('storefront.design_profile') === 'classic')<x-icon name="check" :size="16" />@endif{{ __('pro.home.finder_note') }}</p>
 
     <nav class="et-shop-categories" aria-label="{{ __('seo_store.categories_title') }}">
         <a href="{{ route($routePrefix.'tires.index') }}"><x-icon name="tire" :size="20" /><span><strong>{{ __('seo_store.tires_title') }}</strong><small class="et-shop-categories__catalog-hint">{{ __('seo_store.explore') }}</small></span></a>

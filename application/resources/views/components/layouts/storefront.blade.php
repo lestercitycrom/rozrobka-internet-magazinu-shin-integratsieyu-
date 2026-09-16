@@ -13,6 +13,11 @@
 <head>
     @php
         $preview = app()->getLocale() === 'ru';
+        $configuredDesignProfile = config('storefront.design_profile', 'modern');
+        $designProfile = is_string($configuredDesignProfile) && in_array($configuredDesignProfile, ['modern', 'classic'], true)
+            ? $configuredDesignProfile
+            : 'modern';
+        $classicDesign = $designProfile === 'classic';
         $routePrefix = $preview ? 'storefront.preview.' : 'storefront.';
         $storefrontSettings = null;
         try {
@@ -185,6 +190,10 @@
             $navigationItems[] = ['section' => 'contact', 'href' => route($routePrefix.'content.show', 'kontakt'), 'label' => __('pro.nav.contact')];
         }
         $canonicalUrl = $canonical ?: ($preview ? preg_replace('#/ru(?=/|$)#', '', url()->current(), 1) : url()->current());
+        if ($classicDesign) {
+            $canonicalPath = parse_url($canonicalUrl, PHP_URL_PATH) ?: '/';
+            $canonicalUrl = rtrim((string) config('storefront.canonical_origin'), '/').($canonicalPath === '/' ? '' : $canonicalPath);
+        }
         $metaTitle = $title ?? __('storefront.site_title');
         $metaDescription = $description ?? __('storefront.site_description');
         $socialImage = $image ?: url('/brand/exterior.webp');
@@ -192,9 +201,9 @@
         $schemas = [[
             '@context' => 'https://schema.org',
             '@type' => 'AutoRepair',
-            '@id' => url('/').'#business',
+            '@id' => ($classicDesign ? rtrim((string) config('storefront.canonical_origin'), '/') : url('/')).'#business',
             'name' => 'EasyTire',
-            'url' => url('/'),
+            'url' => $classicDesign ? rtrim((string) config('storefront.canonical_origin'), '/').'/' : url('/'),
             'telephone' => $phoneDisplay,
             'email' => $contactEmail,
             'address' => [
@@ -221,7 +230,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $metaTitle }}">
     <meta name="twitter:description" content="{{ $metaDescription }}">
-    @if ($preview)
+    @if ($preview || $classicDesign)
         <meta name="robots" content="noindex,nofollow">
     @endif
     <link rel="canonical" href="{{ $canonicalUrl }}">
@@ -235,9 +244,13 @@
     @foreach ($schemas as $schema)
         <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
     @endforeach
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if ($classicDesign)
+        @vite(['resources/css/app.css', 'resources/css/storefront-classic.css', 'resources/js/app.js'])
+    @else
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
 </head>
-<body class="storefront" data-storefront-style="sharp">
+<body class="storefront" data-storefront-style="sharp" data-storefront-design="{{ $designProfile }}">
     @if ($preview)
         <div class="et-demo-banner"><strong>QA</strong><span>{{ __('pro.qa_preview') }}</span></div>
     @endif

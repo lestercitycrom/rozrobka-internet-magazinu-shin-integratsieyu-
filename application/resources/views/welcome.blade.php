@@ -374,8 +374,14 @@
                         <article @class(['et-v3-service', 'et-v3-service--feature' => $index < 2])>
                             @if ($index < 2)
                                 <img src="{{ $serviceImage($service, $index) }}" width="1200" height="900" loading="lazy" alt="">
+                                @if (config('storefront.design_profile') === 'classic')
+                                    <span class="et-v3-service__shade" aria-hidden="true"></span>
+                                @endif
                             @endif
                             <div class="et-v3-service__content">
+                                @if (config('storefront.design_profile') === 'classic')
+                                    <span class="et-v3-service__number" aria-hidden="true">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                @endif
                                 <h3>{{ $service->title }}</h3>
                                 @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
                                 <a class="et-action-link" href="{{ $serviceUrl($service) }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}"><span class="et-action-link__label">{{ __('pro.home.service_link') }}</span><x-icon name="arrow" :size="16" /></a>

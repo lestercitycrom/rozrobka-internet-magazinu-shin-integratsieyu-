@@ -1,5 +1,16 @@
 # Current task
 
+Owner continuation, 2026-09-17: create the separate Classic preview on
+`staging-classic-easytire.bethub.fun`, branch `codex/classic-storefront`, from
+the functional source `7165ca13090e3f0f122b181cc6c37eb6fc9f874f`. Restore the
+pre-redesign visual treatment selectively from `bf7f03e…`; retain modern runtime
+`5472266…` at its current host. Shared database/catalogue, isolated runtime
+sessions/cache, no migrations/seeds/integration activation or merge. Owner has
+authorised this second-host preview; prior PR80 local-only instruction remains
+historical. See [boundary and verification](../evidence/classic-preview/README.md).
+
+The following records the accepted functional/design predecessors.
+
 Active owner continuation: [#79 — Autonomous public design finishing](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/79), branch `codex/autonomous-design-finish`, based on exact current staging/PR #78 head `1326895e93b5f6bea67426100c282172be869564`. Finish the complete public buying/booking experience, including product controls, honest empty states, field grouping and cross-page visual rhythm. Preserve all #75/#77 snapshot/filter functionality and the fixed two-item sandbox. Public presentation only; no migrations, staging seeds, catalogue edits, integration activation or main merge. Design previews use the existing #44 published-SHA permission and retain the immediately previous release.
 
 Current bounded follow-up: close only R2b from the [latest PR #80 review](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/80#pullrequestreview-5226165027). Mobile current-state underlines its label, not the arrow or disclosure signs. R1/R3/R4 and routing semantics are accepted and must remain unchanged. See [targeted verification scope](../evidence/pr80-r2b/README.md). Local-only; no new redesign, runtime deployment or merge.

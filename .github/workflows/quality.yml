@@ -2,7 +2,7 @@ name: Quality gates
 
 on:
   pull_request:
-    branches: [main, codex/catalog-filter-consistency]
+    branches: [main, codex/catalog-filter-consistency, codex/autonomous-design-finish]
   push:
     branches: [main]
   workflow_dispatch:
@@ -82,7 +82,7 @@ jobs:
   quality:
     name: Application quality
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: application
@@ -135,6 +135,10 @@ jobs:
         working-directory: .
         run: bash deploy/tests/design-finish-safety.sh
 
+      - name: Verify isolated Classic preview deployment safety
+        working-directory: .
+        run: bash deploy/tests/classic-preview-safety.sh
+
       - name: Check PHP formatting
         run: vendor/bin/pint --test
 
@@ -162,6 +166,9 @@ jobs:
       - name: Run design finishing journey regression
         run: npx playwright test --config=playwright.design-finish.config.ts
 
+      - name: Run both design profiles against isolated fixtures
+        run: CLASSIC_PREVIEW_CI_AUTOSTART=1 npx playwright test --config=playwright.classic.config.ts
+
       - name: Upload Playwright failure evidence
         if: failure()
         uses: actions/upload-artifact@v7
@@ -174,6 +181,9 @@ jobs:
             application/tmp/snapshot/playwright-results
             application/tmp/filters/playwright-results
             application/tmp/design-finish-tests
+            application/tmp/classic-preview/report
+            application/tmp/classic-preview/test-results
+            application/tmp/classic-preview/evidence
           if-no-files-found: ignore
           retention-days: 7
 
