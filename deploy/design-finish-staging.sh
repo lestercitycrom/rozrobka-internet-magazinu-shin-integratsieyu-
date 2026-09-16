@@ -7,7 +7,7 @@ umask 0027
 readonly ROOT='/var/www/staging-easytire.bethub.fun'
 readonly REPO='/srv/git/shop-ndi.git'
 readonly BASE='1326895e93b5f6bea67426100c282172be869564'
-readonly EXPECTED_CURRENT='1326895e93b5f6bea67426100c282172be869564'
+readonly EXPECTED_CURRENT='ade1aa8d3b230d10851233cd5c7ce2b9473c415f'
 readonly BRANCH='refs/heads/codex/autonomous-design-finish'
 readonly HOST='staging-easytire.bethub.fun'
 readonly COMPOSER='/usr/local/bin/composer'

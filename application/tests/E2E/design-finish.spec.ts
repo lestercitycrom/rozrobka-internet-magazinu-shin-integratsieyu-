@@ -83,6 +83,8 @@ test('empty results retain canonical filters and offer a clear recovery; genuine
     await expect(empty).toHaveAttribute('data-empty-reason', 'no-match');
     await expect(empty).toHaveCSS('border-top-width', '0px');
     await expect(page.getByTestId('active-filters')).toContainText('125');
+    const rail = page.locator('.et-catalog-categories__rail');
+    expect(await rail.evaluate(node => node.scrollHeight - node.clientHeight)).toBeLessThanOrEqual(0);
     await expect(empty.locator('.et-page-actions')).toHaveCSS('justify-content', 'center');
     await expectNoGlobalOverflow(page);
     await empty.locator('[data-catalog-live-link]').click();
