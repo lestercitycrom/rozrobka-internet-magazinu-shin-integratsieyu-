@@ -28,7 +28,6 @@
                             @else
                                 <div class="et-v3-service__fallback" data-testid="homepage-service-media-fallback"><img src="/brand/easytire-mark.svg" width="96" height="96" alt=""><span>{{ __('pro.services.media_unavailable') }}</span></div>
                             @endif
-                            <span class="et-v3-service__shade" aria-hidden="true"></span>
                         @endif
                         <div class="et-v3-service__content">
                             <h3>{{ $title }}</h3>

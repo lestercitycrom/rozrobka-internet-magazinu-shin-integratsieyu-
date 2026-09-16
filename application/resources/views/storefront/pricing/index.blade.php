@@ -2,7 +2,7 @@
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
 @endphp
 
-<x-layouts.storefront :title="__('public_pricing.title')" :description="__('public_pricing.description')" :canonical="route('storefront.pricing.index')" active-section="services">
+<x-layouts.storefront :title="__('public_pricing.title')" :description="__('public_pricing.description')" :canonical="route('storefront.pricing.index')" active-section="pricing">
     <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">

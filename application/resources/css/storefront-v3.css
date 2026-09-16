@@ -1483,18 +1483,18 @@
 }
 
 .et-v3-service--feature {
-    min-height: 430px;
+    min-height: 0;
     grid-column: span 2;
+    flex-direction: column;
+    background: #181819;
     color: #fff;
 }
 
 .et-v3-service > img,
-.et-v3-service__fallback,
-.et-v3-service__shade {
-    position: absolute;
-    inset: 0;
+.et-v3-service__fallback {
     width: 100%;
-    height: 100%;
+    height: clamp(180px, 22vw, 260px);
+    flex: none;
 }
 
 .et-v3-service__fallback {
@@ -1518,10 +1518,6 @@
 
 .et-v3-service > img { object-fit: cover; }
 
-.et-v3-service__shade {
-    background: linear-gradient(0deg, rgb(6 6 7 / .94), rgb(6 6 7 / .12) 70%);
-}
-
 .et-v3-service__content {
     position: relative;
     z-index: 1;
@@ -1536,6 +1532,11 @@
     justify-content: flex-start;
 }
 
+.et-v3-service--feature .et-v3-service__content {
+    flex: 1;
+    justify-content: flex-start;
+}
+
 .et-v3-service h3 {
     margin: .65rem 0 0;
     font-size: var(--et-type-h3);
@@ -1546,6 +1547,7 @@
 }
 
 .et-v3-service:not(.et-v3-service--feature) h3 { font-size: var(--et-type-h3); font-weight: 600; line-height: var(--et-type-card-leading); }
+.et-v3-service--feature h3 { margin-top: 0; }
 
 .et-v3-service p {
     margin: .7rem 0 0;
@@ -1556,7 +1558,7 @@
 
 .et-v3-service--feature p {
     max-width: 50ch;
-    color: rgb(255 255 255 / .7);
+    color: #d5d5d7;
 }
 
 .et-v3-service a {
@@ -1567,6 +1569,8 @@
 }
 
 .et-v3-service--feature a {
+    margin-top: 1.25rem;
+    padding-top: 0;
     color: #fff;
 }
 
@@ -3960,9 +3964,7 @@
         flex-wrap: wrap;
     }
 
-    .et-v3-service,
-.et-v3-service--feature {
-        min-height: 320px;
+    .et-v3-service {
         grid-column: auto;
     }
 
@@ -4250,7 +4252,7 @@
     }
 
     .storefront .et-footer__contact {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: .25rem .75rem;
         margin-block: .75rem .9rem;
     }

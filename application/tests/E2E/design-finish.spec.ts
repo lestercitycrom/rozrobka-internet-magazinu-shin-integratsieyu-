@@ -117,3 +117,103 @@ test('services form complete rows in source order; reduced motion remains respec
     const duration = await page.locator('.et-step-panel.is-active').evaluate(node => parseFloat(getComputedStyle(node).animationDuration));
     expect(duration).toBeLessThanOrEqual(.001);
 });
+
+test('review R1: photo captions stay separate, readable and contained through hover and focus', async ({ page }, info) => {
+    await page.goto(prefixFor(info.project.name) || '/');
+    await page.evaluate(() => document.fonts.ready);
+    const cards = page.locator('.et-home-service-collection .et-v3-service--feature');
+    await expect(cards).toHaveCount(4);
+    for (const card of await cards.all()) {
+        const content = card.locator('.et-v3-service__content');
+        const link = content.locator('a');
+        for (const state of ['normal', 'hover', 'focus']) {
+            if (state === 'hover') await link.hover();
+            if (state === 'focus') {
+                await page.keyboard.press('Tab');
+                await link.focus();
+                await expect(link).toBeFocused();
+            }
+            const metrics = await card.evaluate(element => {
+                const rgb = (value: string) => value.match(/[\d.]+/g)!.map(Number);
+                const luminance = (values: number[]) => values.slice(0, 3).map(value => {
+                    const channel = value / 255;
+                    return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+                }).reduce((sum, channel, index) => sum + channel * [.2126, .7152, .0722][index], 0);
+                const background = rgb(getComputedStyle(element).backgroundColor);
+                const bounds = element.getBoundingClientRect();
+                // Read related bounds in one frame: keyboard focus can still be
+                // smoothly scrolling the document between separate protocol calls.
+                const media = element.querySelector(':scope > img, :scope > .et-v3-service__fallback')!.getBoundingClientRect();
+                const content = element.querySelector('.et-v3-service__content')!.getBoundingClientRect();
+                const foregrounds = [...element.querySelectorAll('.et-v3-service__content h3, .et-v3-service__content p, .et-v3-service__content a')];
+                return {
+                    mediaOverlap: media.bottom - content.top,
+                    opaque: background.length === 3 || background[3] === 1,
+                    contrasts: foregrounds.map(node => {
+                        const text = luminance(rgb(getComputedStyle(node).color));
+                        const surface = luminance(background);
+                        return (Math.max(text, surface) + .05) / (Math.min(text, surface) + .05);
+                    }),
+                    contained: foregrounds.every(node => {
+                        const rect = node.getBoundingClientRect();
+                        return rect.left >= bounds.left && rect.right <= bounds.right + 1 && rect.bottom <= bounds.bottom + 1;
+                    }),
+                };
+            });
+            expect(metrics.mediaOverlap).toBeLessThanOrEqual(1);
+            expect(metrics.opaque).toBe(true);
+            expect(metrics.contained).toBe(true);
+            metrics.contrasts.forEach(ratio => expect(ratio).toBeGreaterThanOrEqual(4.5));
+        }
+    }
+    // Presentation-only stress fixture: long localized copy must grow the caption,
+    // not overlap the photograph or conceal the action. Never changes stored data.
+    const longCard = cards.nth(1);
+    await longCard.locator('p').evaluate(node => { node.textContent = `${node.textContent} ${node.textContent} ${node.textContent}`; });
+    const textOverlap = await longCard.evaluate(element => element.querySelector('p')!.getBoundingClientRect().bottom - element.querySelector('a')!.getBoundingClientRect().top);
+    expect(textOverlap).toBeLessThanOrEqual(0);
+    await expectNoGlobalOverflow(page);
+});
+
+test('review R2: price page has exactly one current navigation item in both languages', async ({ page }, info) => {
+    const prefix = prefixFor(info.project.name);
+    await page.goto(`${prefix}/priser`);
+    const mobile = page.viewportSize()!.width < 768;
+    if (mobile) await page.getByRole('button', { name: /Åpne meny|Открыть меню/ }).click();
+    const navigation = page.getByTestId(mobile ? 'mobile-navigation' : 'desktop-navigation');
+    const current = navigation.locator('[aria-current="page"]');
+    await expect(current).toHaveCount(1);
+    await expect(current).toHaveAttribute('href', new RegExp(`${prefix}/priser$`));
+    await expect(current).toHaveText(prefix ? 'Цены' : 'Priser');
+    await expect(navigation.locator('summary[aria-current="page"], a[aria-current="page"][href$="/tjenester"]')).toHaveCount(0);
+});
+
+test('review R3: footer contact values remain intact and stack on narrow screens', async ({ page }, info) => {
+    await page.goto(`${prefixFor(info.project.name)}/priser`);
+    const footer = page.locator('.et-footer__contact');
+    const email = footer.locator('a[href^="mailto:"]');
+    const phone = footer.locator('a[href^="tel:"]');
+    await expect(email).toHaveText('max.easytire@gmail.com');
+    await expect(email).toHaveAttribute('href', 'mailto:max.easytire@gmail.com');
+    await expect(phone).toHaveAttribute('href', /^tel:\+?4793958270$/);
+    if (page.viewportSize()!.width <= 390) {
+        const emailBox = (await email.boundingBox())!;
+        const phoneBox = (await phone.boundingBox())!;
+        expect(emailBox.y).toBeGreaterThanOrEqual(phoneBox.y + phoneBox.height);
+        const type = await email.evaluate(node => {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            return {
+                lines: new Set(Array.from(range.getClientRects(), rect => Math.round(rect.top))).size,
+                fontSize: parseFloat(getComputedStyle(node).fontSize),
+                textOverflow: getComputedStyle(node).textOverflow,
+                fits: range.getBoundingClientRect().width <= node.clientWidth,
+            };
+        });
+        expect(type.lines).toBe(1);
+        expect(type.fontSize).toBeGreaterThanOrEqual(14);
+        expect(type.textOverflow).not.toBe('ellipsis');
+        expect(type.fits).toBe(true);
+    }
+    await expectNoGlobalOverflow(page);
+});

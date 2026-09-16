@@ -374,7 +374,6 @@
                         <article @class(['et-v3-service', 'et-v3-service--feature' => $index < 2])>
                             @if ($index < 2)
                                 <img src="{{ $serviceImage($service, $index) }}" width="1200" height="900" loading="lazy" alt="">
-                                <span class="et-v3-service__shade" aria-hidden="true"></span>
                             @endif
                             <div class="et-v3-service__content">
                                 <h3>{{ $service->title }}</h3>

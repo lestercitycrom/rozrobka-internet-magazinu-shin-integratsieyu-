@@ -169,3 +169,17 @@ test('missing standalone car-care pages have real distinct service-directory des
         ->assertSee('href="'.route('storefront.content.show', 'kontakt').'"', false)
         ->assertSee('href="tel:+4793958270"', false);
 });
+
+test('prices is the only current header destination in both public languages', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+
+    foreach (['' => 'Priser', '/ru' => 'Цены'] as $prefix => $label) {
+        $html = $this->get($prefix.'/priser')->assertOk()->getContent();
+
+        foreach (['desktop-navigation', 'mobile-navigation'] as $navigation) {
+            $selector = "//*[@data-testid='{$navigation}']//*[@aria-current='page']";
+            expect(issue45Texts($html, $selector))->toBe([$label])
+                ->and(issue45Hrefs($html, $selector))->toBe([url($prefix.'/priser')]);
+        }
+    }
+});
