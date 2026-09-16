@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Issue #44 / PM 5678136657: published design/admin-polish candidates only; no DB mutation.
+# Issue #73: published storefront UI-polish candidates only; no DB mutation.
 set -Eeuo pipefail
 umask 0027
 
 readonly ROOT='/var/www/staging-easytire.bethub.fun'
 readonly REPO='/srv/git/shop-ndi.git'
-readonly BASE='bf7f03e3d3265174e4e4307064769a742dd087cc'
-readonly EXPECTED_CURRENT='33694cdb5a41012d6bbb95e548a4eb7d30f0ee3b'
-readonly BRANCH='refs/heads/codex/issue-44-design-v2'
+readonly BASE='3b8ae190512dd897cd0133aa3c2771d0e890196c'
+readonly EXPECTED_CURRENT='95a1b76086e2d51e1aebb01911bc83a683bf78ea'
+readonly ACCEPTED_RUNTIME='95a1b76086e2d51e1aebb01911bc83a683bf78ea'
+readonly BRANCH='refs/heads/codex/ui-polish-v1'
 readonly HOST='staging-easytire.bethub.fun'
 readonly COMPOSER='/usr/local/bin/composer'
 revision="${1:-}"
@@ -19,12 +20,13 @@ fail() { log "$*" >&2; exit 1; }
 [[ "$mode" == '--check' || "$mode" == '--deploy' ]] || fail 'Use --check or --deploy.'
 [[ "$(git --git-dir="$REPO" rev-parse "$BRANCH^{commit}")" == "$revision" ]] || fail 'The received design branch does not match the requested SHA.'
 git --git-dir="$REPO" merge-base --is-ancestor "$BASE" "$revision" || fail 'Candidate is not based on the accepted main.'
+[[ "$(git --git-dir="$REPO" rev-parse "$BASE^{tree}")" == "$(git --git-dir="$REPO" rev-parse "$ACCEPTED_RUNTIME^{tree}")" ]] \
+    || fail 'Accepted main and accepted runtime no longer have identical trees.'
 
 # Fail closed if a preview contains backend, data, dependency or environment changes.
 while IFS= read -r -d '' file; do
     case "$file" in
-        application/resources/css/app.css|application/resources/css/design-tokens.css|application/resources/css/pro-design.css|application/resources/css/storefront-v3.css|application/resources/css/storefront-contracts.css|application/resources/css/admin-system.css|application/resources/views/storefront/*|application/resources/views/components/layouts/storefront.blade.php|application/resources/views/components/icon.blade.php|application/resources/views/welcome.blade.php|application/resources/views/admin/booking-calendar/blackout-form.blade.php|application/resources/views/admin/booking-calendar/interval-form.blade.php|application/resources/views/admin/clients/form.blade.php|application/resources/views/admin/clients/show.blade.php|application/resources/views/admin/partials/navigation.blade.php|application/resources/views/admin/requests/day.blade.php|application/resources/views/admin/requests/form.blade.php|application/resources/views/admin/requests/index.blade.php|application/resources/views/admin/requests/show.blade.php|application/resources/js/ui.js|application/resources/js/catalog-live.js|application/resources/js/product-media.js|application/lang/nb/pro.php|application/lang/ru/pro.php|application/tests/*|application/playwright.config.ts|application/vite.config.js|project-control/*|evidence/*|deploy/preview-staging.sh|deploy/tests/preview-staging-safety.sh|deploy/README.md) ;;
-        application/resources/views/components/storefront-money.blade.php|application/public/brand/*.webp|application/public/brand/*.jpg|application/public/brand/*.jpeg|application/public/brand/*.png|application/public/brand/*.avif|application/public/brand/*.svg|application/public/brand/*.mp4|application/public/brand/*.webm|application/public/brand/*.woff2|docs/operations/OPERATIONS_DAY_AND_CLIENT_SEARCH.md) ;;
+        application/resources/css/design-tokens.css|application/resources/css/storefront-v3.css|application/resources/css/storefront-contracts.css|application/resources/views/storefront/*|application/resources/views/components/layouts/storefront.blade.php|application/resources/views/components/storefront-money.blade.php|application/resources/views/components/icon.blade.php|application/resources/views/welcome.blade.php|application/lang/nb/pro.php|application/lang/ru/pro.php|application/tests/*|application/playwright.config.ts|project-control/*|evidence/*|deploy/preview-staging.sh|deploy/tests/preview-staging-safety.sh|deploy/README.md) ;;
         *) fail "Outside approved preview scope: $file" ;;
     esac
 done < <(git --git-dir="$REPO" diff --name-only -z "$BASE" "$revision")
@@ -43,7 +45,7 @@ previous="$(readlink -f "$ROOT/current")"
 [[ -d "$ROOT/shared/storage/app/public" && "$(readlink -f "$previous/application/public/storage")" == "$ROOT/shared/storage/app/public" ]] || fail 'Unexpected public media storage layout.'
 fallback_found=false
 for marker in "$ROOT"/releases/*/REVISION; do
-    if [[ -f "$marker" && "$(head -n 1 "$marker")" == "$BASE" ]]; then fallback_found=true; break; fi
+    if [[ -f "$marker" && "$(head -n 1 "$marker")" == "$ACCEPTED_RUNTIME" ]]; then fallback_found=true; break; fi
 done
 [[ "$fallback_found" == true ]] || fail 'Accepted fallback release must remain available.'
 [[ ! -L "$ROOT/deploy.lock" ]] || fail 'Unexpected lock symlink.'
@@ -129,5 +131,5 @@ curl --fail --silent --show-error --max-time 30 --resolve "$HOST:443:127.0.0.1" 
 [[ "$(curl --fail --silent --show-error --max-time 30 --resolve "$HOST:443:127.0.0.1" "https://$HOST/design-revision.txt")" == "$revision" ]]
 completed=true
 trap - EXIT INT TERM
-log "Activated $revision; retained previous=$previous and accepted fallback=$BASE."
+log "Activated $revision; retained previous=$previous and accepted fallback=$ACCEPTED_RUNTIME."
 log 'No migration, seed, pruning, runtime-setting change or service restart was performed.'

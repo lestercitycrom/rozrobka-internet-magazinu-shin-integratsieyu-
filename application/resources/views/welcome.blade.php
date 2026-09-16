@@ -280,7 +280,7 @@
                         <p class="et-eyebrow et-eyebrow--light">{{ $storefrontValue('hotel_kicker_'.$homepageLocale, __('pro.home.hotel_kicker')) }}</p>
                         <h3>{{ $storefrontValue('hotel_title_'.$homepageLocale, __('pro.home.hotel_title')) }}</h3>
                         <p>{{ $storefrontValue('hotel_text_'.$homepageLocale, __('pro.home.hotel_text')) }}</p>
-                        <a href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}">{{ $storefrontValue('hotel_cta_'.$homepageLocale, __('pro.home.hotel_link')) }} <x-icon name="arrow" :size="18" /></a>
+                        <a class="et-action-link" href="{{ $hotelService ? $serviceUrl($hotelService) : route($routePrefix.'services.index') }}"><span class="et-action-link__label">{{ $storefrontValue('hotel_cta_'.$homepageLocale, __('pro.home.hotel_link')) }}</span><x-icon name="arrow" :size="16" /></a>
                     </div>
                 </article>
                 <article class="et-v3-logistics-card et-v3-logistics-card--video">
@@ -295,7 +295,7 @@
                         <p class="et-eyebrow">{{ $storefrontValue('mobile_kicker_'.$homepageLocale, __('pro.home.mobile_kicker')) }}</p>
                         <h3>{{ $storefrontValue('mobile_title_'.$homepageLocale, __('pro.home.mobile_title')) }}</h3>
                         <p>{{ $storefrontValue('mobile_text_'.$homepageLocale, __('pro.home.mobile_text')) }}</p>
-                        <button class="et-v3-text-link" type="button" aria-haspopup="dialog" data-dekkhotell-dialog-open>{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }} <x-icon name="arrow" :size="18" /></button>
+                        <button class="et-action-link" type="button" aria-haspopup="dialog" data-dekkhotell-dialog-open><span class="et-action-link__label">{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }}</span><x-icon name="arrow" :size="16" /></button>
                         <noscript>
                             <details class="et-v3-logistics-noscript"><summary>{{ $storefrontValue('mobile_cta_'.$homepageLocale, __('pro.home.mobile_link')) }}</summary><h4>{{ $storefrontValue('mobile_details_title_'.$homepageLocale, __('pro.home.dekkhotell_section_title')) }}</h4><p>{{ $storefrontValue('mobile_details_body_1_'.$homepageLocale, '') }}</p><p>{{ $storefrontValue('mobile_details_body_2_'.$homepageLocale, '') }}</p></details>
                         </noscript>
@@ -341,7 +341,7 @@
                     <a href="{{ route($routePrefix.'pricing.index') }}"><span>{{ __('pro.home.price_pending') }}</span><strong>{{ __('pro.home.price_all') }}</strong><x-icon name="arrow" :size="18" /></a>
                 @endforelse
             </div>
-            <a class="et-home-prices__all" href="{{ route($routePrefix.'pricing.index') }}">{{ __('pro.home.price_all') }} <x-icon name="arrow" :size="17" /></a>
+            <a class="et-home-prices__all et-action-link" href="{{ route($routePrefix.'pricing.index') }}"><span class="et-action-link__label">{{ __('pro.home.price_all') }}</span><x-icon name="arrow" :size="16" /></a>
         </div>
     </section>
 
@@ -366,7 +366,7 @@
                         <h2 class="et-h2" id="home-services-title">{{ __('pro.home.services_title') }}</h2>
                         <p class="et-lead">{{ __('pro.home.services_text') }}</p>
                     </div>
-                    <a class="et-v3-text-link" href="{{ route($routePrefix.'services.index') }}">{{ __('pro.home.services_all') }} <x-icon name="arrow" :size="18" /></a>
+                    <a class="et-action-link" href="{{ route($routePrefix.'services.index') }}"><span class="et-action-link__label">{{ __('pro.home.services_all') }}</span><x-icon name="arrow" :size="16" /></a>
                 </div>
 
                 <div class="et-v3-service-grid">
@@ -377,10 +377,9 @@
                                 <span class="et-v3-service__shade" aria-hidden="true"></span>
                             @endif
                             <div class="et-v3-service__content">
-                                <span class="et-v3-service__number">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                                 <h3>{{ $service->title }}</h3>
                                 @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
-                                <a href="{{ $serviceUrl($service) }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
+                                <a class="et-action-link" href="{{ $serviceUrl($service) }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}"><span class="et-action-link__label">{{ __('pro.home.service_link') }}</span><x-icon name="arrow" :size="16" /></a>
                             </div>
                         </article>
                     @endforeach
@@ -457,7 +456,7 @@
                             <span aria-hidden="true">“</span>
                             <blockquote>{{ $quote }}</blockquote>
                             @if ($author)<p>{{ $author }}</p>@endif
-                            <a href="{{ $review->source_url }}" target="_blank" rel="noopener">{{ $sourceLabel }} <x-icon name="arrow" :size="17" /></a>
+                            <a class="et-action-link" href="{{ $review->source_url }}" target="_blank" rel="noopener"><span class="et-action-link__label">{{ $sourceLabel }}</span><x-icon name="arrow" :size="16" /></a>
                         </article>
                     @endforeach
                     </div>
@@ -479,7 +478,7 @@
                 @if ($socialLinks->isNotEmpty())
                     <nav class="et-v3-socials" aria-label="{{ __('pro.home.social_label') }}" data-testid="homepage-social-links">
                         @foreach ($socialLinks as $social)
-                            <a href="{{ $social['url'] }}" target="_blank" rel="noopener">{{ $social['label'] }} <x-icon name="arrow" :size="15" /></a>
+                            <a class="et-action-link" href="{{ $social['url'] }}" target="_blank" rel="noopener"><span class="et-action-link__label">{{ $social['label'] }}</span><x-icon name="arrow" :size="16" /></a>
                         @endforeach
                     </nav>
                 @endif
@@ -498,7 +497,7 @@
                         <h3 class="et-h3">{{ __('pro.content.map_title') }}</h3>
                         <p>{{ __('pro.content.map_privacy') }}</p>
                         <a class="et-btn et-btn--primary et-btn--full" href="{{ $mapUrl }}" target="_blank" rel="noopener" data-testid="map-external-only">{{ __('pro.content.map_options') }}</a>
-                        <a class="et-btn et-btn--link" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.home.map') }}</a>
+                        <a class="et-action-link" href="{{ $mapUrl }}" target="_blank" rel="noopener"><span class="et-action-link__label">{{ __('pro.home.map') }}</span><x-icon name="arrow" :size="16" /></a>
                     </div>
                 @endif
               </div>

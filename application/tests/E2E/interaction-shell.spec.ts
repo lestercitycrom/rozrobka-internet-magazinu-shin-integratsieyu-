@@ -81,8 +81,8 @@ test('semantic hover variants remain flat and dimensionally stable', async ({ pa
     await stableHover(page, page.getByTestId('header-call'));
     await stableActive(page, page.getByTestId('header-call'));
     await expectDisabledState(page.getByTestId('header-call'));
-    await stableHover(page, page.locator('.et-v3-text-link').first());
-    await stableActive(page, page.locator('.et-v3-text-link').first());
+    await stableHover(page, page.locator('.et-action-link').first());
+    await stableActive(page, page.locator('.et-action-link').first());
     await stableHover(page, page.getByTestId('footer-booking'));
     await stableActive(page, page.getByTestId('footer-booking'));
     await expectDisabledState(page.getByTestId('footer-booking'));
@@ -258,7 +258,7 @@ test('mobile standalone actions and compact footer keep every destination reacha
     }
 
     await page.goto('/');
-    for (const selector of ['.et-home-prices__all', '.et-v3-text-link']) {
+    for (const selector of ['.et-home-prices__all', '.et-action-link']) {
         const action = page.locator(selector).first();
         await expect(action).toBeVisible();
         expect(await action.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);

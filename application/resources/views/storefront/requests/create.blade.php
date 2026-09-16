@@ -149,7 +149,7 @@
                                             <fieldset class="et-form-section et-seasonal-vehicle" data-seasonal-vehicle data-request-vehicle data-vehicle-index="{{ $vehicleIndex }}" @if($vehicleIndex >= $seasonalVehicleCount) hidden @endif>
                                                 <legend class="et-label et-seasonal-vehicle__legend">{{ __('service_requests.form.car_number', ['number' => $vehicleIndex + 1]) }}</legend>
                                                 @if($vehicleIndex > 0)
-                                                    <button class="et-btn et-btn--link et-seasonal-vehicle__remove" type="button" data-remove-vehicle>{{ __('service_requests.form.remove_vehicle') }}</button>
+                                                    <button class="et-seasonal-vehicle__remove et-action-link" type="button" data-remove-vehicle><span class="et-action-link__label">{{ __('service_requests.form.remove_vehicle') }}</span></button>
                                                 @endif
                                                 <div class="et-form-grid">
                                                     <div class="et-field">
@@ -453,7 +453,7 @@
                                 <p class="et-eyebrow">{{ __('pro.booking.generic_service_label') }}</p>
                                 <h2 class="et-h3">{{ $service->title }}</h2>
                                 @if ($service->excerpt)<p class="et-copy">{{ $service->excerpt }}</p>@endif
-                                <a class="et-btn et-btn--link" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
+                                <a class="et-action-link" href="{{ route($prefix.($service->canonicalPath ? 'seo-services.show' : 'services.show'), $service->canonicalPath ?: $service->slug) }}"><span class="et-action-link__label">{{ __('pro.home.service_link') }}</span><x-icon name="arrow" :size="16" /></a>
                             </div>
                         </aside>
                     </div>

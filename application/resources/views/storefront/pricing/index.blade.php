@@ -41,7 +41,7 @@
                                             @if ($description = $price->localized('description', app()->getLocale()))
                                                 <p>{{ $description }}</p>
                                             @endif
-                                            <a class="et-btn et-btn--link et-btn--small" href="{{ $categoryAction[0] }}">{{ $categoryAction[1] }}</a>
+                                            <a class="et-action-link et-action-link--small" href="{{ $categoryAction[0] }}"><span class="et-action-link__label">{{ $categoryAction[1] }}</span><x-icon name="arrow" :size="16" /></a>
                                         </div>
                                         <strong class="et-public-price-row__amount"><x-storefront-money :minor="$price->price_minor" :currency="$price->currency" :decimals="0" /></strong>
                                     </div>

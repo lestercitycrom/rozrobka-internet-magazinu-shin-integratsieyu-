@@ -34,6 +34,7 @@ return [
         'about' => 'Om Oss',
         'contact' => 'Kontakt',
         'cart' => 'Handlekurv',
+        'cart_count_unavailable' => 'antall utilgjengelig',
         'booking' => 'Bestill dekkskift',
         'call' => 'Ring oss',
         'catalog_search' => 'Søk i dekkatalogen',

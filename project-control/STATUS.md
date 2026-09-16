@@ -1,6 +1,10 @@
 # EasyTire status
 
-Updated: 2026-09-16 — Issue #19 final catalogue handoff
+Updated: 2026-09-16 — Issue #73 public UI Polish
+
+## Current work
+
+Catalogue handoff complete: [PM5690161142](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5690161142). UI Polish starts from accepted main `3b8ae190512dd897cd0133aa3c2771d0e890196c` on `codex/ui-polish-v1`; the observed staging `95a1b76086e2d51e1aebb01911bc83a683bf78ea` has the same tree. See [current scope](CURRENT_TASK.md) and [report](../evidence/ui-polish/REPORT.md). The dated observations below remain history, not claims about a later preview.
 
 ## Accepted baseline
 

@@ -34,6 +34,7 @@ return [
         'about' => 'О нас',
         'contact' => 'Контакты',
         'cart' => 'Корзина',
+        'cart_count_unavailable' => 'количество недоступно',
         'booking' => 'Заказать смену колёс',
         'call' => 'Позвонить',
         'catalog_search' => 'Поиск по каталогу шин',

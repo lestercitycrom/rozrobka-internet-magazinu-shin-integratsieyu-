@@ -78,7 +78,7 @@
                                     <h2 class="et-h3">{{ __('pro.content.map_title') }}</h2>
                                     <p>{{ __('pro.content.map_privacy') }}</p>
                                     <a class="et-btn et-btn--primary et-btn--full" href="{{ $mapUrl }}" target="_blank" rel="noopener" data-testid="map-external-only">{{ __('pro.content.map_options') }}</a>
-                                    <a class="et-btn et-btn--link" href="{{ $mapUrl }}" target="_blank" rel="noopener">{{ __('pro.content.map_link') }}</a>
+                                    <a class="et-action-link" href="{{ $mapUrl }}" target="_blank" rel="noopener"><span class="et-action-link__label">{{ __('pro.content.map_link') }}</span><x-icon name="arrow" :size="16" /></a>
                                 </div>
                             @endif
                         </div>
@@ -94,8 +94,8 @@
                     @endif
 
                     <div class="et-grid-2 et-content-followup-grid">
-                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.private_customer') }}</span><h2 class="et-h3">{{ __('pro.content.private_title') }}</h2><p class="et-copy">{{ __('pro.content.private_text') }}</p><a class="et-card__link" href="{{ route($prefix.'services.index') }}">{{ __('pro.nav.services') }}</a></div></article>
-                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.business_customer') }}</span><h2 class="et-h3">{{ __('pro.content.business_title') }}</h2><p class="et-copy">{{ __('pro.content.business_text') }}</p><a class="et-card__link" href="mailto:{{ $contactEmail }}">{{ __('pro.home.email') }}</a></div></article>
+                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.private_customer') }}</span><h2 class="et-h3">{{ __('pro.content.private_title') }}</h2><p class="et-copy">{{ __('pro.content.private_text') }}</p><a class="et-action-link" href="{{ route($prefix.'services.index') }}"><span class="et-action-link__label">{{ __('pro.nav.services') }}</span><x-icon name="arrow" :size="16" /></a></div></article>
+                        <article class="et-card et-card--flat"><div class="et-card__body"><span class="et-card__meta">{{ __('pro.content.business_customer') }}</span><h2 class="et-h3">{{ __('pro.content.business_title') }}</h2><p class="et-copy">{{ __('pro.content.business_text') }}</p><a class="et-action-link" href="mailto:{{ $contactEmail }}"><span class="et-action-link__label">{{ __('pro.home.email') }}</span><x-icon name="arrow" :size="16" /></a></div></article>
                     </div>
                 </div>
             </section>

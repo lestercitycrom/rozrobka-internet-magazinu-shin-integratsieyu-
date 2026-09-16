@@ -40,13 +40,12 @@
                                     <span>{{ __('pro.services.kicker') }}</span>
                                 </span>
                             @endif
-                            <strong class="et-service-card__number">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</strong>
                         </a>
                         <div class="et-service-card__content">
                             <p class="et-service-card__meta">{{ __('pro.services.kicker') }}</p>
                             <h2><a href="{{ $destination }}">{{ $service->title }}</a></h2>
                             @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
-                            <a class="et-service-card__link" href="{{ $destination }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}">{{ __('pro.home.service_link') }} <x-icon name="arrow" :size="18" /></a>
+                            <a class="et-service-card__link et-action-link" href="{{ $destination }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}"><span class="et-action-link__label">{{ __('pro.home.service_link') }}</span><x-icon name="arrow" :size="16" /></a>
                         </div>
                     </article>
                 @empty
@@ -75,7 +74,7 @@
                             <span aria-hidden="true">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                             <h3>{{ $entry['title'] }}</h3>
                             <p>{{ $entry['text'] }}</p>
-                            <a href="{{ $entry['href'] }}">{{ __('pro.services.directory_contact') }} <x-icon name="arrow" :size="17" /></a>
+                            <a class="et-action-link" href="{{ $entry['href'] }}"><span class="et-action-link__label">{{ __('pro.services.directory_contact') }}</span><x-icon name="arrow" :size="16" /></a>
                         </article>
                     @endforeach
                 </div>

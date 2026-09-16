@@ -173,9 +173,24 @@
     --easytire-shadow-hover: var(--et-shadow);
 }
 
-/* Public DS-1 / DS-2. Keep admin's compact scale unchanged. */
+/* Public UI roles. Scoped here so the admin's scale and palette stay unchanged. */
 .storefront {
     --et-font-display: var(--et-font-body-system);
+    --et-type-body: 1rem;
+    --et-type-body-leading: 1.5rem;
+    --et-type-meta: .875rem;
+    --et-type-meta-leading: 1.25rem;
+    --et-type-eyebrow: .75rem;
+    --et-type-eyebrow-leading: 1rem;
+    --et-type-card-leading: 1.75rem;
+    --et-type-page-leading: 3rem;
+    --et-type-section-leading: 2.5rem;
+    --et-type-hero-leading: 4rem;
+    --et-control-border: #83878c;
+    --et-surface-subtle: #f5f5f4;
+    --et-surface-inverse: #101010;
+    --et-action-color: var(--et-color-ink);
+    --et-action-hover: var(--et-color-brand-strong);
     --et-container-gutter: 4rem;
     --et-container-gutter-mobile: 2rem;
     --et-section-space: var(--et-space-20);
@@ -186,10 +201,10 @@
     --et-section-heading-gap: var(--et-space-8);
     --et-control-height: 48px;
     --et-type-h1: 2.5rem;
-    --et-type-h2: 2.5rem;
-    --et-type-h3: 1.5rem;
-    --et-type-hero: 4rem;
-    --et-type-heading-weight: 700;
+    --et-type-h2: 2rem;
+    --et-type-h3: 1.25rem;
+    --et-type-hero: 3.5rem;
+    --et-type-heading-weight: 600;
     --et-type-heading-leading: 1.2;
     --et-type-heading-tracking: 0;
 }
@@ -201,7 +216,8 @@
         --et-section-space-generous: var(--et-space-16);
         --et-section-space-compact: var(--et-space-10);
         --et-section-heading-gap: 1.75rem;
-        --et-type-hero: 3.5rem;
+        --et-type-hero: 3rem;
+        --et-type-hero-leading: 3.5rem;
     }
 }
 
@@ -213,8 +229,11 @@
         --et-section-space-compact: var(--et-space-8);
         --et-section-heading-gap: var(--et-space-6);
         --et-type-h1: 2rem;
-        --et-type-h2: 1.75rem;
+        --et-type-h2: 1.625rem;
         --et-type-h3: 1.25rem;
-        --et-type-hero: clamp(2.25rem, 9.5vw, 2.5rem);
+        --et-type-hero: 2.25rem;
+        --et-type-hero-leading: 2.75rem;
+        --et-type-page-leading: 2.5rem;
+        --et-type-section-leading: 2.125rem;
     }
 }

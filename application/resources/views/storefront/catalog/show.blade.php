@@ -38,7 +38,7 @@
                 <span>{{ $productHeading }}</span>
             </div>
 
-            <a class="et-btn et-btn--link" href="{{ route($catalogRoute) }}">{{ __('pro.catalog.back') }}</a>
+            <a class="et-action-link" href="{{ route($catalogRoute) }}"><span class="et-action-link__label">{{ __('pro.catalog.back') }}</span><x-icon name="arrow" :size="16" /></a>
 
             <article class="et-product-layout et-product-layout--spaced">
                 <div>
@@ -59,9 +59,7 @@
 
                 <div class="et-product-info">
                     <div class="et-product-info__top">
-                        <p class="et-eyebrow">{{ __('pro.catalog.product_kicker') }}</p>
                         @if ($item->isIntegrationTest)<span class="et-badge et-badge--red" data-testid="integration-test-product">{{ __('storefront.integration_test_product') }}</span>@endif
-                        <span class="et-product-card__brand">{{ $item->brand }}</span>
                         <h1 class="et-product-title">{{ $productHeading }}</h1>
                         @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
 

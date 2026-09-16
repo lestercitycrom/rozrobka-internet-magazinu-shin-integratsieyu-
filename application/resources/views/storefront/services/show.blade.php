@@ -102,12 +102,12 @@
                                     <h3>{{ $category->localized('category_title', app()->getLocale()) }}</h3>
                                     @foreach ($categoryPrices as $price)
                                         <div class="et-public-price-row">
-                                            <div><strong>{{ $price->localized('title', app()->getLocale()) }}</strong>@if($description = $price->localized('description', app()->getLocale()))<p>{{ $description }}</p>@endif<a class="et-btn et-btn--link et-btn--small" href="{{ $categoryAction[0] }}">{{ $categoryAction[1] }}</a></div>
+                                            <div><strong>{{ $price->localized('title', app()->getLocale()) }}</strong>@if($description = $price->localized('description', app()->getLocale()))<p>{{ $description }}</p>@endif<a class="et-action-link et-action-link--small" href="{{ $categoryAction[0] }}"><span class="et-action-link__label">{{ $categoryAction[1] }}</span><x-icon name="arrow" :size="16" /></a></div>
                                             <strong class="et-public-price-row__amount"><x-storefront-money :minor="$price->price_minor" :currency="$price->currency" :decimals="0" /></strong>
                                         </div>
                                     @endforeach
                                 @endforeach
-                                <a class="et-btn et-btn--link" href="{{ route($prefix.'pricing.index') }}">{{ __('services.all_prices') }}</a>
+                                <a class="et-action-link" href="{{ route($prefix.'pricing.index') }}"><span class="et-action-link__label">{{ __('services.all_prices') }}</span><x-icon name="arrow" :size="16" /></a>
                             </section>
                         @endif
                     </div>

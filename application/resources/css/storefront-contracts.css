@@ -31,7 +31,7 @@
     --et-shadow-sm: 0 1px 0 rgb(11 11 12 / .12);
     --et-shadow: 0 10px 24px rgb(11 11 12 / .1);
     --et-shadow-dark: 0 14px 36px rgb(0 0 0 / .24);
-    --et-storefront-surface-shadow: var(--et-shadow-sharp);
+    --et-storefront-surface-shadow: none;
 }
 
 /* The custom admin consumes the same approved crisp compatibility aliases. */
@@ -91,9 +91,10 @@
 .storefront .et-product-price--unavailable {
     max-width: 30rem;
     color: var(--et-ink);
-    font-size: clamp(1rem, 2vw, 1.125rem);
+    font-size: var(--et-type-body);
+    font-weight: 400;
     letter-spacing: 0;
-    line-height: 1.4;
+    line-height: var(--et-type-body-leading);
     overflow-wrap: anywhere;
 }
 .storefront .et-product-unavailable {
@@ -194,7 +195,8 @@
 }
 .storefront .et-radio-card small { font-size: .875rem; }
 .storefront .et-stepper__label {
-    font-size: .8125rem;
+    font-size: var(--et-type-meta);
+    line-height: var(--et-type-meta-leading);
     font-weight: 600;
     white-space: normal;
     overflow: visible;
@@ -228,7 +230,6 @@
 }
 .storefront .et-seasonal-vehicle__legend { padding-inline: .3rem; }
 .storefront .et-seasonal-vehicle__remove {
-    display: block;
     margin: -.2rem 0 .8rem auto;
 }
 .storefront .et-seasonal-vehicle-actions {
@@ -237,8 +238,9 @@
 }
 .storefront .et-seasonal-vehicle-actions [data-vehicle-count-status] {
     color: var(--et-muted);
-    font-size: .85rem;
-    font-weight: 700;
+    font-size: var(--et-type-meta);
+    line-height: var(--et-type-meta-leading);
+    font-weight: 400;
 }
 .storefront .et-request-review-note { margin-block-start: 1.1rem; }
 .storefront .et-request-summary-title {
@@ -252,7 +254,7 @@
 /* Cart composition. */
 .storefront .et-cart-quantity {
     width: 88px;
-    min-height: 40px;
+    min-height: 48px;
 }
 .storefront .et-cart-issue-quantity { width: 88px; }
 .storefront .et-cart-action { align-self: end; }
