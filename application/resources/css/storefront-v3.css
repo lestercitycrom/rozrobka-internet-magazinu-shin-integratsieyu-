@@ -569,6 +569,10 @@
 
 .storefront .et-mobile-menu :is(a, summary)[aria-current='page'] {
     color: var(--et-red-ink);
+    text-decoration: none;
+}
+
+.storefront .et-mobile-menu :is(a, summary)[aria-current='page'] > .et-mobile-menu__label {
     text-decoration: underline;
     text-decoration-thickness: 2px;
     text-underline-offset: .3em;

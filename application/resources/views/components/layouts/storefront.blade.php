@@ -321,19 +321,19 @@
                 @foreach ($navigationItems as $navigationItem)
                     @if (! empty($navigationItem['groups']))
                         <details class="et-mobile-menu__group">
-                            <summary class="min-h-11" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</summary>
+                            <summary class="min-h-11" @if($activeSection === $navigationItem['section']) aria-current="page" @endif><span class="et-mobile-menu__label">{{ $navigationItem['label'] }}</span></summary>
                             <div class="et-mobile-menu__children">
-                                <a class="min-h-11" href="{{ $navigationItem['href'] }}">{{ __('pro.nav.all_services') }}</a>
+                                <a class="min-h-11" href="{{ $navigationItem['href'] }}"><span class="et-mobile-menu__label">{{ __('pro.nav.all_services') }}</span></a>
                                 @foreach ($navigationItem['groups'] as $group)
                                     <p>{{ $group['label'] }}</p>
                                     @foreach ($group['children'] as $child)
-                                        <a class="min-h-11" href="{{ $child['href'] }}" @if($child['active']) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                        <a class="min-h-11" href="{{ $child['href'] }}" @if($child['active']) aria-current="page" @endif><span class="et-mobile-menu__label">{{ $child['label'] }}</span></a>
                                     @endforeach
                                 @endforeach
                             </div>
                         </details>
                     @else
-                        <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                        <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif><span class="et-mobile-menu__label">{{ $navigationItem['label'] }}</span></a>
                     @endif
                 @endforeach
                 <form class="et-mobile-menu__search" method="GET" action="{{ route($routePrefix.'tires.index') }}">
@@ -341,8 +341,8 @@
                     <div><input id="mobile-catalog-query" name="q" type="search" autocomplete="off" placeholder="{{ __('pro.nav.catalog_search_placeholder') }}" list="mobile-catalog-suggestions" aria-controls="mobile-catalog-suggestions" data-catalog-autocomplete="{{ route($routePrefix.'tires.suggestions') }}"><button type="submit" aria-label="{{ __('pro.nav.catalog_search_submit') }}"><x-icon name="search" :size="19" /></button></div>
                     <datalist id="mobile-catalog-suggestions"></datalist>
                 </form>
-                <a class="min-h-11" href="tel:{{ $phoneHref }}" data-testid="mobile-call-link">{{ __('pro.nav.call') }}</a>
-                <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link">{{ __('pro.nav.cart') }} ({{ $cartCountLabel }})</a>
+                <a class="min-h-11" href="tel:{{ $phoneHref }}" data-testid="mobile-call-link"><span class="et-mobile-menu__label">{{ __('pro.nav.call') }}</span></a>
+                <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link"><span class="et-mobile-menu__label">{{ __('pro.nav.cart') }} ({{ $cartCountLabel }})</span></a>
             </nav>
         </div>
     </header>

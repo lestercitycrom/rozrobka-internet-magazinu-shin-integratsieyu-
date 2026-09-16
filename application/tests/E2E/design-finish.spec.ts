@@ -187,12 +187,78 @@ test('review R2: price page has exactly one current navigation item in both lang
     await expect(current).toHaveText(prefix ? 'Цены' : 'Priser');
     await expect(navigation.locator('summary[aria-current="page"], a[aria-current="page"][href$="/tjenester"]')).toHaveCount(0);
     if (mobile) {
+        const label = current.locator(':scope > .et-mobile-menu__label');
+        const currentCue = async () => {
+            await expect(current).toHaveCSS('text-decoration-line', 'none');
+            await expect(label).toHaveCSS('text-decoration-line', 'underline');
+            expect(await current.evaluate(node => ({
+                glyph: getComputedStyle(node, '::after').content.replace(/["']/g, ''),
+                decoration: getComputedStyle(node, '::after').textDecorationLine,
+            }))).toEqual({ glyph: '→', decoration: 'none' });
+        };
         // Current-page semantics must also have a visible, non-colour-only cue.
-        await expect(current).toHaveCSS('text-decoration-line', 'underline');
+        await currentCue();
+        expect((await current.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        expect(await label.getAttribute('tabindex')).toBeNull();
+        await expect(label).not.toBeFocused();
         const currentColor = await current.evaluate(node => getComputedStyle(node).color);
         const servicesColor = await navigation.locator('summary').evaluate(node => getComputedStyle(node).color);
         expect(currentColor).not.toBe(servicesColor);
+        await page.keyboard.press('Tab');
+        await current.focus();
+        await expect(current).toBeFocused();
+        await expect(label).not.toBeFocused();
+        await expect(current).toHaveCSS('outline-style', 'solid');
+        expect(parseFloat(await current.evaluate(node => getComputedStyle(node).outlineWidth))).toBeGreaterThanOrEqual(2);
+        await currentCue();
+        await expectNoGlobalOverflow(page);
     }
+});
+
+test('review R2b: mobile current grouping underlines only its label and preserves disclosure cues', async ({ page }, info) => {
+    test.skip(page.viewportSize()!.width >= 768, 'Mobile navigation contract only');
+
+    const prefix = prefixFor(info.project.name);
+    await page.goto(`${prefix}/tjenester`);
+    await page.getByRole('button', { name: /Åpne meny|Открыть меню/ }).click();
+
+    const navigation = page.getByTestId('mobile-navigation');
+    const group = navigation.locator('.et-mobile-menu__group');
+    const summary = group.locator('summary[aria-current="page"]');
+    const label = summary.locator(':scope > .et-mobile-menu__label');
+    await expect(summary).toHaveCount(1);
+    await expect(label).toHaveText(prefix ? 'Услуги' : 'Tjenester');
+    expect(await label.getAttribute('tabindex')).toBeNull();
+    await expect(summary).toHaveCSS('text-decoration-line', 'none');
+    await expect(label).toHaveCSS('text-decoration-line', 'underline');
+    await expect(navigation.locator(':scope > a:not([aria-current]) > .et-mobile-menu__label').first()).toHaveCSS('text-decoration-line', 'none');
+
+    const disclosure = async () => summary.evaluate(node => ({
+        glyph: getComputedStyle(node, '::after').content.replace(/["']/g, ''),
+        decoration: getComputedStyle(node, '::after').textDecorationLine,
+    }));
+    expect(await disclosure()).toEqual({ glyph: '+', decoration: 'none' });
+
+    const target = (await summary.boundingBox())!;
+    expect(target.height).toBeGreaterThanOrEqual(50);
+    await page.keyboard.press('Tab');
+    await summary.focus();
+    await expect(summary).toBeFocused();
+    await expect(label).not.toBeFocused();
+    await expect(summary).toHaveCSS('outline-style', 'solid');
+    expect(parseFloat(await summary.evaluate(node => getComputedStyle(node).outlineWidth))).toBeGreaterThanOrEqual(2);
+    await expect(summary).toHaveCSS('text-decoration-line', 'none');
+    await expect(label).toHaveCSS('text-decoration-line', 'underline');
+    expect(await disclosure()).toEqual({ glyph: '+', decoration: 'none' });
+    await page.keyboard.press('Enter');
+    await expect(group).toHaveAttribute('open', '');
+    await expect(summary).toBeFocused();
+    await expect(summary).toHaveCSS('outline-style', 'solid');
+    expect(parseFloat(await summary.evaluate(node => getComputedStyle(node).outlineWidth))).toBeGreaterThanOrEqual(2);
+    await expect(summary).toHaveCSS('text-decoration-line', 'none');
+    await expect(label).toHaveCSS('text-decoration-line', 'underline');
+    expect(await disclosure()).toEqual({ glyph: '−', decoration: 'none' });
+    await expectNoGlobalOverflow(page);
 });
 
 test('review R3: footer contact values remain intact and stack on narrow screens', async ({ page }, info) => {

@@ -2,7 +2,7 @@
 
 Active owner continuation: [#79 — Autonomous public design finishing](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/79), branch `codex/autonomous-design-finish`, based on exact current staging/PR #78 head `1326895e93b5f6bea67426100c282172be869564`. Finish the complete public buying/booking experience, including product controls, honest empty states, field grouping and cross-page visual rhythm. Preserve all #75/#77 snapshot/filter functionality and the fixed two-item sandbox. Public presentation only; no migrations, staging seeds, catalogue edits, integration activation or main merge. Design previews use the existing #44 published-SHA permission and retain the immediately previous release.
 
-Current bounded follow-up: address [PR #80 review R1–R4](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/80#pullrequestreview-5221279872) in this same branch. Shared photo-card readability, pricing navigation, narrow footer contacts, and exact-final-version interaction evidence; no further redesign. See [review verification scope](../evidence/pr80-review/README.md). This review iteration is local-only: no runtime deployment or merge.
+Current bounded follow-up: close only R2b from the [latest PR #80 review](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/80#pullrequestreview-5226165027). Mobile current-state underlines its label, not the arrow or disclosure signs. R1/R3/R4 and routing semantics are accepted and must remain unchanged. See [targeted verification scope](../evidence/pr80-r2b/README.md). Local-only; no new redesign, runtime deployment or merge.
 
 The handoff below records the functional predecessor, not a second active task.
 
