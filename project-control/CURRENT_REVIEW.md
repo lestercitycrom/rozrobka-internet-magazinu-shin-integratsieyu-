@@ -1,5 +1,18 @@
 # Current review
 
+- PR: [#78 — Catalogue filter consistency](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/78), linked from [Issue #77](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/77); base is #76, not older main. The latest PR result records the exact review/deployment SHA.
+- Branch/base: `codex/catalog-filter-consistency` above `d6938f318052c58842bb66a610ea1bf7a2542943`.
+
+Review the query, visible controls and actual products together. `/dekk?width=125&aspect=35&rim=13` must retain all three selected dimensions and honestly show no matching products; it must never display Alle while silently applying width125. Integer and decimal dimensions must agree, including profile60, rim20, PCD120, signed/zero ET and decimal wheel width.
+
+Sort selected after initial loading must survive the next filter change. Chips, reset, pagination, search, checkboxes, AJAX and back/forward must reflect only applied canonical state. Mobile retains the existing explicit Apply/draft/error/retry contract. NB/RU and 1440/390/320 layouts require browser evidence.
+
+Malformed/non-scalar input is ignored consistently rather than creating misleading active chips. Valid unavailable options remain enabled; unknown text is escaped. Product visibility, historical display pricing, real commerce guards, demo contract, design CSS and integration settings are unchanged.
+
+The no-migration release helper must inherit the current release environment byte-for-byte, verify a fresh backup, retain rollback, reject changed current/branch and avoid all shared build/cache writes. Exact-head CI and fresh runtime evidence are separate from this checklist; results are recorded in the PR/Issue and [report](../evidence/issue-77/REPORT.md).
+
+## Historical snapshot review (completed on staging; not current work)
+
 Current scope: [Issue #75](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/75), branch `codex/staging-catalog-snapshot`, base designer preview `274a1610829f87ed8521f65d62ac0789fc86ec28`. The snapshot PR and exact candidate SHA are linked in Issue #75 after checks. This task does not independently accept design PR #74.
 
 - PR: [#76 — snapshot catalogue](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/76); the older #72 below is retained history only.

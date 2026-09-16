@@ -127,6 +127,10 @@ jobs:
         working-directory: .
         run: bash deploy/tests/staging-catalog-snapshot-safety.sh
 
+      - name: Verify filter deployment safety
+        working-directory: .
+        run: bash deploy/tests/staging-catalog-filters-safety.sh
+
       - name: Check PHP formatting
         run: vendor/bin/pint --test
 
@@ -148,6 +152,9 @@ jobs:
       - name: Run snapshot catalog safety E2E
         run: npx playwright test --config=playwright.snapshot.config.ts
 
+      - name: Run catalog filter consistency E2E
+        run: npx playwright test --config=playwright.filters.config.ts
+
       - name: Upload Playwright failure evidence
         if: failure()
         uses: actions/upload-artifact@v7
@@ -158,6 +165,7 @@ jobs:
             application/test-results
             application/tmp/issue-19/playwright-results
             application/tmp/snapshot/playwright-results
+            application/tmp/filters/playwright-results
           if-no-files-found: ignore
           retention-days: 7
 
