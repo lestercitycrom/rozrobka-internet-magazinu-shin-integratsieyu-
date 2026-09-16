@@ -9,6 +9,7 @@ Date: 2026-09-16. Review diff against preserved designer preview `274a1610829f87
 - Frontend build passed. Existing designer CSS/JS are not modified.
 - Deployment safety suite passed: scope/SHA/environment guards, isolated build/cache, fresh backup requirements, corrupt/missing backup rejection, health/revision rollback, exact `.env` line preservation, old-importer refusal. Mock tests do not connect to staging.
 - Independent read-only agent audit found no blocking price-mode/CLI/health/deployment isolation defects. Added a preactivation old-importer check; an observation is not a global scheduler lock, so verify source observations after activation as well.
+- The first full-history CI secret scan flagged two 2026-08-01 status-prose lines in an old commit. Independent inspection confirmed neither contains credentials; two exact commit/file/rule/line fingerprints were added to `.gitleaksignore`. No broad exclusion or history rewrite. The application tree is unchanged by this CI-only follow-up.
 
 ## Reproduce
 

@@ -1,2 +1,6 @@
 # Public NDI sandbox catalogue SKU used by the provider-approved test fixture; not a credential.
 aeb48a8049138c5dd0786f2b93fd3b696c9f37bd:application/tests/Feature/Payments/PaymentBoundaryTest.php:generic-api-key:394
+# Independently reviewed historical prose about missing integration keys and
+# Notion/Telegram status, not credentials. Exact commit/file/line only.
+17f6b116a205b38cd89eefb57655a5115defcde3:docs/management/BACKLOG.md:generic-api-key:3
+17f6b116a205b38cd89eefb57655a5115defcde3:docs/management/MILESTONES.md:generic-api-key:3

@@ -2,7 +2,7 @@
 
 Current scope: [Issue #75](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/75), branch `codex/staging-catalog-snapshot`, base designer preview `274a1610829f87ed8521f65d62ac0789fc86ec28`. The snapshot PR and exact candidate SHA are linked in Issue #75 after checks. This task does not independently accept design PR #74.
 
-- PR: single snapshot PR linked from Issue #75; the older #72 below is retained history only.
+- PR: [#76 — snapshot catalogue](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/76); the older #72 below is retained history only.
 
 Required current invariants:
 

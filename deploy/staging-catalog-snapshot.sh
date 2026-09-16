@@ -45,7 +45,7 @@ while IFS= read -r -d '' file; do
         application/app/Modules/Catalog/CatalogDataMode.php|application/app/Modules/Catalog/ReadModel/*|application/app/Modules/Catalog/Presentation/CatalogItemPresenter.php|application/app/Modules/Pricing/Data/SellingPrice.php|application/app/Modules/Pricing/SellingPriceService.php|application/app/Http/Controllers/Storefront/CatalogController.php|application/config/ndi.php|application/.env.example|application/phpunit.xml) ;;
         application/app/Console/Commands/SyncNdiInbox.php|application/app/Console/Commands/ImportNdiBundle.php|application/app/Console/Commands/EasyTireHealth.php|application/app/Modules/Operations/SystemHealth.php|application/resources/views/admin/health.blade.php) ;;
         application/resources/views/storefront/catalog/index.blade.php|application/resources/views/storefront/catalog/_card.blade.php|application/resources/views/storefront/catalog/show.blade.php|application/lang/nb/storefront.php|application/lang/ru/storefront.php|application/lang/nb/health.php|application/lang/ru/health.php) ;;
-        application/tests/*|application/playwright.snapshot.config.ts|.github/workflows/quality.yml|docs/operations/*|project-control/*|evidence/*|deploy/staging-catalog-snapshot.sh|deploy/tests/staging-catalog-snapshot-safety.sh|deploy/README.md) ;;
+        application/tests/*|application/playwright.snapshot.config.ts|.github/workflows/quality.yml|.gitleaksignore|docs/operations/*|project-control/*|evidence/*|deploy/staging-catalog-snapshot.sh|deploy/tests/staging-catalog-snapshot-safety.sh|deploy/README.md) ;;
         *) fail "Outside approved snapshot scope: $file" ;;
     esac
 done < <(git --git-dir="$REPO" diff --name-only -z "$BASE" "$revision")
