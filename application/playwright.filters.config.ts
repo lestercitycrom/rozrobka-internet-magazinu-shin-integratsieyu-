@@ -20,7 +20,7 @@ export default defineConfig({
     timeout: 90_000,
     expect: { timeout: 12_000 },
     reporter: 'list',
-    use: { baseURL, browserName: 'chromium', serviceWorkers: 'block', trace: 'retain-on-failure', screenshot: 'only-on-failure', video: 'off' },
+    use: { baseURL, browserName: 'chromium', serviceWorkers: 'block', actionTimeout: 12_000, trace: 'retain-on-failure', screenshot: 'only-on-failure', video: 'off' },
     projects: ['nb', 'ru'].flatMap(locale => [1440, 390, 320].map(width => ({
         name: `filters-${locale}-${width === 1440 ? 'desktop' : 'mobile'}-${width}`,
         use: { ...devices['Desktop Chrome'], viewport: { width, height: width === 1440 ? 1000 : 844 } },
@@ -35,9 +35,10 @@ export default defineConfig({
         env: {
             APP_ENV: 'testing', APP_DEBUG: 'false', APP_URL: baseURL,
             APP_KEY: 'base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=',
-            APP_CONFIG_CACHE: `${isolated}/cache/config.php`, APP_ROUTES_CACHE: `${isolated}/cache/routes.php`,
-            APP_EVENTS_CACHE: `${isolated}/cache/events.php`, APP_SERVICES_CACHE: `${isolated}/cache/services.php`,
-            APP_PACKAGES_CACHE: `${isolated}/cache/packages.php`, VIEW_COMPILED_PATH: `${isolated}/storage/framework/views`,
+            // Laravel's cache-path resolver recognizes / and \\, but not a Windows drive prefix.
+            APP_CONFIG_CACHE: 'tmp/filters/cache/config.php', APP_ROUTES_CACHE: 'tmp/filters/cache/routes.php',
+            APP_EVENTS_CACHE: 'tmp/filters/cache/events.php', APP_SERVICES_CACHE: 'tmp/filters/cache/services.php',
+            APP_PACKAGES_CACHE: 'tmp/filters/cache/packages.php', VIEW_COMPILED_PATH: `${isolated}/storage/framework/views`,
             LARAVEL_STORAGE_PATH: `${isolated}/storage`,
             DB_CONNECTION: 'sqlite', DB_DATABASE: `${root}/database/filters-e2e.sqlite`, DB_URL: '',
             CACHE_STORE: 'array', SESSION_DRIVER: 'file', QUEUE_CONNECTION: 'sync', MAIL_MAILER: 'array',

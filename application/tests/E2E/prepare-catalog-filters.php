@@ -14,7 +14,7 @@ if (getenv('APP_ENV') !== 'testing' || getenv('DB_CONNECTION') !== 'sqlite'
     || $normalized((string) getenv('DB_DATABASE')) !== $normalized($expected)
     || getenv('DB_URL') !== '' || getenv('NDI_CATALOG_MODE') !== 'snapshot'
     || $normalized((string) getenv('LARAVEL_STORAGE_PATH')) !== $normalized($isolated.'/storage')
-    || $normalized((string) getenv('APP_CONFIG_CACHE')) !== $normalized($isolated.'/cache/config.php')
+    || getenv('APP_CONFIG_CACHE') !== 'tmp/filters/cache/config.php'
     || is_link($expected) || is_link($isolated) || is_file($isolated.'/cache/config.php')) {
     throw new RuntimeException('Refusing filters fixture outside its uncached isolated test database/storage.');
 }
@@ -30,10 +30,20 @@ if (! is_file($expected) && ! touch($expected)) {
 require $root.'/vendor/autoload.php';
 $app = require $root.'/bootstrap/app.php';
 $kernel = $app->make(Kernel::class);
-$kernel->bootstrap();
+try {
+    $kernel->bootstrap();
+} catch (Throwable) {
+    fwrite(STDERR, "Isolated filters application bootstrap failed.\n");
+    exit(1);
+}
+set_exception_handler(static function (Throwable $exception): never {
+    fwrite(STDERR, 'Isolated filters fixture failed: '.get_class($exception)."\n");
+    exit(1);
+});
 if (! app()->environment('testing') || config('database.default') !== 'sqlite'
     || realpath(config('database.connections.sqlite.database')) !== realpath($expected)
-    || realpath(storage_path()) !== realpath($isolated.'/storage')) {
+    || realpath(storage_path()) !== realpath($isolated.'/storage')
+    || realpath(dirname($app->getCachedConfigPath())) !== realpath($isolated.'/cache')) {
     throw new RuntimeException('Resolved filters fixture configuration is not isolated.');
 }
 foreach (['payments.enabled', 'ndi_api.inquiry_enabled', 'ndi_api.order_enabled', 'ndi_api.c1_test_mode',
