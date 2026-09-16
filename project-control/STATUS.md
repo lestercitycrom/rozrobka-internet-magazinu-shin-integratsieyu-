@@ -1,8 +1,10 @@
 # EasyTire status
 
-Updated: 2026-09-16 — Issue #77 catalogue filter consistency
+Updated: 2026-09-16 — Issue #79 autonomous public design finishing
 
 ## Current work
+
+Owner requested a complete visual finishing pass after reviewing the live product, empty catalogue and seasonal form. Active branch `codex/autonomous-design-finish` starts at exact live `1326895e93b5f6bea67426100c282172be869564` (PR #78), preserving its snapshot and filter contracts. See [current scope](CURRENT_TASK.md) and [Issue #79](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/79). The entries below are predecessor evidence; they are not a claim about the new design preview.
 
 Active work is [#77](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/77): finish filter consistency and adjacent browser checks. Branch `codex/catalog-filter-consistency` preserves active snapshot/design release `d6938f318052c58842bb66a610ea1bf7a2542943`. The previous #75/#76 snapshot activation is complete and its exact-head CI is fully green (run35051457360). Accepted `main` remains `3b8ae190512dd897cd0133aa3c2771d0e890196c`; older main is not the deployment source.
 

@@ -119,13 +119,17 @@
                                         </div>
                                         @error('fulfilment')<p class="et-form-error">{{ $message }}</p>@enderror
                                     </fieldset>
-                                     <div class="et-field et-request-mobile-address" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif>
-                                        <label class="et-label" for="booking-address">{{ __('pro.booking.mobile_address_title') }}</label>
-                                        <input class="et-input easytire-input" id="booking-address" name="address" type="text" value="{{ old('address') }}" autocomplete="street-address" @required($requestedFulfilment === 'mobile') aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}">
-                                         @error('address')<p class="et-form-error">{{ $message }}</p>@enderror
-                                         <label class="et-label" for="booking-district">{{ __('service_requests.district') }}</label>
-                                         <input class="et-input easytire-input" id="booking-district" name="district" type="text" value="{{ old('district') }}" maxlength="120" aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}">
-                                         @error('district')<p class="et-form-error">{{ $message }}</p>@enderror
+                                    <div class="et-form-stack et-request-mobile-address" data-mobile-address @if($requestedFulfilment !== 'mobile') hidden @endif>
+                                        <div class="et-field">
+                                            <label class="et-label" for="booking-address">{{ __('pro.booking.mobile_address_title') }}</label>
+                                            <input class="et-input easytire-input" id="booking-address" name="address" type="text" value="{{ old('address') }}" autocomplete="street-address" @required($requestedFulfilment === 'mobile') aria-invalid="{{ $errors->has('address') ? 'true' : 'false' }}">
+                                            @error('address')<p class="et-form-error">{{ $message }}</p>@enderror
+                                        </div>
+                                        <div class="et-field">
+                                            <label class="et-label" for="booking-district">{{ __('service_requests.district') }}</label>
+                                            <input class="et-input easytire-input" id="booking-district" name="district" type="text" value="{{ old('district') }}" maxlength="120" aria-invalid="{{ $errors->has('district') ? 'true' : 'false' }}">
+                                            @error('district')<p class="et-form-error">{{ $message }}</p>@enderror
+                                        </div>
                                     </div>
                                     <div class="et-step-actions"><span></span><button class="et-btn et-btn--primary" type="button" data-booking-next>{{ __('pro.booking.next') }}</button></div>
                                 </section>

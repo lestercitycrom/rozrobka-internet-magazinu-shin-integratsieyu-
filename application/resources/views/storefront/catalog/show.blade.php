@@ -30,7 +30,7 @@
 @endphp
 
 <x-layouts.storefront :title="'EasyTire | '.$productHeading" :description="$productDescription" :image="$item->primaryMedia['url'] ?? null" :structured-data="[$productSchema]" active-section="store" :store-route="route($catalogRoute)" :store-label="$catalogLabel">
-    <section class="et-section et-section--compact">
+    <section class="et-section et-section--compact et-product-section">
         <div class="et-container">
             <div class="et-breadcrumbs et-breadcrumbs--muted">
                 <span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span>
@@ -38,10 +38,13 @@
                 <span>{{ $productHeading }}</span>
             </div>
 
-            <a class="et-action-link" href="{{ route($catalogRoute) }}"><span class="et-action-link__label">{{ __('pro.catalog.back') }}</span><x-icon name="arrow" :size="16" /></a>
-
             <article class="et-product-layout et-product-layout--spaced">
-                <div>
+                <header class="et-product-heading">
+                    @if ($item->isIntegrationTest)<span class="et-badge et-badge--red" data-testid="integration-test-product">{{ __('storefront.integration_test_product') }}</span>@endif
+                    <h1 class="et-product-title">{{ $productHeading }}</h1>
+                    @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
+                </header>
+                <div class="et-product-media">
                     <div class="et-product-gallery">
                         <div class="et-product-gallery__main">
                             <div class="et-product-visual">
@@ -50,19 +53,10 @@
                         </div>
                         <div class="et-product-gallery__note" data-product-media-note data-fallback-text="{{ __('storefront.image_unavailable') }}">{{ $item->primaryMedia ? __('pro.catalog.media_note') : __('storefront.image_unavailable') }}</div>
                     </div>
-
-                    <div class="et-fitment-notice">
-                        <strong>{{ __('pro.catalog.compatibility') }}</strong>
-                        {{ __('fitment.notice') }}
-                    </div>
                 </div>
 
                 <div class="et-product-info">
                     <div class="et-product-info__top">
-                        @if ($item->isIntegrationTest)<span class="et-badge et-badge--red" data-testid="integration-test-product">{{ __('storefront.integration_test_product') }}</span>@endif
-                        <h1 class="et-product-title">{{ $productHeading }}</h1>
-                        @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
-
                         <div class="et-stock-line">
                             <span @class(['et-stock-dot' => in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote], true)]) aria-hidden="true"></span>
                             <span>{{ $presenter->availabilityDetail() }}</span>
@@ -98,7 +92,6 @@
                                 </div>
                                 @if ($item->isIntegrationTest)
                                     <aside class="et-sandbox-purchase-note" data-testid="integration-test-quantity-note">
-                                        <span>{{ __('storefront.integration_test_product') }}</span>
                                         <small>{{ __('storefront.integration_test_quantity_note', ['quantity' => $requiredQuantity]) }}</small>
                                     </aside>
                                 @endif
@@ -117,6 +110,11 @@
                                 @endunless
                             </div>
                         @endif
+                    </div>
+
+                    <div class="et-fitment-notice">
+                        <strong>{{ __('pro.catalog.compatibility') }}</strong>
+                        {{ __('fitment.notice') }}
                     </div>
 
                     <h2 class="et-h3 et-product-spec-heading">{{ __('storefront.technical_details') }}</h2>

@@ -36,13 +36,11 @@
                                 <img src="{{ $media['url'] }}" width="1000" height="720" loading="lazy" alt="">
                             @else
                                 <span class="et-service-card__fallback">
-                                    <img src="/brand/easytire-mark.svg" width="88" height="88" alt="">
-                                    <span>{{ __('pro.services.kicker') }}</span>
+                                    <x-icon :name="str_contains($service->slug, 'tpms') ? 'sensor' : (str_contains($service->slug, 'dekk') ? 'tire' : 'workshop')" :size="72" />
                                 </span>
                             @endif
                         </a>
                         <div class="et-service-card__content">
-                            <p class="et-service-card__meta">{{ __('pro.services.kicker') }}</p>
                             <h2><a href="{{ $destination }}">{{ $service->title }}</a></h2>
                             @if ($service->excerpt)<p>{{ $service->excerpt }}</p>@endif
                             <a class="et-service-card__link et-action-link" href="{{ $destination }}" aria-label="{{ __('pro.home.service_link') }}: {{ $service->title }}"><span class="et-action-link__label">{{ __('pro.home.service_link') }}</span><x-icon name="arrow" :size="16" /></a>

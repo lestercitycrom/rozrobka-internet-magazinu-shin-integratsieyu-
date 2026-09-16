@@ -28,14 +28,13 @@
 
     <section class="et-section et-section--compact">
         <div class="et-container et-cart-layout">
-            <form method="post" class="et-booking-card" data-testid="checkout-form">
+            <form method="post" class="et-booking-card et-checkout-form" data-testid="checkout-form">
                 @csrf
                 <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
                 <input name="website" class="hidden" aria-hidden="true" tabindex="-1" autocomplete="off">
 
                 <div class="et-booking-card__head">
-                    <p class="et-caption">EasyTire</p>
-                    <h2 class="et-h3">{{ __('commerce.checkout') }}</h2>
+                    <h2 class="et-h3">{{ __('pro.booking.contact_title') }}</h2>
                 </div>
 
                 <div class="et-booking-card__body">

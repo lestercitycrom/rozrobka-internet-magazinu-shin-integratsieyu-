@@ -296,14 +296,14 @@
                 @if ($items->items === [])
                     <div class="et-empty-state" data-testid="catalog-empty" data-empty-reason="{{ $hasSearchFilters ? 'no-match' : 'no-published-products' }}">
                         <div>
-                            <div class="et-empty-state__icon" aria-hidden="true">⌕</div>
+                            <div class="et-empty-state__icon" aria-hidden="true"><x-icon name="search" :size="28" /></div>
                             <h2 class="et-h3 et-empty-state__heading">{{ $hasSearchFilters ? __('storefront.empty_title') : __('pro.catalog.empty_available_title') }}</h2>
                             <p>{{ $hasSearchFilters ? __('storefront.empty_text') : __('pro.catalog.empty_available_text') }}</p>
                             <div class="et-page-actions">
                                 @if ($hasSearchFilters)
                                     <a class="et-btn et-btn--primary" href="{{ $baseUrl }}" data-catalog-live-link>{{ __('storefront.reset_all') }}</a>
                                 @endif
-                                <a class="et-btn {{ $hasSearchFilters ? 'et-btn--outline' : 'et-btn--primary' }}" href="{{ route($routePrefix.'requests.create', 'dekk-felg-og-hjulpakker') }}">{{ __('pro.catalog.empty_help') }}</a>
+                                <a class="{{ $hasSearchFilters ? 'et-action-link' : 'et-btn et-btn--primary' }}" href="{{ route($routePrefix.'requests.create', 'dekk-felg-og-hjulpakker') }}"><span class="et-action-link__label">{{ __('pro.catalog.empty_help') }}</span><x-icon name="arrow" :size="16" /></a>
                             </div>
                         </div>
                     </div>

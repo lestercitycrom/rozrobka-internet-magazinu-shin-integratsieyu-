@@ -20,7 +20,7 @@
             @unless ($isCartEmpty)
                 <div class="et-toolbar et-cart-toolbar">
                     <div></div>
-                    <a class="et-btn et-btn--outline" href="{{ route($prefix.'tires.index') }}">{{ __('commerce.continue_shopping') }}</a>
+                    <a class="et-action-link" href="{{ route($prefix.'tires.index') }}"><span class="et-action-link__label">{{ __('commerce.continue_shopping') }}</span><x-icon name="arrow" :size="16" /></a>
                 </div>
             @endunless
 
