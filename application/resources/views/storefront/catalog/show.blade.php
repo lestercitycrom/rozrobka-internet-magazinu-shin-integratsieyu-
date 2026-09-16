@@ -75,6 +75,10 @@
                                 <x-storefront-money :minor="$sellingPrice->money->minor" :currency="$sellingPrice->money->currency" />
                                 <small>{{ __('storefront.selling_price_note') }}</small>
                             </div>
+                        @else
+                            <p class="et-product-price et-product-price--unavailable" data-testid="product-price-unavailable">
+                                {{ __('storefront.price_unavailable') }}
+                            </p>
                         @endif
                         @if ($canPurchase)
                             <form class="et-product-purchase" method="post" action="{{ route($prefix.'cart.add') }}" data-testid="product-cart-form">
@@ -99,9 +103,16 @@
                             </form>
                             <p class="et-help et-purchase-fulfilment-note">{{ __('pro.catalog.buy_box_note') }}</p>
                         @else
-                            <div class="et-alert et-alert--warning et-product-unavailable">
-                                <span class="et-alert__icon" aria-hidden="true">!</span>
-                                <div><strong>{{ $item->stock->canPurchase($requiredQuantity) ? __('storefront.price_unavailable') : $presenter->availabilityLabel() }}</strong><br>{{ __('storefront.unavailable_note') }}</div>
+                            <div class="et-product-unavailable" data-testid="product-unavailable">
+                                <div class="et-alert et-alert--warning">
+                                    <span class="et-alert__icon" aria-hidden="true">!</span>
+                                    <div><strong>{{ $presenter->availabilityLabel() }}</strong><br>{{ __('storefront.unavailable_note') }}</div>
+                                </div>
+                                @unless ($item->isIntegrationTest)
+                                    <a class="et-btn et-btn--outline et-product-unavailable__contact" href="{{ route($prefix.'content.show', ['slug' => 'kontakt']) }}" data-testid="product-availability-contact">
+                                        {{ __('storefront.availability_contact') }} <x-icon name="arrow" :size="18" />
+                                    </a>
+                                @endunless
                             </div>
                         @endif
                     </div>

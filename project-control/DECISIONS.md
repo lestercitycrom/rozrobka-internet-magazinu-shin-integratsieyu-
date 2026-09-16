@@ -71,3 +71,13 @@ The current contract is [`DINTERO_PAYMENT_LIFECYCLE.md`](../docs/architecture/DI
 ## COM-002 — NDI sandbox and commercial NDI are isolated
 
 The staging full-cycle fixture is limited to PartyID `1220000`, article `4765205551649102`, quantity `2`. Sandbox enablement never enables commercial NDI ordering and is forbidden in production.
+
+## COM-003 — Catalogue visibility is separate from purchase eligibility
+
+- A published active real tyre or wheel remains browseable and keeps its permanent detail URL when stock is missing, stale or zero.
+- Visibility never grants permission to buy. Cart, checkout and payment require a valid selling price and fresh, sufficient positive stock, enforced server-side even for direct requests or an old browser tab.
+- Missing price is shown explicitly; zero, supplier cost and an invented price are forbidden.
+- The staging-only demo is independent from live NDI stock freshness, but its fixed test contract never enables production exposure, a real payment, a commercial NDI order or delivery.
+- A new authoritative NDI delivery remains an external prerequisite for making stale real products purchasable; it is not a prerequisite for browsing or design work.
+
+Source: [Issue #19 final handoff scope, comment 5689353790](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5689353790).

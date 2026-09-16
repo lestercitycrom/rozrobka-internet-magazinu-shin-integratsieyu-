@@ -22,6 +22,7 @@ return [
     'stock_missing_detail' => 'NDI har ikke levert lagerstatus for denne varen ennå.',
     'quantity' => 'Antall',
     'price_unavailable' => 'Pris er ikke klar for netthandel',
+    'availability_contact' => 'Spør om pris og tilgjengelighet',
     'selling_price_note' => 'Pris beregnet etter den aktive prisregelen.',
     'unavailable_note' => 'Produktet kan ikke bestilles før pris og tilgjengelighet er bekreftet.',
     'any' => 'Alle', 'all_brands' => 'Alle merker', 'center_bore' => 'Navdiameter', 'bolt_holes' => 'Antall bolter', 'in_stock' => 'Kun på lager', 'has_image' => 'Kun med produktbilde', 'loading_results' => 'Oppdaterer produkter …', 'sort' => 'Sorter', 'sort_recommended' => 'Anbefalt', 'sort_title' => 'Produktnavn', 'sort_brand' => 'Merke', 'active_filters' => 'Valgte filtre', 'remove_filter' => 'Fjern filter', 'reset_all' => 'Nullstill alle', 'yes' => 'Ja', 'no' => 'Nei',
