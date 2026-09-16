@@ -5,7 +5,7 @@ Scope: the owner's `EasyTire_PR80_Review_Fixes.zip`, reviewed head `06d371565871
 ## Implementation
 
 - R1: the shared featured-service card places the approved photograph above an opaque charcoal caption in normal flow. No photo overlay, darkening, stronger type, changed copy or ordering. Both the current collection partial and the legacy home fallback use this treatment.
-- R2: the price view selects `pricing`, so NB/RU desktop and mobile navigation identify only Priser / Цены as current.
+- R2: the price view selects `pricing`, so NB/RU desktop and mobile navigation identify only Priser / Цены as current. The shared mobile current item has a red text-and-underline cue, including grouped service headings, without adding weight or decoration to inactive items.
 - R3: the shared narrow-screen footer stacks contact groups; the email keeps its original font and intact `mailto`, without ellipsis or global no-wrap rules.
 - R4: record the final application commit locally, with normal and reduced-motion interactive demonstrations. Preserve the old intermediate recording separately; it is not final-version evidence.
 

@@ -567,6 +567,13 @@
     display: none;
 }
 
+.storefront .et-mobile-menu :is(a, summary)[aria-current='page'] {
+    color: var(--et-red-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: .3em;
+}
+
 .storefront .et-mobile-menu__group summary::after {
     color: var(--v3-red);
     content: '+';

@@ -186,6 +186,13 @@ test('review R2: price page has exactly one current navigation item in both lang
     await expect(current).toHaveAttribute('href', new RegExp(`${prefix}/priser$`));
     await expect(current).toHaveText(prefix ? 'Цены' : 'Priser');
     await expect(navigation.locator('summary[aria-current="page"], a[aria-current="page"][href$="/tjenester"]')).toHaveCount(0);
+    if (mobile) {
+        // Current-page semantics must also have a visible, non-colour-only cue.
+        await expect(current).toHaveCSS('text-decoration-line', 'underline');
+        const currentColor = await current.evaluate(node => getComputedStyle(node).color);
+        const servicesColor = await navigation.locator('summary').evaluate(node => getComputedStyle(node).color);
+        expect(currentColor).not.toBe(servicesColor);
+    }
 });
 
 test('review R3: footer contact values remain intact and stack on narrow screens', async ({ page }, info) => {
