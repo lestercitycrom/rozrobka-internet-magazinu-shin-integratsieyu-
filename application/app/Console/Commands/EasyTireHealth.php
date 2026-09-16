@@ -25,6 +25,8 @@ final class EasyTireHealth extends Command
             .' failed_jobs='.($r['failed_jobs'] ?? 'unknown')
             .' ndi_media_pending='.($r['ndi_media_pending'] ?? 'unknown')
             .' ndi_media_failed='.($r['ndi_media_failed'] ?? 'unknown')
+            .' catalog_mode='.$r['ndi_catalog_mode']
+            .' inbox_paused='.($r['ndi_import_paused'] ? 'yes' : 'no')
             .' ndi_stock='.$ndiStock
             .' ndi_age_minutes='.($r['ndi_age_minutes'] ?? 'none')
             .' inbox_configured='.($r['ndi_inbox_configured'] ? 'yes' : 'no')

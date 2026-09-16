@@ -1,8 +1,14 @@
 # EasyTire status
 
-Updated: 2026-09-16 — Issue #73 public UI Polish
+Updated: 2026-09-16 — Issue #75 explicit staging catalogue snapshot
 
 ## Current work
+
+Owner authorised the saved-price staging mode in [#75](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/75). Implementation is stacked on deployed designer preview `274a1610829f87ed8521f65d62ac0789fc86ec28` (#73 / #74); accepted `main` remains `3b8ae190512dd897cd0133aa3c2771d0e890196c`. Final candidate checks and activation evidence belong to the #75 PR, not to the historical read-backs below.
+
+Read-only supplier investigation: three succeeded XLSX receipts; real price/stock observations remain August 12, with zero fresh real commercial prices. Queue/scheduler operate, but this does not prove regular supplier delivery. SFTP password/chroot/list access was checked locally; actual NDI upload and recurring-import acceptance remain open. See [connection runbook](../docs/operations/NDI_DELIVERY_CONNECTION.md).
+
+Snapshot explicitly pauses file imports and offers historical calculated prices for display only; ordinary-product purchase remains closed. No refreshed timestamps, fake stock or changed commercial gates are part of this work. The former Issue #19 closeout below is historical, not an active second task.
 
 Catalogue handoff complete: [PM5690161142](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5690161142). UI Polish starts from accepted main `3b8ae190512dd897cd0133aa3c2771d0e890196c` on `codex/ui-polish-v1`; the observed staging `95a1b76086e2d51e1aebb01911bc83a683bf78ea` has the same tree. See [current scope](CURRENT_TASK.md) and [report](../evidence/ui-polish/REPORT.md). The dated observations below remain history, not claims about a later preview.
 

@@ -5,7 +5,7 @@
     $specification = $presenter->summary();
     $cardTitle = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
     $requiredQuantity = $item->isIntegrationTest ? \App\Modules\NdiApi\NdiSandboxContract::QUANTITY : 1;
-    $canPurchase = $sellingPrice !== null && $item->stock->canPurchase($requiredQuantity);
+    $canPurchase = $sellingPrice !== null && ! $sellingPrice->isSnapshot && $item->stock->canPurchase($requiredQuantity);
     $stockState = $item->stock->state();
 @endphp
 <article class="et-product-card" data-testid="catalog-product" data-product-sku="{{ $item->sku }}">
@@ -25,6 +25,9 @@
             <div class="et-product-card__price-block">
                 @if ($sellingPrice)
                     <div class="et-price"><x-storefront-money :minor="$sellingPrice->money->minor" :currency="$sellingPrice->money->currency" /></div>
+                    @if ($sellingPrice->isSnapshot)
+                        <p class="et-caption" data-testid="snapshot-price-note">{{ __('storefront.snapshot_price_label', ['date' => \Carbon\CarbonImmutable::parse($sellingPrice->sourceObservedAt)->format('d.m.Y')]) }}</p>
+                    @endif
                 @else
                     <p class="et-caption">{{ __('storefront.price_unavailable') }}</p>
                 @endif

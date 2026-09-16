@@ -10,7 +10,7 @@
     $productHeading = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
     $productDescription = trim(implode(' · ', array_filter([$productHeading, $presenter->summary(), $item->sku])));
     $requiredQuantity = $item->isIntegrationTest ? \App\Modules\NdiApi\NdiSandboxContract::QUANTITY : 1;
-    $canPurchase = $sellingPrice !== null && $item->stock->canPurchase($requiredQuantity);
+    $canPurchase = $sellingPrice !== null && ! $sellingPrice->isSnapshot && $item->stock->canPurchase($requiredQuantity);
     $stockState = $item->stock->state();
     $productSchema = [
         '@context' => 'https://schema.org', '@type' => 'Product', 'name' => $productHeading,
@@ -19,7 +19,7 @@
         'url' => route($prefix.'products.show', ['sku' => $item->sku]),
     ];
     if ($item->primaryMedia) $productSchema['image'] = url($item->primaryMedia['url']);
-    if ($sellingPrice && in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote, \App\Modules\Catalog\ReadModel\CatalogStockState::OutOfStock], true)) {
+    if ($sellingPrice && ! $sellingPrice->isSnapshot && in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote, \App\Modules\Catalog\ReadModel\CatalogStockState::OutOfStock], true)) {
         $productSchema['offers'] = [
             '@type' => 'Offer', 'priceCurrency' => $sellingPrice->money->currency,
             'price' => number_format($sellingPrice->money->minor / 100, 2, '.', ''),
@@ -71,7 +71,11 @@
                         @if ($sellingPrice)
                             <div class="et-product-price">
                                 <x-storefront-money :minor="$sellingPrice->money->minor" :currency="$sellingPrice->money->currency" />
-                                <small>{{ __('storefront.selling_price_note') }}</small>
+                                @if ($sellingPrice->isSnapshot)
+                                    <small data-testid="snapshot-price-note">{{ __('storefront.snapshot_price_note', ['date' => \Carbon\CarbonImmutable::parse($sellingPrice->sourceObservedAt)->format('d.m.Y')]) }}</small>
+                                @else
+                                    <small>{{ __('storefront.selling_price_note') }}</small>
+                                @endif
                             </div>
                         @else
                             <p class="et-product-price et-product-price--unavailable" data-testid="product-price-unavailable">

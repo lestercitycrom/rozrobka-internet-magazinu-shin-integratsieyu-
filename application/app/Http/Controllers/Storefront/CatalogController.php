@@ -33,7 +33,7 @@ class CatalogController extends Controller
         return view('storefront.catalog.show', [
             'item' => $item,
             'presenter' => new CatalogItemPresenter($item),
-            'sellingPrice' => $pricing->forItem($item),
+            'sellingPrice' => $pricing->forDisplay($item),
         ]);
     }
 
@@ -69,8 +69,9 @@ class CatalogController extends Controller
         ));
 
         $pricing = app(SellingPriceService::class);
+        $displayPrices = $pricing->forDisplayItems($items->items);
         $sellingPrices = collect($items->items)
-            ->mapWithKeys(fn ($item): array => [$item->sku => $pricing->forItem($item)]);
+            ->mapWithKeys(fn ($item, int $index): array => [$item->sku => $displayPrices[$index]]);
 
         $filterKeys = ['q', 'brand', 'width', 'aspect', 'rim', 'season', 'diameter', 'bolt_holes', 'pcd', 'et', 'center_bore'];
         $filters = collect($filterKeys)

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Operations;
 
+use App\Modules\Catalog\CatalogDataMode;
 use App\Modules\Catalog\Enums\CatalogState;
 use App\Modules\Catalog\Enums\PublicationStatus;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
@@ -188,6 +189,9 @@ final class SystemHealth
 
         return [
             'database' => $database,
+            'ndi_catalog_mode' => CatalogDataMode::mode(),
+            'ndi_catalog_mode_valid' => CatalogDataMode::isValid(),
+            'ndi_import_paused' => CatalogDataMode::isSnapshot(),
             'queue' => config('queue.default'),
             'cache' => config('cache.default'),
             'failed_jobs' => $failed,
@@ -240,6 +244,7 @@ final class SystemHealth
         $inboxHealthy = $report['ndi_inbox_ready'] && $report['ndi_inbox_receipts_healthy'];
 
         return $report['database']
+            && $report['ndi_catalog_mode_valid']
             && $report['failed_jobs'] === 0
             && $report['ndi_media_failed'] === 0
             && $report['disk_ok']

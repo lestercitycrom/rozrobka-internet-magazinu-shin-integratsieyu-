@@ -13,5 +13,6 @@ final readonly class SellingPrice
         public string $ruleName,
         public string $sourcePriceListCode,
         public ?string $sourceObservedAt,
+        public bool $isSnapshot = false,
     ) {}
 }

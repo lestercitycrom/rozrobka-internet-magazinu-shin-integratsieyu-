@@ -1,10 +1,10 @@
 # Current task
 
-- Issue: [#73 — UI Polish v1](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/73).
-- Branch: `codex/ui-polish-v1`; workspace `D:\The works\shop-ndi-design`.
+- Issue: [#75 — Staging catalogue snapshot and NDI delivery readiness](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/75).
+- Branch: `codex/staging-catalog-snapshot`, stacked on the deployed designer preview `274a1610829f87ed8521f65d62ac0789fc86ec28` from #73 / #74. No design rollback or unrelated merge.
 
-Accepted base: `origin/main` `3b8ae190512dd897cd0133aa3c2771d0e890196c`, following [CATALOG HANDOFF READY](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5690161142). Source: owner-supplied UI Polish v1 archive. Scope/evidence: [engineer report](../evidence/ui-polish/REPORT.md).
+Owner decision, 2026-09-16: implement and activate an explicit staging mode that displays dated prices from the already imported supplier files while automatic file import is paused. This is a new staging policy, not evidence that the supplier feed was previously accepted or intentionally deferred.
 
-Public UI only: no backend, data, catalogue guards, admin or integrations. Old clone untouched. Published design preview authority remains [PM5673643971](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5673643971); no merge/production/DNS authority. Owner requested completion and one combined handoff, superseding the intermediate sample gate. Final independent acceptance remains separate.
+Scope: `NDI_CATALOG_MODE=snapshot|live`; separate historical display pricing from strict commerce; localized source-date notices; importer pause and truthful admin health; hermetic tests and protected no-migration staging release. Keep original observations, active markup policy and fixed sandbox contract unchanged. Preserve prior/shared runtime configuration and retained design release.
 
-Catalogue recovery [#19](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5690161142) is accepted history, not a new work item. Existing price/freshness/purchase guards and the need for a new authoritative supplier delivery remain unchanged.
+End-to-end supplier delivery remains unaccepted. [Connection runbook](../docs/operations/NDI_DELIVERY_CONNECTION.md) records locally verified SFTP, the original provider request, actual schema/cadence acceptance, and the unchanged-content delivery/replay limitation. No provider message, credentials transmission, production/DNS or commercial integration is authorised by this task.
