@@ -15,6 +15,8 @@ Scope: the owner's `EasyTire_PR80_Review_Fixes.zip`, reviewed head `06d371565871
 
 `CustomerNavigationRevisionTest` additionally asserts exactly one current destination in both rendered menus and both languages. Existing full CI remains the proportional functional regression; no duplicated new full-suite config.
 
+The old `interaction-shell` footer test capped the entire collapsed footer at 95% of the viewport; that conflicts with R3's deliberately separate, touch-sized contact rows on short phones. It now proves real compaction instead: each link group starts hidden, expands with usable 44px targets and increased footer height, then returns to the original collapsed height/ARIA state. Global overflow and contact-fit assertions remain. This follow-up changes tests only; the runtime application stays exactly as captured at `71f127b206b996a6c4e568ccae47964700e4b5a8`, with runtime-tree identity recorded in the final handoff.
+
 The final handoff archive contains the filled `ACCEPTANCE_RESULTS.md`, exact application SHA/environment manifest, NB/RU captures, human-paced normal/reduced-motion videos and their interaction log. Capture only after the application commit is fixed; any subsequent application edit invalidates that binding. Local fixture evidence is not staging evidence. Source-approved photography may be shown alongside hermetic seeded content; there are no live external submissions.
 
 The earlier 44 captures were route × viewport samples covering 18 routes, not 44 independent interaction scenarios. This follow-up adds explicit interactions rather than relabelling those samples.
