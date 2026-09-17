@@ -95,7 +95,11 @@ test('stored long short copy and a stored legacy offer without short copy remain
             await detailsSurface.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: 'instant' }));
             await expect.poll(() => detailsSurface.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 2)).toBe(true);
             await expect(details).toContainText(locale.legacyEnd);
-            await expect(details.locator('.et-btn')).toBeInViewport();
+            const detailsCta = details.locator('.et-btn');
+            await expectContained(detailsSurface, detailsCta);
+            await tabTo(page, detailsCta);
+            await expect(detailsCta).toBeFocused();
+            await expect(detailsCta).toBeInViewport();
             await page.keyboard.press('Escape');
             await expect(details).not.toHaveAttribute('open', '');
             await expect(disclosure).toBeFocused();

@@ -153,27 +153,34 @@ jobs:
         run: php artisan test --compact
 
       - name: Install Playwright Chromium
+        id: playwright_install
         run: npx playwright install --with-deps chromium
 
       - name: Run buyer and admin E2E
         run: npm run test:e2e
 
       - name: Run Issue 19 catalog safety E2E
+        if: ${{ !cancelled() && steps.playwright_install.outcome == 'success' }}
         run: npm run test:e2e:issue19
 
       - name: Run snapshot catalog safety E2E
+        if: ${{ !cancelled() && steps.playwright_install.outcome == 'success' }}
         run: npx playwright test --config=playwright.snapshot.config.ts
 
       - name: Run catalog filter consistency E2E
+        if: ${{ !cancelled() && steps.playwright_install.outcome == 'success' }}
         run: npx playwright test --config=playwright.filters.config.ts
 
       - name: Run design finishing journey regression
+        if: ${{ !cancelled() && steps.playwright_install.outcome == 'success' }}
         run: npx playwright test --config=playwright.design-finish.config.ts
 
       - name: Run both design profiles against isolated fixtures
+        if: ${{ !cancelled() && steps.playwright_install.outcome == 'success' }}
         run: CLASSIC_PREVIEW_CI_AUTOSTART=1 npx playwright test --config=playwright.classic.config.ts
 
       - name: Verify shared catalogue quantities using isolated purchasable fixtures
+        if: ${{ !cancelled() && steps.playwright_install.outcome == 'success' }}
         run: CLASSIC_PREVIEW_CI_AUTOSTART=1 CUSTOMER_SHARED_LIVE_FIXTURE=1 npx playwright test --config=playwright.classic.config.ts customer-shared-followups --grep "ordinary catalogue quantity"
 
       - name: Upload Playwright failure evidence
