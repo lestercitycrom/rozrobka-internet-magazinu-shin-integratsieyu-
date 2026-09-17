@@ -16,8 +16,8 @@ sha() { sha256sum "$1" | cut -d' ' -f1; }
 bash -n "$script"
 grep -Fq "readonly BASE='f776dbe4710f001c24ba8848739f331cc15bbe96'" "$script" || fail 'accepted source is not pinned'
 grep -Fq "readonly BRANCH='refs/heads/codex/customer-shared-followups'" "$script" || fail 'branch is not pinned'
-grep -Fq "readonly PRIMARY_REVISION='5472266d2fe9412867b5d7f5eb6e5d6b8e26a808'" "$script" || fail 'primary predecessor is not pinned'
-grep -Fq "readonly CLASSIC_REVISION='f776dbe4710f001c24ba8848739f331cc15bbe96'" "$script" || fail 'Classic predecessor is not pinned'
+grep -Fq "readonly PRIMARY_REVISION='fee302fc34ec741e5975bdf56394e8f38c2fe7d6'" "$script" || fail 'primary predecessor is not pinned'
+grep -Fq "readonly CLASSIC_REVISION='fee302fc34ec741e5975bdf56394e8f38c2fe7d6'" "$script" || fail 'Classic predecessor is not pinned'
 grep -Fq 'env -i PATH="$PATH" bash -s' "$script" || fail 'clean build/cache execution is missing'
 grep -Fq 'DB_CONNECTION=sqlite DB_DATABASE=:memory:' "$script" || fail 'isolated SQLite build is missing'
 grep -Fq 'NDI_INQUIRY_ENABLED=false NDI_ORDER_ENABLED=false' "$script" || fail 'build gates are not disabled'

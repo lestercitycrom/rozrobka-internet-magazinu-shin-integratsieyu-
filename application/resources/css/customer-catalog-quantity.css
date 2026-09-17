@@ -53,6 +53,15 @@
         min-width: 0;
         flex-basis: 100%;
     }
+
+    .storefront .et-product-card__purchase-controls {
+        flex-direction: column;
+    }
+
+    .storefront .et-product-card__quantity {
+        align-self: flex-start;
+    }
+
 }
 
 @media (max-width: 390px) {

@@ -64,6 +64,14 @@ Evidence is produced under `application/tmp/customer-shared/evidence/`; CI runs
 the snapshot matrix and a separate isolated purchasable-fixture quantity matrix.
 No staging orders or integration requests are submitted by these tests.
 
+The first published head (`fee302f`) passed the live read-only matrix (52 passed,
+8 intentional mobile no-JavaScript skips), but the broader CI suite found two
+mobile sizing regressions: the new quantity field compressed the purchase button,
+and the search catalogue link was 42 rather than 44 px tall. The follow-up keeps
+the original accessibility/layout assertions and fixes those scoped styles.
+Its deployment predecessor is pinned to the already-verified `fee302f` releases
+on both hosts; the original pre-task releases also remain retained.
+
 Exact published SHA, final browser/CI results and live read-back are recorded in
 the pull-request conversation after publication. Snapchat itself is visible;
 only its real destination remains pending the customer's account URL. The
