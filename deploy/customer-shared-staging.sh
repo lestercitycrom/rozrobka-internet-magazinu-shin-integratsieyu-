@@ -8,10 +8,10 @@ readonly PRIMARY_ROOT='/var/www/staging-easytire.bethub.fun'
 readonly CLASSIC_ROOT='/var/www/staging-classic-easytire.bethub.fun'
 readonly REPO='/srv/git/shop-ndi.git'
 readonly BASE='f776dbe4710f001c24ba8848739f331cc15bbe96'
-readonly PRIMARY_REVISION='fee302fc34ec741e5975bdf56394e8f38c2fe7d6'
-readonly CLASSIC_REVISION='fee302fc34ec741e5975bdf56394e8f38c2fe7d6'
-readonly PRIMARY_PREVIOUS='/var/www/staging-easytire.bethub.fun/releases/20260917005515-fee302fc34ec-customer-shared'
-readonly CLASSIC_PREVIOUS='/var/www/staging-classic-easytire.bethub.fun/releases/20260917005515-fee302fc34ec-customer-shared'
+readonly PRIMARY_REVISION='b25bc47621c08629b7f673410e207087e85234de'
+readonly CLASSIC_REVISION='b25bc47621c08629b7f673410e207087e85234de'
+readonly PRIMARY_PREVIOUS='/var/www/staging-easytire.bethub.fun/releases/20260917021110-b25bc47621c0-customer-shared'
+readonly CLASSIC_PREVIOUS='/var/www/staging-classic-easytire.bethub.fun/releases/20260917021110-b25bc47621c0-customer-shared'
 readonly BRANCH='refs/heads/codex/customer-shared-followups'
 readonly PRIMARY_HOST='staging-easytire.bethub.fun'
 readonly CLASSIC_HOST='staging-classic-easytire.bethub.fun'
@@ -136,6 +136,7 @@ validate_scope() {
             application/app/Modules/Content/ReadModel/SiteContentSearch.php) ;;
             application/routes/web.php) ;;
             application/resources/css/app.css|application/resources/css/customer-card-overlays.css|application/resources/css/customer-catalog-quantity.css|application/resources/css/customer-shared-followups.css|application/resources/css/site-search.css) ;;
+            application/resources/css/customer-design-balance.css|application/resources/css/storefront-classic.css) ;;
             application/resources/js/app.js|application/resources/js/ui.js|application/resources/js/customer-card-overlays.js|application/resources/js/site-search.js) ;;
             application/resources/views/components/layouts/storefront.blade.php) ;;
             application/resources/views/storefront/_homepage-promotions.blade.php|application/resources/views/storefront/catalog/_card.blade.php|application/resources/views/storefront/pricing/index.blade.php|application/resources/views/storefront/search/*) ;;

@@ -1,0 +1,69 @@
+/* Final profile-specific balance pass: preserve Modern's clean system while
+ * returning a little of the approved boxed finder structure. */
+.storefront[data-storefront-design='modern'] :is(
+    .et-v3-display,
+    .et-h1,
+    .et-h2,
+    .et-page-hero :is(h1, h2),
+    .et-service-hero :is(h1, h2),
+    .et-quick-finder__head h2,
+    .et-v3-chooser__heading h2,
+    .et-form-section__head h2,
+    .et-booking-card__head h2,
+    .et-panel__head h2
+) {
+    font-weight: 700;
+}
+
+.storefront[data-storefront-design='modern'] .et-quick-finder {
+    border: 1px solid var(--et-color-border-strong);
+    background: var(--et-color-panel);
+}
+
+.storefront[data-storefront-design='modern'] .et-quick-finder__head {
+    background: var(--et-color-surface-raised);
+    border-start-start-radius: var(--et-radius-surface-small);
+    border-start-end-radius: var(--et-radius-surface-small);
+}
+
+.storefront[data-storefront-design='modern'] .et-quick-finder__tabs {
+    margin-inline: 0;
+    padding-inline: 1.5rem;
+    background: var(--et-color-surface);
+}
+
+.storefront[data-storefront-design='modern'] .et-quick-finder__tabs button[aria-selected='true'] {
+    background: var(--et-color-brand-soft);
+}
+
+.storefront[data-storefront-design='modern'] .et-quick-finder__panel {
+    background: var(--et-color-panel);
+}
+
+.storefront[data-storefront-design='modern'] .et-shop-categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+    border-top: 1px solid var(--et-color-border);
+    padding: .75rem 1.5rem 1.5rem;
+    background: var(--et-color-surface);
+    border-end-start-radius: var(--et-radius-surface-small);
+    border-end-end-radius: var(--et-radius-surface-small);
+}
+
+.storefront[data-storefront-design='modern'] .et-shop-categories a {
+    border: 1px solid var(--et-color-border);
+    padding: .75rem;
+    background: var(--et-color-panel);
+}
+
+@container finder (max-width: 30rem) {
+    .storefront[data-storefront-design='modern'] .et-quick-finder__tabs {
+        padding-inline: 1rem;
+    }
+}
+
+@container finder (max-width: 20rem) {
+    .storefront[data-storefront-design='modern'] .et-shop-categories {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

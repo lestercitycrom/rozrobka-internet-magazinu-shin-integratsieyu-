@@ -1,5 +1,18 @@
 # Current task
 
+Owner follow-up, 2026-09-17: on the same `codex/customer-shared-followups`
+branch and deployed base `b25bc47621c08629b7f673410e207087e85234de`, fix
+Classic heading diacritic/line collisions and give Modern stronger headings
+and a subtly structured vehicle finder. Preserve body-text readability,
+profile differences and all shared customer functionality. CSS-only public
+presentation; no database/catalogue/integration changes or PR merge. Verify
+locally and on both staging profiles, retaining each `b25bc47` release for
+rollback. GitHub Actions remains billing-blocked; do not claim cloud CI green
+or change billing/branch restrictions. Prior source-request audit is complete
+except the customer's real Snapchat URL and unavailable voice attachments.
+
+The following records the completed shared-customer changes.
+
 Owner continuation, 2026-09-17: implement the shared functional/content requests
 from `ChatExport_2026-09-16` on both live design profiles. Work branch
 `codex/customer-shared-followups`, based on Classic/source `f776dbe…`. Preserve

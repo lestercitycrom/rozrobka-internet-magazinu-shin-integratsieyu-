@@ -16,8 +16,8 @@ sha() { sha256sum "$1" | cut -d' ' -f1; }
 bash -n "$script"
 grep -Fq "readonly BASE='f776dbe4710f001c24ba8848739f331cc15bbe96'" "$script" || fail 'accepted source is not pinned'
 grep -Fq "readonly BRANCH='refs/heads/codex/customer-shared-followups'" "$script" || fail 'branch is not pinned'
-grep -Fq "readonly PRIMARY_REVISION='fee302fc34ec741e5975bdf56394e8f38c2fe7d6'" "$script" || fail 'primary predecessor is not pinned'
-grep -Fq "readonly CLASSIC_REVISION='fee302fc34ec741e5975bdf56394e8f38c2fe7d6'" "$script" || fail 'Classic predecessor is not pinned'
+grep -Fq "readonly PRIMARY_REVISION='b25bc47621c08629b7f673410e207087e85234de'" "$script" || fail 'primary predecessor is not pinned'
+grep -Fq "readonly CLASSIC_REVISION='b25bc47621c08629b7f673410e207087e85234de'" "$script" || fail 'Classic predecessor is not pinned'
 grep -Fq 'env -i PATH="$PATH" bash -s' "$script" || fail 'clean build/cache execution is missing'
 grep -Fq 'DB_CONNECTION=sqlite DB_DATABASE=:memory:' "$script" || fail 'isolated SQLite build is missing'
 grep -Fq 'NDI_INQUIRY_ENABLED=false NDI_ORDER_ENABLED=false' "$script" || fail 'build gates are not disabled'
@@ -88,6 +88,8 @@ Route::get('/', fn () => 'ok');
     Route::get('/sok', SiteSearchController::class)->name('site-search.index');
 PHP
 printf 'shared customer styles\n' > "$work/application/resources/css/customer-shared-followups.css"
+printf 'profile-scoped balance styles\n' > "$work/application/resources/css/customer-design-balance.css"
+printf 'Classic heading leading\n' > "$work/application/resources/css/storefront-classic.css"
 git -C "$work" add .
 git -C "$work" commit -qm candidate
 candidate="$(git -C "$work" rev-parse HEAD)"

@@ -17,6 +17,7 @@
 @import './customer-card-overlays.css';
 @import './customer-catalog-quantity.css';
 @import './site-search.css';
+@import './customer-design-balance.css';
 @import './admin-system.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

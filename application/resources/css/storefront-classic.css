@@ -49,13 +49,13 @@
 .storefront[data-storefront-design='classic'] .et-h1 {
     max-width: none;
     font-size: var(--et-type-h1);
-    line-height: .92;
+    line-height: 1.12;
 }
 
 .storefront[data-storefront-design='classic'] .et-h2 {
     max-width: none;
     font-size: var(--et-type-h2);
-    line-height: .96;
+    line-height: 1.12;
 }
 
 .storefront[data-storefront-design='classic'] .et-h3 {
@@ -205,7 +205,8 @@
     font-size: var(--et-type-hero);
     font-weight: 800;
     letter-spacing: -.028em;
-    line-height: .83;
+    /* Å and the Cyrillic fallback have taller ink than plain Latin capitals. */
+    line-height: 1.12;
     text-transform: uppercase;
     text-wrap: balance;
 }
@@ -266,7 +267,7 @@
     font-size: clamp(1.75rem, 3vw, 2.35rem);
     font-weight: 800;
     letter-spacing: -.015em;
-    line-height: .95;
+    line-height: 1.12;
 }
 
 .storefront[data-storefront-design='classic'] .et-quick-finder__tabs {
@@ -434,7 +435,7 @@
     font-size: clamp(1.65rem, 3vw, 2.5rem);
     font-weight: 800;
     letter-spacing: -.015em;
-    line-height: .95;
+    line-height: 1.12;
 }
 
 .storefront[data-storefront-design='classic'] .et-home-prices__list > a {
@@ -662,7 +663,7 @@
     font-size: clamp(2rem, 3.2vw, 3rem);
     font-weight: 800;
     letter-spacing: -.025em;
-    line-height: .94;
+    line-height: 1.12;
 }
 
 .storefront[data-storefront-design='classic'] .et-v3-process {
@@ -852,7 +853,7 @@
     }
 
     .storefront[data-storefront-design='classic'] .et-v3-display {
-        line-height: .88;
+        line-height: 1.12;
     }
 
     .storefront[data-storefront-design='classic'] .et-v3-hero > picture,
