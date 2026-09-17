@@ -51,7 +51,8 @@
     .storefront .et-product-card__purchase {
         width: 100%;
         min-width: 0;
-        flex-basis: 100%;
+        flex: 0 0 auto;
+        align-self: stretch;
     }
 
     .storefront .et-product-card__purchase-controls {
@@ -61,7 +62,6 @@
     .storefront .et-product-card__quantity {
         align-self: flex-start;
     }
-
 }
 
 @media (max-width: 390px) {
