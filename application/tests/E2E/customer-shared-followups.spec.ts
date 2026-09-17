@@ -331,8 +331,21 @@ test('ordinary catalogue quantity reaches cart while the NDI test item remains f
     await page.goto(`${localePrefix}/dekk`);
 
     if (metadata(info).catalogMode !== 'live') {
-        await expect(page.getByTestId('snapshot-price-note').first()).toBeVisible();
-        await expect(page.getByTestId('catalog-product-quantity')).toHaveCount(0);
+        const ordinaryCards = page.locator(`[data-testid="catalog-product"]:not([data-product-sku="${fixedSku}"])`);
+        await expect(ordinaryCards).not.toHaveCount(0);
+        await expect(ordinaryCards.getByTestId('snapshot-price-note').first()).toBeVisible();
+        await expect(ordinaryCards.getByTestId('catalog-product-quantity')).toHaveCount(0);
+        await expect(ordinaryCards.getByTestId('catalog-add-to-cart')).toHaveCount(0);
+
+        await page.goto(`${localePrefix}/dekk?q=${fixedSku}`);
+        const fixed = productCard(page, fixedSku);
+        const fixedQuantity = fixed.getByTestId('catalog-product-quantity');
+        await expect(fixed).toBeVisible();
+        await expect(fixedQuantity).toHaveValue('2');
+        await expect(fixedQuantity).toHaveAttribute('min', '2');
+        await expect(fixedQuantity).toHaveAttribute('max', '2');
+        await expect(fixedQuantity).toHaveAttribute('readonly', '');
+        await expect(fixed.getByTestId('catalog-integration-test-quantity-note')).toContainText('2');
         return;
     }
 
