@@ -1,5 +1,13 @@
 # Current task
 
+Next-agent coordination, 2026-09-18: any new admin/CRM task starts from the
+current shared two-profile line, not `origin/main` or a historical design branch.
+Read and follow [`ADMIN_AGENT_HANDOFF.md`](ADMIN_AGENT_HANDOFF.md) before editing.
+The handoff authorizes a fresh branch and isolated local work only; its presence
+does not authorize a staging deployment, database mutation or integration use.
+
+The following records the completed design-balance task.
+
 Owner follow-up, 2026-09-17: on the same `codex/customer-shared-followups`
 branch and deployed base `b25bc47621c08629b7f673410e207087e85234de`, fix
 Classic heading diacritic/line collisions and give Modern stronger headings
