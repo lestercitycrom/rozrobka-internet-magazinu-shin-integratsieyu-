@@ -5,6 +5,7 @@ const modernBaseURL = process.env.CLASSIC_PREVIEW_MODERN_URL ?? 'http://127.0.0.
 const classicBaseURL = process.env.CLASSIC_PREVIEW_CLASSIC_URL ?? 'http://127.0.0.1:8047';
 const allowRemoteReadOnly = process.env.CLASSIC_PREVIEW_ALLOW_REMOTE_READONLY === '1';
 const ciAutostart = process.env.CLASSIC_PREVIEW_CI_AUTOSTART === '1';
+const customerSharedLiveFixture = process.env.CUSTOMER_SHARED_LIVE_FIXTURE === '1';
 const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 
 for (const [profile, value] of Object.entries({ modern: modernBaseURL, classic: classicBaseURL })) {
@@ -38,7 +39,8 @@ const ciEnvironment = (profile: 'modern' | 'classic') => {
         CLASSIC_PREVIEW_BOOTSTRAP: '1', DB_CONNECTION: 'sqlite', DB_DATABASE: path.join(root, 'database.sqlite'), DB_URL: '',
         LARAVEL_STORAGE_PATH: path.join(root, 'storage'), VIEW_COMPILED_PATH: path.join(root, 'storage/framework/views'),
         CACHE_STORE: 'array', SESSION_DRIVER: 'file', QUEUE_CONNECTION: 'sync', MAIL_MAILER: 'array',
-        NDI_CATALOG_MODE: 'snapshot', NDI_INBOX_PATH: '', NDI_MEDIA_HOSTS: 'example.invalid', NDI_SANDBOX_CATALOG_ENABLED: 'true',
+        CUSTOMER_SHARED_LIVE_FIXTURE: customerSharedLiveFixture ? '1' : '0',
+        NDI_CATALOG_MODE: customerSharedLiveFixture ? 'live' : 'snapshot', NDI_INBOX_PATH: '', NDI_MEDIA_HOSTS: 'example.invalid', NDI_SANDBOX_CATALOG_ENABLED: 'true',
         STOREFRONT_DESIGN_PROFILE: profile, STOREFRONT_RU_PREVIEW_ENABLED: 'true',
         NDI_INQUIRY_ENABLED: 'false', NDI_ORDER_ENABLED: 'false', NDI_C1_TEST_MODE: 'false',
         NDI_SANDBOX_INQUIRY_ENABLED: 'false', NDI_SANDBOX_ORDER_ENABLED: 'false', NDI_FULFILMENT_READ_ENABLED: 'false',
@@ -49,7 +51,7 @@ const ciEnvironment = (profile: 'modern' | 'classic') => {
 
 export default defineConfig({
     testDir: './tests/E2E',
-    testMatch: /classic-preview\.spec\.ts/,
+    testMatch: /(?:classic-preview|customer-shared-followups)\.spec\.ts/,
     outputDir: './tmp/classic-preview/test-results',
     fullyParallel: false,
     workers: 1,
@@ -72,6 +74,7 @@ export default defineConfig({
         metadata: {
             designProfile: profile.name,
             locale,
+            catalogMode: customerSharedLiveFixture ? 'live' : 'snapshot',
             remoteReadOnly: !['127.0.0.1', 'localhost', '::1'].includes(new URL(profile.baseURL).hostname),
         },
         use: {

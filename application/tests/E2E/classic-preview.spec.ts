@@ -6,6 +6,30 @@ import { expectNoGlobalOverflow } from './helpers';
 const sku = 'NDI-TEST-4765205551649102';
 const evidenceRoot = path.resolve(process.cwd(), 'tmp/classic-preview/evidence');
 
+type BoundingBox = { x: number; y: number; width: number; height: number };
+
+function expectOverlayInsideCard(cardBox: BoundingBox | null, overlayBox: BoundingBox | null): void {
+    expect(cardBox).not.toBeNull();
+    expect(overlayBox).not.toBeNull();
+    if (!cardBox || !overlayBox) throw new Error('Expected the card and its overlay to have layout boxes.');
+
+    const leftInset = overlayBox.x - cardBox.x;
+    const topInset = overlayBox.y - cardBox.y;
+    const rightInset = cardBox.x + cardBox.width - (overlayBox.x + overlayBox.width);
+    const bottomInset = cardBox.y + cardBox.height - (overlayBox.y + overlayBox.height);
+    const widthDifference = cardBox.width - overlayBox.width;
+    const heightDifference = cardBox.height - overlayBox.height;
+
+    for (const inset of [leftInset, topInset, rightInset, bottomInset]) {
+        expect(inset).toBeGreaterThan(0);
+        expect(inset).toBeLessThanOrEqual(2);
+    }
+    expect(widthDifference).toBeGreaterThan(0);
+    expect(widthDifference).toBeLessThanOrEqual(2);
+    expect(heightDifference).toBeGreaterThan(0);
+    expect(heightDifference).toBeLessThanOrEqual(2);
+}
+
 type PreviewMetadata = {
     designProfile: 'modern' | 'classic';
     locale: 'nb' | 'ru';
@@ -79,7 +103,7 @@ test('profile marker, assets, canonical host and same-host navigation stay isola
     await expectNoGlobalOverflow(page);
 });
 
-test('home keeps the boxed finder, numbered cards, hotel dialog and portrait media usable', async ({ page }, info) => {
+test('home keeps the boxed finder, numbered cards, hotel card overlay and portrait media usable', async ({ page }, info) => {
     test.skip(metadata(info).remoteReadOnly && metadata(info).designProfile === 'modern', 'Legacy primary smoke is limited to stable GET contracts.');
     test.skip(metadata(info).locale === 'ru', 'NB pass captures the shared homepage composition; RU is covered by route/profile checks.');
     const profile = metadata(info).designProfile;
@@ -102,11 +126,16 @@ test('home keeps the boxed finder, numbered cards, hotel dialog and portrait med
     await expect(poster).toHaveAttribute('width', '720');
     await expect(poster).toHaveAttribute('height', '1280');
 
-    const opener = page.locator('[data-dekkhotell-dialog-open]');
+    const opener = page.locator('[data-dekkhotell-card-overlay-open]');
     await opener.click();
-    const dialog = page.locator('[data-dekkhotell-dialog]');
+    const dialog = page.locator('[data-dekkhotell-card-overlay]');
     await expect(dialog).toHaveJSProperty('open', true);
-    await expect(dialog.locator('[data-dekkhotell-dialog-close]')).toBeFocused();
+    await expect(dialog.locator('[data-card-overlay-close]')).toBeFocused();
+    const [cardBox, overlayBox] = await Promise.all([
+        dialog.locator('xpath=..').boundingBox(),
+        dialog.boundingBox(),
+    ]);
+    expectOverlayInsideCard(cardBox, overlayBox);
     await page.keyboard.press('Escape');
     await expect(opener).toBeFocused();
     await expectNoGlobalOverflow(page);

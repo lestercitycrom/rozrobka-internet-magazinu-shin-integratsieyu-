@@ -200,7 +200,7 @@ test('homepage renders the final approved order copy links logos and hidden Russ
         ->assertSee('https://elementnor.no/', false)
         ->assertSee('https://carsoe.com/', false)
         ->assertSee('https://www.avis.no/', false)
-        ->assertSee('data-dekkhotell-dialog', false)
+        ->assertSee('data-dekkhotell-card-overlay', false)
         ->assertSee('data-homepage-video-element', false)
         ->assertSee('data-src="/brand/easytire-workshop-loop.mp4"', false)
         ->assertSee('preload="none"', false)

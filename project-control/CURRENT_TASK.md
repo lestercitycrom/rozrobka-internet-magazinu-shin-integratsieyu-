@@ -1,5 +1,19 @@
 # Current task
 
+Owner continuation, 2026-09-17: implement the shared functional/content requests
+from `ChatExport_2026-09-16` on both live design profiles. Work branch
+`codex/customer-shared-followups`, based on Classic/source `f776dbe…`. Preserve
+the profile-specific typography, finder layout, red accents and media proportions.
+Scope: content/service search, card-local descriptions, catalogue quantity
+selection (sandbox remains fixed at two), contact navigation and partner logos.
+Snapchat remains visible with a localized "link coming soon" placeholder until
+the owner saves the verified customer account URL in the existing admin setting.
+Do not invent a destination. No main
+merge, catalogue changes, migrations/seeds or integration activation. The two
+staging releases must retain their environments, isolation and rollback versions.
+
+The following records the completed split and its predecessors.
+
 Owner continuation, 2026-09-17: create the separate Classic preview on
 `staging-classic-easytire.bethub.fun`, branch `codex/classic-storefront`, from
 the functional source `7165ca13090e3f0f122b181cc6c37eb6fc9f874f`. Restore the

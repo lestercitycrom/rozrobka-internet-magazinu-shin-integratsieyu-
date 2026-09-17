@@ -5,6 +5,30 @@ import { expectNoGlobalOverflow, localePrefix } from './helpers';
 
 const evidenceDirectory = path.resolve(process.cwd(), '..', 'evidence', 'issue-46');
 
+type BoundingBox = { x: number; y: number; width: number; height: number };
+
+function expectOverlayInsideCard(cardBox: BoundingBox | null, overlayBox: BoundingBox | null): void {
+    expect(cardBox).not.toBeNull();
+    expect(overlayBox).not.toBeNull();
+    if (!cardBox || !overlayBox) throw new Error('Expected the card and its overlay to have layout boxes.');
+
+    const leftInset = overlayBox.x - cardBox.x;
+    const topInset = overlayBox.y - cardBox.y;
+    const rightInset = cardBox.x + cardBox.width - (overlayBox.x + overlayBox.width);
+    const bottomInset = cardBox.y + cardBox.height - (overlayBox.y + overlayBox.height);
+    const widthDifference = cardBox.width - overlayBox.width;
+    const heightDifference = cardBox.height - overlayBox.height;
+
+    for (const inset of [leftInset, topInset, rightInset, bottomInset]) {
+        expect(inset).toBeGreaterThan(0);
+        expect(inset).toBeLessThanOrEqual(2);
+    }
+    expect(widthDifference).toBeGreaterThan(0);
+    expect(widthDifference).toBeLessThanOrEqual(2);
+    expect(heightDifference).toBeGreaterThan(0);
+    expect(heightDifference).toBeLessThanOrEqual(2);
+}
+
 async function expectContained(
     outer: import('@playwright/test').Locator,
     inner: import('@playwright/test').Locator,
@@ -80,8 +104,8 @@ test('offers and both independently managed service collections render in NB and
     expect(order).toEqual([...order].sort((a, b) => a - b));
 
     const firstOffer = promotions.getByTestId('homepage-promotion').first();
-    const disclosure = firstOffer.locator('[data-promotion-disclosure]');
-    const detailsDialog = firstOffer.locator('[data-promotion-details]');
+    const disclosure = firstOffer.locator('[data-promotion-card-overlay-open]');
+    const detailsDialog = firstOffer.locator('[data-promotion-card-overlay]');
     const cardDocumentBox = () => firstOffer.evaluate((element) => {
         const rect = element.getBoundingClientRect();
         return { x: rect.x + scrollX, y: rect.y + scrollY, width: rect.width, height: rect.height };
@@ -91,28 +115,12 @@ test('offers and both independently managed service collections render in NB and
     await expect(firstOffer.locator('.et-v3-promotion__cta')).toBeVisible();
     await expect(detailsDialog).not.toHaveAttribute('open', '');
     await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
-    const supportsHover = await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)').matches);
-    if (supportsHover) {
-        await firstOffer.scrollIntoViewIfNeeded();
-        await page.mouse.move(0, 0);
-        await firstOffer.hover();
-        const hoverPreview = page.locator('body > .et-promotion-hover-preview.is-visible');
-        await expect(hoverPreview).toBeVisible();
-        await expect(hoverPreview).toHaveAttribute('aria-hidden', 'true');
-        await expect(detailsDialog).not.toHaveAttribute('open', '');
-        await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
-        expect(await cardDocumentBox()).toEqual(initialCardBox);
-        await page.mouse.move(0, 0);
-        await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
-    } else {
-        await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
-    }
-
     await disclosure.click();
     await expect(detailsDialog).toHaveAttribute('open', '');
     await expect(detailsDialog).toBeVisible();
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
+    const [cardBox, overlayBox] = await Promise.all([firstOffer.boundingBox(), detailsDialog.boundingBox()]);
+    expectOverlayInsideCard(cardBox, overlayBox);
     expect(await cardDocumentBox()).toEqual(initialCardBox);
     await page.keyboard.press('Escape');
     await expect(detailsDialog).not.toHaveAttribute('open', '');

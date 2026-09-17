@@ -173,6 +173,21 @@ test('administrator can save only safe public social links and the read model ha
     ]);
 });
 
+test('both designs replace the visible Snapchat placeholder with a configured safe link in both languages', function (string $profile, string $path): void {
+    config()->set('storefront.design_profile', $profile);
+    config()->set('storefront.ru_preview_enabled', true);
+    StorefrontSettings::query()->updateOrCreate(['id' => 1], ['snapchat_url' => null]);
+
+    $this->get($path)->assertOk()->assertSee('Snapchat')->assertSee('data-testid="social-link-pending"', false);
+
+    $confirmedUrl = 'https://www.snapchat.com/add/qa-confirmed-account';
+    StorefrontSettings::query()->whereKey(1)->update(['snapchat_url' => $confirmedUrl]);
+    $this->get($path)->assertOk()->assertSee('href="'.$confirmedUrl.'"', false)->assertSee('Snapchat')->assertDontSee('data-testid="social-link-pending"', false);
+
+    StorefrontSettings::query()->whereKey(1)->update(['snapchat_url' => 'javascript:alert(1)']);
+    $this->get($path)->assertOk()->assertSee('data-testid="social-link-pending"', false)->assertDontSee('javascript:alert', false);
+})->with(['modern', 'classic'])->with(['/', '/ru']);
+
 function storefrontSettingsPayload(MediaAsset $asset): array
 {
     return [

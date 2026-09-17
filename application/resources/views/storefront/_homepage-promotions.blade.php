@@ -40,13 +40,12 @@
                                 @endphp
                             @php($detailsId = 'promotion-details-'.$promotion->id)
                             @php($titleId = 'promotion-title-'.$promotion->id)
-                            <article class="et-v3-promotion" data-testid="homepage-promotion">
+                            <article class="et-v3-promotion" data-testid="homepage-promotion" data-card-overlay-root data-card-overlay-kind="promotion">
                                 <div class="et-v3-promotion__fallback" aria-hidden="true"><img src="/brand/easytire-mark.svg" width="100" height="100" alt=""></div>
                                 @if ($promotionImage)
                                     <img src="{{ $promotionImage }}" width="1200" height="900" loading="lazy" alt="{{ $promotionAlt }}" data-media-fallback-image>
                                 @endif
                                 <span class="et-v3-promotion__shade" aria-hidden="true"></span>
-                                <div class="et-v3-promotion__preview" aria-hidden="true" data-promotion-preview>{{ \Illuminate\Support\Str::limit($body, 160) }}</div>
                                 <div class="et-v3-promotion__content">
                                     @if (config('storefront.design_profile') === 'classic')
                                         <span class="et-v3-promotion__number" aria-hidden="true">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
@@ -57,13 +56,13 @@
                                     @else
                                         <p class="et-v3-promotion__short">{{ \Illuminate\Support\Str::limit($body, 100) }}</p>
                                     @endif
-                                    <button class="et-v3-promotion__disclosure et-action-link" type="button" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ $detailsId }}" data-promotion-disclosure><span class="et-action-link__label">{{ __('pro.home.promotion_details') }}</span><x-icon name="arrow" :size="16" /></button>
-                                    <details data-promotion-native-details><summary>{{ __('pro.home.promotion_details') }}</summary><p>{{ $body }}</p></details>
+                                    <button class="et-v3-promotion__disclosure et-action-link" type="button" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="{{ $detailsId }}" data-card-overlay-open data-promotion-card-overlay-open><span class="et-action-link__label">{{ __('pro.home.promotion_details') }}</span><x-icon name="arrow" :size="16" /></button>
+                                    <details data-card-overlay-fallback><summary>{{ __('pro.home.promotion_details') }}</summary><p>{{ $body }}</p></details>
                                     <a class="et-v3-promotion__cta et-action-link" href="{{ $ctaUrl }}" @if($externalPromotion) target="_blank" rel="noopener" @endif><span class="et-action-link__label">{{ $ctaLabel }}</span><x-icon name="arrow" :size="16" /></a>
                                 </div>
-                                <dialog class="et-v3-dialog" id="{{ $detailsId }}" aria-labelledby="{{ $detailsId }}-title" data-promotion-details>
-                                    <div class="et-v3-dialog__surface">
-                                        <button class="et-v3-dialog__close" type="button" aria-label="{{ __('project.home.dialog_close') }}" data-promotion-dialog-close>×</button>
+                                <dialog class="et-card-overlay" id="{{ $detailsId }}" aria-labelledby="{{ $detailsId }}-title" data-card-overlay data-promotion-card-overlay>
+                                    <div class="et-card-overlay__surface">
+                                        <button class="et-card-overlay__close" type="button" aria-label="{{ __('project.home.dialog_close') }}" data-card-overlay-close>×</button>
                                         <p class="et-eyebrow">{{ __('pro.home.promotion_details') }}</p>
                                         <h2 id="{{ $detailsId }}-title">{{ $title }}</h2>
                                         <p>{{ $body }}</p>

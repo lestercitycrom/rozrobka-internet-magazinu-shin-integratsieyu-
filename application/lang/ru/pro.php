@@ -32,7 +32,7 @@ return [
         'prices' => 'Цены',
         'offers' => 'Актуальные предложения',
         'about' => 'О нас',
-        'contact' => 'Контакты',
+        'contact' => 'Связаться с нами',
         'cart' => 'Корзина',
         'cart_count_unavailable' => 'количество недоступно',
         'booking' => 'Заказать смену колёс',
@@ -180,6 +180,7 @@ return [
         'social_facebook' => 'Facebook',
         'social_instagram' => 'Instagram',
         'social_snapchat' => 'Snapchat',
+        'social_link_pending' => 'Ссылка скоро появится',
     ],
     'catalog' => [
         'empty_available_title' => 'Сейчас нет товаров для показа',

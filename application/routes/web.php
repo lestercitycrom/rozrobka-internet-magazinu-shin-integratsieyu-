@@ -10,6 +10,7 @@ use App\Http\Controllers\Storefront\PricingPageController;
 use App\Http\Controllers\Storefront\SeoServicePageController;
 use App\Http\Controllers\Storefront\ServiceController;
 use App\Http\Controllers\Storefront\ServiceRequestController;
+use App\Http\Controllers\Storefront\SiteSearchController;
 use App\Http\Controllers\Storefront\VehicleFitmentController;
 use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\ReadModel\CatalogReadService;
@@ -61,6 +62,7 @@ Route::middleware('public.locale')->group(function (): void {
     Route::get('/felger/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Wheel))->middleware('throttle:60,1')->name('storefront.wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('storefront.products.show');
     Route::get('/priser', PricingPageController::class)->name('storefront.pricing.index');
+    Route::get('/sok', SiteSearchController::class)->name('storefront.site-search.index');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('storefront.services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('storefront.services.show');
     Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('storefront.content.show');
@@ -98,6 +100,7 @@ Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')-
     Route::get('/felger/suggestions', fn (Request $request, CatalogReadService $catalog) => app(CatalogController::class)->suggestions($request, $catalog, ProductType::Wheel))->middleware('throttle:60,1')->name('wheels.suggestions');
     Route::get('/produkter/{sku}', [CatalogController::class, 'show'])->name('products.show');
     Route::get('/priser', PricingPageController::class)->name('pricing.index');
+    Route::get('/sok', SiteSearchController::class)->name('site-search.index');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('services.show');
     Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('content.show');

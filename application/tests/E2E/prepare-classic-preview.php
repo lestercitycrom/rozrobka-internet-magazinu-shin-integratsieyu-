@@ -22,6 +22,13 @@ if ($argc !== 2 || ! in_array($argv[1], ['modern', 'classic'], true)) {
 }
 
 $profile = $argv[1];
+$customerSharedFixture = getenv('CUSTOMER_SHARED_LIVE_FIXTURE');
+
+if (! in_array($customerSharedFixture, ['0', '1'], true)) {
+    $abort('CUSTOMER_SHARED_LIVE_FIXTURE must be explicitly 0 or 1.');
+}
+
+$catalogMode = $customerSharedFixture === '1' ? 'live' : 'snapshot';
 $root = dirname(__DIR__, 2);
 $relativeRoot = "tmp/classic-preview/ci/{$profile}";
 $ownedRoot = "{$root}/{$relativeRoot}";
@@ -48,7 +55,8 @@ $expectedEnvironment = [
     'SESSION_DRIVER' => 'file',
     'QUEUE_CONNECTION' => 'sync',
     'MAIL_MAILER' => 'array',
-    'NDI_CATALOG_MODE' => 'snapshot',
+    'CUSTOMER_SHARED_LIVE_FIXTURE' => $customerSharedFixture,
+    'NDI_CATALOG_MODE' => $catalogMode,
     'NDI_SANDBOX_CATALOG_ENABLED' => 'true',
     'STOREFRONT_RU_PREVIEW_ENABLED' => 'true',
     'STOREFRONT_DESIGN_PROFILE' => $profile,
@@ -162,8 +170,12 @@ foreach ([
 foreach (['config.php', 'events.php', 'packages.php', 'routes.php', 'services.php'] as $cacheFile) {
     $path = "{$cachePath}/{$cacheFile}";
 
-    if (is_link($path) || file_exists($path)) {
-        $abort('the profile cache must be empty before fixture bootstrap.');
+    if (is_link($path) || (file_exists($path) && ! is_file($path))) {
+        $abort('a profile cache path is not an owned regular file.');
+    }
+
+    if (is_file($path) && ! unlink($path)) {
+        $abort('an owned profile cache file could not be recreated.');
     }
 }
 
@@ -225,7 +237,7 @@ try {
 
     if (config('storefront.design_profile') !== $profile
         || config('storefront.ru_preview_enabled') !== true
-        || config('ndi.catalog_mode') !== 'snapshot') {
+        || config('ndi.catalog_mode') !== $catalogMode) {
         throw new RuntimeException('the effective storefront fixture profile is not deterministic.');
     }
 

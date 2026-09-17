@@ -60,7 +60,8 @@ test('storefront and admin consume one shared design foundation', function (): v
 
     $storefront = file_get_contents(resource_path('css/storefront-v3.css'));
     $contracts = file_get_contents(resource_path('css/storefront-contracts.css'));
-    $ui = file_get_contents(resource_path('js/ui.js'));
+    $cardOverlays = file_get_contents(resource_path('js/customer-card-overlays.js'));
+    $cardOverlayStyles = file_get_contents(resource_path('css/customer-card-overlays.css'));
     $promotionPartial = file_get_contents(resource_path('views/storefront/_homepage-promotions.blade.php'));
 
     expect(substr_count($storefront, '.et-v3-process-strip {'))->toBe(1)
@@ -69,20 +70,21 @@ test('storefront and admin consume one shared design foundation', function (): v
         ->and($storefront)
         ->not->toContain('.et-v3-promotion:hover .et-v3-promotion__details')
         ->not->toContain('.et-v3-promotion:focus-within .et-v3-promotion__details')
-        ->toContain('.et-v3-promotion__preview { display: none; }')
-        ->toContain('.et-promotion-hover-preview.is-visible')
         ->toContain('overflow-y: auto;')
         ->toContain('.storefront .et-btn--outline:hover')
         ->toContain("[aria-disabled='true']")
         ->toContain('.storefront .et-footer.is-enhanced .et-footer__toggle')
-        ->and($ui)
-        ->toContain('(hover: hover) and (pointer: fine) and (min-width: 768px)')
-        ->toContain("clone.className = 'et-promotion-hover-preview'")
-        ->toContain('const modal = createModalDialog(dialog')
+        ->and($cardOverlays)
+        ->toContain('overlay.show()')
+        ->toContain('activeController.close({ restoreFocus: false })')
+        ->toContain("event.key === 'Escape'")
+        ->and($cardOverlayStyles)
+        ->toContain('position: absolute;')
+        ->toContain('overscroll-behavior: contain;')
         ->and($promotionPartial)
-        ->toContain('class="et-v3-promotion__preview"')
-        ->toContain('data-promotion-disclosure')
-        ->toContain('data-promotion-details')
+        ->toContain('data-promotion-card-overlay-open')
+        ->toContain('data-promotion-card-overlay')
+        ->not->toContain('data-promotion-preview')
         ->and($contracts)->toContain('.et-admin-body')
         ->and($contracts)->toContain('--radius-2xl: var(--et-radius-sharp);');
 });

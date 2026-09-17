@@ -1,0 +1,68 @@
+/* Shared catalog-card quantity control for the modern and classic storefront profiles. */
+.storefront .et-product-card__purchase {
+    flex: 1 1 15rem;
+    min-width: min(100%, 15rem);
+}
+
+.storefront .et-product-card__purchase-controls {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+    gap: .5rem;
+}
+
+.storefront .et-product-card__quantity {
+    width: 4.25rem;
+    min-width: 0;
+    min-height: 48px;
+    flex: 0 0 4.25rem;
+    border-radius: var(--et-radius-control);
+    padding: .55rem .35rem;
+    color: var(--easytire-ink);
+    font: inherit;
+    font-weight: 600;
+    text-align: center;
+}
+
+.storefront .et-product-card__quantity[readonly] {
+    background: var(--easytire-surface);
+    color: var(--easytire-muted);
+    cursor: not-allowed;
+}
+
+.storefront .et-product-card__purchase-controls .et-product-card__buy {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.storefront .et-product-card__purchase-controls .et-product-card__buy span {
+    overflow-wrap: anywhere;
+}
+
+.storefront .et-product-card__quantity-note {
+    display: block;
+    margin-top: .5rem;
+    color: var(--easytire-muted);
+    font-size: var(--et-type-meta);
+    line-height: var(--et-type-meta-leading);
+}
+
+@media (max-width: 768px) {
+    .storefront .et-product-card__purchase {
+        width: 100%;
+        min-width: 0;
+        flex-basis: 100%;
+    }
+}
+
+@media (max-width: 390px) {
+    .storefront .et-product-card__purchase-controls {
+        gap: .4rem;
+    }
+
+    .storefront .et-product-card__quantity {
+        width: 3.5rem;
+        flex-basis: 3.5rem;
+        padding-inline: .2rem;
+    }
+}

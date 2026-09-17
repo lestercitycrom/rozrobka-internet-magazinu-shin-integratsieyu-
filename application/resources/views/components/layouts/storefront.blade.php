@@ -307,16 +307,16 @@
             </nav>
 
             <div class="et-header__actions">
-                <div class="et-catalog-search" data-catalog-search>
-                    <button class="et-catalog-search__toggle min-h-11" type="button" aria-label="{{ __('pro.nav.catalog_search_open') }}" aria-expanded="false" aria-controls="header-catalog-search" data-catalog-search-toggle><x-icon name="search" :size="20" /></button>
-                    <div class="et-catalog-search__panel" id="header-catalog-search" aria-hidden="true" data-catalog-search-panel>
-                        <form method="GET" action="{{ route($routePrefix.'tires.index') }}">
-                            <label for="header-catalog-query">{{ __('pro.nav.catalog_search') }}</label>
+                <div class="et-site-search" data-site-search>
+                    <a class="et-site-search__toggle min-h-11" href="{{ route($routePrefix.'site-search.index') }}" aria-label="{{ __('customer_search.open') }}" aria-expanded="false" aria-controls="header-site-search" data-site-search-toggle><x-icon name="search" :size="20" /></a>
+                    <div class="et-site-search__panel" id="header-site-search" aria-hidden="true" data-site-search-panel>
+                        <form class="et-site-search-form" method="GET" action="{{ route($routePrefix.'site-search.index') }}" role="search">
+                            <label for="header-site-query">{{ __('customer_search.label') }}</label>
                             <div>
-                                <input id="header-catalog-query" name="q" type="search" autocomplete="off" placeholder="{{ __('pro.nav.catalog_search_placeholder') }}" list="header-catalog-suggestions" aria-controls="header-catalog-suggestions" data-catalog-autocomplete="{{ route($routePrefix.'tires.suggestions') }}">
-                                <button type="submit">{{ __('pro.nav.catalog_search_submit') }}</button>
+                                <input id="header-site-query" name="q" type="search" maxlength="100" autocomplete="off" placeholder="{{ __('customer_search.placeholder') }}">
+                                <button type="submit">{{ __('customer_search.submit') }}</button>
                             </div>
-                            <datalist id="header-catalog-suggestions"></datalist>
+                            <a class="et-site-search__store-link" href="{{ route($routePrefix.'store.index') }}"><span>{{ __('customer_search.tyre_search_link') }}</span><x-icon name="arrow" :size="15" /></a>
                         </form>
                     </div>
                 </div>
@@ -349,10 +349,10 @@
                         <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif><span class="et-mobile-menu__label">{{ $navigationItem['label'] }}</span></a>
                     @endif
                 @endforeach
-                <form class="et-mobile-menu__search" method="GET" action="{{ route($routePrefix.'tires.index') }}">
-                    <label for="mobile-catalog-query">{{ __('pro.nav.catalog_search') }}</label>
-                    <div><input id="mobile-catalog-query" name="q" type="search" autocomplete="off" placeholder="{{ __('pro.nav.catalog_search_placeholder') }}" list="mobile-catalog-suggestions" aria-controls="mobile-catalog-suggestions" data-catalog-autocomplete="{{ route($routePrefix.'tires.suggestions') }}"><button type="submit" aria-label="{{ __('pro.nav.catalog_search_submit') }}"><x-icon name="search" :size="19" /></button></div>
-                    <datalist id="mobile-catalog-suggestions"></datalist>
+                <form class="et-site-search-form et-site-search-form--mobile" method="GET" action="{{ route($routePrefix.'site-search.index') }}" role="search">
+                    <label for="mobile-site-query">{{ __('customer_search.label') }}</label>
+                    <div><input id="mobile-site-query" name="q" type="search" maxlength="100" autocomplete="off" placeholder="{{ __('customer_search.placeholder') }}"><button type="submit" aria-label="{{ __('customer_search.submit') }}"><x-icon name="search" :size="19" /></button></div>
+                    <a class="et-site-search__store-link" href="{{ route($routePrefix.'store.index') }}"><span>{{ __('customer_search.tyre_search_link') }}</span><x-icon name="arrow" :size="15" /></a>
                 </form>
                 <a class="min-h-11" href="tel:{{ $phoneHref }}" data-testid="mobile-call-link"><span class="et-mobile-menu__label">{{ __('pro.nav.call') }}</span></a>
                 <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link"><span class="et-mobile-menu__label">{{ __('pro.nav.cart') }} ({{ $cartCountLabel }})</span></a>

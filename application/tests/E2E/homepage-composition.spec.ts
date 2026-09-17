@@ -81,20 +81,20 @@ test('customer-approved homepage composition, copy and local partner media rende
     await expectNoGlobalOverflow(page);
 });
 
-test('homepage detail dialog is keyboard operable and returns focus', async ({ page }, testInfo) => {
+test('homepage card overlay is keyboard operable and returns focus', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     const russian = isRussianProject(testInfo.project.name);
     await page.goto(prefix || '/');
-    const opener = page.locator('[data-dekkhotell-dialog-open]');
-    const dialog = page.locator('[data-dekkhotell-dialog]');
-    await tabToFromPageStart(page, '[data-dekkhotell-dialog-open]');
+    const opener = page.locator('[data-dekkhotell-card-overlay-open]');
+    const dialog = page.locator('[data-dekkhotell-card-overlay]');
+    await tabToFromPageStart(page, '[data-dekkhotell-card-overlay-open]');
     await expect(opener).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(dialog).toHaveJSProperty('open', true);
     await expect(dialog).toContainText(russian
         ? 'С шинным отелем EasyTire вам не придётся самостоятельно поднимать, перевозить или хранить колёса.'
         : 'Med dekkhotell hos EasyTire slipper du å løfte, frakte eller oppbevare hjulene selv.');
-    await expect(dialog.locator('[data-dekkhotell-dialog-close]')).toBeFocused();
+    await expect(dialog.locator('[data-card-overlay-close]')).toBeFocused();
     for (let index = 0; index < 5; index += 1) {
         await page.keyboard.press('Tab');
         expect(await dialog.evaluate((element) => element === document.activeElement || element.contains(document.activeElement))).toBeTruthy();
@@ -173,7 +173,7 @@ test('homepage cards keep the intended 4/2/1 responsive structure at the accepta
         const columns = await processGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
         expect(columns).toBe(viewport.width <= 640 ? 1 : viewport.width <= 900 ? 2 : 4);
         const partnerColumns = await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
-        expect(partnerColumns).toBe(viewport.width <= 420 ? 1 : viewport.width <= 900 ? 2 : 4);
+        expect(partnerColumns).toBe(2);
         const stepGeometry = await steps.evaluateAll((nodes) => nodes.map((node) => {
             const rect = node.getBoundingClientRect();
             return {

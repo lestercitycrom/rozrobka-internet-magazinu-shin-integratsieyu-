@@ -2,7 +2,7 @@ name: Quality gates
 
 on:
   pull_request:
-    branches: [main, codex/catalog-filter-consistency, codex/autonomous-design-finish]
+    branches: [main, codex/catalog-filter-consistency, codex/autonomous-design-finish, codex/classic-storefront]
   push:
     branches: [main]
   workflow_dispatch:
@@ -139,6 +139,10 @@ jobs:
         working-directory: .
         run: bash deploy/tests/classic-preview-safety.sh
 
+      - name: Verify shared customer dual-site deployment safety
+        working-directory: .
+        run: bash deploy/tests/customer-shared-safety.sh
+
       - name: Check PHP formatting
         run: vendor/bin/pint --test
 
@@ -169,6 +173,9 @@ jobs:
       - name: Run both design profiles against isolated fixtures
         run: CLASSIC_PREVIEW_CI_AUTOSTART=1 npx playwright test --config=playwright.classic.config.ts
 
+      - name: Verify shared catalogue quantities using isolated purchasable fixtures
+        run: CLASSIC_PREVIEW_CI_AUTOSTART=1 CUSTOMER_SHARED_LIVE_FIXTURE=1 npx playwright test --config=playwright.classic.config.ts customer-shared-followups --grep "ordinary catalogue quantity"
+
       - name: Upload Playwright failure evidence
         if: failure()
         uses: actions/upload-artifact@v7
@@ -184,6 +191,7 @@ jobs:
             application/tmp/classic-preview/report
             application/tmp/classic-preview/test-results
             application/tmp/classic-preview/evidence
+            application/tmp/customer-shared/evidence
           if-no-files-found: ignore
           retention-days: 7
 

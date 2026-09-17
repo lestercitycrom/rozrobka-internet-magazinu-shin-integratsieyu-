@@ -1,6 +1,30 @@
 import { expect, test } from '@playwright/test';
 import { expectNoGlobalOverflow } from './helpers';
 
+type BoundingBox = { x: number; y: number; width: number; height: number };
+
+function expectOverlayInsideCard(cardBox: BoundingBox | null, overlayBox: BoundingBox | null): void {
+    expect(cardBox).not.toBeNull();
+    expect(overlayBox).not.toBeNull();
+    if (!cardBox || !overlayBox) throw new Error('Expected the card and its overlay to have layout boxes.');
+
+    const leftInset = overlayBox.x - cardBox.x;
+    const topInset = overlayBox.y - cardBox.y;
+    const rightInset = cardBox.x + cardBox.width - (overlayBox.x + overlayBox.width);
+    const bottomInset = cardBox.y + cardBox.height - (overlayBox.y + overlayBox.height);
+    const widthDifference = cardBox.width - overlayBox.width;
+    const heightDifference = cardBox.height - overlayBox.height;
+
+    for (const inset of [leftInset, topInset, rightInset, bottomInset]) {
+        expect(inset).toBeGreaterThan(0);
+        expect(inset).toBeLessThanOrEqual(2);
+    }
+    expect(widthDifference).toBeGreaterThan(0);
+    expect(widthDifference).toBeLessThanOrEqual(2);
+    expect(heightDifference).toBeGreaterThan(0);
+    expect(heightDifference).toBeLessThanOrEqual(2);
+}
+
 test('approved homepage composition stays coherent at the priority desktop and mobile widths', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial multi-viewport visual contract is enough');
     test.setTimeout(120_000);
@@ -35,8 +59,8 @@ test('approved homepage composition stays coherent at the priority desktop and m
         await expectNoGlobalOverflow(page);
 
         const firstPromotion = page.getByTestId('homepage-promotion').first();
-        const promotionDisclosure = firstPromotion.locator('[data-promotion-disclosure]');
-        const promotionDialog = firstPromotion.locator('[data-promotion-details]');
+        const promotionDisclosure = firstPromotion.locator('[data-promotion-card-overlay-open]');
+        const promotionDialog = firstPromotion.locator('[data-promotion-card-overlay]');
         const cardDocumentBox = () => firstPromotion.evaluate((element) => {
             const rect = element.getBoundingClientRect();
             return { x: rect.x + scrollX, y: rect.y + scrollY, width: rect.width, height: rect.height };
@@ -47,26 +71,12 @@ test('approved homepage composition stays coherent at the priority desktop and m
         await expect(promotionDialog).not.toHaveAttribute('open', '');
         await expect(promotionDisclosure).toHaveAttribute('aria-expanded', 'false');
 
-        if (viewport.width > 767) {
-            await firstPromotion.scrollIntoViewIfNeeded();
-            await page.mouse.move(0, 0);
-            await firstPromotion.hover();
-            const hoverPreview = page.locator('body > .et-promotion-hover-preview.is-visible');
-            await expect(hoverPreview).toBeVisible();
-            await expect(hoverPreview).toHaveAttribute('aria-hidden', 'true');
-            await expect(promotionDialog).not.toHaveAttribute('open', '');
-            expect(await cardDocumentBox()).toEqual(initialCardBox);
-            await page.mouse.move(0, 0);
-            await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
-        } else {
-            await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
-        }
-
         await promotionDisclosure.click();
         await expect(promotionDialog).toHaveAttribute('open', '');
         await expect(promotionDialog).toBeVisible();
         await expect(promotionDisclosure).toHaveAttribute('aria-expanded', 'true');
-        await expect(page.locator('body > .et-promotion-hover-preview')).toHaveCount(0);
+        const [cardBox, overlayBox] = await Promise.all([firstPromotion.boundingBox(), promotionDialog.boundingBox()]);
+        expectOverlayInsideCard(cardBox, overlayBox);
         expect(await cardDocumentBox()).toEqual(initialCardBox);
         await page.keyboard.press('Escape');
         await expect(promotionDialog).not.toHaveAttribute('open', '');

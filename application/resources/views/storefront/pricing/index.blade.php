@@ -28,14 +28,14 @@
                                 default => [route($prefix.'services.index'), __('public_pricing.cta')],
                             };
                         @endphp
-                        <article class="et-public-price-group">
+                        <article class="et-public-price-group" id="price-category-{{ \Illuminate\Support\Str::slug($category->category_code) }}">
                             <header class="et-public-price-group__head">
                                 <p class="et-eyebrow">{{ __('public_pricing.category_kicker') }}</p>
                                 <h2 class="et-h3">{{ $category->localized('category_title', app()->getLocale()) }}</h2>
                             </header>
                             <div class="et-public-price-group__rows">
                                 @foreach ($categoryPrices as $price)
-                                    <div class="et-public-price-row" data-testid="public-price-row">
+                                    <div class="et-public-price-row" id="price-{{ \Illuminate\Support\Str::slug($price->code) }}" data-testid="public-price-row">
                                         <div>
                                             <strong>{{ $price->localized('title', app()->getLocale()) }}</strong>
                                             @if ($description = $price->localized('description', app()->getLocale()))

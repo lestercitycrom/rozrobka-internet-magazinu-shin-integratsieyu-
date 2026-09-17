@@ -89,15 +89,15 @@ test('natural full storefront settings save preserves unrelated values and remai
     }
 });
 
-test('Dekkhotell dialog contains reverse Tab and remains readable without JavaScript in NB and RU', async ({ browser, page }, testInfo) => {
+test('Dekkhotell card overlay contains reverse Tab and remains readable without JavaScript in NB and RU', async ({ browser, page }, testInfo) => {
     test.skip(!isDesktopPass(testInfo.project.name), 'One deterministic desktop/no-JS matrix is sufficient.');
     test.setTimeout(120_000);
 
     for (const route of ['/', '/ru']) {
         await page.goto(route);
-        const opener = page.locator('[data-dekkhotell-dialog-open]');
-        const dialog = page.locator('[data-dekkhotell-dialog]');
-        const close = dialog.locator('[data-dekkhotell-dialog-close]');
+        const opener = page.locator('[data-dekkhotell-card-overlay-open]');
+        const dialog = page.locator('[data-dekkhotell-card-overlay]');
+        const close = dialog.locator('[data-card-overlay-close]');
         const cta = dialog.locator('a.et-btn');
         await tabTo(page, opener);
         await page.keyboard.press('Enter');
@@ -132,7 +132,7 @@ test('Dekkhotell dialog contains reverse Tab and remains readable without JavaSc
     }
 });
 
-test('Dekkhotell dialog opens and closes through real touch and its mobile content scrolls to the CTA', async ({ page }, testInfo) => {
+test('Dekkhotell card overlay opens and closes through real touch and its mobile content scrolls to the CTA', async ({ page }, testInfo) => {
     test.skip(!isTouchPass(testInfo.project.name), 'This contract requires a touch-enabled Playwright project.');
     test.setTimeout(90_000);
     await page.addInitScript(() => {
@@ -144,23 +144,24 @@ test('Dekkhotell dialog opens and closes through real touch and its mobile conte
 
     for (const route of ['/', '/ru']) {
         await page.goto(route);
-        const opener = page.locator('[data-dekkhotell-dialog-open]');
-        const dialog = page.locator('[data-dekkhotell-dialog]');
-        const close = dialog.locator('[data-dekkhotell-dialog-close]');
+        const opener = page.locator('[data-dekkhotell-card-overlay-open]');
+        const dialog = page.locator('[data-dekkhotell-card-overlay]');
+        const surface = dialog.locator('.et-card-overlay__surface');
+        const close = dialog.locator('[data-card-overlay-close]');
         const cta = dialog.locator('a.et-btn');
         await opener.scrollIntoViewIfNeeded();
         await opener.tap();
         await expect(dialog).toHaveAttribute('open', '');
         expect(await page.evaluate(() => (window as unknown as { __issue44PointerType?: string }).__issue44PointerType)).toBe('touch');
 
-        const scrollState = await dialog.evaluate((element) => ({
+        const scrollState = await surface.evaluate((element) => ({
             clientHeight: element.clientHeight,
             scrollHeight: element.scrollHeight,
             before: element.scrollTop,
         }));
         if (scrollState.scrollHeight > scrollState.clientHeight + 1) {
-            await dialog.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: 'instant' }));
-            await expect.poll(() => dialog.evaluate((element) => element.scrollTop)).toBeGreaterThan(scrollState.before);
+            await surface.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: 'instant' }));
+            await expect.poll(() => surface.evaluate((element) => element.scrollTop)).toBeGreaterThan(scrollState.before);
         } else {
             expect(scrollState.scrollHeight).toBeLessThanOrEqual(scrollState.clientHeight + 1);
         }
@@ -204,7 +205,7 @@ test('reduced-motion homepage preserves its video poster at the focused native v
             await expect(video).toHaveAttribute('data-src', /\.mp4(?:\?|$)/);
             await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
             await expect(hotel.locator('[data-homepage-video-control]')).toBeVisible();
-            await expect(hotel.locator('[data-dekkhotell-dialog-open]')).toBeVisible();
+            await expect(hotel.locator('[data-dekkhotell-card-overlay-open]')).toBeVisible();
             await expectNoGlobalOverflow(page);
             const geometry = await hotel.evaluate((element) => {
                 const rect = element.getBoundingClientRect();
