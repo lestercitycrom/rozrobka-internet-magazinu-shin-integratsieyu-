@@ -44,6 +44,7 @@
 
         <div class="mt-5 flex flex-wrap items-center gap-3">
             <span class="et-admin-status et-admin-status--{{ $statusTone[$request->status->value] ?? 'neutral' }}">{{ __('service_requests.status_'.$request->status->value) }}</span>
+            @if($request->canBeRescheduled())<a class="et-btn et-btn--outline et-btn--small" href="{{ route('admin.service-requests.reschedule.edit', ['serviceRequest' => $request, 'return_to' => $returnTo]) }}" data-testid="request-reschedule">{{ $request->booking_slot_key ? __('service_requests.reschedule') : __('service_requests.assign_exact_time') }}</a>@endif
             <a class="et-btn et-btn--primary et-btn--small" href="{{ $editUrl }}" data-testid="request-edit">{{ __('service_requests.edit_full') }}</a>
             <a class="et-btn et-btn--outline et-btn--small" href="{{ route('admin.service-requests.show', ['request' => $request, 'return_to' => $returnTo]) }}">{{ __('service_requests.open_full_page') }}</a>
         </div>

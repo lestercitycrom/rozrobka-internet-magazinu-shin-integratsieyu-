@@ -16,7 +16,7 @@
                     <select id="promotion-media" name="media_asset_id" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
                         <option value="">{{ __('admin.homepage_promotions.no_media') }}</option>
                         @foreach ($assets as $asset)
-                            <option value="{{ $asset->id }}" @selected(old('media_asset_id', $promotion->media_asset_id) === $asset->id)>{{ $asset->original_name }}{{ $asset->alt_nb ? ' — '.$asset->alt_nb : '' }}</option>
+                            <option value="{{ $asset->id }}" @selected((string) old('media_asset_id', $promotion->media_asset_id) === (string) $asset->id)>{{ $asset->original_name }}{{ $asset->alt_nb ? ' — '.$asset->alt_nb : '' }}</option>
                         @endforeach
                     </select>
                     <span class="mt-2 block text-xs font-normal text-easytire-muted">{{ __('admin.homepage_promotions.media_hint') }}</span>

@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\ServicePageController;
 use App\Http\Controllers\Admin\ServiceRequestController;
 use App\Http\Controllers\Admin\ServiceRequestDayController;
 use App\Http\Controllers\Admin\ServiceRequestQuickActionController;
+use App\Http\Controllers\Admin\ServiceRequestRescheduleController;
 use App\Http\Controllers\Admin\StorefrontSettingsController;
 use App\Http\Controllers\Admin\SystemHealthController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::get('/service-requests/{request}', [ServiceRequestController::class, 'show'])->name('service-requests.show');
             Route::match(['put', 'patch'], '/service-requests/{request}', [ServiceRequestController::class, 'update'])->name('service-requests.update');
             Route::patch('/service-requests/{serviceRequest}/quick-action', ServiceRequestQuickActionController::class)->name('service-requests.quick-action');
+            Route::get('/service-requests/{serviceRequest}/reschedule', [ServiceRequestRescheduleController::class, 'edit'])->name('service-requests.reschedule.edit');
+            Route::post('/service-requests/{serviceRequest}/reschedule', [ServiceRequestRescheduleController::class, 'update'])->name('service-requests.reschedule.update');
             Route::get('/booking-calendar', [BookingCalendarController::class, 'index'])->name('booking-calendar.index');
         });
 

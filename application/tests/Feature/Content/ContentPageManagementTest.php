@@ -86,6 +86,17 @@ test('an administrator can create update and delete localized content pages', fu
     expect(ContentPage::query()->count())->toBe(0);
 });
 
+test('administrator cannot publish a content slug that has no public route', function (): void {
+    $admin = User::factory()->owner()->create();
+    $payload = contentPayload('faq');
+    $payload['publication_status'] = $payload['publication_status']->value;
+
+    $this->actingAs($admin)->post('/admin/content-pages', $payload)
+        ->assertSessionHasErrors('slug');
+
+    expect(ContentPage::query()->where('slug', 'faq')->exists())->toBeFalse();
+});
+
 test('content page seed publishes complete company, contact and legal pages without overwriting editor changes', function (): void {
     $this->seed(ContentPageSeeder::class);
     expect(ContentPage::query()->count())->toBe(4)

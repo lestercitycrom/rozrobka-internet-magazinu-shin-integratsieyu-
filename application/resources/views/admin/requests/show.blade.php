@@ -8,7 +8,10 @@
     <div class="max-w-6xl space-y-8">
         <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div><a class="inline-flex min-h-11 items-center underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ $backHref }}" data-testid="request-back">{{ filled($returnTo ?? null) ? __('operations_day.back_to_day') : __('service_requests.back') }}</a><p class="mt-5 text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">{{ __('service_requests.reference') }}</p><h1 class="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{{ $request->reference }}</h1></div>
-            <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.edit', $editParameters) }}" data-testid="request-edit">{{ __('service_requests.edit') }}</a>
+            <div class="flex flex-wrap gap-3">
+                @if($request->canBeRescheduled())<a class="et-btn et-btn--outline" href="{{ route('admin.service-requests.reschedule.edit', array_filter(['serviceRequest' => $request, 'return_to' => $returnTo])) }}" data-testid="request-reschedule">{{ $request->booking_slot_key ? __('service_requests.reschedule') : __('service_requests.assign_exact_time') }}</a>@endif
+                <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.edit', $editParameters) }}" data-testid="request-edit">{{ __('service_requests.edit') }}</a>
+            </div>
         </header>
         @if (session('status'))<p class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800" role="status">{{ session('status') }}</p>@endif
 

@@ -47,6 +47,7 @@ return [
         'no' => 'Nei',
         'actions' => 'Handlinger',
         'edit' => 'Rediger',
+        'read_only_notice' => 'Du kan se timeplanen og kapasiteten. Bare eieren kan endre arbeidsintervaller og stengte perioder.',
         'save' => 'Lagre',
         'delete' => 'Slett',
         'back' => 'Tilbake til timeplanen',

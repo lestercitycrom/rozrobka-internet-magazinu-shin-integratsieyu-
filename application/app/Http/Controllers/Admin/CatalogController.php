@@ -103,12 +103,20 @@ final class CatalogController
 
     public function publicationPreview(EligibleCatalogPublication $publication)
     {
-        return view('admin.catalog.publication-preview', ['candidates' => $publication->preview()]);
+        $candidates = $publication->preview();
+
+        return view('admin.catalog.publication-preview', [
+            'candidates' => $candidates,
+            'publicationSnapshot' => $publication->snapshot($candidates),
+        ]);
     }
 
-    public function publishEligible(EligibleCatalogPublication $publication): RedirectResponse
+    public function publishEligible(Request $request, EligibleCatalogPublication $publication): RedirectResponse
     {
-        $count = $publication->publish();
+        $validated = $request->validate([
+            'publication_snapshot' => ['required', 'string', 'size:64'],
+        ]);
+        $count = $publication->publish($validated['publication_snapshot']);
 
         return redirect()->route('admin.catalog.index')->with('status', trans_choice('catalog.bulk_published', $count, ['count' => $count]));
     }

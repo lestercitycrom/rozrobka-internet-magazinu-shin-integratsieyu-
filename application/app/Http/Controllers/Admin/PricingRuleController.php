@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Modules\Catalog\Enums\ProductType;
 use App\Modules\Catalog\Enums\TaxMode;
+use App\Modules\Catalog\Models\Brand;
+use App\Modules\Catalog\Models\SupplierSku;
 use App\Modules\Pricing\Enums\PricingRuleScope;
 use App\Modules\Pricing\Models\PricingRule;
 use Illuminate\Http\Request;
@@ -61,9 +64,12 @@ final class PricingRuleController
             $data['scope_key'] = null;
         } elseif (blank($data['scope_key'] ?? null)) {
             throw ValidationException::withMessages(['scope_key' => __('pricing.scope_key_required')]);
+        } else {
+            $data['scope_key'] = trim((string) $data['scope_key']);
         }
         $data['currency'] = strtoupper($data['currency']);
         $data['is_active'] = $request->boolean('is_active');
+        $this->assertScopeTargetExists($data);
         $data['markup_basis_points'] = $this->minor($data['markup_percent'], 100);
         $data['fixed_markup_minor'] = $this->minor($data['fixed_markup_nok'], 100);
         $data['rounding_increment_minor'] = $this->minor($data['rounding_nok'], 100);
@@ -82,6 +88,34 @@ final class PricingRuleController
         unset($data['markup_percent'],$data['fixed_markup_nok'],$data['rounding_nok']);
 
         return $data;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function assertScopeTargetExists(array &$data): void
+    {
+        if (! $data['is_active'] || $data['scope'] === PricingRuleScope::Global->value) {
+            return;
+        }
+
+        $key = (string) $data['scope_key'];
+        $exists = match ($data['scope']) {
+            PricingRuleScope::ProductType->value => ProductType::tryFrom(mb_strtolower($key)) !== null,
+            PricingRuleScope::Brand->value => Brand::query()->whereRaw('LOWER(canonical_name) = ?', [mb_strtolower($key)])->exists(),
+            PricingRuleScope::Sku->value => SupplierSku::query()->where('external_sku', $key)->exists(),
+            default => false,
+        };
+
+        if (! $exists) {
+            throw ValidationException::withMessages(['scope_key' => __('pricing.scope_key_invalid')]);
+        }
+
+        if ($data['scope'] === PricingRuleScope::ProductType->value) {
+            $data['scope_key'] = mb_strtolower($key);
+        } elseif ($data['scope'] === PricingRuleScope::Brand->value) {
+            $data['scope_key'] = Brand::query()
+                ->whereRaw('LOWER(canonical_name) = ?', [mb_strtolower($key)])
+                ->value('canonical_name');
+        }
     }
 
     private function minor(string $value, int $factor): int

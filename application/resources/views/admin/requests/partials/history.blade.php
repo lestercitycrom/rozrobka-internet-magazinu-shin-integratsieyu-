@@ -13,7 +13,7 @@
                             @php
                                 $labelKey = 'service_requests.history_field_'.$field;
                                 $label = Illuminate\Support\Facades\Lang::has($labelKey) ? __($labelKey) : Illuminate\Support\Str::headline($field);
-                                $safeFields = ['status', 'assigned_van', 'client_id', 'service_slug', 'fulfilment', 'preferred_date', 'preferred_window', 'booking_slot_key', 'booking_starts_at', 'booking_ends_at', 'dekkhotell_number', 'storage_number'];
+                                $safeFields = ['status', 'assigned_van', 'client_id', 'service_slug', 'fulfilment', 'preferred_date', 'preferred_window', 'preferred_period_starts_at', 'preferred_period_ends_at', 'booking_schedule_interval_id', 'booking_slot_key', 'booking_starts_at', 'booking_ends_at', 'dekkhotell_number', 'storage_number'];
                                 $hasSafeValues = in_array($field, $safeFields, true) && is_array($change) && array_key_exists('old', $change) && array_key_exists('new', $change);
                                 $formatHistoryValue = function (mixed $value) use ($field): string {
                                     if ($value === null || $value === '') return __('service_requests.history_empty_value');
@@ -21,6 +21,7 @@
                                     if ($field === 'assigned_van') return Illuminate\Support\Facades\Lang::has('service_requests.assigned_van_'.$value) ? __('service_requests.assigned_van_'.$value) : (string) $value;
                                     if ($field === 'fulfilment' && Illuminate\Support\Facades\Lang::has('service_requests.fulfilment_'.$value)) return __('service_requests.fulfilment_'.$value);
                                     if ($field === 'client_id') return '#'.(string) $value;
+                                    if ($field === 'booking_schedule_interval_id') return '#'.(string) $value;
                                     if (is_bool($value)) return $value ? __('service_requests.yes') : __('service_requests.no');
 
                                     return is_scalar($value) ? (string) $value : __('service_requests.history_changed_redacted');
