@@ -217,6 +217,8 @@ test('full edit conflict compares concurrent address and storage before an expli
     const baselineStorage = '00070-BASE';
     const concurrentAddress = 'Concurrentvegen 77, Tromsø';
     const concurrentStorage = '00077-A';
+    const baselineRimBand = 'r16-r18';
+    const concurrentRimBand = 'r19';
 
     await loginOperations(page);
     await ensureAdminLocale(page, 'nb');
@@ -227,6 +229,7 @@ test('full edit conflict compares concurrent address and storage before an expli
     await page.getByTestId('request-edit').click();
     await page.locator('[name="address"]').fill(baselineAddress);
     await page.locator('[name="vehicles[0][storage_number]"]').fill(baselineStorage);
+    await page.locator('[name="vehicles[0][rim_band]"]').selectOption(baselineRimBand);
     await page.getByTestId('request-save').click();
     await page.getByTestId('request-edit').click();
 
@@ -235,9 +238,11 @@ test('full edit conflict compares concurrent address and storage before an expli
     await staleTab.goto(editUrl);
     await expect(staleTab.locator('[name="address"]')).toHaveValue(baselineAddress);
     await expect(staleTab.locator('[name="vehicles[0][storage_number]"]')).toHaveValue(baselineStorage);
+    await expect(staleTab.locator('[name="vehicles[0][rim_band]"]')).toHaveValue(baselineRimBand);
 
     await page.locator('[name="address"]').fill(concurrentAddress);
     await page.locator('[name="vehicles[0][storage_number]"]').fill(concurrentStorage);
+    await page.locator('[name="vehicles[0][rim_band]"]').selectOption(concurrentRimBand);
     await page.getByTestId('request-save').click();
     await expect(page.locator('main')).toContainText(concurrentAddress);
     await expect(page.locator('main')).toContainText(concurrentStorage);
@@ -250,8 +255,11 @@ test('full edit conflict compares concurrent address and storage before an expli
     await expect(comparison).toContainText(baselineAddress);
     await expect(comparison).toContainText(concurrentStorage);
     await expect(comparison).toContainText(baselineStorage);
+    await expect(comparison).toContainText('R19 eller større');
+    await expect(comparison).toContainText('R16–R18');
     await expect(staleTab.locator('[name="address"]')).toHaveValue(baselineAddress);
     await expect(staleTab.locator('[name="vehicles[0][storage_number]"]')).toHaveValue(baselineStorage);
+    await expect(staleTab.locator('[name="vehicles[0][rim_band]"]')).toHaveValue(baselineRimBand);
     await expect(staleTab.locator('input[name="resolve_conflict"]')).not.toBeChecked();
 
     await staleTab.locator('input[name="resolve_conflict"]').check();
@@ -259,6 +267,8 @@ test('full edit conflict compares concurrent address and storage before an expli
     await expect(staleTab).toHaveURL(/\/admin\/service-requests(?:\/\d+|\?)/);
     await expect(staleTab.locator('main')).toContainText(baselineAddress);
     await expect(staleTab.locator('main')).toContainText(baselineStorage);
+    await staleTab.getByTestId('request-edit').click();
+    await expect(staleTab.locator('[name="vehicles[0][rim_band]"]')).toHaveValue(baselineRimBand);
     await staleTab.close();
 });
 

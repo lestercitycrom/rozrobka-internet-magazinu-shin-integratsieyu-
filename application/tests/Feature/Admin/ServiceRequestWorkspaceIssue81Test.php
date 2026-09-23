@@ -247,6 +247,57 @@ test('stale quick and full edits require an explicit reviewed version before ret
         ->and($request->fresh()->address)->toBe('Reviewed address from tab B');
 });
 
+test('full conflict comparison exposes each pricing-relevant draft difference', function (
+    string $field,
+    mixed $savedValue,
+    mixed $draftValue,
+    string $savedLabel,
+    string $draftLabel,
+): void {
+    $service = issue81Service();
+    $savedVehicle = [
+        'vehicle' => 'Comparison vehicle',
+        'registration_number' => 'COMPARE81',
+        'tire_size' => '225/45 R18',
+        'vehicle_type' => 'passenger',
+        'rim_band' => 'r16-r18',
+        'storage_plan' => 'renew',
+        'storage_number' => '00081-A',
+    ];
+    $draftVehicle = $savedVehicle;
+    $savedWheelCount = 4;
+    $draftWheelCount = 4;
+
+    if ($field === 'wheel_count') {
+        $savedWheelCount = (int) $savedValue;
+        $draftWheelCount = (int) $draftValue;
+    } else {
+        $savedVehicle[$field] = $savedValue;
+        $draftVehicle[$field] = $draftValue;
+    }
+
+    $request = issue81Request($service, [
+        'vehicles' => [$savedVehicle],
+        'wheel_count' => $savedWheelCount,
+    ])->fresh();
+
+    $view = $this->view('admin.requests.partials.full-conflict-comparison', [
+        'request' => $request,
+        'serviceOptions' => collect([$service]),
+        'clientOptions' => collect(),
+        'draftVehicles' => [$draftVehicle],
+        'draftWheelCount' => $draftWheelCount,
+    ]);
+
+    $view->assertSee($savedLabel)
+        ->assertSee($draftLabel)
+        ->assertSee('data-conflict-difference', false);
+})->with([
+    'vehicle type' => ['vehicle_type', 'passenger', 'six_wheels', 'Personbil', 'Varebil eller bobil med 6 hjul'],
+    'rim band' => ['rim_band', 'r16-r18', 'r19', 'R16–R18', 'R19 eller større'],
+    'wheel count' => ['wheel_count', 4, 2, '4', '2'],
+]);
+
 test('cancelled booked requests cannot be reactivated and list return context cannot escape the admin', function (): void {
     $service = issue81Service();
     $staff = User::factory()->operations()->create();

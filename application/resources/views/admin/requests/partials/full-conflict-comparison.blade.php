@@ -34,10 +34,18 @@
             $plan = (string) ($vehicle['storage_plan'] ?? 'none');
             $planKey = 'service_requests.storage_operation_'.$plan;
             $planTitle = Illuminate\Support\Facades\Lang::has($planKey) ? __($planKey) : $plan;
+            $vehicleType = (string) ($vehicle['vehicle_type'] ?? 'passenger');
+            $vehicleTypeKey = 'service_requests.form.'.$vehicleType;
+            $vehicleTypeTitle = Illuminate\Support\Facades\Lang::has($vehicleTypeKey) ? __($vehicleTypeKey) : $vehicleType;
+            $rimBand = (string) ($vehicle['rim_band'] ?? 'unknown');
+            $rimBandKey = 'service_requests.form.rim_'.$rimBand;
+            $rimBandTitle = Illuminate\Support\Facades\Lang::has($rimBandKey) ? __($rimBandKey) : $rimBand;
             $parts = [
                 $vehicle['vehicle'] ?? null,
                 $vehicle['registration_number'] ?? null,
                 $vehicle['tire_size'] ?? null,
+                __('service_requests.form.vehicle_type').': '.$vehicleTypeTitle,
+                __('service_requests.form.rim_band').': '.$rimBandTitle,
                 $planTitle,
                 filled($vehicle['storage_number'] ?? null)
                     ? __('service_requests.form.storage_number').': '.$vehicle['storage_number']
@@ -64,6 +72,7 @@
             : old('preferred_window', $request->preferred_window));
     $currentVehicles = $request->operationalVehicles();
     $draftClientId = old('client_id', $request->client_id);
+    $draftWheelCount = $draftWheelCount ?? old('wheel_count', $request->wheel_count);
     $rows = [
         [__('service_requests.linked_client'), $clientTitle($request->client_id), $clientTitle($draftClientId)],
         [__('service_requests.form.name'), $display($request->name), $display(old('name', $request->name))],
@@ -84,6 +93,7 @@
         [__('service_requests.form.vehicle'), $display($request->vehicle), $display(old('vehicle', $request->vehicle))],
         [__('service_requests.form.registration_number'), $display($request->registration_number), $display(old('registration_number', $request->registration_number))],
         [__('service_requests.form.tire_size'), $display($request->tire_size), $display(old('tire_size', $request->tire_size))],
+        [__('service_requests.wheel_count'), $display($request->wheel_count), $display($draftWheelCount)],
         [__('service_requests.form.storage_plan'), $translated('service_requests.form.storage_', \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::generalPlan((bool) $request->dekkhotell, $request->dekkhotell_already_stored)), $translated('service_requests.form.storage_', old('storage_plan', \App\Modules\ServiceBooking\ServiceRequestVehiclePayload::generalPlan((bool) $request->dekkhotell, $request->dekkhotell_already_stored)))],
         [__('service_requests.form.storage_number'), $display($request->dekkhotell_number), $display(old('storage_number', $request->dekkhotell_number))],
         [__('service_requests.additional_services'), $list($request->additional_services), $list(old('additional_services', $request->additional_services ?? []))],
