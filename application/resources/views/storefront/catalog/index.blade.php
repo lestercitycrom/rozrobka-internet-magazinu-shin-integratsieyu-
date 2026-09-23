@@ -63,10 +63,10 @@
     ];
     $activeFilters = collect($query)
         ->only(array_keys($filterLabels))
-        ->filter(fn ($value) => $value !== null && $value !== '' && $value !== '0');
+        ->filter(fn ($value) => $value !== null && $value !== '');
     $hasSearchFilters = $activeFilters->except('sort')->isNotEmpty();
-    $matchesValue = fn (string $field, string $value): bool => rtrim(rtrim(str_replace(',', '.', $query[$field] ?? ''), '0'), '.') === rtrim(rtrim($value, '0'), '.');
-    $formatOption = fn (string $value): string => rtrim(rtrim($value, '0'), '.');
+    $matchesValue = fn (string $field, string $value): bool => ($query[$field] ?? null) === $value;
+    $formatOption = fn (string $value): string => $value;
     $seasonLabel = fn (string $value): string => match (strtolower($value)) {
         'summer' => __('storefront.season_summer'),
         'winter' => __('storefront.season_winter'),
@@ -83,6 +83,9 @@
                 <p class="et-eyebrow">{{ __('pro.catalog.kicker') }}</p>
                 <h1 class="et-h1">{{ $heading }}</h1>
                 <p>{{ $description }}</p>
+                @if (\App\Modules\Catalog\CatalogDataMode::isSnapshot())
+                    <p class="et-help" data-testid="snapshot-catalog-notice">{{ __('storefront.snapshot_catalog_notice') }}</p>
+                @endif
             </div>
             <div class="et-v3-catalog-hero__note">
                 <x-icon name="check" :size="20" />
@@ -145,10 +148,10 @@
                         </div>
 
                         <form method="GET" action="{{ $baseUrl }}" data-testid="catalog-filters" data-catalog-live-form>
-                            @if (isset($query['sort']))<input type="hidden" name="sort" value="{{ $query['sort'] }}">@endif
+                            <input type="hidden" name="sort" value="{{ $query['sort'] ?? '' }}">
                             <div class="et-production-filter__body">
                                 <details class="et-filter-section et-filter-group et-filter-section--search" open data-testid="catalog-filter-group-search">
-                                    <summary class="et-filter-group__summary"><span><b>00</b>{{ __('catalog_correction.search_group') }}</span></summary>
+                                    <summary class="et-filter-group__summary"><span>{{ __('catalog_correction.search_group') }}</span></summary>
                                     <div class="et-filter-group__body">
                                     <div class="et-field">
                                         <label class="et-label" for="q">{{ __('storefront.search') }}</label>
@@ -170,7 +173,7 @@
 
                                 @if ($isTire)
                                     <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-dimensions">
-                                        <summary class="et-filter-group__summary"><span><b>01</b>{{ __('pro.catalog.dimensions') }}</span></summary>
+                                        <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.dimensions') }}</span></summary>
                                         <div class="et-filter-group__body">
                                         <div class="et-size-builder et-size-builder--tire">
                                         @foreach (['width' => 'widths', 'aspect' => 'aspects'] as $field => $optionKey)
@@ -197,7 +200,7 @@
                                     </details>
                                 @else
                                     <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-wheel-size">
-                                        <summary class="et-filter-group__summary"><span><b>01</b>{{ __('pro.catalog.wheel_size') }}</span></summary>
+                                        <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.wheel_size') }}</span></summary>
                                         <div class="et-filter-group__body">
                                         <div class="et-form-grid">
                                         @foreach (['width' => 'widths', 'diameter' => 'diameters'] as $field => $optionKey)
@@ -207,7 +210,7 @@
                                         </div>
                                     </details>
                                     <details class="et-filter-section et-filter-group" open data-testid="catalog-filter-group-fitment">
-                                        <summary class="et-filter-group__summary"><span><b>02</b>{{ __('pro.catalog.fitment') }}</span></summary>
+                                        <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.fitment') }}</span></summary>
                                         <div class="et-filter-group__body">
                                         <div class="et-form-grid">
                                         @foreach (['bolt_holes' => 'bolt_holes', 'pcd' => 'pcds'] as $field => $optionKey)
@@ -224,7 +227,7 @@
                                 @endif
 
                                 <details class="et-filter-section et-filter-group et-filter-availability" open data-testid="catalog-filter-group-availability">
-                                    <summary class="et-filter-group__summary"><span><b>{{ $isTire ? '02' : '03' }}</b>{{ __('pro.catalog.availability') }}</span></summary>
+                                    <summary class="et-filter-group__summary"><span>{{ __('pro.catalog.availability') }}</span></summary>
                                     <div class="et-filter-group__body">
                                         <label class="et-check et-filter-toggle"><input type="checkbox" name="in_stock" value="1" @checked(($query['in_stock'] ?? null) === '1')><span>{{ __('storefront.in_stock') }}</span></label>
                                         <label class="et-check et-filter-toggle"><input type="checkbox" name="has_image" value="1" @checked(($query['has_image'] ?? null) === '1')><span>{{ __('storefront.has_image') }}</span></label>
@@ -286,21 +289,21 @@
                                 {{ $filterLabels[$key] }}: {{ $displayValue }} <span aria-hidden="true">×</span><span class="sr-only">{{ __('storefront.remove_filter') }}</span>
                             </a>
                         @endforeach
-                        <a class="et-btn et-btn--link et-btn--small" href="{{ $baseUrl }}" data-catalog-live-link data-testid="catalog-filter-reset-all">{{ __('storefront.reset_all') }}</a>
+                        <a class="et-action-link et-action-link--small" href="{{ $baseUrl }}" data-catalog-live-link data-testid="catalog-filter-reset-all"><span class="et-action-link__label">{{ __('storefront.reset_all') }}</span><x-icon name="arrow" :size="16" /></a>
                     </div>
                 @endif
 
                 @if ($items->items === [])
                     <div class="et-empty-state" data-testid="catalog-empty" data-empty-reason="{{ $hasSearchFilters ? 'no-match' : 'no-published-products' }}">
                         <div>
-                            <div class="et-empty-state__icon" aria-hidden="true">⌕</div>
+                            <div class="et-empty-state__icon" aria-hidden="true"><x-icon name="search" :size="28" /></div>
                             <h2 class="et-h3 et-empty-state__heading">{{ $hasSearchFilters ? __('storefront.empty_title') : __('pro.catalog.empty_available_title') }}</h2>
                             <p>{{ $hasSearchFilters ? __('storefront.empty_text') : __('pro.catalog.empty_available_text') }}</p>
                             <div class="et-page-actions">
                                 @if ($hasSearchFilters)
                                     <a class="et-btn et-btn--primary" href="{{ $baseUrl }}" data-catalog-live-link>{{ __('storefront.reset_all') }}</a>
                                 @endif
-                                <a class="et-btn {{ $hasSearchFilters ? 'et-btn--outline' : 'et-btn--primary' }}" href="{{ route($routePrefix.'requests.create', 'dekk-felg-og-hjulpakker') }}">{{ __('pro.catalog.empty_help') }}</a>
+                                <a class="{{ $hasSearchFilters ? 'et-action-link' : 'et-btn et-btn--primary' }}" href="{{ route($routePrefix.'requests.create', 'dekk-felg-og-hjulpakker') }}"><span class="et-action-link__label">{{ __('pro.catalog.empty_help') }}</span><x-icon name="arrow" :size="16" /></a>
                             </div>
                         </div>
                     </div>

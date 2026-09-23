@@ -5,6 +5,30 @@ import { expectNoGlobalOverflow } from '../helpers';
 
 const qaDirectory = path.resolve(process.cwd(), 'storage/app/qa-design-v2/home-content');
 
+type BoundingBox = { x: number; y: number; width: number; height: number };
+
+function expectOverlayInsideCard(cardBox: BoundingBox | null, overlayBox: BoundingBox | null): void {
+    expect(cardBox).not.toBeNull();
+    expect(overlayBox).not.toBeNull();
+    if (!cardBox || !overlayBox) throw new Error('Expected the card and its overlay to have layout boxes.');
+
+    const leftInset = overlayBox.x - cardBox.x;
+    const topInset = overlayBox.y - cardBox.y;
+    const rightInset = cardBox.x + cardBox.width - (overlayBox.x + overlayBox.width);
+    const bottomInset = cardBox.y + cardBox.height - (overlayBox.y + overlayBox.height);
+    const widthDifference = cardBox.width - overlayBox.width;
+    const heightDifference = cardBox.height - overlayBox.height;
+
+    for (const inset of [leftInset, topInset, rightInset, bottomInset]) {
+        expect(inset).toBeGreaterThan(0);
+        expect(inset).toBeLessThanOrEqual(2);
+    }
+    expect(widthDifference).toBeGreaterThan(0);
+    expect(widthDifference).toBeLessThanOrEqual(2);
+    expect(heightDifference).toBeGreaterThan(0);
+    expect(heightDifference).toBeLessThanOrEqual(2);
+}
+
 async function routeHomepageMarkup(page: import('@playwright/test').Page, transform: (html: string) => string): Promise<void> {
     await page.route('**/', async (route) => {
         if (route.request().resourceType() !== 'document') {
@@ -156,7 +180,7 @@ test('no-JS mobile promotion fallback keeps every offer and full terms reachable
         await expect(cards).toHaveCount(4);
         await expect(section.locator('[data-promotion-carousel]')).not.toHaveClass(/is-enhanced/);
         await expect(section.locator('[data-promotion-controls]')).toBeHidden();
-        const disclosures = cards.locator('[data-promotion-disclosure]');
+        const disclosures = cards.locator('[data-promotion-card-overlay-open]');
         await expect(disclosures).toHaveCount(4);
         expect(await disclosures.evaluateAll((elements) => elements.every((element) => element.hidden))).toBe(true);
 
@@ -170,7 +194,7 @@ test('no-JS mobile promotion fallback keeps every offer and full terms reachable
             if (index > 0) expect(bounds.top).toBeGreaterThanOrEqual(geometry[index - 1].bottom);
         }
 
-        const fallbackDetails = cards.locator('[data-promotion-native-details]');
+        const fallbackDetails = cards.locator('[data-card-overlay-fallback]');
         await expect(fallbackDetails).toHaveCount(4);
         for (let index = 0; index < 4; index += 1) {
             const details = fallbackDetails.nth(index);
@@ -202,8 +226,8 @@ test('native promotion terms survive without the dialog API and later initialize
 
     await page.goto('/');
     const cards = page.getByTestId('homepage-promotion');
-    const nativeDetails = cards.locator('[data-promotion-native-details]');
-    const disclosures = cards.locator('[data-promotion-disclosure]');
+    const nativeDetails = cards.locator('[data-card-overlay-fallback]');
+    const disclosures = cards.locator('[data-promotion-card-overlay-open]');
     await expect(cards).toHaveCount(4);
     await expect(nativeDetails).toHaveCount(4);
     expect(await disclosures.evaluateAll((elements) => elements.every((element) => element.hidden))).toBe(true);
@@ -218,53 +242,65 @@ test('native promotion terms survive without the dialog API and later initialize
     expect(pageErrors).toEqual([]);
 });
 
-test('promotion preview floats outside the card and explicit dialog restores focus', async ({ page }) => {
+test('promotion details cover their card and restore focus without locking the page', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
 
-    const card = page.getByTestId('homepage-promotion').filter({ has: page.locator('[data-promotion-disclosure]') }).first();
-    const opener = card.locator('[data-promotion-disclosure]');
+    const card = page.getByTestId('homepage-promotion').filter({ has: page.locator('[data-promotion-card-overlay-open]') }).first();
+    const opener = card.locator('[data-promotion-card-overlay-open]');
     const dialogId = await opener.getAttribute('aria-controls');
     const dialog = page.locator(`#${dialogId}`);
-    await expect(card.locator('[data-promotion-preview]')).toHaveAttribute('aria-hidden', 'true');
     await expect(opener).toBeVisible();
-
-    expect(await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)').matches)).toBe(true);
-    await card.scrollIntoViewIfNeeded();
-    await page.mouse.move(0, 0);
-    await card.hover();
-    const floating = page.locator('body > .et-promotion-hover-preview');
-    await expect(floating).toHaveClass(/is-visible/, { timeout: 1_000 });
-    const [cardBox, floatingBox] = await Promise.all([card.boundingBox(), floating.boundingBox()]);
-    expect(cardBox).not.toBeNull();
-    expect(floatingBox).not.toBeNull();
-    const overlaps = floatingBox!.x < cardBox!.x + cardBox!.width
-        && floatingBox!.x + floatingBox!.width > cardBox!.x
-        && floatingBox!.y < cardBox!.y + cardBox!.height
-        && floatingBox!.y + floatingBox!.height > cardBox!.y;
-    expect(overlaps).toBe(false);
-    await expect(card.locator('h3')).toBeVisible();
-    await expect(card.locator('.et-v3-promotion__cta')).toBeVisible();
 
     await opener.click();
     await expect(dialog).toHaveJSProperty('open', true);
-    await expect(floating).toHaveCount(0);
-    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
-    await expect(dialog.locator('[data-promotion-dialog-close]')).toBeFocused();
+    const [cardBox, overlayBox] = await Promise.all([card.boundingBox(), dialog.boundingBox()]);
+    expectOverlayInsideCard(cardBox, overlayBox);
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+    await expect(dialog.locator('[data-card-overlay-close]')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveJSProperty('open', false);
     await expect(opener).toBeFocused();
     await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
 });
 
-test('dekkhotell dialog shares scroll lock, focus trap and opener restoration', async ({ page }) => {
+test('switching promotion overlays keeps focus on the newly opened card and freezes carousel controls', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    const opener = page.locator('[data-dekkhotell-dialog-open]');
-    const dialog = page.locator('[data-dekkhotell-dialog]');
+
+    const cards = page.getByTestId('homepage-promotion');
+    const firstOpener = cards.nth(0).locator('[data-promotion-card-overlay-open]');
+    const secondOpener = cards.nth(1).locator('[data-promotion-card-overlay-open]');
+    const firstOverlay = cards.nth(0).locator('[data-promotion-card-overlay]');
+    const secondOverlay = cards.nth(1).locator('[data-promotion-card-overlay]');
+    const previous = page.locator('[data-promotion-previous]');
+    const next = page.locator('[data-promotion-next]');
+
+    await firstOpener.click();
+    await expect(firstOverlay).toHaveJSProperty('open', true);
+    await expect(previous).toBeDisabled();
+    await expect(next).toBeDisabled();
+
+    await secondOpener.click();
+    await expect(firstOverlay).toHaveJSProperty('open', false);
+    await expect(secondOverlay).toHaveJSProperty('open', true);
+    await expect(secondOverlay.locator('[data-card-overlay-close]')).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(secondOpener).toBeFocused();
+    await expect(next).toBeEnabled();
+});
+
+test('dekkhotell details cover the video card, trap focus and restore the opener', async ({ page }) => {
+    await page.goto('/');
+    const opener = page.locator('[data-dekkhotell-card-overlay-open]');
+    const dialog = page.locator('[data-dekkhotell-card-overlay]');
     await opener.click();
     await expect(dialog).toHaveJSProperty('open', true);
-    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
-    await expect(dialog.locator('[data-dekkhotell-dialog-close]')).toBeFocused();
+    const [cardBox, overlayBox] = await Promise.all([dialog.locator('xpath=..').boundingBox(), dialog.boundingBox()]);
+    expectOverlayInsideCard(cardBox, overlayBox);
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+    await expect(dialog.locator('[data-card-overlay-close]')).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     expect(await dialog.evaluate((element) => element === document.activeElement || element.contains(document.activeElement))).toBe(true);
     await page.keyboard.press('Escape');
@@ -343,15 +379,15 @@ test('homepage video pauses under a modal and resumes its prior visible intent',
     const root = page.locator('[data-homepage-video]');
     const video = root.locator('[data-homepage-video-element]');
     const control = root.locator('[data-homepage-video-control]');
-    const dialog = page.locator('[data-dekkhotell-dialog]');
+    const dialog = page.locator('[data-dekkhotell-card-overlay]');
 
     await expect(control).toBeVisible();
     await root.scrollIntoViewIfNeeded();
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused), { timeout: 10_000 }).toBe(false);
-    await page.locator('[data-dekkhotell-dialog-open]').click();
+    await page.locator('[data-dekkhotell-card-overlay-open]').click();
     await expect(dialog).toHaveJSProperty('open', true);
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
-    await dialog.locator('[data-dekkhotell-dialog-close]').click();
+    await dialog.locator('[data-card-overlay-close]').click();
     await expect(dialog).toHaveJSProperty('open', false);
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(false);
 });
@@ -382,7 +418,7 @@ test('configured public workshop clip decodes a real portrait frame and keeps pl
     const root = page.locator('[data-homepage-video]');
     const video = root.locator('[data-homepage-video-element]');
     const control = root.locator('[data-homepage-video-control]');
-    const dialog = page.locator('[data-dekkhotell-dialog]');
+    const dialog = page.locator('[data-dekkhotell-card-overlay]');
     await root.scrollIntoViewIfNeeded();
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => ({
         width: element.videoWidth,
@@ -401,9 +437,9 @@ test('configured public workshop clip decodes a real portrait frame and keeps pl
     mkdirSync(qaDirectory, { recursive: true });
     await root.screenshot({ path: path.join(qaDirectory, 'configured-workshop-video-frame-540x960.png'), animations: 'disabled' });
 
-    await page.locator('[data-dekkhotell-dialog-open]').click();
+    await page.locator('[data-dekkhotell-card-overlay-open]').click();
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
-    await dialog.locator('[data-dekkhotell-dialog-close]').click();
+    await dialog.locator('[data-card-overlay-close]').click();
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(false);
 
     await page.emulateMedia({ reducedMotion: 'reduce' });

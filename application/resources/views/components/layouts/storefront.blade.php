@@ -13,6 +13,11 @@
 <head>
     @php
         $preview = app()->getLocale() === 'ru';
+        $configuredDesignProfile = config('storefront.design_profile', 'modern');
+        $designProfile = is_string($configuredDesignProfile) && in_array($configuredDesignProfile, ['modern', 'classic'], true)
+            ? $configuredDesignProfile
+            : 'modern';
+        $classicDesign = $designProfile === 'classic';
         $routePrefix = $preview ? 'storefront.preview.' : 'storefront.';
         $storefrontSettings = null;
         try {
@@ -85,8 +90,10 @@
         try {
             $cartCount = array_sum(app(\App\Modules\Cart\SessionCart::class)->items());
         } catch (\Throwable) {
-            $cartCount = 0;
+            $cartCount = null;
         }
+        $cartCountLabel = $cartCount ?? __('pro.nav.cart_count_unavailable');
+        $cartCountDisplay = $cartCount === null ? '–' : ($cartCount > 99 ? '99+' : (string) $cartCount);
 
         $contentSlug = request()->route('slug');
         $activeSection = $activeSection ?? match (true) {
@@ -183,6 +190,10 @@
             $navigationItems[] = ['section' => 'contact', 'href' => route($routePrefix.'content.show', 'kontakt'), 'label' => __('pro.nav.contact')];
         }
         $canonicalUrl = $canonical ?: ($preview ? preg_replace('#/ru(?=/|$)#', '', url()->current(), 1) : url()->current());
+        if ($classicDesign) {
+            $canonicalPath = parse_url($canonicalUrl, PHP_URL_PATH) ?: '/';
+            $canonicalUrl = rtrim((string) config('storefront.canonical_origin'), '/').($canonicalPath === '/' ? '' : $canonicalPath);
+        }
         $metaTitle = $title ?? __('storefront.site_title');
         $metaDescription = $description ?? __('storefront.site_description');
         $socialImage = $image ?: url('/brand/exterior.webp');
@@ -190,9 +201,9 @@
         $schemas = [[
             '@context' => 'https://schema.org',
             '@type' => 'AutoRepair',
-            '@id' => url('/').'#business',
+            '@id' => ($classicDesign ? rtrim((string) config('storefront.canonical_origin'), '/') : url('/')).'#business',
             'name' => 'EasyTire',
-            'url' => url('/'),
+            'url' => $classicDesign ? rtrim((string) config('storefront.canonical_origin'), '/').'/' : url('/'),
             'telephone' => $phoneDisplay,
             'email' => $contactEmail,
             'address' => [
@@ -219,7 +230,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $metaTitle }}">
     <meta name="twitter:description" content="{{ $metaDescription }}">
-    @if ($preview)
+    @if ($preview || $classicDesign)
         <meta name="robots" content="noindex,nofollow">
     @endif
     <link rel="canonical" href="{{ $canonicalUrl }}">
@@ -229,12 +240,17 @@
     <link rel="manifest" href="/site.webmanifest">
     <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-700-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ \Illuminate\Support\Facades\Vite::asset('node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
     @foreach ($schemas as $schema)
         <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
     @endforeach
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if ($classicDesign)
+        @vite(['resources/css/app.css', 'resources/css/storefront-classic.css', 'resources/js/app.js'])
+    @else
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
 </head>
-<body class="storefront" data-storefront-style="sharp">
+<body class="storefront" data-storefront-style="sharp" data-storefront-design="{{ $designProfile }}">
     @if ($preview)
         <div class="et-demo-banner"><strong>QA</strong><span>{{ __('pro.qa_preview') }}</span></div>
     @endif
@@ -291,23 +307,23 @@
             </nav>
 
             <div class="et-header__actions">
-                <div class="et-catalog-search" data-catalog-search>
-                    <button class="et-catalog-search__toggle min-h-11" type="button" aria-label="{{ __('pro.nav.catalog_search_open') }}" aria-expanded="false" aria-controls="header-catalog-search" data-catalog-search-toggle><x-icon name="search" :size="20" /></button>
-                    <div class="et-catalog-search__panel" id="header-catalog-search" aria-hidden="true" data-catalog-search-panel>
-                        <form method="GET" action="{{ route($routePrefix.'tires.index') }}">
-                            <label for="header-catalog-query">{{ __('pro.nav.catalog_search') }}</label>
+                <div class="et-site-search" data-site-search>
+                    <a class="et-site-search__toggle min-h-11" href="{{ route($routePrefix.'site-search.index') }}" aria-label="{{ __('customer_search.open') }}" aria-expanded="false" aria-controls="header-site-search" data-site-search-toggle><x-icon name="search" :size="20" /></a>
+                    <div class="et-site-search__panel" id="header-site-search" aria-hidden="true" data-site-search-panel>
+                        <form class="et-site-search-form" method="GET" action="{{ route($routePrefix.'site-search.index') }}" role="search">
+                            <label for="header-site-query">{{ __('customer_search.label') }}</label>
                             <div>
-                                <input id="header-catalog-query" name="q" type="search" autocomplete="off" placeholder="{{ __('pro.nav.catalog_search_placeholder') }}" list="header-catalog-suggestions" aria-controls="header-catalog-suggestions" data-catalog-autocomplete="{{ route($routePrefix.'tires.suggestions') }}">
-                                <button type="submit">{{ __('pro.nav.catalog_search_submit') }}</button>
+                                <input id="header-site-query" name="q" type="search" maxlength="100" autocomplete="off" placeholder="{{ __('customer_search.placeholder') }}">
+                                <button type="submit">{{ __('customer_search.submit') }}</button>
                             </div>
-                            <datalist id="header-catalog-suggestions"></datalist>
+                            <a class="et-site-search__store-link" href="{{ route($routePrefix.'store.index') }}"><span>{{ __('customer_search.tyre_search_link') }}</span><x-icon name="arrow" :size="15" /></a>
                         </form>
                     </div>
                 </div>
                 <a class="et-btn et-btn--primary min-h-11" href="tel:{{ $phoneHref }}" data-testid="header-call"><x-icon name="phone" :size="17" />{{ __('pro.nav.call') }}</a>
-                <a class="et-cart min-h-11" href="{{ route($routePrefix.'cart.index') }}" aria-label="{{ __('pro.nav.cart') }}: {{ $cartCount }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="header-cart">
+                <a class="et-cart min-h-11" href="{{ route($routePrefix.'cart.index') }}" aria-label="{{ __('pro.nav.cart') }}: {{ $cartCountLabel }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="header-cart">
                     <x-icon name="cart" :size="22" />
-                    <span class="et-cart__count">{{ $cartCount }}</span>
+                    <span class="et-cart__count" aria-hidden="true">{{ $cartCountDisplay }}</span>
                 </a>
                 <button class="et-menu-button min-h-11" type="button" aria-label="{{ __('pro.menu_open') }}" aria-expanded="false" data-menu-toggle><span></span></button>
             </div>
@@ -318,28 +334,28 @@
                 @foreach ($navigationItems as $navigationItem)
                     @if (! empty($navigationItem['groups']))
                         <details class="et-mobile-menu__group">
-                            <summary class="min-h-11" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</summary>
+                            <summary class="min-h-11" @if($activeSection === $navigationItem['section']) aria-current="page" @endif><span class="et-mobile-menu__label">{{ $navigationItem['label'] }}</span></summary>
                             <div class="et-mobile-menu__children">
-                                <a class="min-h-11" href="{{ $navigationItem['href'] }}">{{ __('pro.nav.all_services') }}</a>
+                                <a class="min-h-11" href="{{ $navigationItem['href'] }}"><span class="et-mobile-menu__label">{{ __('pro.nav.all_services') }}</span></a>
                                 @foreach ($navigationItem['groups'] as $group)
                                     <p>{{ $group['label'] }}</p>
                                     @foreach ($group['children'] as $child)
-                                        <a class="min-h-11" href="{{ $child['href'] }}" @if($child['active']) aria-current="page" @endif>{{ $child['label'] }}</a>
+                                        <a class="min-h-11" href="{{ $child['href'] }}" @if($child['active']) aria-current="page" @endif><span class="et-mobile-menu__label">{{ $child['label'] }}</span></a>
                                     @endforeach
                                 @endforeach
                             </div>
                         </details>
                     @else
-                        <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif>{{ $navigationItem['label'] }}</a>
+                        <a class="min-h-11" href="{{ $navigationItem['href'] }}" @if($activeSection === $navigationItem['section']) aria-current="page" @endif><span class="et-mobile-menu__label">{{ $navigationItem['label'] }}</span></a>
                     @endif
                 @endforeach
-                <form class="et-mobile-menu__search" method="GET" action="{{ route($routePrefix.'tires.index') }}">
-                    <label for="mobile-catalog-query">{{ __('pro.nav.catalog_search') }}</label>
-                    <div><input id="mobile-catalog-query" name="q" type="search" autocomplete="off" placeholder="{{ __('pro.nav.catalog_search_placeholder') }}" list="mobile-catalog-suggestions" aria-controls="mobile-catalog-suggestions" data-catalog-autocomplete="{{ route($routePrefix.'tires.suggestions') }}"><button type="submit" aria-label="{{ __('pro.nav.catalog_search_submit') }}"><x-icon name="search" :size="19" /></button></div>
-                    <datalist id="mobile-catalog-suggestions"></datalist>
+                <form class="et-site-search-form et-site-search-form--mobile" method="GET" action="{{ route($routePrefix.'site-search.index') }}" role="search">
+                    <label for="mobile-site-query">{{ __('customer_search.label') }}</label>
+                    <div><input id="mobile-site-query" name="q" type="search" maxlength="100" autocomplete="off" placeholder="{{ __('customer_search.placeholder') }}"><button type="submit" aria-label="{{ __('customer_search.submit') }}"><x-icon name="search" :size="19" /></button></div>
+                    <a class="et-site-search__store-link" href="{{ route($routePrefix.'store.index') }}"><span>{{ __('customer_search.tyre_search_link') }}</span><x-icon name="arrow" :size="15" /></a>
                 </form>
-                <a class="min-h-11" href="tel:{{ $phoneHref }}" data-testid="mobile-call-link">{{ __('pro.nav.call') }}</a>
-                <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link">{{ __('pro.nav.cart') }} ({{ $cartCount }})</a>
+                <a class="min-h-11" href="tel:{{ $phoneHref }}" data-testid="mobile-call-link"><span class="et-mobile-menu__label">{{ __('pro.nav.call') }}</span></a>
+                <a class="min-h-11" href="{{ route($routePrefix.'cart.index') }}" @if($activeSection === 'cart') aria-current="page" @endif data-testid="mobile-cart-link"><span class="et-mobile-menu__label">{{ __('pro.nav.cart') }} ({{ $cartCountLabel }})</span></a>
             </nav>
         </div>
     </header>

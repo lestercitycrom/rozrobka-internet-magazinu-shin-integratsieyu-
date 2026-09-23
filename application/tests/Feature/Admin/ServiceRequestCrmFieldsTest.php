@@ -82,12 +82,12 @@ test('an operator can explicitly remove storage without leaving a false dekkhote
     $request = ServiceRequest::query()->sole();
     expect($request->dekkhotell)->toBeTrue();
 
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), issue59AdminPayload($service, [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, issue59AdminPayload($service, [
         'operational_form' => '1', 'booking_mode' => 'period', 'preferred_date' => $date,
         'preferred_time_start' => '09:00', 'preferred_time_end' => '11:00',
         'car_count' => 1, 'vehicle' => 'Tesla Model Y', 'vehicle_type' => 'passenger',
         'rim_band' => 'r19', 'storage_plan' => 'none', 'registration_number' => 'EV12345',
-    ]))->assertRedirect();
+    ])))->assertRedirect();
 
     $request->refresh();
     expect($request->dekkhotell)->toBeFalse()
@@ -117,16 +117,16 @@ test('legacy storage without registration remains editable but a new storage sel
         'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'renew',
         'registration_number' => null, 'name' => 'Legacy contact updated',
     ]);
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $legacy), $unchangedStorage)
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $legacy), versionedServiceRequestPayload($legacy, $unchangedStorage))
         ->assertRedirect();
     $legacy->refresh();
     expect($legacy->name)->toBe('Legacy contact updated')
         ->and($legacy->vehicles[0]['storage_plan'])->toBe('renew')
         ->and($legacy->vehicles[0]['registration_number'])->toBeNull();
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $legacy), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $legacy), versionedServiceRequestPayload($legacy, [
         ...$unchangedStorage, 'storage_plan' => 'new', 'registration_number' => null,
-    ])->assertSessionHasErrors('registration_number');
+    ]))->assertSessionHasErrors('registration_number');
     expect($legacy->refresh()->vehicles[0]['storage_plan'])->toBe('renew');
 });
 
@@ -162,15 +162,15 @@ test('general tyre storage records both explicit already-stored answers and pres
         ->assertOk()->assertSee('data-general-storage-plan', false)
         ->assertSee('name="storage_plan"', false);
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         ...$payload, 'registration_number' => 'ZH12345', 'dekkhotell_already_stored' => '0',
-    ])->assertRedirect();
+    ]))->assertRedirect();
     expect($request->refresh()->dekkhotell_already_stored)->toBeFalse();
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         ...$payload, 'registration_number' => 'ZH12345', 'dekkhotell' => null,
         'dekkhotell_already_stored' => '0',
-    ])->assertRedirect();
+    ]))->assertRedirect();
     expect($request->refresh()->dekkhotell)->toBeFalse()
         ->and($request->dekkhotell_already_stored)->toBeNull()
         ->and($request->registration_number)->toBe('ZH12345');
@@ -186,9 +186,9 @@ test('general tyre storage records both explicit already-stored answers and pres
         ->assertOk()->assertSee('Hva skal skje med hjulsettet?')->assertSee('Ikke registrert i den tidligere forespørselen');
     $this->actingAs($operations)->get(route('admin.service-requests.edit', $legacy))
         ->assertOk()->assertSee('Ikke registrert i den tidligere forespørselen');
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $legacy), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $legacy), versionedServiceRequestPayload($legacy, [
         'name' => 'Legacy contact corrected', 'phone' => '91111111', 'status' => 'contacted',
-    ])->assertRedirect();
+    ]))->assertRedirect();
     expect($legacy->refresh()->dekkhotell)->toBeTrue()
         ->and($legacy->dekkhotell_already_stored)->toBeNull();
 });
@@ -213,16 +213,16 @@ test('partial storage change for a stored second vehicle requires its registrati
         'storage_plan_2' => 'renew',
     ];
 
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), $partial)
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, $partial))
         ->assertSessionHasErrors('registration_number_2');
     $request->refresh();
     expect($request->vehicles)->toHaveCount(2)
         ->and($request->vehicles[1]['storage_plan'])->toBe('none')
         ->and($request->vehicles[1]['registration_number'])->toBeNull();
 
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         ...$partial, 'registration_number_2' => 'EV54321',
-    ])->assertRedirect();
+    ]))->assertRedirect();
     $request->refresh();
     expect($request->vehicles)->toHaveCount(2)
         ->and($request->vehicles[1]['storage_plan'])->toBe('renew')
@@ -247,9 +247,9 @@ test('period validation is atomic while a historical contact-only edit stays pos
     ]))->assertRedirect();
     $request = ServiceRequest::query()->sole();
 
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'Corrected only', 'phone' => '91111111', 'status' => 'contacted',
-    ])->assertRedirect();
+    ]))->assertRedirect();
 
     $request->refresh();
     expect($request->name)->toBe('Corrected only')
@@ -279,10 +279,10 @@ test('public and admin period transitions require a date and public seasonal man
         'name' => 'Admin period transition', 'phone' => '90000000', 'phone_normalized' => '4790000000',
         'status' => ServiceRequestStatus::New,
     ]);
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $existing), issue59AdminPayload($generic, [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $existing), versionedServiceRequestPayload($existing, issue59AdminPayload($generic, [
         'operational_form' => '1', 'booking_mode' => 'period', 'preferred_time_start' => '09:00',
         'preferred_time_end' => '11:00',
-    ]))->assertSessionHasErrors('preferred_date');
+    ])))->assertSessionHasErrors('preferred_date');
 
     expect(ServiceRequest::query()->count())->toBe(1)
         ->and($existing->refresh()->preferred_period_starts_at)->toBeNull()
@@ -352,9 +352,9 @@ test('manual van assignment is mobile-only filterable and survives contact edits
     $request = ServiceRequest::query()->sole();
     expect($request->assigned_van)->toBe('van_1');
 
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'Contact only', 'phone' => '91111111', 'status' => 'contacted',
-    ])->assertRedirect();
+    ]))->assertRedirect();
     expect($request->refresh()->assigned_van)->toBe('van_1');
 
     $this->actingAs($operations)->get(route('admin.service-requests.index', ['assigned_van' => 'van_1']))
@@ -362,14 +362,14 @@ test('manual van assignment is mobile-only filterable and survives contact edits
     $this->actingAs($operations)->get(route('admin.service-requests.index', ['assigned_van' => 'van_2']))
         ->assertOk()->assertDontSee($request->reference);
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), issue59AdminPayload($service, [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, issue59AdminPayload($service, [
         'operational_form' => '1', 'fulfilment' => 'workshop', 'name' => 'Contact only', 'phone' => '91111111',
-    ]))->assertRedirect();
+    ])))->assertRedirect();
     expect($request->refresh()->assigned_van)->toBeNull();
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), issue59AdminPayload($service, [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, issue59AdminPayload($service, [
         'operational_form' => '1', 'fulfilment' => 'workshop', 'assigned_van' => 'van_2',
-    ]))->assertSessionHasErrors('assigned_van');
+    ])))->assertSessionHasErrors('assigned_van');
 });
 
 test('public requests cannot forge an internal van assignment', function (): void {

@@ -76,3 +76,27 @@ test('calendar administration is localized for Russian QA and forbidden to custo
         ->assertOk()->assertSee('Расписание и вместимость')->assertSee('Рабочие часы не заданы');
     $this->actingAs($customer)->get('/admin/booking-calendar')->assertForbidden();
 });
+
+test('operations sees a read only booking calendar without owner actions', function (): void {
+    $owner = User::factory()->owner()->create();
+    $operations = User::factory()->operations()->create();
+
+    $this->actingAs($owner)->post('/admin/booking-calendar/intervals', [
+        'weekday' => 1,
+        'location' => 'workshop',
+        'start_time' => '09:00',
+        'end_time' => '12:00',
+        'slot_minutes' => 30,
+        'capacity' => 2,
+        'is_active' => '1',
+    ])->assertRedirect();
+
+    $interval = BookingScheduleInterval::query()->firstOrFail();
+    $response = $this->actingAs($operations)->get('/admin/booking-calendar');
+
+    $response->assertOk()
+        ->assertSee('data-testid="booking-calendar-read-only"', false)
+        ->assertDontSee(route('admin.booking-calendar.intervals.create'), false)
+        ->assertDontSee(route('admin.booking-calendar.intervals.edit', $interval), false)
+        ->assertDontSee(route('admin.booking-calendar.blackouts.create'), false);
+});

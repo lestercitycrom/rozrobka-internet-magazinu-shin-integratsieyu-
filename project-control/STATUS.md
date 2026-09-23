@@ -1,6 +1,20 @@
 # EasyTire status
 
-Updated: 2026-09-16 — Issue #19 final catalogue handoff
+Updated: 2026-09-16 — Issue #79 autonomous public design finishing
+
+## Current work
+
+Owner requested a complete visual finishing pass after reviewing the live product, empty catalogue and seasonal form. Active branch `codex/autonomous-design-finish` starts at exact live `1326895e93b5f6bea67426100c282172be869564` (PR #78), preserving its snapshot and filter contracts. See [current scope](CURRENT_TASK.md) and [Issue #79](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/79). The entries below are predecessor evidence; they are not a claim about the new design preview.
+
+Active work is [#77](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/77): finish filter consistency and adjacent browser checks. Branch `codex/catalog-filter-consistency` preserves active snapshot/design release `d6938f318052c58842bb66a610ea1bf7a2542943`. The previous #75/#76 snapshot activation is complete and its exact-head CI is fully green (run35051457360). Accepted `main` remains `3b8ae190512dd897cd0133aa3c2771d0e890196c`; older main is not the deployment source.
+
+Latest pre-filter runtime read-back: 1,082 real tyres, 491 real wheels, one sandbox item; 3,168 real price rows and 16,128 stock rows unchanged, including observation hashes. Queue/scheduler running, no queued/failed jobs or in-flight imports; 30 complete backups and no partials. Snapshot prices display only, real commerce remains closed. Designer predecessor `274a1610829f87ed8521f65d62ac0789fc86ec28` retained. The #77 PR will record its own fresh release evidence, not reuse this read-back as proof of a later deployment.
+
+Read-only supplier investigation: three succeeded XLSX receipts; real price/stock observations remain August 12, with zero fresh real commercial prices. Queue/scheduler operate, but this does not prove regular supplier delivery. SFTP password/chroot/list access was checked locally; actual NDI upload and recurring-import acceptance remain open. See [connection runbook](../docs/operations/NDI_DELIVERY_CONNECTION.md).
+
+Snapshot explicitly pauses file imports and offers historical calculated prices for display only; ordinary-product purchase remains closed. No refreshed timestamps, fake stock or changed commercial gates are part of this work. The former Issue #19 closeout below is historical, not an active second task.
+
+Catalogue handoff complete: [PM5690161142](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5690161142). UI Polish starts from accepted main `3b8ae190512dd897cd0133aa3c2771d0e890196c` on `codex/ui-polish-v1`; the observed staging `95a1b76086e2d51e1aebb01911bc83a683bf78ea` has the same tree. See [current scope](CURRENT_TASK.md) and [report](../evidence/ui-polish/REPORT.md). The dated observations below remain history, not claims about a later preview.
 
 ## Accepted baseline
 
@@ -22,7 +36,7 @@ Updated: 2026-09-16 — Issue #19 final catalogue handoff
 
 These are dated accepted observations, not a substitute for a fresh runtime read-back before a later deployment.
 
-## Active closeout
+## Historical Issue #19 closeout (not current work)
 
 - Issue [#19](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19) is reopened only for the bounded final handoff in [comment 5689353790](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/19#issuecomment-5689353790).
 - Branch: `codex/issue-19-final-handoff`, created directly from the accepted baseline above.

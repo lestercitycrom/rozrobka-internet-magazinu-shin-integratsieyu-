@@ -2,7 +2,7 @@
     $prefix = app()->getLocale() === 'ru' ? 'storefront.preview.' : 'storefront.';
 @endphp
 
-<x-layouts.storefront :title="__('public_pricing.title')" :description="__('public_pricing.description')" :canonical="route('storefront.pricing.index')" active-section="services">
+<x-layouts.storefront :title="__('public_pricing.title')" :description="__('public_pricing.description')" :canonical="route('storefront.pricing.index')" active-section="pricing">
     <section class="et-page-hero et-page-hero--light et-page-hero--transactional">
         <div class="et-container et-page-hero__inner">
             <div class="et-page-hero__content">
@@ -28,20 +28,20 @@
                                 default => [route($prefix.'services.index'), __('public_pricing.cta')],
                             };
                         @endphp
-                        <article class="et-public-price-group">
+                        <article class="et-public-price-group" id="price-category-{{ \Illuminate\Support\Str::slug($category->category_code) }}">
                             <header class="et-public-price-group__head">
                                 <p class="et-eyebrow">{{ __('public_pricing.category_kicker') }}</p>
                                 <h2 class="et-h3">{{ $category->localized('category_title', app()->getLocale()) }}</h2>
                             </header>
                             <div class="et-public-price-group__rows">
                                 @foreach ($categoryPrices as $price)
-                                    <div class="et-public-price-row" data-testid="public-price-row">
+                                    <div class="et-public-price-row" id="price-{{ \Illuminate\Support\Str::slug($price->code) }}" data-testid="public-price-row">
                                         <div>
                                             <strong>{{ $price->localized('title', app()->getLocale()) }}</strong>
                                             @if ($description = $price->localized('description', app()->getLocale()))
                                                 <p>{{ $description }}</p>
                                             @endif
-                                            <a class="et-btn et-btn--link et-btn--small" href="{{ $categoryAction[0] }}">{{ $categoryAction[1] }}</a>
+                                            <a class="et-action-link et-action-link--small" href="{{ $categoryAction[0] }}"><span class="et-action-link__label">{{ $categoryAction[1] }}</span><x-icon name="arrow" :size="16" /></a>
                                         </div>
                                         <strong class="et-public-price-row__amount"><x-storefront-money :minor="$price->price_minor" :currency="$price->currency" :decimals="0" /></strong>
                                     </div>

@@ -32,8 +32,9 @@ return [
         'prices' => 'Priser',
         'offers' => 'Aktuelle tilbud',
         'about' => 'Om Oss',
-        'contact' => 'Kontakt',
+        'contact' => 'Kontakt Oss',
         'cart' => 'Handlekurv',
+        'cart_count_unavailable' => 'antall utilgjengelig',
         'booking' => 'Bestill dekkskift',
         'call' => 'Ring oss',
         'catalog_search' => 'Søk i dekkatalogen',
@@ -179,6 +180,7 @@ return [
         'social_facebook' => 'Facebook',
         'social_instagram' => 'Instagram',
         'social_snapchat' => 'Snapchat',
+        'social_link_pending' => 'Lenke kommer snart',
     ],
     'catalog' => [
         'empty_available_title' => 'Ingen produkter å vise akkurat nå',

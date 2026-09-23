@@ -679,6 +679,7 @@ const initPromotionCarousels = () => {
         if (!track || cards.length < 2 || !previous || !next) return;
 
         let firstVisible = 0;
+        let cardOverlayOpen = false;
         let resizeFrame = 0;
         let touchStart = null;
         const visibleCount = () => {
@@ -701,8 +702,8 @@ const initPromotionCarousels = () => {
             if (controls) controls.hidden = !hasOverflow;
             previous.hidden = !hasOverflow;
             next.hidden = !hasOverflow;
-            previous.disabled = firstVisible === 0;
-            next.disabled = firstVisible === maximum;
+            previous.disabled = cardOverlayOpen || firstVisible === 0;
+            next.disabled = cardOverlayOpen || firstVisible === maximum;
 
             cards.forEach((card, index) => {
                 const visibleNow = index >= firstVisible && index < firstVisible + visible;
@@ -722,6 +723,7 @@ const initPromotionCarousels = () => {
         };
 
         const move = (direction) => {
+            if (cardOverlayOpen) return;
             const maximum = Math.max(0, cards.length - Math.min(cards.length, visibleCount()));
             firstVisible = Math.min(maximum, Math.max(0, firstVisible + direction));
             render();
@@ -730,6 +732,10 @@ const initPromotionCarousels = () => {
         previous.addEventListener('click', () => move(-1));
         next.addEventListener('click', () => move(1));
         track.addEventListener('touchstart', (event) => {
+            if (cardOverlayOpen) {
+                touchStart = null;
+                return;
+            }
             if (event.touches.length !== 1) {
                 touchStart = null;
                 return;
@@ -753,6 +759,13 @@ const initPromotionCarousels = () => {
             window.cancelAnimationFrame(resizeFrame);
             resizeFrame = window.requestAnimationFrame(render);
         }, { passive: true });
+        window.addEventListener('et:card-overlay-statechange', (event) => {
+            const overlayRoot = event.detail?.root;
+            if (!(overlayRoot instanceof Element) || !root.contains(overlayRoot)) return;
+            // A previous dialog's close event may arrive after the next one opened.
+            cardOverlayOpen = root.querySelector('[data-card-overlay][open]') !== null;
+            render();
+        });
 
         root.classList.add('is-enhanced');
         render();
@@ -906,6 +919,8 @@ const initHomepageVideos = () => {
         let visible = false;
         let userPaused = false;
         let manualPlayOverride = false;
+        let cardOverlayOpen = false;
+        let resumeAfterCardOverlay = false;
         let loadStarted = Boolean(video.currentSrc || video.getAttribute('src'));
         let failed = false;
         let playRequest = 0;
@@ -940,6 +955,7 @@ const initHomepageVideos = () => {
             && document.visibilityState === 'visible'
             && (!reducedMotion.matches || manualPlayOverride)
             && !userPaused
+            && !cardOverlayOpen
             && modalScrollLockDepth === 0
             && !failed;
         const updatePlayback = () => {
@@ -999,6 +1015,22 @@ const initHomepageVideos = () => {
         reducedMotion.addEventListener('change', () => {
             manualPlayOverride = false;
             updatePlayback();
+        });
+        window.addEventListener('et:card-overlay-statechange', (event) => {
+            const overlayRoot = event.detail?.root;
+            if (!(overlayRoot instanceof Element) || !overlayRoot.contains(root)) return;
+            if (event.detail?.open === true) {
+                resumeAfterCardOverlay = !video.paused;
+                cardOverlayOpen = true;
+                updatePlayback();
+                return;
+            }
+
+            cardOverlayOpen = false;
+            const shouldResume = resumeAfterCardOverlay;
+            resumeAfterCardOverlay = false;
+            if (shouldResume) updatePlayback();
+            else render();
         });
         window.addEventListener('et:modal-statechange', updatePlayback);
         document.addEventListener('visibilitychange', updatePlayback);

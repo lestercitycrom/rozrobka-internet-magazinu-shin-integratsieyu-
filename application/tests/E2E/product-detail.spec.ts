@@ -133,12 +133,22 @@ test('sandbox quantity, explanation and purchase actions use separate readable r
     await expect(russianNote).toContainText('без реальной поставки');
     const russianNoteTypography = await russianNote.locator('small').evaluate((element) => {
         const style = getComputedStyle(element);
+        const bounds = element.getBoundingClientRect();
+        const container = element.closest('[data-testid="integration-test-quantity-note"]')!.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(element);
         return {
-            lineHeight: Number.parseFloat(style.lineHeight),
-            height: element.getBoundingClientRect().height,
+            fontSize: Number.parseFloat(style.fontSize),
+            lineCount: new Set(Array.from(range.getClientRects(), rect => Math.round(rect.top))).size,
+            contained: bounds.left >= container.left - 1 && bounds.right <= container.right + 1
+                && bounds.top >= container.top - 1 && bounds.bottom <= container.bottom + 1,
         };
     });
-    expect(russianNoteTypography.height).toBeLessThanOrEqual(russianNoteTypography.lineHeight * 4.2);
+    // An inline small uses its parent's line boxes, which can be taller than
+    // its computed line-height. Count rendered lines, not height / line-height.
+    expect(russianNoteTypography.fontSize).toBeGreaterThanOrEqual(14);
+    expect(russianNoteTypography.contained).toBe(true);
+    expect(russianNoteTypography.lineCount).toBeLessThanOrEqual(4);
     await expectNoGlobalOverflow(page);
 
     await page.goto('/produkter/000205550016');

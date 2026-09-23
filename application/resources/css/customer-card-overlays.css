@@ -1,0 +1,100 @@
+.et-card-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--v3-line);
+    padding: 0;
+    background: #fff;
+    color: var(--v3-ink);
+    overscroll-behavior: contain;
+}
+
+.et-card-overlay[open] {
+    display: block;
+}
+
+.et-card-overlay__surface {
+    min-height: 100%;
+    max-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    scrollbar-gutter: stable;
+}
+
+.et-card-overlay__close {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: grid;
+    width: 48px;
+    height: 48px;
+    float: right;
+    margin: 0 0 .75rem 1rem;
+    place-items: center;
+    border: 1px solid var(--v3-line);
+    background: #fff;
+    color: var(--v3-ink);
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.et-card-overlay__surface h2 {
+    margin: .75rem 0 0;
+    font-family: var(--et-font-display);
+    font-size: clamp(1.5rem, 3vw, var(--et-type-h2));
+    font-weight: 600;
+    line-height: var(--et-type-section-leading);
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.et-card-overlay__surface > p:not(.et-eyebrow) {
+    margin: 1.25rem 0 0;
+    color: var(--v3-muted);
+    font-size: var(--et-type-body);
+    line-height: var(--et-type-body-leading);
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.et-card-overlay__surface > .et-btn {
+    margin-top: 1.5rem;
+}
+
+.is-card-overlay-open > :not(.et-card-overlay) {
+    pointer-events: none;
+}
+
+.storefront[data-storefront-design='classic'] .et-card-overlay {
+    border-radius: 2px;
+}
+
+.storefront[data-storefront-design='classic'] .et-card-overlay__surface h2 {
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1;
+}
+
+@media (max-width: 479px) {
+    .et-card-overlay__surface {
+        padding: 1rem;
+    }
+
+    .et-card-overlay__surface h2 {
+        font-size: 1.4rem;
+    }
+
+    .et-card-overlay__surface > p:not(.et-eyebrow) {
+        margin-top: .85rem;
+        font-size: .95rem;
+    }
+}

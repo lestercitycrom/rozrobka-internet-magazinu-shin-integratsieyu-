@@ -43,7 +43,7 @@ test('Norwegian header and footer follow the exact customer navigation contract'
     $html = $response->getContent();
 
     expect(issue45Texts($html, "//nav[@data-testid='desktop-navigation']/*[self::a] | //nav[@data-testid='desktop-navigation']/div[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__item ')]/span[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__trigger ')]/a"))->toBe([
-        'Tjenester', 'Dekk og felger', 'Priser', 'Aktuelle tilbud', 'Om Oss', 'Kontakt',
+        'Tjenester', 'Dekk og felger', 'Priser', 'Aktuelle tilbud', 'Om Oss', 'Kontakt Oss',
     ])->and(issue45Texts($html, "//div[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__mega-grid ')]//h2"))->toBe(['Dekk og hjul', 'Biltjenester'])
         ->and(issue45Texts($html, "//div[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__mega-grid ')]/section[1]//li/a"))->toBe([
             'Dekkskift hjemme hos deg', 'Dekkskift på verksted', 'Dekkhotell', 'Montering og balansering',
@@ -72,7 +72,8 @@ test('Norwegian header and footer follow the exact customer navigation contract'
         ->assertSee('EasyTask AS · Org.nr. 934 860 187 MVA')
         ->assertDontSee('et-footer__logo-lockup', false)
         ->assertSee('src="/brand/easytire-logo.png"', false)
-        ->assertSee('data-catalog-autocomplete="'.route('storefront.tires.suggestions').'"', false);
+        ->assertSee('action="'.route('storefront.site-search.index').'"', false)
+        ->assertSee('href="'.route('storefront.site-search.index').'"', false);
 
     expect(file_exists(public_path('dokumenter/angreskjema-easytire.pdf')))->toBeTrue();
 });
@@ -83,7 +84,7 @@ test('hidden Russian projection keeps navigation and footer parity', function ()
     $html = $response->getContent();
 
     expect(issue45Texts($html, "//nav[@data-testid='desktop-navigation']/*[self::a] | //nav[@data-testid='desktop-navigation']/div[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__item ')]/span[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__trigger ')]/a"))->toBe([
-        'Услуги', 'Шины и диски', 'Цены', 'Актуальные предложения', 'О нас', 'Контакты',
+        'Услуги', 'Шины и диски', 'Цены', 'Актуальные предложения', 'О нас', 'Связаться с нами',
     ])->and(issue45Texts($html, "//div[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__mega-grid ')]//h2"))->toBe(['Шины и колёса', 'Автомобильные услуги'])
         ->and(issue45Texts($html, "//div[contains(concat(' ', normalize-space(@class), ' '), ' et-nav__mega-grid ')]/section[1]//li/a"))->toBe([
             'Замена колёс у вас', 'Замена колёс в мастерской', 'Хранение колёс', 'Монтаж и балансировка',
@@ -109,7 +110,8 @@ test('hidden Russian projection keeps navigation and footer parity', function ()
         ->assertSee('data-testid="footer-booking"', false)
         ->assertSee('href="'.route('storefront.preview.home').'#aktuelle-tilbud"', false)
         ->assertSee('href="'.route('storefront.preview.pricing.index').'"', false)
-        ->assertSee('data-catalog-autocomplete="'.route('storefront.preview.tires.suggestions').'"', false)
+        ->assertSee('action="'.route('storefront.preview.site-search.index').'"', false)
+        ->assertSee('href="'.route('storefront.preview.site-search.index').'"', false)
         ->assertSee('Русская QA-проекция');
 });
 
@@ -168,4 +170,18 @@ test('missing standalone car-care pages have real distinct service-directory des
         ->assertSee('id="service-lockout"', false)
         ->assertSee('href="'.route('storefront.content.show', 'kontakt').'"', false)
         ->assertSee('href="tel:+4793958270"', false);
+});
+
+test('prices is the only current header destination in both public languages', function (): void {
+    config()->set('storefront.ru_preview_enabled', true);
+
+    foreach (['' => 'Priser', '/ru' => 'Цены'] as $prefix => $label) {
+        $html = $this->get($prefix.'/priser')->assertOk()->getContent();
+
+        foreach (['desktop-navigation', 'mobile-navigation'] as $navigation) {
+            $selector = "//*[@data-testid='{$navigation}']//*[@aria-current='page']";
+            expect(issue45Texts($html, $selector))->toBe([$label])
+                ->and(issue45Hrefs($html, $selector))->toBe([url($prefix.'/priser')]);
+        }
+    }
 });

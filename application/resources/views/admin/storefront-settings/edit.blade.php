@@ -70,7 +70,7 @@
                     <select id="hero_media_asset_id" name="hero_media_asset_id" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
                         <option value="">{{ __('storefront_settings.default_hero_media') }}</option>
                         @foreach ($assets as $asset)
-                            <option value="{{ $asset->id }}" @selected(old('hero_media_asset_id', $settings->hero_media_asset_id) === $asset->id)>{{ $asset->original_name }}{{ $asset->alt_nb ? ' — '.$asset->alt_nb : '' }}</option>
+                            <option value="{{ $asset->id }}" @selected((string) old('hero_media_asset_id', $settings->hero_media_asset_id) === (string) $asset->id)>{{ $asset->original_name }}{{ $asset->alt_nb ? ' — '.$asset->alt_nb : '' }}</option>
                         @endforeach
                     </select>
                     <span class="mt-2 block text-xs font-normal text-easytire-muted">{{ __('storefront_settings.hero_media_hint') }}</span>
@@ -155,7 +155,7 @@
                                 <select id="{{ $field }}" name="{{ $field }}" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
                                     <option value="">{{ __('storefront_settings.default_section_media') }}</option>
                                     @foreach ($assets as $asset)
-                                        <option value="{{ $asset->id }}" @selected(old($field, $settings->{$field}) === $asset->id)>{{ $asset->original_name }}{{ $asset->alt_nb ? ' — '.$asset->alt_nb : '' }}</option>
+                                        <option value="{{ $asset->id }}" @selected((string) old($field, $settings->{$field}) === (string) $asset->id)>{{ $asset->original_name }}{{ $asset->alt_nb ? ' — '.$asset->alt_nb : '' }}</option>
                                     @endforeach
                                 </select>
                             </label>
@@ -164,7 +164,7 @@
                             <select id="hotel_video_media_asset_id" name="hotel_video_media_asset_id" class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3">
                                 <option value="">{{ __('storefront_settings.default_hotel_video_media') }}</option>
                                 @foreach ($videoAssets as $asset)
-                                    <option value="{{ $asset->id }}" @selected(old('hotel_video_media_asset_id', $settings->hotel_video_media_asset_id) === $asset->id)>{{ $asset->original_name }}</option>
+                                    <option value="{{ $asset->id }}" @selected((string) old('hotel_video_media_asset_id', $settings->hotel_video_media_asset_id) === (string) $asset->id)>{{ $asset->original_name }}</option>
                                 @endforeach
                             </select>
                         </label>

@@ -12,7 +12,7 @@ const phpBinary = process.env.PLAYWRIGHT_PHP_BINARY ?? 'php';
 const phpTempDirectory = (process.env.PLAYWRIGHT_PHP_TEMP_DIR ?? `${process.cwd()}/storage/framework/playwright-tmp`).replace(/\\/g, '/');
 const phpTempDirectoryForPhp = phpTempDirectory.replace(/'/g, "\\'");
 const phpCommand = `"${phpBinary}" -d "sys_temp_dir=${phpTempDirectory}" -d "upload_tmp_dir=${phpTempDirectory}"`;
-const buyerSpecs = /(?:^|[\\/])(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|design-foundation|header-navigation|home-hero-process|homepage-feedback|homepage-content-collections|homepage-composition|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts$/;
+const buyerSpecs = /(?:^|[\\/])(buyer\.smoke|checkout\.smoke|cart-composition|catalog-live|catalog-mobile-layout|customer-navigation|design-foundation|ui-polish|header-navigation|home-hero-process|homepage-feedback|homepage-content-collections|homepage-composition|interaction-shell|product-detail|service-composition|service-requests|map-overflow|project-content|storefront-style)\.spec\.ts$/;
 
 export default defineConfig({
     testDir: './tests/E2E',

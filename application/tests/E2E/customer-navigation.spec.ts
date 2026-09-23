@@ -204,24 +204,25 @@ test('mobile navigation preserves service group order and returns focus after Es
     await expect(navigation).toBeHidden();
 });
 
-test('catalogue search is explicitly bounded and submits the existing q contract', async ({ page }, testInfo) => {
+test('site search submits the shared content query and keeps the tyre finder available', async ({ page }, testInfo) => {
     const prefix = localePrefix(testInfo.project.name);
     await page.goto(prefix || '/');
     const mobile = isMobileProject(testInfo.project.name);
     if (mobile) await page.locator('[data-menu-toggle]').click();
-    const search = mobile ? page.locator('.et-mobile-menu__search') : page.locator('[data-catalog-search]');
-    if (!mobile) await search.locator('[data-catalog-search-toggle]').click();
+    const search = mobile ? page.locator('.et-site-search-form--mobile') : page.locator('[data-site-search]');
+    if (!mobile) await search.locator('[data-site-search-toggle]').click();
     const query = search.locator('input[name="q"]');
     if (!mobile) await expect(query).toBeFocused();
-    const suggestionsResponse = page.waitForResponse((response) => response.url().includes('/dekk/suggestions?q=Demo'));
-    await query.fill('Demo');
-    await expect((await suggestionsResponse).status()).toBe(200);
-    await expect(search.locator('datalist option').first()).toHaveAttribute('value', /.+/);
+    await query.fill('oil change');
     await search.getByRole('button', { name: /Søk|Найти/, exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`${prefix || ''}/dekk\\?q=Demo$`));
+    await expect.poll(() => new URL(page.url()).pathname).toBe(`${prefix}/sok` || '/sok');
+    expect(new URL(page.url()).searchParams.get('q')).toBe('oil change');
+    await expect(page.getByTestId('site-search-results')).toBeVisible();
+    await expect(page.getByTestId('site-search-results').getByRole('link', { name: /Oljeskift|Замена масла/ }).first()).toBeVisible();
+    await expect(page.getByTestId('quick-finder')).toBeVisible();
 });
 
-test('catalogue search keeps exactly one token-backed keyboard focus treatment', async ({ page }, testInfo) => {
+test('site search keeps exactly one token-backed keyboard focus treatment', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic NB/RU desktop/mobile matrix is sufficient');
     test.setTimeout(90_000);
     const capture = process.env.CAPTURE_ISSUE_45 === '1';
@@ -240,20 +241,23 @@ test('catalogue search keeps exactly one token-backed keyboard focus treatment',
 
             let searchRoot;
             if (mode.name === 'desktop') {
-                const opener = page.locator('[data-catalog-search-toggle]');
+                const opener = page.locator('[data-site-search-toggle]');
                 await tabTo(page, opener);
                 await page.keyboard.press('Enter');
-                searchRoot = page.locator('[data-catalog-search]');
+                searchRoot = page.locator('[data-site-search]');
             } else {
                 const menuToggle = page.locator('[data-menu-toggle]');
                 await tabTo(page, menuToggle);
                 await page.keyboard.press('Enter');
-                searchRoot = page.locator('.et-mobile-menu__search');
+                searchRoot = page.locator('.et-site-search-form--mobile');
             }
 
             const input = searchRoot.locator('input[name="q"]');
             const submit = searchRoot.locator('button[type="submit"]');
             const wrapper = input.locator('..');
+            // The desktop panel returns focus after its existing opening transition.
+            // Wait for that handoff before starting another keyboard traversal.
+            if (mode.name === 'desktop') await expect(input).toBeFocused();
             await tabTo(page, input);
             const initialGeometry = await wrapper.boundingBox();
 
@@ -290,6 +294,11 @@ test('catalogue search keeps exactly one token-backed keyboard focus treatment',
             await page.keyboard.press('Shift+Tab');
             await assertSingleFocus(input);
             await expectNoGlobalOverflow(page);
+            if (mode.name === 'desktop') {
+                await page.keyboard.press('Escape');
+                await expect(page.locator('[data-site-search-toggle]')).toBeFocused();
+                await expect(page.locator('[data-site-search-panel]')).toHaveAttribute('aria-hidden', 'true');
+            }
         }
     }
 });

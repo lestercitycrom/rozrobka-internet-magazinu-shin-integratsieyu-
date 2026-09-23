@@ -141,14 +141,14 @@ test('staff can edit contact and unconfirmed details while booked capacity data 
         'consent_at' => now(),
     ]);
 
-    $this->actingAs($staff)->put('/admin/service-requests/'.$request->id, [
+    $this->actingAs($staff)->put('/admin/service-requests/'.$request->id, versionedServiceRequestPayload($request, [
         'name' => 'Updated Name', 'phone' => '91111111', 'status' => 'contacted', 'admin_note' => 'Ringte kunden',
-    ])->assertRedirect(route('admin.service-requests.show', $request));
+    ]))->assertRedirect(route('admin.service-requests.show', $request));
     expect($request->fresh()->name)->toBe('Updated Name')
         ->and($request->fresh()->phone_normalized)->toBe('4791111111')
         ->and($request->fresh()->booking_slot_key)->toBe('b1-1-20990101-0900');
 
-    $this->actingAs($staff)->put('/admin/service-requests/'.$request->id, [
+    $this->actingAs($staff)->put('/admin/service-requests/'.$request->id, versionedServiceRequestPayload($request, [
         'service_slug' => $service->slug,
         'fulfilment' => 'mobile',
         'booking_mode' => 'exact',
@@ -156,13 +156,13 @@ test('staff can edit contact and unconfirmed details while booked capacity data 
         'name' => 'Updated Name',
         'phone' => '91111111',
         'status' => 'contacted',
-    ])->assertSessionHasErrors('fulfilment');
+    ]))->assertSessionHasErrors('fulfilment');
     expect($request->fresh()->fulfilment)->toBe('workshop');
 
     $request->update(['status' => ServiceRequestStatus::Cancelled]);
-    $this->actingAs($staff)->put('/admin/service-requests/'.$request->id, [
+    $this->actingAs($staff)->put('/admin/service-requests/'.$request->id, versionedServiceRequestPayload($request, [
         'name' => 'Updated Name', 'phone' => '91111111', 'status' => 'new',
-    ])->assertSessionHasErrors('status');
+    ]))->assertSessionHasErrors('status');
     expect($request->fresh()->status)->toBe(ServiceRequestStatus::Cancelled);
 });
 
@@ -233,7 +233,7 @@ test('full seasonal edit preserves vehicle sizes historical date and quote snaps
         ->assertSee('name="vehicles[1][tire_size]" value="235/55 R18"', false)
         ->assertSee('min="'.$pastDate.'"', false);
 
-    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'operational_form' => 1,
         'service_slug' => $service->slug,
         'fulfilment' => 'workshop',
@@ -259,7 +259,7 @@ test('full seasonal edit preserves vehicle sizes historical date and quote snaps
         'note' => 'Original note',
         'admin_note' => 'Contact corrected only',
         'status' => 'contacted',
-    ])->assertRedirect(route('admin.service-requests.show', $request));
+    ]))->assertRedirect(route('admin.service-requests.show', $request));
 
     $request->refresh();
     expect($request->name)->toBe('Updated Name')
@@ -270,7 +270,7 @@ test('full seasonal edit preserves vehicle sizes historical date and quote snaps
         ->and($request->quote_max_minor)->toBe(123400)
         ->and($request->quote_currency)->toBe('NOK');
 
-    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'operational_form' => 1,
         'service_slug' => $service->slug,
         'fulfilment' => 'workshop',
@@ -288,7 +288,7 @@ test('full seasonal edit preserves vehicle sizes historical date and quote snaps
         'note' => 'Original note',
         'admin_note' => 'Browser-shaped contact correction',
         'status' => 'contacted',
-    ])->assertRedirect(route('admin.service-requests.show', $request));
+    ]))->assertRedirect(route('admin.service-requests.show', $request));
 
     $request->refresh();
     expect($request->vehicles)->toBe($vehicles)
@@ -316,13 +316,13 @@ test('partial seasonal edit with unchanged service preserves omitted multi vehic
         'status' => ServiceRequestStatus::New, 'consent_at' => now(),
     ]);
 
-    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'service_slug' => $service->slug,
         'fulfilment' => 'workshop',
         'booking_mode' => 'manual',
         'name' => 'Corrected Name',
         'phone' => '90000000',
-    ])->assertRedirect(route('admin.service-requests.show', $request));
+    ]))->assertRedirect(route('admin.service-requests.show', $request));
 
     $request->refresh();
     expect($request->name)->toBe('Corrected Name')
@@ -345,14 +345,14 @@ test('partial service change to battery requires the resulting battery contract'
         'status' => ServiceRequestStatus::New,
     ]);
 
-    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'service_slug' => $battery->slug,
         'fulfilment' => 'workshop',
         'booking_mode' => 'manual',
         'note' => 'Bilen starter tregt.',
         'name' => 'Battery Customer',
         'phone' => '90000000',
-    ])->assertSessionHasErrors(['preferred_date', 'registration_number']);
+    ]))->assertSessionHasErrors(['preferred_date', 'registration_number']);
 
     expect($request->fresh()->service_slug)->toBe($generic->slug)
         ->and($request->fresh()->preferred_date)->toBeNull()
@@ -369,13 +369,13 @@ test('partial fulfilment change to mobile requires a new address', function (): 
         'status' => ServiceRequestStatus::New,
     ]);
 
-    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'service_slug' => $service->slug,
         'fulfilment' => 'mobile',
         'booking_mode' => 'manual',
         'name' => 'Mobile Customer',
         'phone' => '90000000',
-    ])->assertSessionHasErrors('address');
+    ]))->assertSessionHasErrors('address');
 
     expect($request->fresh()->fulfilment)->toBe('workshop')
         ->and($request->fresh()->address)->toBeNull();
@@ -399,24 +399,24 @@ test('full seasonal edit preserves an omitted single vehicle size but a genuine 
         'status' => ServiceRequestStatus::New, 'consent_at' => now(),
     ]);
 
-    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'operational_form' => 1, 'service_slug' => $seasonal->slug, 'fulfilment' => 'workshop',
         'booking_mode' => 'manual', 'preferred_date' => $request->preferred_date->format('Y-m-d'),
         'preferred_window' => 'Ettermiddag', 'car_count' => 1, 'vehicle' => 'Tesla Model Y',
         'registration_number' => 'EV12345', 'vehicle_type' => 'passenger', 'rim_band' => 'r19',
         'storage_plan' => 'renew', 'name' => 'Contact corrected', 'phone' => '90000000', 'status' => 'contacted',
-    ])->assertRedirect();
+    ]))->assertRedirect();
 
     $request->refresh();
     expect($request->tire_size)->toBe('255/45 R19')
         ->and($request->vehicles[0]['tire_size'])->toBe('255/45 R19')
         ->and($request->quote_min_minor)->toBe(123400);
 
-    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'operational_form' => 1, 'service_slug' => $generic->slug, 'fulfilment' => 'workshop',
         'booking_mode' => 'manual', 'preferred_date' => $request->preferred_date->format('Y-m-d'),
         'preferred_window' => 'Ettermiddag', 'name' => 'Service changed', 'phone' => '90000000', 'status' => 'contacted',
-    ])->assertRedirect();
+    ]))->assertRedirect();
 
     $request->refresh();
     expect($request->service_slug)->toBe($generic->slug)
@@ -437,14 +437,14 @@ test('booked mobile request validates the effective stored fulfilment before cle
         'address' => 'Ringvegen 200', 'status' => ServiceRequestStatus::New, 'consent_at' => now(),
     ]);
 
-    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'Mobile Customer', 'phone' => '90000000', 'address' => '', 'status' => 'contacted',
-    ])->assertSessionHasErrors('address');
+    ]))->assertSessionHasErrors('address');
     expect($request->fresh()->address)->toBe('Ringvegen 200');
 
-    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'Updated Mobile Customer', 'phone' => '91111111', 'address' => 'Ringvegen 202', 'status' => 'contacted',
-    ])->assertRedirect();
+    ]))->assertRedirect();
     expect($request->fresh()->address)->toBe('Ringvegen 202')
         ->and($request->fresh()->name)->toBe('Updated Mobile Customer');
 });
@@ -485,9 +485,9 @@ test('manual intake accepts only requestable services and keeps system provenanc
         'service_slug' => $draft->slug, 'fulfilment' => 'workshop', 'name' => 'Historical customer',
         'phone' => '92222222', 'phone_normalized' => '4792222222', 'status' => ServiceRequestStatus::New, 'consent_at' => now(),
     ]);
-    $this->actingAs($staff)->patch(route('admin.service-requests.update', $historical), [
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $historical), versionedServiceRequestPayload($historical, [
         'name' => 'Historical corrected', 'phone' => '92222222', 'status' => 'contacted',
-    ])->assertRedirect();
+    ]))->assertRedirect();
     expect($historical->fresh()->name)->toBe('Historical corrected')
         ->and($historical->fresh()->service_slug)->toBe($draft->slug);
 });
@@ -552,9 +552,9 @@ test('non owner roles are denied sensitive writes before controller mutation', f
     $this->actingAs($operations)->put('/admin/catalog/publication', [])->assertForbidden();
     $this->actingAs($operations)->post('/admin/pricing-rules', [])->assertForbidden();
     $this->actingAs($operations)->put('/admin/storefront-settings', [])->assertForbidden();
-    $this->actingAs($editor)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($editor)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'Leaked edit', 'phone' => '94444444', 'status' => 'closed',
-    ])->assertForbidden();
+    ]))->assertForbidden();
 
     expect($service->fresh()->title_nb)->not->toBe('Forbidden')
         ->and(BookingScheduleInterval::query()->find($interval->id))->not->toBeNull()

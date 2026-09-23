@@ -37,28 +37,10 @@ bare="$tmp/repo.git"
 root="$tmp/root"
 mkdir -p \
     "$work/application/resources/css" \
-    "$work/application/resources/views/admin/booking-calendar" \
-    "$work/application/resources/views/admin/clients" \
-    "$work/application/resources/views/admin/partials" \
-    "$work/application/resources/views/admin/requests" \
     "$work/application/storage" \
     "$work/application/bootstrap/cache" \
     "$work/application/public"
 printf 'base\n' > "$work/application/resources/css/storefront-v3.css"
-printf 'base\n' > "$work/application/resources/css/admin-system.css"
-for file in \
-    application/resources/views/admin/booking-calendar/blackout-form.blade.php \
-    application/resources/views/admin/booking-calendar/interval-form.blade.php \
-    application/resources/views/admin/clients/form.blade.php \
-    application/resources/views/admin/clients/show.blade.php \
-    application/resources/views/admin/partials/navigation.blade.php \
-    application/resources/views/admin/requests/day.blade.php \
-    application/resources/views/admin/requests/form.blade.php \
-    application/resources/views/admin/requests/index.blade.php \
-    application/resources/views/admin/requests/show.blade.php; do
-    printf 'base\n' > "$work/$file"
-done
-printf 'base\n' > "$work/application/vite.config.js"
 printf '*\n!.gitignore\n' > "$work/application/storage/.gitignore"
 printf '*\n!.gitignore\n' > "$work/application/bootstrap/cache/.gitignore"
 git -C "$work" init -q
@@ -67,22 +49,12 @@ git -C "$work" config user.name 'Preview safety'
 git -C "$work" add .
 git -C "$work" commit -qm base
 base="$(git -C "$work" rev-parse HEAD)"
-git -C "$work" switch -qc codex/issue-44-design-v2
+git -C "$work" commit --allow-empty -qm accepted-runtime
+accepted_runtime="$(git -C "$work" rev-parse HEAD)"
+[[ "$(git -C "$work" rev-parse "$base^{tree}")" == "$(git -C "$work" rev-parse "$accepted_runtime^{tree}")" ]] \
+    || fail 'mock accepted base and runtime do not have identical trees'
+git -C "$work" switch -qc codex/ui-polish-v1 "$base"
 printf 'allowed\n' >> "$work/application/resources/css/storefront-v3.css"
-printf 'allowed\n' >> "$work/application/resources/css/admin-system.css"
-for file in \
-    application/resources/views/admin/booking-calendar/blackout-form.blade.php \
-    application/resources/views/admin/booking-calendar/interval-form.blade.php \
-    application/resources/views/admin/clients/form.blade.php \
-    application/resources/views/admin/clients/show.blade.php \
-    application/resources/views/admin/partials/navigation.blade.php \
-    application/resources/views/admin/requests/day.blade.php \
-    application/resources/views/admin/requests/form.blade.php \
-    application/resources/views/admin/requests/index.blade.php \
-    application/resources/views/admin/requests/show.blade.php; do
-    printf 'allowed\n' >> "$work/$file"
-done
-printf 'allowed\n' >> "$work/application/vite.config.js"
 git -C "$work" commit -qam allowed
 allowed="$(git -C "$work" rev-parse HEAD)"
 git clone -q --bare "$work" "$bare"
@@ -90,7 +62,7 @@ git clone -q --bare "$work" "$bare"
 previous="$root/releases/accepted"
 shared="$root/shared/storage"
 mkdir -p "$previous/application/storage" "$previous/application/public/storage" "$shared/app/public"
-printf '%s\n' "$base" > "$previous/REVISION"
+printf '%s\n' "$accepted_runtime" > "$previous/REVISION"
 printf 'APP_ENV=staging\n' > "$previous/application/.env"
 mkdir -p "$root/current"
 
@@ -120,26 +92,50 @@ sed \
     -e "s|readonly ROOT='/var/www/staging-easytire.bethub.fun'|readonly ROOT='$root'|" \
     -e "s|readonly REPO='/srv/git/shop-ndi.git'|readonly REPO='$bare'|" \
     -e "s|readonly BASE='[0-9a-f]*'|readonly BASE='$base'|" \
-    -e "s|readonly EXPECTED_CURRENT='[0-9a-f]*'|readonly EXPECTED_CURRENT='$base'|" \
+    -e "s|readonly EXPECTED_CURRENT='[0-9a-f]*'|readonly EXPECTED_CURRENT='$accepted_runtime'|" \
+    -e "s|readonly ACCEPTED_RUNTIME='[0-9a-f]*'|readonly ACCEPTED_RUNTIME='$accepted_runtime'|" \
     "$script" > "$runner"
 chmod +x "$runner"
 
-git --git-dir="$bare" update-ref refs/heads/codex/issue-44-design-v2 "$allowed"
+git --git-dir="$bare" update-ref refs/heads/codex/ui-polish-v1 "$allowed"
 PATH="$mockbin:$PATH" "$runner" "$allowed" --check > "$tmp/allowed.out"
 grep -Fq 'Checks passed' "$tmp/allowed.out" || fail 'allowed presentation candidate did not pass --check'
 [[ ! -s "$tmp/runtime-command.log" ]] || fail '--check invoked a forbidden runtime command'
 
-mkdir -p "$work/application/app"
-printf '<?php // forbidden backend change\n' > "$work/application/app/Unsafe.php"
-git -C "$work" add application/app/Unsafe.php
-git -C "$work" commit -qm forbidden-backend
-forbidden="$(git -C "$work" rev-parse HEAD)"
-git -C "$work" push -q "$bare" "$forbidden":refs/heads/codex/issue-44-design-v2
-if PATH="$mockbin:$PATH" "$runner" "$forbidden" --check > "$tmp/forbidden.out" 2>&1; then
-    fail 'backend change unexpectedly passed the presentation-only guard'
+mismatch_runner="$tmp/preview-staging-tree-mismatch.sh"
+sed "s|readonly ACCEPTED_RUNTIME='$accepted_runtime'|readonly ACCEPTED_RUNTIME='$allowed'|" "$runner" > "$mismatch_runner"
+chmod +x "$mismatch_runner"
+if PATH="$mockbin:$PATH" "$mismatch_runner" "$allowed" --check > "$tmp/tree-mismatch.out" 2>&1; then
+    fail 'accepted base/runtime tree mismatch unexpectedly passed'
 fi
-grep -Fq 'Outside approved preview scope: application/app/Unsafe.php' "$tmp/forbidden.out" \
-    || fail 'backend guard failed without the expected fail-closed reason'
-[[ ! -s "$tmp/runtime-command.log" ]] || fail 'guard failure invoked a forbidden runtime command'
+grep -Fq 'Accepted main and accepted runtime no longer have identical trees.' "$tmp/tree-mismatch.out" \
+    || fail 'accepted-tree guard failed without the expected fail-closed reason'
+[[ ! -s "$tmp/runtime-command.log" ]] || fail 'accepted-tree guard failure invoked a forbidden runtime command'
 
-pass 'syntax, exact-path scope, command boundary, isolated-cache ordering, atomic pointer hooks and fail-closed guards passed'
+assert_forbidden() {
+    local label="$1"
+    local path="$2"
+    local branch="mock-forbidden-$label"
+    local output="$tmp/forbidden-$label.out"
+    git -C "$work" switch -qC "$branch" "$allowed"
+    mkdir -p "$(dirname "$work/$path")"
+    printf 'forbidden\n' > "$work/$path"
+    git -C "$work" add "$path"
+    git -C "$work" commit -qm "forbidden-$label"
+    local forbidden
+    forbidden="$(git -C "$work" rev-parse HEAD)"
+    git -C "$work" push -q "$bare" "$forbidden:refs/heads/mock-$label"
+    git --git-dir="$bare" update-ref refs/heads/codex/ui-polish-v1 "$forbidden"
+    if PATH="$mockbin:$PATH" "$runner" "$forbidden" --check > "$output" 2>&1; then
+        fail "$label change unexpectedly passed the storefront-only guard"
+    fi
+    grep -Fq "Outside approved preview scope: $path" "$output" \
+        || fail "$label guard failed without the expected fail-closed reason"
+    [[ ! -s "$tmp/runtime-command.log" ]] || fail "$label guard failure invoked a forbidden runtime command"
+}
+
+assert_forbidden admin application/resources/views/admin/requests/index.blade.php
+assert_forbidden backend application/app/Unsafe.php
+assert_forbidden js application/resources/js/ui.js
+
+pass 'syntax, accepted-tree parity, exact-path scope, command boundary, isolated-cache ordering, atomic pointer hooks and fail-closed admin/backend/JS guards passed'

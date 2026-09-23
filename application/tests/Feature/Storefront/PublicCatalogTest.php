@@ -450,7 +450,8 @@ test('product detail normalizes confirmed tire data and hides uncontracted suppl
         ->assertDontSee('PCR radial tyre > 240 km/h')
         ->assertDontSee('Winter tyre type')
         ->assertDontSee('Vintertype');
-    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.store.index'), 'Dekk og felger'))->toBe(2);
+    expect(activeCatalogNavigationVariants($norwegian->getContent(), route('storefront.store.index'), 'Dekk og felger'))
+        ->toBe(['desktop' => 1, 'mobile' => 1]);
 
     $russian = $this->get('/ru/produkter/063965255551871001')->assertOk();
     $russian
@@ -460,7 +461,8 @@ test('product detail normalizes confirmed tire data and hides uncontracted suppl
         ->assertDontSee('PCR radial tyre > 240 km/h')
         ->assertDontSee('Winter tyre type')
         ->assertDontSee('Тип зимней шины');
-    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.store.index'), 'Шины и диски'))->toBe(2);
+    expect(activeCatalogNavigationVariants($russian->getContent(), route('storefront.preview.store.index'), 'Шины и диски'))
+        ->toBe(['desktop' => 1, 'mobile' => 1]);
 });
 
 test('wheel detail normalizes fitment values and marks the wheel navigation in NB and RU', function (): void {
@@ -484,7 +486,8 @@ test('wheel detail normalizes fitment values and marks the wheel navigation in N
         ->assertDontSee('112.00')
         ->assertDontSee('Silver')
         ->assertDontSee('Supplier drilling text');
-    expect(activeCatalogNavigationCount($norwegian->getContent(), route('storefront.store.index'), 'Dekk og felger'))->toBe(2);
+    expect(activeCatalogNavigationVariants($norwegian->getContent(), route('storefront.store.index'), 'Dekk og felger'))
+        ->toBe(['desktop' => 1, 'mobile' => 1]);
 
     $russian = $this->get('/ru/produkter/SKU-WHEEL-DETAIL')->assertOk();
     $russian
@@ -495,7 +498,8 @@ test('wheel detail normalizes fitment values and marks the wheel navigation in N
         ->assertSee('Уточнить цену и наличие')
         ->assertSee('href="'.route('storefront.preview.content.show', ['slug' => 'kontakt']).'"', false)
         ->assertDontSee('Silver');
-    expect(activeCatalogNavigationCount($russian->getContent(), route('storefront.preview.store.index'), 'Шины и диски'))->toBe(2);
+    expect(activeCatalogNavigationVariants($russian->getContent(), route('storefront.preview.store.index'), 'Шины и диски'))
+        ->toBe(['desktop' => 1, 'mobile' => 1]);
 });
 
 function storefrontProduct(ProductType $type, string $skuCode, array $spec, string $supplierCode = 'storefront-ndi'): SupplierSku
@@ -535,9 +539,14 @@ function storefrontMediaAsset(User $uploader, string $suffix, bool $active): Med
     ]);
 }
 
-function activeCatalogNavigationCount(string $html, string $href, string $label): int
+/** @return array{desktop: int, mobile: int} */
+function activeCatalogNavigationVariants(string $html, string $href, string $label): array
 {
-    $pattern = '/<a\b(?=[^>]*\bhref="'.preg_quote($href, '/').'\")(?=[^>]*\baria-current="page")[^>]*>\s*'.preg_quote($label, '/').'\s*<\/a>/u';
+    $anchor = '<a\b(?=[^>]*\bhref="'.preg_quote($href, '/').'\")(?=[^>]*\baria-current="page")[^>]*>';
+    $escapedLabel = preg_quote($label, '/');
 
-    return preg_match_all($pattern, $html);
+    return [
+        'desktop' => preg_match_all('/'.$anchor.'\s*'.$escapedLabel.'\s*<\/a>/u', $html),
+        'mobile' => preg_match_all('/'.$anchor.'\s*<span class="et-mobile-menu__label">\s*'.$escapedLabel.'\s*<\/span>\s*<\/a>/u', $html),
+    ];
 }

@@ -80,8 +80,9 @@ test('stored long short copy and a stored legacy offer without short copy remain
             }
 
             const legacyCard = cards.nth(1);
-            const disclosure = legacyCard.locator('[data-promotion-disclosure]');
-            const details = legacyCard.locator('[data-promotion-details]');
+            const disclosure = legacyCard.locator('[data-promotion-card-overlay-open]');
+            const details = legacyCard.locator('[data-promotion-card-overlay]');
+            const detailsSurface = details.locator('.et-card-overlay__surface');
             const legacyCta = legacyCard.locator('.et-v3-promotion__cta');
             await expect(legacyCard.locator('.et-v3-promotion__short')).toBeVisible();
             await expect(legacyCard.locator('.et-v3-promotion__short')).not.toContainText(locale.legacyEnd);
@@ -90,11 +91,15 @@ test('stored long short copy and a stored legacy offer without short copy remain
             await page.keyboard.press('Enter');
             await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
             await expect(details).toHaveAttribute('open', '');
-            await expect(details.locator('[data-promotion-dialog-close]')).toBeFocused();
-            await details.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: 'instant' }));
-            await expect.poll(() => details.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 2)).toBe(true);
+            await expect(details.locator('[data-card-overlay-close]')).toBeFocused();
+            await detailsSurface.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: 'instant' }));
+            await expect.poll(() => detailsSurface.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 2)).toBe(true);
             await expect(details).toContainText(locale.legacyEnd);
-            await expect(details.locator('.et-btn')).toBeInViewport();
+            const detailsCta = details.locator('.et-btn');
+            await expectContained(detailsSurface, detailsCta);
+            await tabTo(page, detailsCta);
+            await expect(detailsCta).toBeFocused();
+            await expect(detailsCta).toBeInViewport();
             await page.keyboard.press('Escape');
             await expect(details).not.toHaveAttribute('open', '');
             await expect(disclosure).toBeFocused();

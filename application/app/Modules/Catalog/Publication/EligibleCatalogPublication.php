@@ -11,6 +11,8 @@ use App\Modules\Catalog\ReadModel\CatalogStock;
 use App\Modules\Pricing\Data\SellingPrice;
 use App\Modules\Pricing\SellingPriceService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 final class EligibleCatalogPublication
 {
@@ -56,13 +58,41 @@ final class EligibleCatalogPublication
             ->values();
     }
 
-    public function publish(): int
+    /** @param Collection<int, array{product: Product, price: SellingPrice}> $candidates */
+    public function snapshot(Collection $candidates): string
     {
-        $ids = $this->preview()->pluck('product.id');
+        $payload = $candidates
+            ->sortBy(fn (array $candidate): int => (int) $candidate['product']->id)
+            ->map(fn (array $candidate): array => [
+                'id' => (int) $candidate['product']->id,
+                'minor' => $candidate['price']->money->minor,
+                'currency' => $candidate['price']->money->currency,
+                'rule_id' => $candidate['price']->ruleId,
+                'source' => $candidate['price']->sourcePriceListCode,
+            ])
+            ->values()
+            ->all();
 
-        return $ids->isEmpty() ? 0 : Product::query()
-            ->whereIn('id', $ids)
-            ->where('publication_status', PublicationStatus::Draft->value)
-            ->update(['publication_status' => PublicationStatus::Published->value, 'updated_at' => now()]);
+        return hash_hmac('sha256', json_encode($payload, JSON_THROW_ON_ERROR), (string) config('app.key'));
+    }
+
+    public function publish(string $expectedSnapshot): int
+    {
+        return DB::transaction(function () use ($expectedSnapshot): int {
+            $candidates = $this->preview();
+
+            if (! hash_equals($this->snapshot($candidates), $expectedSnapshot)) {
+                throw ValidationException::withMessages([
+                    'publication_snapshot' => __('catalog.bulk_snapshot_stale'),
+                ]);
+            }
+
+            $ids = $candidates->pluck('product.id');
+
+            return $ids->isEmpty() ? 0 : Product::query()
+                ->whereIn('id', $ids)
+                ->where('publication_status', PublicationStatus::Draft->value)
+                ->update(['publication_status' => PublicationStatus::Published->value, 'updated_at' => now()]);
+        });
     }
 }

@@ -68,6 +68,7 @@ test('public homepage hides draft and unsafe ratings and only renders published 
         ->assertOk()
         ->assertDontSee('data-testid="homepage-rating-summaries"', false)
         ->assertSee('data-testid="homepage-business-partners"', false)
+        ->assertSee('data-testid="partner-logo-grid"', false)
         ->assertSee('Approved fleet partner')
         ->assertSee('Safe logo without unsafe link')
         ->assertDontSee('Draft partner')

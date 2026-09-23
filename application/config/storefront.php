@@ -1,6 +1,18 @@
 <?php
 
+$designProfile = env('STOREFRONT_DESIGN_PROFILE', 'modern');
+$designProfile = is_string($designProfile) && in_array($designProfile, ['modern', 'classic'], true)
+    ? $designProfile
+    : 'modern';
+
+$canonicalOrigin = rtrim((string) env('STOREFRONT_CANONICAL_ORIGIN', 'https://staging-easytire.bethub.fun'), '/');
+if (filter_var($canonicalOrigin, FILTER_VALIDATE_URL) === false || parse_url($canonicalOrigin, PHP_URL_SCHEME) !== 'https') {
+    $canonicalOrigin = 'https://staging-easytire.bethub.fun';
+}
+
 return [
+    'design_profile' => $designProfile,
+    'canonical_origin' => $canonicalOrigin,
     'ru_preview_enabled' => (bool) env('STOREFRONT_RU_PREVIEW_ENABLED', false),
     'stock_max_age_minutes' => (int) env('STOREFRONT_STOCK_MAX_AGE_MINUTES', 180),
     'price_max_age_minutes' => (int) env('STOREFRONT_PRICE_MAX_AGE_MINUTES', 1560),

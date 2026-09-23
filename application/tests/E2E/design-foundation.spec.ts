@@ -32,10 +32,10 @@ async function expectFunctionalType(page: Page, route: string, viewport: { width
 
     expect(h1.family).toMatch(/^Barlow\b/i);
     expect(h1.size).toBeCloseTo(expectedH1, 1);
-    expect(h1.weight).toBe('700');
+    expect(h1.weight).toBe('600');
     expect(h2.family).toMatch(/^Barlow\b/i);
     expect(h2.size).toBeCloseTo(expectedH2, 1);
-    expect(h2.weight).toBe('700');
+    expect(h2.weight).toBe('600');
     await expectNoGlobalOverflow(page);
 }
 
@@ -46,7 +46,7 @@ test('DS-1 typography and responsive home composition stay on the approved scale
     await page.goto('/');
     const desktopHeroType = await typography(page.locator('.et-v3-display'));
     expect(desktopHeroType.family).toMatch(/^Barlow\b/i);
-    expect(desktopHeroType.size).toBeCloseTo(64, 1);
+    expect(desktopHeroType.size).toBeCloseTo(56, 1);
     expect(desktopHeroType.weight).toBe('700');
 
     const desktopContent = await box(page.locator('.et-v3-hero__content'));
@@ -167,8 +167,8 @@ test('mobile finder labels stay readable while preserving full accessible tab na
 test('functional reference pages keep DS-1 headings and the store header label stays stable', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic multi-route DS-1 pass is sufficient');
 
-    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 1440, height: 900 }, 40, 40);
-    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 390, height: 844 }, 32, 28);
+    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 1440, height: 900 }, 40, 32);
+    await expectFunctionalType(page, '/tjenester/dekkverksted', { width: 390, height: 844 }, 32, 26);
 
     for (const route of ['/dekk', '/felger']) {
         await page.setViewportSize({ width: 1440, height: 900 });
@@ -178,7 +178,7 @@ test('functional reference pages keep DS-1 headings and the store header label s
         await expect(storeLink).toHaveAttribute('href', /\/dekk-og-felger$/);
         const h1 = await typography(page.locator('main h1').first());
         expect(h1.size).toBeCloseTo(40, 1);
-        expect(h1.weight).toBe('700');
+        expect(h1.weight).toBe('600');
     }
 });
 

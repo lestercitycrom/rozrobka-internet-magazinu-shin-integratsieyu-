@@ -20,7 +20,7 @@
             @unless ($isCartEmpty)
                 <div class="et-toolbar et-cart-toolbar">
                     <div></div>
-                    <a class="et-btn et-btn--outline" href="{{ route($prefix.'tires.index') }}">{{ __('commerce.continue_shopping') }}</a>
+                    <a class="et-action-link" href="{{ route($prefix.'tires.index') }}"><span class="et-action-link__label">{{ __('commerce.continue_shopping') }}</span><x-icon name="arrow" :size="16" /></a>
                 </div>
             @endunless
 
@@ -64,13 +64,13 @@
                                                 @php $requiredTestQuantity = \App\Modules\NdiApi\NdiSandboxContract::QUANTITY; @endphp
                                                 <input class="et-input easytire-input et-cart-quantity" id="{{ $quantityId }}" name="quantity" data-testid="cart-line-quantity" type="number" min="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : 1 }}" max="{{ $line->item->isIntegrationTest ? $requiredTestQuantity : min(40, $line->item->stock->quantity) }}" value="{{ $line->quantity }}" inputmode="numeric" {{ $line->item->isIntegrationTest ? 'readonly' : '' }}>
                                             </div>
-                                            <button class="et-btn et-btn--dark et-btn--small et-cart-action" type="submit" data-testid="cart-line-update">{{ __('commerce.update') }}</button>
+                                            <button class="et-btn et-btn--outline et-btn--small et-cart-action" type="submit" data-testid="cart-line-update">{{ __('commerce.update') }}</button>
                                         </form>
                                         <form class="et-cart-action" method="post" action="{{ route($prefix.'cart.remove') }}">
                                             @csrf @method('DELETE')
                                             <input type="hidden" name="sku" value="{{ $line->item->sku }}">
                                             <input type="hidden" name="quantity" value="1">
-                                            <button class="et-btn et-btn--link et-btn--small" type="submit" data-testid="cart-line-remove">{{ __('commerce.remove') }}</button>
+                                            <button class="et-action-link et-action-link--small" type="submit" data-testid="cart-line-remove"><span class="et-action-link__label">{{ __('commerce.remove') }}</span></button>
                                         </form>
                                     </div>
                                 </div>
@@ -94,7 +94,7 @@
                                                 @csrf @method('PATCH')
                                                 <input type="hidden" name="sku" value="{{ $issue->sku }}">
                                                 <div><label class="et-label" for="{{ $issueQuantityId }}">{{ __('commerce.quantity') }}</label><input class="et-input et-cart-issue-quantity" id="{{ $issueQuantityId }}" name="quantity" type="number" min="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : 1 }}" max="{{ min(40, $issue->availableQuantity) }}" value="{{ $issue->reason === 'sandbox_quantity_required' ? $issue->availableQuantity : min($issue->quantity, $issue->availableQuantity) }}" inputmode="numeric" {{ $issue->reason === 'sandbox_quantity_required' ? 'readonly' : '' }}></div>
-                                                <button class="et-btn et-btn--dark et-btn--small" type="submit">{{ __('commerce.update') }}</button>
+                                                <button class="et-btn et-btn--outline et-btn--small" type="submit">{{ __('commerce.update') }}</button>
                                             </form>
                                         @endif
                                         <form method="post" action="{{ route($prefix.'cart.remove') }}">
@@ -129,7 +129,7 @@
                                                     @csrf
                                                     @if ($option->selected) @method('DELETE') @endif
                                                     <input type="hidden" name="code" value="{{ $option->code }}">
-                                                    <button class="et-btn {{ $option->selected ? 'et-btn--outline' : 'et-btn--dark' }} et-btn--small" type="submit" data-testid="service-addon-toggle">{{ $option->selected ? __('commerce.remove_service') : __('commerce.add_service') }}</button>
+                                                    <button class="et-btn et-btn--outline et-btn--small" type="submit" data-testid="service-addon-toggle">{{ $option->selected ? __('commerce.remove_service') : __('commerce.add_service') }}</button>
                                                 </form>
                                             </article>
                                         @endforeach

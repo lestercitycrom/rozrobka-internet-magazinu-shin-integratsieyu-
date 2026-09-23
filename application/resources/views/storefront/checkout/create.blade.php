@@ -28,14 +28,13 @@
 
     <section class="et-section et-section--compact">
         <div class="et-container et-cart-layout">
-            <form method="post" class="et-booking-card" data-testid="checkout-form">
+            <form method="post" class="et-booking-card et-checkout-form" data-testid="checkout-form">
                 @csrf
                 <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
                 <input name="website" class="hidden" aria-hidden="true" tabindex="-1" autocomplete="off">
 
                 <div class="et-booking-card__head">
-                    <p class="et-caption">EasyTire</p>
-                    <h2 class="et-h3">{{ __('commerce.checkout') }}</h2>
+                    <h2 class="et-h3">{{ __('pro.booking.contact_title') }}</h2>
                 </div>
 
                 <div class="et-booking-card__body">
@@ -99,7 +98,7 @@
                             <label class="et-check" data-testid="checkout-privacy">
                                 <input required type="checkbox" name="consent" value="1" @checked(old('consent')) aria-label="{{ __('commerce.consent') }}" aria-describedby="checkout-consent-error" aria-invalid="{{ $errors->has('consent') ? 'true' : 'false' }}">
                                 @if (isset($legalPages['personvern']))
-                                    <span>{{ __('commerce.privacy_acknowledgement') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'personvern') }}" target="_blank" rel="noopener">{{ __('legal.privacy') }}</a>.</span>
+                                    <span>{{ __('commerce.privacy_acknowledgement') }} <a class="et-inline-link" href="{{ route($prefix.'content.show', 'personvern') }}" target="_blank" rel="noopener">{{ __('legal.privacy') }}</a>.</span>
                                 @else
                                     <span>{{ __('commerce.consent') }}</span>
                                 @endif
@@ -109,7 +108,7 @@
                             <label class="et-check" data-testid="checkout-terms">
                                 <input required type="checkbox" name="terms" value="1" @checked(old('terms')) aria-label="{{ __('commerce.terms') }}" aria-describedby="checkout-terms-error" aria-invalid="{{ $errors->has('terms') ? 'true' : 'false' }}">
                                 @if (isset($legalPages['kjopsvilkar']))
-                                    <span>{{ __('legal.terms_prefix') }} <a class="et-btn--link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}" target="_blank" rel="noopener">{{ __('legal.terms') }}</a> ({{ \App\Modules\Orders\LegalDocumentVersions::TERMS }}).</span>
+                                    <span>{{ __('legal.terms_prefix') }} <a class="et-inline-link" href="{{ route($prefix.'content.show', 'kjopsvilkar') }}" target="_blank" rel="noopener">{{ __('legal.terms') }}</a> ({{ \App\Modules\Orders\LegalDocumentVersions::TERMS }}).</span>
                                 @else
                                     <span>{{ __('commerce.terms') }}</span>
                                 @endif

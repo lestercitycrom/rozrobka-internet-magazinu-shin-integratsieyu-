@@ -52,7 +52,7 @@ final class ContentPageController
     private function validated(Request $request, ?ContentPage $page = null): array
     {
         return $request->validate([
-            'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('content_pages', 'slug')->ignore($page)],
+            'slug' => ['required', 'string', 'max:120', Rule::in(ContentPage::ROUTABLE_SLUGS), Rule::unique('content_pages', 'slug')->ignore($page)],
             'sort_order' => ['required', 'integer', 'min:0', 'max:65535'], 'publication_status' => ['required', Rule::enum(ContentPageStatus::class)],
             'title_nb' => ['required', 'string', 'max:255'], 'excerpt_nb' => ['nullable', 'string'], 'body_nb' => ['nullable', 'string'], 'meta_title_nb' => ['nullable', 'string', 'max:255'], 'meta_description_nb' => ['nullable', 'string'],
             'title_ru' => ['required', 'string', 'max:255'], 'excerpt_ru' => ['nullable', 'string'], 'body_ru' => ['nullable', 'string'], 'meta_title_ru' => ['nullable', 'string', 'max:255'], 'meta_description_ru' => ['nullable', 'string'],

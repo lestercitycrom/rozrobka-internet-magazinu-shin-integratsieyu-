@@ -24,6 +24,26 @@ test('active overlapping rules are rejected but inactive and nonoverlapping rule
     $this->actingAs($admin)->post('/admin/pricing-rules', pricingPayload(['is_active' => '1', 'starts_at' => '2027-01-01', 'ends_at' => '2027-12-31']))->assertRedirect();
 });
 
+test('active pricing rules reject scope keys that can never match catalog data', function (): void {
+    $admin = User::factory()->owner()->create();
+
+    foreach ([
+        ['scope' => 'product_type', 'scope_key' => 'tyre'],
+        ['scope' => 'brand', 'scope_key' => 'Missing brand'],
+        ['scope' => 'sku', 'scope_key' => 'MISSING-SKU'],
+    ] as $invalid) {
+        $this->actingAs($admin)
+            ->post('/admin/pricing-rules', pricingPayload([...$invalid, 'is_active' => '1']))
+            ->assertSessionHasErrors('scope_key');
+    }
+
+    $this->actingAs($admin)
+        ->post('/admin/pricing-rules', pricingPayload(['scope' => 'product_type', 'scope_key' => 'TIRE', 'is_active' => '1']))
+        ->assertRedirect();
+
+    expect(PricingRule::query()->sole()->scope_key)->toBe('tire');
+});
+
 test('pricing rule source tax mode is required and enum validated', function (array $override): void {
     $admin = User::factory()->owner()->create();
 

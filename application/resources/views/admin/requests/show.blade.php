@@ -8,12 +8,21 @@
     <div class="max-w-6xl space-y-8">
         <header class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div><a class="inline-flex min-h-11 items-center underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ $backHref }}" data-testid="request-back">{{ filled($returnTo ?? null) ? __('operations_day.back_to_day') : __('service_requests.back') }}</a><p class="mt-5 text-sm font-bold uppercase tracking-[0.16em] text-easytire-brand">{{ __('service_requests.reference') }}</p><h1 class="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{{ $request->reference }}</h1></div>
-            <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.edit', $editParameters) }}" data-testid="request-edit">{{ __('service_requests.edit') }}</a>
+            <div class="flex flex-wrap gap-3">
+                @if($request->canBeRescheduled())<a class="et-btn et-btn--outline" href="{{ route('admin.service-requests.reschedule.edit', array_filter(['serviceRequest' => $request, 'return_to' => $returnTo])) }}" data-testid="request-reschedule">{{ $request->booking_slot_key ? __('service_requests.reschedule') : __('service_requests.assign_exact_time') }}</a>@endif
+                <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.edit', $editParameters) }}" data-testid="request-edit">{{ __('service_requests.edit') }}</a>
+            </div>
         </header>
+        @if ($errors->any())
+            <div class="border border-red-300 bg-red-50 p-4 text-sm text-red-900" role="alert" tabindex="-1" autofocus data-testid="request-page-errors">
+                <strong>{{ __('service_requests.validation_summary') }}</strong>
+                <ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
         @if (session('status'))<p class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800" role="status">{{ session('status') }}</p>@endif
 
         <div class="grid gap-5 lg:grid-cols-2">
-            <section class="easytire-card rounded-2xl p-6"><h2 class="text-lg font-black">{{ __('service_requests.customer') }}</h2><dl class="mt-5 space-y-4 text-sm"><div><dt class="text-easytire-muted">{{ __('service_requests.contact') }}</dt><dd class="mt-1 font-bold">{{ $request->name }}</dd><dd>{{ $request->email ?: __('service_requests.no_email') }}</dd><dd><a class="underline" href="tel:{{ $request->phone }}">{{ $request->phone }}</a></dd>@if($request->client)<dd class="mt-2"><a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.show', $request->client) }}">{{ __('service_requests.open_client') }}</a></dd>@else<dd class="mt-2"><a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.create', ['service_request' => $request->id]) }}">{{ __('service_requests.create_and_link_client') }}</a></dd>@endif</div><div><dt class="text-easytire-muted">{{ __('service_requests.address') }}</dt><dd class="mt-1">{{ $request->address ?: __('service_requests.not_provided') }}</dd>@if($request->district)<dd class="mt-1 text-easytire-muted">{{ __('service_requests.district') }}: {{ $request->district }}</dd>@endif @if($mapUrl)<dd class="mt-2"><a class="font-bold text-easytire-brand underline" href="{{ $mapUrl }}" target="_blank" rel="noopener noreferrer">{{ __('service_requests.open_map') }}</a></dd>@endif</div><div><dt class="text-easytire-muted">{{ __('service_requests.note') }}</dt><dd class="mt-1 whitespace-pre-wrap">{{ $request->note ?: __('service_requests.not_provided') }}</dd></div></dl></section>
+            <section class="easytire-card rounded-2xl p-6"><h2 class="text-lg font-black">{{ __('service_requests.customer') }}</h2><dl class="mt-5 space-y-4 text-sm"><div><dt class="text-easytire-muted">{{ __('service_requests.contact') }}</dt><dd class="mt-1 font-bold">{{ $request->name }}</dd><dd>{{ $request->email ?: __('service_requests.no_email') }}</dd><dd><a class="underline" href="tel:{{ $request->phone }}">{{ $request->phone }}</a></dd>@if($request->client)<dd class="mt-2"><a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.show', $request->client) }}">{{ __('service_requests.open_client') }}</a></dd>@else<dd class="mt-2"><a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.create', array_filter(['service_request' => $request->id, 'return_to' => $returnTo])) }}">{{ __('service_requests.create_and_link_client') }}</a></dd>@endif</div><div><dt class="text-easytire-muted">{{ __('service_requests.address') }}</dt><dd class="mt-1">{{ $request->address ?: __('service_requests.not_provided') }}</dd>@if($request->district)<dd class="mt-1 text-easytire-muted">{{ __('service_requests.district') }}: {{ $request->district }}</dd>@endif @if($mapUrl)<dd class="mt-2"><a class="font-bold text-easytire-brand underline" href="{{ $mapUrl }}" target="_blank" rel="noopener noreferrer">{{ __('service_requests.open_map') }}</a></dd>@endif</div><div><dt class="text-easytire-muted">{{ __('service_requests.note') }}</dt><dd class="mt-1 whitespace-pre-wrap">{{ $request->note ?: __('service_requests.not_provided') }}</dd></div></dl></section>
             <section class="easytire-card rounded-2xl p-6"><h2 class="text-lg font-black">{{ __('service_requests.follow_up') }}</h2><dl class="mt-5 grid gap-4 text-sm sm:grid-cols-2"><div><dt class="text-easytire-muted">{{ __('service_requests.status') }}</dt><dd class="mt-1"><span class="et-admin-status et-admin-status--{{ $statusTone[$request->status->value] ?? 'neutral' }}">{{ __('service_requests.status_'.$request->status->value) }}</span></dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.source') }}</dt><dd class="mt-1 font-bold">{{ __('service_requests.source_'.$request->source->value) }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.created_by') }}</dt><dd class="mt-1">{{ $request->createdBy?->name ?: __('service_requests.public_customer') }}</dd></div><div><dt class="text-easytire-muted">{{ __('service_requests.received') }}</dt><dd class="mt-1">{{ $request->created_at->format('Y-m-d H:i') }}</dd></div><div class="sm:col-span-2"><dt class="text-easytire-muted">{{ __('service_requests.admin_note') }}</dt><dd class="mt-1 whitespace-pre-wrap">{{ $request->admin_note ?: __('service_requests.not_provided') }}</dd></div></dl></section>
         </div>
 
@@ -66,6 +75,13 @@
                     </div>
                 </div>
             @endif
+        </section>
+        @php($quickReturnTo = $returnTo ?: route('admin.service-requests.show', $request, false))
+        <section class="easytire-card rounded-2xl p-6">
+            @include('admin.requests.partials.quick-actions', ['request' => $request, 'returnTo' => $quickReturnTo, 'vehicles' => $request->operationalVehicles()])
+        </section>
+        <section class="easytire-card rounded-2xl p-6">
+            @include('admin.requests.partials.history', ['request' => $request])
         </section>
     </div>
 </x-layouts.admin>

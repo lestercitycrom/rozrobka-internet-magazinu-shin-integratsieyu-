@@ -81,6 +81,7 @@ final class UpsertServiceRequest extends FormRequest
                 && ($generalPlanChanged || $this->has('registration_number')));
         $generalRegistrationPresence = $generalRegistrationRequired ? [] : $serviceContractPresence;
         $serviceExists = Rule::exists('service_pages', 'slug');
+        $bookingToday = now((string) config('service_booking.timezone', 'Europe/Oslo'))->format('Y-m-d');
         if ($serviceChanged) {
             $serviceExists->where('publication_status', ServicePagePublicationStatus::Published->value);
         }
@@ -88,6 +89,13 @@ final class UpsertServiceRequest extends FormRequest
         return [
             'operational_form' => ['nullable', 'boolean'],
             'submission_token' => [$isCreate ? 'required' : 'nullable', 'uuid'],
+            'expected_version' => [$isCreate ? 'prohibited' : 'required', 'integer', 'min:1'],
+            'resolve_conflict' => $isCreate ? ['prohibited'] : ['sometimes', 'accepted'],
+            'conflict_version' => $isCreate
+                ? ['prohibited']
+                : [Rule::requiredIf($this->boolean('resolve_conflict')), 'nullable', 'integer', 'min:1'],
+            'command_id' => [$isCreate ? 'prohibited' : 'required', 'uuid'],
+            'return_to' => ['nullable', 'string', 'max:2048'],
             'client_id' => ['sometimes', 'nullable', 'integer', Rule::exists('clients', 'id')],
             'service_slug' => [$detailsLocked ? 'sometimes' : Rule::requiredIf($operationalUpdate), 'string', $serviceExists],
             'service_variant' => [...$serviceContractPresence, Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
@@ -97,8 +105,8 @@ final class UpsertServiceRequest extends FormRequest
                 ...$datePresence,
                 Rule::requiredIf($dateRequired),
                 'nullable',
-                'date',
-                ...($dateChanged ? ['after_or_equal:today'] : []),
+                'date_format:Y-m-d',
+                ...($dateChanged ? ['after_or_equal:'.$bookingToday] : []),
             ],
             'preferred_window' => [$detailsLocked ? 'sometimes' : 'nullable', 'string', 'max:64'],
             'preferred_time_start' => [
@@ -226,6 +234,8 @@ final class UpsertServiceRequest extends FormRequest
             'storage_payload_conflict.prohibited' => __('service_requests.validation.storage_payload_conflict'),
             'vehicles.*.storage_number.regex' => __('service_requests.validation.storage_number_format'),
             'storage_number.regex' => __('service_requests.validation.storage_number_format'),
+            'preferred_date.date_format' => __('service_requests.validation.preferred_date_invalid'),
+            'preferred_date.after_or_equal' => __('service_requests.validation.preferred_date_not_past'),
         ];
     }
 

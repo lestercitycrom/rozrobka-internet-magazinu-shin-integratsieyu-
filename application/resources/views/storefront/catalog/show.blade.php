@@ -10,7 +10,7 @@
     $productHeading = filled($item->modelName) ? trim($item->brand.' '.$item->modelName) : $item->title;
     $productDescription = trim(implode(' · ', array_filter([$productHeading, $presenter->summary(), $item->sku])));
     $requiredQuantity = $item->isIntegrationTest ? \App\Modules\NdiApi\NdiSandboxContract::QUANTITY : 1;
-    $canPurchase = $sellingPrice !== null && $item->stock->canPurchase($requiredQuantity);
+    $canPurchase = $sellingPrice !== null && ! $sellingPrice->isSnapshot && $item->stock->canPurchase($requiredQuantity);
     $stockState = $item->stock->state();
     $productSchema = [
         '@context' => 'https://schema.org', '@type' => 'Product', 'name' => $productHeading,
@@ -19,7 +19,7 @@
         'url' => route($prefix.'products.show', ['sku' => $item->sku]),
     ];
     if ($item->primaryMedia) $productSchema['image'] = url($item->primaryMedia['url']);
-    if ($sellingPrice && in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote, \App\Modules\Catalog\ReadModel\CatalogStockState::OutOfStock], true)) {
+    if ($sellingPrice && ! $sellingPrice->isSnapshot && in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote, \App\Modules\Catalog\ReadModel\CatalogStockState::OutOfStock], true)) {
         $productSchema['offers'] = [
             '@type' => 'Offer', 'priceCurrency' => $sellingPrice->money->currency,
             'price' => number_format($sellingPrice->money->minor / 100, 2, '.', ''),
@@ -30,7 +30,7 @@
 @endphp
 
 <x-layouts.storefront :title="'EasyTire | '.$productHeading" :description="$productDescription" :image="$item->primaryMedia['url'] ?? null" :structured-data="[$productSchema]" active-section="store" :store-route="route($catalogRoute)" :store-label="$catalogLabel">
-    <section class="et-section et-section--compact">
+    <section class="et-section et-section--compact et-product-section">
         <div class="et-container">
             <div class="et-breadcrumbs et-breadcrumbs--muted">
                 <span><a href="{{ route($prefix.'home') }}">{{ __('pro.content.back_home') }}</a></span>
@@ -38,10 +38,13 @@
                 <span>{{ $productHeading }}</span>
             </div>
 
-            <a class="et-btn et-btn--link" href="{{ route($catalogRoute) }}">{{ __('pro.catalog.back') }}</a>
-
             <article class="et-product-layout et-product-layout--spaced">
-                <div>
+                <header class="et-product-heading">
+                    @if ($item->isIntegrationTest)<span class="et-badge et-badge--red" data-testid="integration-test-product">{{ __('storefront.integration_test_product') }}</span>@endif
+                    <h1 class="et-product-title">{{ $productHeading }}</h1>
+                    @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
+                </header>
+                <div class="et-product-media">
                     <div class="et-product-gallery">
                         <div class="et-product-gallery__main">
                             <div class="et-product-visual">
@@ -50,21 +53,10 @@
                         </div>
                         <div class="et-product-gallery__note" data-product-media-note data-fallback-text="{{ __('storefront.image_unavailable') }}">{{ $item->primaryMedia ? __('pro.catalog.media_note') : __('storefront.image_unavailable') }}</div>
                     </div>
-
-                    <div class="et-fitment-notice">
-                        <strong>{{ __('pro.catalog.compatibility') }}</strong>
-                        {{ __('fitment.notice') }}
-                    </div>
                 </div>
 
                 <div class="et-product-info">
                     <div class="et-product-info__top">
-                        <p class="et-eyebrow">{{ __('pro.catalog.product_kicker') }}</p>
-                        @if ($item->isIntegrationTest)<span class="et-badge et-badge--red" data-testid="integration-test-product">{{ __('storefront.integration_test_product') }}</span>@endif
-                        <span class="et-product-card__brand">{{ $item->brand }}</span>
-                        <h1 class="et-product-title">{{ $productHeading }}</h1>
-                        @if ($dimension)<p class="et-product-dimension">{{ $dimension }}</p>@endif
-
                         <div class="et-stock-line">
                             <span @class(['et-stock-dot' => in_array($stockState, [\App\Modules\Catalog\ReadModel\CatalogStockState::Local, \App\Modules\Catalog\ReadModel\CatalogStockState::Remote], true)]) aria-hidden="true"></span>
                             <span>{{ $presenter->availabilityDetail() }}</span>
@@ -73,7 +65,11 @@
                         @if ($sellingPrice)
                             <div class="et-product-price">
                                 <x-storefront-money :minor="$sellingPrice->money->minor" :currency="$sellingPrice->money->currency" />
-                                <small>{{ __('storefront.selling_price_note') }}</small>
+                                @if ($sellingPrice->isSnapshot)
+                                    <small data-testid="snapshot-price-note">{{ __('storefront.snapshot_price_note', ['date' => \Carbon\CarbonImmutable::parse($sellingPrice->sourceObservedAt)->format('d.m.Y')]) }}</small>
+                                @else
+                                    <small>{{ __('storefront.selling_price_note') }}</small>
+                                @endif
                             </div>
                         @else
                             <p class="et-product-price et-product-price--unavailable" data-testid="product-price-unavailable">
@@ -96,7 +92,6 @@
                                 </div>
                                 @if ($item->isIntegrationTest)
                                     <aside class="et-sandbox-purchase-note" data-testid="integration-test-quantity-note">
-                                        <span>{{ __('storefront.integration_test_product') }}</span>
                                         <small>{{ __('storefront.integration_test_quantity_note', ['quantity' => $requiredQuantity]) }}</small>
                                     </aside>
                                 @endif
@@ -115,6 +110,11 @@
                                 @endunless
                             </div>
                         @endif
+                    </div>
+
+                    <div class="et-fitment-notice">
+                        <strong>{{ __('pro.catalog.compatibility') }}</strong>
+                        {{ __('fitment.notice') }}
                     </div>
 
                     <h2 class="et-h3 et-product-spec-heading">{{ __('storefront.technical_details') }}</h2>

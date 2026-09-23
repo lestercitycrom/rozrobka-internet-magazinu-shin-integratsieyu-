@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Modules\Catalog\CatalogDataMode;
 use App\Modules\NdiImport\Exceptions\NdiImportAlreadyRunning;
 use App\Modules\NdiImport\Exceptions\NdiPublishFailed;
 use App\Modules\NdiImport\NdiBundleImporter;
@@ -21,6 +22,12 @@ class ImportNdiBundle extends Command
 
     public function handle(NdiBundleImporter $importer): int
     {
+        if (! CatalogDataMode::isLive()) {
+            $this->components->error('NDI import requires live catalogue mode. The saved snapshot was not changed.');
+
+            return self::FAILURE;
+        }
+
         try {
             $files = array_values($this->argument('files'));
             $observedAt = $this->oldestFileModification($files);

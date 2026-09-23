@@ -3,6 +3,17 @@
 return [
     'title' => 'Systemhelse',
     'intro' => 'Leseklar driftsstatus uten sensitive detaljer.',
+    'catalog_mode' => 'NDI-katalogmodus',
+    'catalog_modes' => [
+        'live' => 'Oppdatering fra leverandørfiler',
+        'snapshot' => 'Testkatalog med lagrede data',
+        'invalid' => 'Feil konfigurasjon',
+    ],
+    'catalog_mode_help' => [
+        'live' => 'Importen kontrollerer innboksen etter tidsplanen. Datoene nedenfor viser hvor ferske de mottatte dataene er.',
+        'snapshot' => 'Automatisk import er satt på pause. Eksempelprisene beregnes fra lagrede filer med gjeldende prisregel. Vanlige varer kan ikke bestilles. De opprinnelige datoene vises nedenfor; dette bekrefter ikke at løpende leveranser er klare.',
+        'invalid' => 'Import og kjøp av vanlige varer er stengt. Produksjon krever modusen live.',
+    ],
     'database' => 'Database',
     'queue' => 'Køforbindelse',
     'cache' => 'Cache-driver',

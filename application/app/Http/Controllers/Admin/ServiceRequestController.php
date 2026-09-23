@@ -6,27 +6,31 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpsertServiceRequest;
 use App\Modules\Content\Enums\ServicePagePublicationStatus;
 use App\Modules\Content\Models\ServicePage;
-use App\Modules\ServiceBooking\CustomerPhoneNormalizer;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
 use App\Modules\ServiceBooking\Models\Client;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use App\Modules\ServiceBooking\SeasonalQuoteCalculator;
 use App\Modules\ServiceBooking\ServiceRequestCreator;
+use App\Modules\ServiceBooking\ServiceRequestDirectorySearch;
 use App\Modules\ServiceBooking\ServiceRequestMapLink;
+use App\Modules\ServiceBooking\ServiceRequestReturnContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ServiceRequestController extends Controller
 {
-    public function index(Request $input, CustomerPhoneNormalizer $phones): View
-    {
+    public function index(
+        Request $input,
+        ServiceRequestDirectorySearch $search,
+        ServiceRequestReturnContext $contexts,
+        ServiceRequestMapLink $maps,
+    ): View {
         $filters = $input->validate([
             'q' => ['nullable', 'string', 'max:120'],
             'date' => ['nullable', 'date_format:Y-m-d'],
@@ -45,27 +49,19 @@ class ServiceRequestController extends Controller
             'status' => ['nullable', Rule::in(['new', 'contacted', 'closed', 'cancelled'])],
             'district' => ['nullable', 'string', 'max:120'],
             'dekkhotell' => ['nullable', 'boolean'],
+            'storage_operation' => ['nullable', Rule::in(['none', 'new', 'renew', 'last', 'unknown'])],
             'assigned_van' => ['nullable', Rule::in(['unassigned', 'van_1', 'van_2'])],
             'view' => ['nullable', Rule::in(['all', 'new', 'workshop', 'mobile', 'additional'])],
+            'queue' => ['nullable', Rule::in(['new', 'pending_time', 'unassigned_van', 'missing_kit', 'today'])],
             'new_only' => ['nullable', 'boolean'],
             'without_date' => ['nullable', 'boolean'],
+            'selected' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $withoutDate = $input->boolean('without_date');
 
         $query = ServiceRequest::query()->with(['createdBy', 'client'])->latest();
-        if (filled($filters['q'] ?? null)) {
-            $needle = trim((string) $filters['q']);
-            $phoneNeedle = $phones->searchTerm($needle);
-            $query->where(function (Builder $query) use ($needle, $phoneNeedle): void {
-                $query->where('reference', 'like', "%{$needle}%")
-                    ->orWhere('name', 'like', "%{$needle}%")
-                    ->orWhere('email', 'like', "%{$needle}%");
-                if ($phoneNeedle !== null) {
-                    $query->orWhere('phone_normalized', 'like', "%{$phoneNeedle}%");
-                }
-            });
-        }
+        $search->apply($query, $filters['q'] ?? null, $filters['storage_operation'] ?? null);
         $query
             ->when($withoutDate, fn (Builder $query) => $query->whereNull('preferred_date'))
             ->when(! $withoutDate && filled($filters['date'] ?? null), fn (Builder $query) => $query->whereDate('preferred_date', $filters['date']))
@@ -87,6 +83,8 @@ class ServiceRequestController extends Controller
             })
             ->when($input->boolean('new_only'), fn (Builder $query) => $query->where('status', ServiceRequestStatus::New));
 
+        $this->applyQueue($query, $filters['queue'] ?? null, $search);
+
         match ($filters['view'] ?? 'all') {
             'new' => $query->where('status', ServiceRequestStatus::New),
             'workshop' => $query->where('fulfilment', 'workshop'),
@@ -99,19 +97,45 @@ class ServiceRequestController extends Controller
         };
 
         $requests = $query->paginate(25)->withQueryString();
+        if (filled($filters['q'] ?? null)) {
+            $requests->getCollection()->each(function (ServiceRequest $request) use ($search, $filters): void {
+                $request->setAttribute('search_match_reason', $search->matchReason(
+                    $request,
+                    (string) $filters['q'],
+                    $filters['storage_operation'] ?? null,
+                ));
+            });
+        }
+
+        $selectedRequest = null;
+        if (filled($filters['selected'] ?? null)) {
+            $selectedRequest = ServiceRequest::query()
+                ->with(['createdBy', 'client', 'events.actor'])
+                ->findOrFail((int) $filters['selected']);
+        }
+        $listReturnTo = $contexts->list($input, $selectedRequest?->getKey());
+        $closeSelectedUrl = $contexts->withoutSelected($listReturnTo);
+        $queueCounts = $this->queueCounts($search);
+        $slugs = $requests->pluck('service_slug')->push($selectedRequest?->service_slug)->filter()->all();
 
         return view('admin.requests.index', [
             'requests' => $requests,
             'filters' => $filters,
             'serviceOptions' => $this->services(includeUnpublished: true),
-            'serviceTitles' => $this->serviceTitles($requests->pluck('service_slug')->all()),
+            'serviceTitles' => $this->serviceTitles($slugs),
             'activeView' => $filters['view'] ?? 'all',
+            'selectedRequest' => $selectedRequest,
+            'selectedInResults' => $selectedRequest !== null && $requests->contains('id', $selectedRequest->getKey()),
+            'selectedMapUrl' => $selectedRequest === null ? null : $maps->forAddress($selectedRequest->address),
+            'listReturnTo' => $listReturnTo,
+            'closeSelectedUrl' => $closeSelectedUrl,
+            'queueCounts' => $queueCounts,
         ]);
     }
 
-    public function create(Request $input, SeasonalQuoteCalculator $quotes): View
+    public function create(Request $input, SeasonalQuoteCalculator $quotes, ServiceRequestReturnContext $contexts): View
     {
-        $returnTo = $this->safeDayReturnTo($input);
+        $returnTo = $contexts->fromRequest($input);
         $client = $input->filled('client')
             ? Client::query()->findOrFail($input->integer('client'))
             : null;
@@ -134,47 +158,90 @@ class ServiceRequestController extends Controller
         ]);
     }
 
-    public function store(UpsertServiceRequest $input, ServiceRequestCreator $creator): RedirectResponse
+    public function store(UpsertServiceRequest $input, ServiceRequestCreator $creator, ServiceRequestReturnContext $contexts): RedirectResponse
     {
         $request = $creator->createManual($input->validated(), $input->user(), app()->getLocale());
 
         return redirect()->route('admin.service-requests.show', $this->requestRouteParameters(
             $request,
-            $this->safeDayReturnTo($input),
+            $contexts->fromRequest($input),
         ))
             ->with('status', __('service_requests.created'));
     }
 
-    public function show(ServiceRequest $request, ServiceRequestMapLink $maps, Request $input): View
+    public function show(ServiceRequest $request, ServiceRequestMapLink $maps, Request $input, ServiceRequestReturnContext $contexts): View
     {
-        $request->load(['createdBy', 'client']);
+        $request->load(['createdBy', 'client', 'events.actor']);
 
         return view('admin.requests.show', [
             'request' => $request,
-            'returnTo' => $this->safeDayReturnTo($input),
+            'returnTo' => $contexts->fromRequest($input),
             'mapUrl' => $maps->forAddress($request->address),
             'serviceTitle' => $this->serviceTitles([$request->service_slug])[$request->service_slug] ?? $request->service_slug,
         ]);
     }
 
-    public function edit(ServiceRequest $request, SeasonalQuoteCalculator $quotes, Request $input): View
+    public function edit(ServiceRequest $request, SeasonalQuoteCalculator $quotes, Request $input, ServiceRequestReturnContext $contexts): View
     {
         $request->load(['createdBy', 'client']);
 
         return view('admin.requests.form', $this->formData($request, $quotes) + [
-            'returnTo' => $this->safeDayReturnTo($input),
+            'returnTo' => $contexts->fromRequest($input),
         ]);
     }
 
-    public function update(UpsertServiceRequest $input, ServiceRequest $request, ServiceRequestCreator $creator): RedirectResponse
+    public function update(UpsertServiceRequest $input, ServiceRequest $request, ServiceRequestCreator $creator, ServiceRequestReturnContext $contexts): RedirectResponse
     {
-        $creator->updateManual($request, $input->validated());
+        $updated = $creator->updateManual($request, $input->validated(), $input->user());
+        $returnTo = $contexts->fromRequest($input);
+        if ($returnTo !== null
+            && parse_url($returnTo, PHP_URL_PATH) === route('admin.service-requests.index', [], false)) {
+            return redirect($contexts->withSelected($returnTo, $updated->getKey()))
+                ->with('status', __('service_requests.saved'));
+        }
 
         return redirect()->route('admin.service-requests.show', $this->requestRouteParameters(
-            $request,
-            $this->safeDayReturnTo($input),
+            $updated,
+            $returnTo,
         ))
             ->with('status', __('service_requests.saved'));
+    }
+
+    /** @param Builder<ServiceRequest> $query */
+    private function applyQueue(Builder $query, ?string $queue, ServiceRequestDirectorySearch $search): void
+    {
+        if ($queue === null) {
+            return;
+        }
+        $active = [ServiceRequestStatus::New->value, ServiceRequestStatus::Contacted->value];
+        if ($queue === 'new') {
+            $query->where('status', ServiceRequestStatus::New);
+        } elseif ($queue === 'pending_time') {
+            $query->whereIn('status', $active)->whereNull('booking_starts_at');
+        } elseif ($queue === 'unassigned_van') {
+            $query->whereIn('status', $active)->where('fulfilment', 'mobile')->whereNull('assigned_van');
+        } elseif ($queue === 'missing_kit') {
+            $query->whereIn('status', $active);
+            $search->whereMissingStoredKit($query);
+        } elseif ($queue === 'today') {
+            $query->whereIn('status', $active)->whereDate('preferred_date', now(config('service_booking.timezone'))->format('Y-m-d'));
+        }
+    }
+
+    /** @return array<string, int> */
+    private function queueCounts(ServiceRequestDirectorySearch $search): array
+    {
+        $active = [ServiceRequestStatus::New->value, ServiceRequestStatus::Contacted->value];
+        $missing = ServiceRequest::query()->whereIn('status', $active);
+        $search->whereMissingStoredKit($missing);
+
+        return [
+            'new' => ServiceRequest::query()->where('status', ServiceRequestStatus::New)->count(),
+            'pending_time' => ServiceRequest::query()->whereIn('status', $active)->whereNull('booking_starts_at')->count(),
+            'unassigned_van' => ServiceRequest::query()->whereIn('status', $active)->where('fulfilment', 'mobile')->whereNull('assigned_van')->count(),
+            'missing_kit' => $missing->count(),
+            'today' => ServiceRequest::query()->whereIn('status', $active)->whereDate('preferred_date', now(config('service_booking.timezone'))->format('Y-m-d'))->count(),
+        ];
     }
 
     /** @return array<string, mixed> */
@@ -220,47 +287,6 @@ class ServiceRequestController extends Controller
                 $page->slug => $locale === 'ru' && filled($page->title_ru) ? $page->title_ru : $page->title_nb,
             ])
             ->all();
-    }
-
-    private function safeDayReturnTo(Request $input): ?string
-    {
-        $candidate = $input->query('return_to');
-        if (! is_string($candidate) || $candidate === '' || str_contains($candidate, '\\')) {
-            return null;
-        }
-
-        $parts = parse_url($candidate);
-        $expectedPath = route('admin.service-requests.day', [], false);
-        if ($parts === false
-            || ($parts['path'] ?? null) !== $expectedPath
-            || array_intersect_key($parts, array_flip(['scheme', 'host', 'port', 'user', 'pass', 'fragment'])) !== []) {
-            return null;
-        }
-
-        parse_str((string) ($parts['query'] ?? ''), $query);
-        if (array_diff(array_keys($query), ['date', 'resource', 'include_history']) !== []) {
-            return null;
-        }
-
-        $validator = Validator::make($query, [
-            'date' => ['required', 'date_format:Y-m-d'],
-            'resource' => ['required', Rule::in(['all', 'workshop', 'van_1', 'van_2', 'mobile_unassigned'])],
-            'include_history' => ['sometimes', Rule::in(['1'])],
-        ]);
-        if ($validator->fails()) {
-            return null;
-        }
-
-        $validated = $validator->validated();
-        $parameters = [
-            'date' => $validated['date'],
-            'resource' => $validated['resource'],
-        ];
-        if (($validated['include_history'] ?? null) === '1') {
-            $parameters['include_history'] = 1;
-        }
-
-        return route('admin.service-requests.day', $parameters, false);
     }
 
     /** @return array<string, mixed> */

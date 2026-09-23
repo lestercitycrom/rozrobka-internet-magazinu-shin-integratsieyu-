@@ -9,12 +9,16 @@
 
 <div class="et-quick-finder" data-tabs data-testid="quick-finder">
     <div class="et-quick-finder__head">
-        <div>
-            <span>{{ __('pro.home.finder_kicker') }}</span>
+        @if (config('storefront.design_profile') === 'classic')
+            <div>
+                <span>{{ __('pro.home.finder_kicker') }}</span>
+                <h2>{{ __('pro.home.finder_title') }}</h2>
+            </div>
+        @else
             <h2>{{ __('pro.home.finder_title') }}</h2>
-        </div>
+        @endif
         @if ($showStoreLink)
-            <a href="{{ route($routePrefix.'store.index') }}">{{ __('pro.home.finder_store_link') }} <x-icon name="arrow" :size="17" /></a>
+            <a class="et-action-link et-action-link--small" href="{{ route($routePrefix.'store.index') }}"><span class="et-action-link__label">{{ __('pro.home.finder_store_link') }}</span><x-icon name="arrow" :size="16" /></a>
         @endif
     </div>
 
@@ -36,7 +40,7 @@
             @csrf
             <label class="sr-only" for="{{ $finderId }}-registration">{{ __('pro.home.registration_label') }}</label>
             <input id="{{ $finderId }}-registration" name="registration" type="text" required maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="{{ __('pro.home.registration_placeholder') }}">
-            <button type="submit">{{ __('pro.home.registration_submit') }} <x-icon name="arrow" :size="18" /></button>
+            <button class="et-btn et-btn--primary" type="submit">{{ __('pro.home.registration_submit') }} <x-icon name="arrow" :size="16" /></button>
         </form>
     </div>
 
@@ -47,16 +51,16 @@
             <label for="{{ $finderId }}-aspect"><span>{{ __('pro.home.finder_aspect') }}</span><select id="{{ $finderId }}-aspect" name="aspect" required data-testid="finder-aspect"><option value="">{{ __('pro.home.finder_select_placeholder') }}</option>@foreach ($dimensionOptions['aspects'] as $value)<option value="{{ $value }}" @selected((string) $selectedAspect === (string) $value)>{{ $value }}</option>@endforeach</select></label>
             <span aria-hidden="true">R</span>
             <label for="{{ $finderId }}-rim"><span>{{ __('pro.home.finder_rim') }}</span><select id="{{ $finderId }}-rim" name="rim" required data-testid="finder-rim"><option value="">{{ __('pro.home.finder_select_placeholder') }}</option>@foreach ($dimensionOptions['rims'] as $value)<option value="{{ $value }}" @selected((string) $selectedRim === (string) $value)>{{ $value }}</option>@endforeach</select></label>
-            <button type="submit">{{ __('pro.home.finder_size_submit') }} <x-icon name="arrow" :size="18" /></button>
+            <button class="et-btn et-btn--primary" type="submit">{{ __('pro.home.finder_size_submit') }} <x-icon name="arrow" :size="16" /></button>
         </form>
     </div>
 
-    <p class="et-quick-finder__note"><x-icon name="check" :size="16" />{{ __('pro.home.finder_note') }}</p>
+    <p class="et-quick-finder__note">@if (config('storefront.design_profile') === 'classic')<x-icon name="check" :size="16" />@endif{{ __('pro.home.finder_note') }}</p>
 
     <nav class="et-shop-categories" aria-label="{{ __('seo_store.categories_title') }}">
-        <a href="{{ route($routePrefix.'tires.index') }}"><x-icon name="tire" :size="22" /><span><strong>{{ __('seo_store.tires_title') }}</strong><small>{{ __('seo_store.explore') }}</small></span></a>
-        <a href="{{ route($routePrefix.'wheels.index') }}"><x-icon name="wheel" :size="22" /><span><strong>{{ __('seo_store.wheels_title') }}</strong><small>{{ __('seo_store.explore') }}</small></span></a>
-        <a href="{{ route($routePrefix.'requests.create', ['slug' => 'dekk-felg-og-hjulpakker']) }}" data-guided-category><x-icon name="package" :size="22" /><span><strong>{{ __('seo_store.packages_title') }}</strong><small>{{ __('pro.home.guided_choice') }}</small></span></a>
-        <a href="{{ route($routePrefix.'requests.create', ['slug' => 'tpms-sensor']) }}" data-guided-category><x-icon name="sensor" :size="22" /><span><strong>{{ __('pro.home.tpms_title') }}</strong><small>{{ __('pro.home.guided_choice') }}</small></span></a>
+        <a href="{{ route($routePrefix.'tires.index') }}"><x-icon name="tire" :size="20" /><span><strong>{{ __('seo_store.tires_title') }}</strong><small class="et-shop-categories__catalog-hint">{{ __('seo_store.explore') }}</small></span></a>
+        <a href="{{ route($routePrefix.'wheels.index') }}"><x-icon name="wheel" :size="20" /><span><strong>{{ __('seo_store.wheels_title') }}</strong><small class="et-shop-categories__catalog-hint">{{ __('seo_store.explore') }}</small></span></a>
+        <a href="{{ route($routePrefix.'requests.create', ['slug' => 'dekk-felg-og-hjulpakker']) }}" data-guided-category><x-icon name="package" :size="20" /><span><strong>{{ __('seo_store.packages_title') }}</strong><small>{{ __('pro.home.guided_choice') }}</small></span></a>
+        <a href="{{ route($routePrefix.'requests.create', ['slug' => 'tpms-sensor']) }}" data-guided-category><x-icon name="sensor" :size="20" /><span><strong>{{ __('pro.home.tpms_title') }}</strong><small>{{ __('pro.home.guided_choice') }}</small></span></a>
     </nav>
 </div>

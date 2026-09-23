@@ -2,6 +2,8 @@
 
 return [
     'supplier_code' => 'ndi',
+    // Snapshot is a non-production display mode; it never renews source data.
+    'catalog_mode' => env('NDI_CATALOG_MODE', 'live'),
     'parser_version' => env('NDI_PARSER_VERSION', '1.1.0'),
     'raw_disk' => env('NDI_RAW_DISK', 'local'),
     'raw_prefix' => env('NDI_RAW_PREFIX', 'ndi/raw'),
