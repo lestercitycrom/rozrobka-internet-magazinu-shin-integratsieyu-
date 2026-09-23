@@ -167,6 +167,101 @@ test('operations stores and reopens five vehicles with an internal hotel number'
     await expectNoGlobalOverflow(page);
 });
 
+test('cancelled closing confirmation keeps the full edit dirty until it is saved', async ({ page }, testInfo) => {
+    const currentSurface = surface(testInfo.project.name);
+    const reference = `SR-E2E-HIST-${currentSurface}`;
+    const retainedNote = `Cancelled close retained ${currentSurface}`;
+
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'nb');
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(reference);
+    await page.getByRole('button', { name: 'Vis resultater' }).click();
+    await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+    await page.getByTestId('request-edit').click();
+
+    const status = page.locator('[name="status"]');
+    const initialStatus = await status.inputValue();
+    await page.locator('[name="admin_note"]').fill(retainedNote);
+    await status.selectOption('closed');
+    page.once('dialog', async (dialog) => {
+        expect(dialog.type()).toBe('confirm');
+        await dialog.dismiss();
+    });
+    await page.getByTestId('request-save').click();
+
+    await expect(page).toHaveURL(/\/admin\/service-requests\/\d+\/edit/);
+    await expect(page.locator('[name="admin_note"]')).toHaveValue(retainedNote);
+
+    let beforeUnloadSeen = false;
+    page.once('dialog', async (dialog) => {
+        beforeUnloadSeen = dialog.type() === 'beforeunload';
+        await dialog.dismiss();
+    });
+    await page.getByTestId('request-back').click();
+    expect(beforeUnloadSeen).toBe(true);
+    await expect(page).toHaveURL(/\/admin\/service-requests\/\d+\/edit/);
+    await expect(page.locator('[name="admin_note"]')).toHaveValue(retainedNote);
+
+    await status.selectOption(initialStatus);
+    await page.getByTestId('request-save').click();
+    await expect(page).toHaveURL(/\/admin\/service-requests(?:\/\d+|\?)/);
+    await expect(page.locator('main')).toContainText(retainedNote);
+});
+
+test('full edit conflict compares concurrent address and storage before an explicit retry', async ({ page, context }, testInfo) => {
+    test.skip(surface(testInfo.project.name) !== 'DESKTOP', 'One real two-tab run covers the shared conflict implementation.');
+
+    const reference = 'SR-E2E-HIST-DESKTOP';
+    const baselineAddress = 'Baselinevegen 70, Tromsø';
+    const baselineStorage = '00070-BASE';
+    const concurrentAddress = 'Concurrentvegen 77, Tromsø';
+    const concurrentStorage = '00077-A';
+
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'nb');
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(reference);
+    await page.getByRole('button', { name: 'Vis resultater' }).click();
+    await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+    await page.getByTestId('request-edit').click();
+    await page.locator('[name="address"]').fill(baselineAddress);
+    await page.locator('[name="vehicles[0][storage_number]"]').fill(baselineStorage);
+    await page.getByTestId('request-save').click();
+    await page.getByTestId('request-edit').click();
+
+    const editUrl = page.url();
+    const staleTab = await context.newPage();
+    await staleTab.goto(editUrl);
+    await expect(staleTab.locator('[name="address"]')).toHaveValue(baselineAddress);
+    await expect(staleTab.locator('[name="vehicles[0][storage_number]"]')).toHaveValue(baselineStorage);
+
+    await page.locator('[name="address"]').fill(concurrentAddress);
+    await page.locator('[name="vehicles[0][storage_number]"]').fill(concurrentStorage);
+    await page.getByTestId('request-save').click();
+    await expect(page.locator('main')).toContainText(concurrentAddress);
+    await expect(page.locator('main')).toContainText(concurrentStorage);
+
+    await staleTab.locator('[name="admin_note"]').fill('Draft note from stale tab B');
+    await staleTab.getByTestId('request-save').click();
+    const comparison = staleTab.getByTestId('request-form-version-conflict');
+    await expect(comparison).toBeVisible();
+    await expect(comparison).toContainText(concurrentAddress);
+    await expect(comparison).toContainText(baselineAddress);
+    await expect(comparison).toContainText(concurrentStorage);
+    await expect(comparison).toContainText(baselineStorage);
+    await expect(staleTab.locator('[name="address"]')).toHaveValue(baselineAddress);
+    await expect(staleTab.locator('[name="vehicles[0][storage_number]"]')).toHaveValue(baselineStorage);
+    await expect(staleTab.locator('input[name="resolve_conflict"]')).not.toBeChecked();
+
+    await staleTab.locator('input[name="resolve_conflict"]').check();
+    await staleTab.getByTestId('request-save').click();
+    await expect(staleTab).toHaveURL(/\/admin\/service-requests(?:\/\d+|\?)/);
+    await expect(staleTab.locator('main')).toContainText(baselineAddress);
+    await expect(staleTab.locator('main')).toContainText(baselineStorage);
+    await staleTab.close();
+});
+
 test('request workspace preserves context protects dirty input and works as a mobile full screen', async ({ page }, testInfo) => {
     const currentSurface = surface(testInfo.project.name);
     const reference = 'SR-E2E-LOOKUP-ISSUE66';

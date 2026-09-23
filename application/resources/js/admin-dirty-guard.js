@@ -32,14 +32,13 @@ if (root) {
 
     root.addEventListener('input', markDirty);
     root.addEventListener('change', markDirty);
-    root.addEventListener('submit', (event) => {
+    window.addEventListener('submit', (event) => {
         const form = guardedForm(event.target);
 
-        if (!form) {
+        if (!form || event.defaultPrevented) {
             return;
         }
 
-        const dirtyBeforeSubmit = new Set(dirtyForms);
         const otherDirtyForms = Array.from(dirtyForms).filter((dirtyForm) => dirtyForm !== form && dirtyForm.isConnected);
 
         if (otherDirtyForms.length > 0 && !window.confirm(root.dataset.adminUnsavedMessage ?? '')) {
@@ -49,19 +48,9 @@ if (root) {
             return;
         }
 
-        queueMicrotask(() => {
-            if (event.defaultPrevented) {
-                dirtyForms.clear();
-                dirtyBeforeSubmit.forEach((dirtyForm) => dirtyForms.add(dirtyForm));
-                navigating = false;
-
-                return;
-            }
-
-            dirtyForms.clear();
-            navigating = true;
-        });
-    }, true);
+        dirtyForms.clear();
+        navigating = true;
+    });
 
     root.adminDirtyGuard = {
         allowNavigation() {

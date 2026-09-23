@@ -213,28 +213,38 @@ test('stale quick and full edits require an explicit reviewed version before ret
         'expected_version' => 3, 'admin_note' => 'Saved in tab A again',
     ])->assertSessionHasNoErrors();
 
+    $request->forceFill(['address' => 'Current address from tab A'])->save();
+
     $edit = route('admin.service-requests.edit', $request);
     $this->from($edit)->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
-        'expected_version' => 3, 'command_id' => (string) Str::uuid(), 'name' => 'Retained full edit',
+        'expected_version' => 3, 'command_id' => (string) Str::uuid(),
+        'name' => 'Retained full edit', 'address' => 'Draft address from tab B',
     ])->assertSessionHasErrors('expected_version')->assertRedirect($edit);
     $this->actingAs($staff)->get($edit)
         ->assertOk()
         ->assertSee('data-conflict-draft="true"', false)
         ->assertSee('Saved in tab A again')
+        ->assertSee('Current address from tab A')
+        ->assertSee('Draft address from tab B')
+        ->assertSee('data-conflict-difference', false)
         ->assertSee('value="Retained full edit"', false)
         ->assertSee('name="expected_version" value="3"', false)
         ->assertSee('name="conflict_version" value="4"', false);
 
     $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
-        'expected_version' => 3, 'command_id' => (string) Str::uuid(), 'name' => 'Silent full retry',
+        'expected_version' => 3, 'command_id' => (string) Str::uuid(),
+        'name' => 'Silent full retry', 'address' => 'Silent address retry',
     ])->assertSessionHasErrors('expected_version');
-    expect($request->fresh()->name)->not->toBe('Silent full retry');
+    expect($request->fresh()->name)->not->toBe('Silent full retry')
+        ->and($request->fresh()->address)->toBe('Current address from tab A');
 
     $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
         'expected_version' => 3, 'resolve_conflict' => '1', 'conflict_version' => 4,
-        'command_id' => (string) Str::uuid(), 'name' => 'Reviewed full retry',
+        'command_id' => (string) Str::uuid(),
+        'name' => 'Reviewed full retry', 'address' => 'Reviewed address from tab B',
     ])->assertSessionHasNoErrors();
-    expect($request->fresh()->name)->toBe('Reviewed full retry');
+    expect($request->fresh()->name)->toBe('Reviewed full retry')
+        ->and($request->fresh()->address)->toBe('Reviewed address from tab B');
 });
 
 test('cancelled booked requests cannot be reactivated and list return context cannot escape the admin', function (): void {
