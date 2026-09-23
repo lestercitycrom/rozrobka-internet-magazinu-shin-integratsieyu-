@@ -25,6 +25,8 @@ final class UpsertClient extends FormRequest
             'note' => ['nullable', 'string', 'max:4000'],
             'link_request_id' => ['nullable', 'integer', Rule::exists('service_requests', 'id')],
             'expected_version' => [Rule::requiredIf($this->filled('link_request_id')), 'nullable', 'integer', 'min:1'],
+            'resolve_conflict' => ['sometimes', 'accepted'],
+            'conflict_version' => [Rule::requiredIf($this->boolean('resolve_conflict')), 'nullable', 'integer', 'min:1'],
             'command_id' => [Rule::requiredIf($this->filled('link_request_id')), 'nullable', 'uuid'],
             'return_to' => ['nullable', 'string', 'max:2048'],
         ];

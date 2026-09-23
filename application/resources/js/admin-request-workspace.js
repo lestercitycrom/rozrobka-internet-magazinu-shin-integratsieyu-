@@ -11,8 +11,9 @@ if (drawer) {
     const panel = drawer.querySelector('[data-request-drawer-panel]');
     const closeUrl = drawer.dataset.closeUrl;
     const forms = Array.from(drawer.querySelectorAll('form'));
+    const dirtyRoot = document.querySelector('[data-admin-dirty-root]');
 
-    const hasUnsavedInput = () => forms.some((form) => Array.from(form.elements).some((element) => {
+    const hasUnsavedInput = () => forms.some((form) => form.hasAttribute('data-conflict-draft') || Array.from(form.elements).some((element) => {
         if (!(element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement)) return false;
         if (element.type === 'hidden' || element.type === 'submit') return false;
         if (element instanceof HTMLInputElement && ['checkbox', 'radio'].includes(element.type)) return element.checked !== element.defaultChecked;
@@ -20,9 +21,12 @@ if (drawer) {
         return element.value !== element.defaultValue;
     }));
 
+    const allowNavigation = () => dirtyRoot?.adminDirtyGuard?.allowNavigation?.();
+
     const close = () => {
         if (!closeUrl) return;
         if (hasUnsavedInput() && !window.confirm(drawer.dataset.unsavedMessage || '')) return;
+        allowNavigation();
         window.location.assign(closeUrl);
     };
 
@@ -30,6 +34,7 @@ if (drawer) {
         link.addEventListener('click', (event) => {
             if (!hasUnsavedInput()) return;
             if (!window.confirm(drawer.dataset.unsavedMessage || '')) event.preventDefault();
+            else allowNavigation();
         });
     });
     drawer.addEventListener('keydown', (event) => {

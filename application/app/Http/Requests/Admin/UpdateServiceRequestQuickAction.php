@@ -22,6 +22,8 @@ final class UpdateServiceRequestQuickAction extends FormRequest
             'command' => ['required', Rule::in(['status', 'assigned_van', 'admin_note', 'storage_number'])],
             'command_id' => ['required', 'uuid'],
             'expected_version' => ['required', 'integer', 'min:1'],
+            'resolve_conflict' => ['sometimes', 'accepted'],
+            'conflict_version' => [Rule::requiredIf($this->boolean('resolve_conflict')), 'nullable', 'integer', 'min:1'],
             'return_to' => ['nullable', 'string', 'max:2048'],
             'status' => [Rule::requiredIf($command === 'status'), Rule::in(['new', 'contacted', 'closed', 'cancelled'])],
             'assigned_van' => ['nullable', Rule::in(['van_1', 'van_2'])],

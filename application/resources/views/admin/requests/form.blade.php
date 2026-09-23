@@ -1,5 +1,8 @@
 @php
     $editing = $request->exists;
+    $hasVersionConflict = $editing && ($errors->has('expected_version')
+        || (filled(old('command_id')) && filled(old('expected_version')) && (int) old('expected_version') !== (int) $request->operation_version));
+    $submittedExpectedVersion = old('expected_version', $request->operation_version);
     $vehicles = old('vehicles', $request->vehicles ?? []);
     $vehicles = is_array($vehicles) ? array_values($vehicles) : [];
     if ($vehicles === []) {
@@ -63,9 +66,23 @@
                 <ul class="mt-2 list-disc space-y-1 pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
-        @error('expected_version')
-            <p class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="status">{{ __('service_requests.latest_version_notice', ['version' => $request->operation_version, 'status' => __('service_requests.status_'.$request->status->value)]) }}</p>
-        @enderror
+        @if($hasVersionConflict)
+            <section class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="status" data-testid="request-form-version-conflict">
+                <p class="font-bold">{{ __('service_requests.latest_version_notice', ['version' => $request->operation_version, 'status' => __('service_requests.status_'.$request->status->value)]) }}</p>
+                <p class="mt-2">{{ __('service_requests.conflict_current_values') }}</p>
+                <dl class="mt-3 grid gap-x-5 gap-y-2 sm:grid-cols-2" data-testid="request-form-current-values">
+                    <div><dt class="font-bold">{{ __('service_requests.status') }}</dt><dd>{{ __('service_requests.status_'.$request->status->value) }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.linked_client') }}</dt><dd>{{ $request->client ? $request->client->name.' · #'.$request->client->id : __('service_requests.no_linked_client') }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.form.name') }}</dt><dd>{{ $request->name }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.form.phone') }}</dt><dd>{{ $request->phone }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.service') }}</dt><dd>{{ $request->service_slug }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.fulfilment') }}</dt><dd>{{ __('service_requests.fulfilment_'.$request->fulfilment) }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.preferred_date') }}</dt><dd>{{ $request->preferred_date?->format('Y-m-d') ?: '—' }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.assigned_van') }}</dt><dd>{{ $request->assigned_van ? __('service_requests.assigned_van_'.$request->assigned_van) : __('service_requests.assigned_van_unassigned') }}</dd></div>
+                    <div class="sm:col-span-2"><dt class="font-bold">{{ __('service_requests.admin_note') }}</dt><dd class="whitespace-pre-wrap">{{ filled($request->admin_note) ? $request->admin_note : '—' }}</dd></div>
+                </dl>
+            </section>
+        @endif
 
         @if($detailsLocked)
             <div class="rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-950" role="status">
@@ -74,11 +91,11 @@
             </div>
         @endif
 
-        <form class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,.85fr)]" method="post" action="{{ $formAction }}" data-seasonal-prices='@json($seasonalPrices)' @if($editing) data-status-full-form data-reference="{{ $request->reference }}" data-initial-status="{{ $request->status->value }}" @endif>
+        <form class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,.85fr)]" method="post" action="{{ $formAction }}" data-seasonal-prices='@json($seasonalPrices)' @if($editing) data-status-full-form data-reference="{{ $request->reference }}" data-initial-status="{{ $request->status->value }}" @endif @if($hasVersionConflict) data-conflict-draft="true" @endif>
             @csrf
             @if($editing)
                 @method('PUT')
-                <input type="hidden" name="expected_version" value="{{ $request->operation_version }}">
+                <input type="hidden" name="expected_version" value="{{ $hasVersionConflict ? $submittedExpectedVersion : $request->operation_version }}">
                 <input type="hidden" name="command_id" value="{{ old('command_id', (string) Illuminate\Support\Str::uuid()) }}">
                 @if(filled($returnTo ?? null))<input type="hidden" name="return_to" value="{{ $returnTo }}">@endif
             @else
@@ -309,6 +326,7 @@
                         </label>
                         <label class="block text-sm font-bold">{{ __('service_requests.admin_note') }}<textarea class="{{ $field }} min-h-40 py-3" name="admin_note" maxlength="4000" @error('admin_note') aria-invalid="true" aria-describedby="request-admin-note-error" @enderror>{{ old('admin_note', $request->admin_note) }}</textarea>@error('admin_note')<span class="et-admin-field-error" id="request-admin-note-error">{{ $message }}</span>@enderror</label>
                         <p class="text-sm leading-6 text-easytire-muted">{{ __('service_requests.manual_consent_note') }}</p>
+                        @if($hasVersionConflict)@include('admin.requests.partials.conflict-resolution', ['currentVersion' => $request->operation_version])@endif
                         <button class="et-btn et-btn--primary w-full" type="submit" data-testid="request-save">{{ $editing ? __('service_requests.save') : __('service_requests.create_action') }}</button>
                     </div>
                 </section>

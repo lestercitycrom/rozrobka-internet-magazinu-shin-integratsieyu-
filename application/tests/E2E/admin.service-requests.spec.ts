@@ -202,6 +202,20 @@ test('request workspace preserves context protects dirty input and works as a mo
     await page.keyboard.press('Escape');
     await expect(drawer).toBeVisible();
 
+    const vanForm = drawer.locator('select[name="assigned_van"]').locator('xpath=ancestor::form');
+    await vanForm.locator('select[name="assigned_van"]').selectOption('van_1');
+    page.once('dialog', async (dialog) => dialog.dismiss());
+    await vanForm.getByRole('button', { name: 'Lagre', exact: true }).click();
+    await expect(drawer).toBeVisible();
+    await expect(note).toHaveValue(`Issue 81 workspace ${currentSurface}`);
+
+    page.once('dialog', async (dialog) => dialog.accept());
+    await vanForm.getByRole('button', { name: 'Lagre', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`q=${reference}.*selected=\\d+`));
+    await expect(drawer.locator('select[name="assigned_van"]')).toHaveValue('van_1');
+    await expect(note).not.toHaveValue(`Issue 81 workspace ${currentSurface}`);
+
+    await note.fill(`Issue 81 workspace ${currentSurface}`);
     await drawer.getByRole('button', { name: 'Lagre intern merknad' }).click();
     await expect(page).toHaveURL(new RegExp(`q=${reference}.*selected=\\d+`));
     await expect(page.locator('[data-request-history]')).toContainText('Intern merknad endret');
@@ -215,6 +229,8 @@ test('request workspace preserves context protects dirty input and works as a mo
     await noteForm.getByRole('button', { name: 'Lagre intern merknad' }).click();
     await expect(page.getByTestId('request-version-conflict')).toBeVisible();
     await expect(page.locator('[data-request-drawer] textarea[name="admin_note"]')).toHaveValue(`Stale input retained ${currentSurface}`);
+    await expect(noteForm.locator('input[name="expected_version"]')).toHaveValue('1');
+    await expect(noteForm.locator('input[name="resolve_conflict"]')).not.toBeChecked();
     if (process.env.ISSUE81_CAPTURE_EVIDENCE === 'true') {
         const file = currentSurface === 'DESKTOP' ? 'desktop-1440.png' : `${currentSurface.toLowerCase()}.png`;
         await page.screenshot({
@@ -223,6 +239,17 @@ test('request workspace preserves context protects dirty input and works as a mo
             fullPage: false,
         });
     }
+
+    page.once('dialog', async (dialog) => dialog.dismiss());
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeVisible();
+    await expect(note).toHaveValue(`Stale input retained ${currentSurface}`);
+
+    await noteForm.getByRole('button', { name: 'Lagre intern merknad' }).click();
+    await expect(page.getByTestId('request-version-conflict')).toBeVisible();
+    await noteForm.locator('input[name="resolve_conflict"]').check();
+    await noteForm.getByRole('button', { name: 'Lagre intern merknad' }).click();
+    await expect(note).toHaveValue(`Stale input retained ${currentSurface}`);
 
     await page.keyboard.press('Escape');
     await expect(page).toHaveURL(new RegExp(`/admin/service-requests\\?q=${reference}$`));

@@ -152,11 +152,89 @@ test('quick actions are versioned idempotent audited and role protected', functi
     expect($noteAudit->changes)->toBe(['admin_note' => ['changed' => true]])
         ->and(json_encode($noteAudit->changes))->not->toContain('Private customer context');
 
+    $history = $this->view('admin.requests.partials.history', [
+        'request' => $request->fresh()->load('events.actor'),
+    ]);
+    $history->assertSee('Ny → Kontaktet')
+        ->assertSee('tom → 00042-A')
+        ->assertSee('bil 1')
+        ->assertSee('intern merknad:')
+        ->assertSee('endret (verdien vises ikke)')
+        ->assertDontSee('Private customer context');
+
     $this->actingAs($editor)->patch(route('admin.service-requests.quick-action', $request), [
         'command' => 'status', 'command_id' => (string) Str::uuid(),
         'expected_version' => 5, 'status' => 'closed',
     ])->assertForbidden();
     expect($request->fresh()->status)->toBe(ServiceRequestStatus::Contacted);
+});
+
+test('stale quick and full edits require an explicit reviewed version before retry', function (): void {
+    $service = issue81Service();
+    $staff = User::factory()->operations()->create();
+    $request = issue81Request($service, ['admin_note' => 'Original note'])->fresh();
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.quick-action', $request), [
+        'command' => 'admin_note', 'command_id' => (string) Str::uuid(),
+        'expected_version' => 1, 'admin_note' => 'Saved in tab A',
+    ])->assertSessionHasNoErrors();
+
+    $workspace = route('admin.service-requests.index', ['selected' => $request->id]);
+    $this->from($workspace)->actingAs($staff)->patch(route('admin.service-requests.quick-action', $request), [
+        'command' => 'admin_note', 'command_id' => (string) Str::uuid(),
+        'expected_version' => 1, 'admin_note' => 'Draft from tab B', 'return_to' => $workspace,
+    ])->assertSessionHasErrors('expected_version')->assertRedirect($workspace);
+
+    $this->actingAs($staff)->get($workspace)
+        ->assertOk()
+        ->assertSee('data-conflict-draft="true"', false)
+        ->assertSee('name="expected_version" value="1"', false)
+        ->assertSee('name="conflict_version" value="2"', false)
+        ->assertSee('Saved in tab A')
+        ->assertSee('Draft from tab B');
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.quick-action', $request), [
+        'command' => 'admin_note', 'command_id' => (string) Str::uuid(),
+        'expected_version' => 1, 'admin_note' => 'Silent retry must fail',
+    ])->assertSessionHasErrors('expected_version');
+    expect($request->fresh()->admin_note)->toBe('Saved in tab A');
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.quick-action', $request), [
+        'command' => 'admin_note', 'command_id' => (string) Str::uuid(),
+        'expected_version' => 1, 'resolve_conflict' => '1', 'conflict_version' => 2,
+        'admin_note' => 'Reviewed retry from tab B',
+    ])->assertSessionHasNoErrors();
+    $resolved = $request->fresh();
+    expect($resolved->admin_note)->toBe('Reviewed retry from tab B')
+        ->and($resolved->operation_version)->toBe(3);
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.quick-action', $request), [
+        'command' => 'admin_note', 'command_id' => (string) Str::uuid(),
+        'expected_version' => 3, 'admin_note' => 'Saved in tab A again',
+    ])->assertSessionHasNoErrors();
+
+    $edit = route('admin.service-requests.edit', $request);
+    $this->from($edit)->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+        'expected_version' => 3, 'command_id' => (string) Str::uuid(), 'name' => 'Retained full edit',
+    ])->assertSessionHasErrors('expected_version')->assertRedirect($edit);
+    $this->actingAs($staff)->get($edit)
+        ->assertOk()
+        ->assertSee('data-conflict-draft="true"', false)
+        ->assertSee('Saved in tab A again')
+        ->assertSee('value="Retained full edit"', false)
+        ->assertSee('name="expected_version" value="3"', false)
+        ->assertSee('name="conflict_version" value="4"', false);
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+        'expected_version' => 3, 'command_id' => (string) Str::uuid(), 'name' => 'Silent full retry',
+    ])->assertSessionHasErrors('expected_version');
+    expect($request->fresh()->name)->not->toBe('Silent full retry');
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+        'expected_version' => 3, 'resolve_conflict' => '1', 'conflict_version' => 4,
+        'command_id' => (string) Str::uuid(), 'name' => 'Reviewed full retry',
+    ])->assertSessionHasNoErrors();
+    expect($request->fresh()->name)->toBe('Reviewed full retry');
 });
 
 test('cancelled booked requests cannot be reactivated and list return context cannot escape the admin', function (): void {
@@ -226,6 +304,48 @@ test('client linking is explicit versioned idempotent and preserves the request 
         ->and($request->phone)->toBe('91234567')
         ->and($request->address)->toBe('Original address')
         ->and(ServiceRequestEvent::query()->where('command_id', $commandId)->count())->toBe(1);
+});
+
+test('stale create and link keeps the client draft and cannot replace a current link silently', function (): void {
+    $service = issue81Service();
+    $staff = User::factory()->operations()->create();
+    $request = issue81Request($service)->fresh();
+    $currentClient = Client::query()->create([
+        'name' => 'Client selected in tab A', 'phone' => '91234567', 'phone_normalized' => '4791234567',
+        'created_by_user_id' => $staff->id,
+    ]);
+
+    $this->actingAs($staff)->patch(route('admin.service-requests.update', $request), [
+        'expected_version' => 1, 'command_id' => (string) Str::uuid(), 'client_id' => $currentClient->id,
+    ])->assertSessionHasNoErrors();
+
+    $create = route('admin.clients.create', ['service_request' => $request->id]);
+    $payload = [
+        'name' => 'Retained client draft', 'phone' => '92345678', 'link_request_id' => $request->id,
+        'expected_version' => 1, 'command_id' => (string) Str::uuid(),
+    ];
+    $this->from($create)->actingAs($staff)->post(route('admin.clients.store'), $payload)
+        ->assertSessionHasErrors('expected_version')->assertRedirect($create);
+    expect(Client::query()->where('name', 'Retained client draft')->exists())->toBeFalse();
+
+    $this->actingAs($staff)->get($create)
+        ->assertOk()
+        ->assertSee('data-conflict-draft="true"', false)
+        ->assertSee('Client selected in tab A')
+        ->assertSee('value="Retained client draft"', false)
+        ->assertSee('name="expected_version" value="1"', false)
+        ->assertSee('name="conflict_version" value="2"', false);
+
+    $this->actingAs($staff)->post(route('admin.clients.store'), [
+        ...$payload, 'command_id' => (string) Str::uuid(), 'name' => 'Silent replacement',
+    ])->assertSessionHasErrors('expected_version');
+    expect($request->fresh()->client_id)->toBe($currentClient->id)
+        ->and(Client::query()->where('name', 'Silent replacement')->exists())->toBeFalse();
+
+    $this->actingAs($staff)->post(route('admin.clients.store'), [
+        ...$payload, 'command_id' => (string) Str::uuid(), 'resolve_conflict' => '1', 'conflict_version' => 2,
+    ])->assertSessionHasNoErrors();
+    expect($request->fresh()->client->name)->toBe('Retained client draft');
 });
 
 test('possible duplicate clients are warned about but never merged automatically', function (): void {

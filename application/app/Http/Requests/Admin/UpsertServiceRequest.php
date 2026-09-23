@@ -89,6 +89,10 @@ final class UpsertServiceRequest extends FormRequest
             'operational_form' => ['nullable', 'boolean'],
             'submission_token' => [$isCreate ? 'required' : 'nullable', 'uuid'],
             'expected_version' => [$isCreate ? 'prohibited' : 'required', 'integer', 'min:1'],
+            'resolve_conflict' => $isCreate ? ['prohibited'] : ['sometimes', 'accepted'],
+            'conflict_version' => $isCreate
+                ? ['prohibited']
+                : [Rule::requiredIf($this->boolean('resolve_conflict')), 'nullable', 'integer', 'min:1'],
             'command_id' => [$isCreate ? 'prohibited' : 'required', 'uuid'],
             'return_to' => ['nullable', 'string', 'max:2048'],
             'client_id' => ['sometimes', 'nullable', 'integer', Rule::exists('clients', 'id')],

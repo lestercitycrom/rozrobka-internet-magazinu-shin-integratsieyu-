@@ -42,7 +42,7 @@ final class ClientController extends Controller
         CustomerPhoneNormalizer $phones,
     ): View {
         $linkRequest = $request->filled('service_request')
-            ? ServiceRequest::query()->findOrFail($request->integer('service_request'))
+            ? ServiceRequest::query()->with('client')->findOrFail($request->integer('service_request'))
             : null;
         $normalizedPhone = $phones->normalize($linkRequest?->phone);
         $email = filled($linkRequest?->email) ? mb_strtolower(trim((string) $linkRequest?->email)) : null;
@@ -100,7 +100,7 @@ final class ClientController extends Controller
                 return Client::query()->findOrFail($linkRequest->fresh()->client_id);
             }
             if ($linkRequest !== null) {
-                $changes->assertExpected($linkRequest, $request->integer('expected_version'));
+                $changes->assertExpected($linkRequest, $this->expectedVersion($request));
             }
 
             $client = Client::query()->create($this->attributes($request->validated(), $phones) + [
@@ -112,7 +112,7 @@ final class ClientController extends Controller
                     request: $linkRequest,
                     attributes: ['client_id' => $client->getKey()],
                     actor: $request->user(),
-                    expectedVersion: $request->integer('expected_version'),
+                    expectedVersion: $this->expectedVersion($request),
                     commandId: (string) $request->input('command_id'),
                     command: 'client_link',
                 );
@@ -161,7 +161,7 @@ final class ClientController extends Controller
     /** @param array<string, mixed> $data @return array<string, mixed> */
     private function attributes(array $data, CustomerPhoneNormalizer $phones): array
     {
-        $data = Arr::except($data, ['link_request_id', 'expected_version', 'command_id', 'return_to']);
+        $data = Arr::except($data, ['link_request_id', 'expected_version', 'resolve_conflict', 'conflict_version', 'command_id', 'return_to']);
 
         return [
             'name' => trim((string) $data['name']),
@@ -172,5 +172,12 @@ final class ClientController extends Controller
             'district' => filled($data['district'] ?? null) ? trim((string) $data['district']) : null,
             'note' => filled($data['note'] ?? null) ? trim((string) $data['note']) : null,
         ];
+    }
+
+    private function expectedVersion(UpsertClient $request): int
+    {
+        return $request->boolean('resolve_conflict')
+            ? $request->integer('conflict_version')
+            : $request->integer('expected_version');
     }
 }

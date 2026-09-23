@@ -4,6 +4,10 @@ if (root) {
     const dirtyForms = new Set();
     let navigating = false;
 
+    root.querySelectorAll('form[data-conflict-draft]').forEach((form) => {
+        dirtyForms.add(form);
+    });
+
     const guardedForm = (target) => {
         if (!(target instanceof Element)) {
             return null;
@@ -31,11 +35,43 @@ if (root) {
     root.addEventListener('submit', (event) => {
         const form = guardedForm(event.target);
 
-        if (form) {
-            dirtyForms.delete(form);
-            navigating = true;
+        if (!form) {
+            return;
         }
-    });
+
+        const dirtyBeforeSubmit = new Set(dirtyForms);
+        const otherDirtyForms = Array.from(dirtyForms).filter((dirtyForm) => dirtyForm !== form && dirtyForm.isConnected);
+
+        if (otherDirtyForms.length > 0 && !window.confirm(root.dataset.adminUnsavedMessage ?? '')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            return;
+        }
+
+        queueMicrotask(() => {
+            if (event.defaultPrevented) {
+                dirtyForms.clear();
+                dirtyBeforeSubmit.forEach((dirtyForm) => dirtyForms.add(dirtyForm));
+                navigating = false;
+
+                return;
+            }
+
+            dirtyForms.clear();
+            navigating = true;
+        });
+    }, true);
+
+    root.adminDirtyGuard = {
+        allowNavigation() {
+            dirtyForms.clear();
+            navigating = true;
+        },
+        hasDirtyForms() {
+            return dirtyForms.size > 0;
+        },
+    };
 
     document.querySelectorAll('[data-admin-locale-form]').forEach((form) => {
         form.addEventListener('submit', (event) => {
@@ -52,6 +88,7 @@ if (root) {
                 return;
             }
 
+            dirtyForms.clear();
             navigating = true;
         });
     });

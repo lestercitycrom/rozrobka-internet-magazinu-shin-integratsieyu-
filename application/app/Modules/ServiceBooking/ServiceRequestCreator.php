@@ -62,7 +62,9 @@ final class ServiceRequestCreator
             /** @var ServiceRequest $locked */
             $locked = ServiceRequest::query()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
             $commandId = (string) $data['command_id'];
-            $expectedVersion = (int) $data['expected_version'];
+            $expectedVersion = (bool) ($data['resolve_conflict'] ?? false)
+                ? (int) $data['conflict_version']
+                : (int) $data['expected_version'];
             if ($this->changes->alreadyApplied($locked, $actor, $commandId, 'full_update')) {
                 return $locked->refresh();
             }

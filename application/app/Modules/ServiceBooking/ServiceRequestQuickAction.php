@@ -51,12 +51,20 @@ final class ServiceRequestQuickAction
                 request: $locked,
                 attributes: $attributes,
                 actor: $actor,
-                expectedVersion: (int) $data['expected_version'],
+                expectedVersion: $this->expectedVersion($data),
                 commandId: (string) $data['command_id'],
                 command: $command,
                 auditChanges: $audit,
             );
         }, 3);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function expectedVersion(array $data): int
+    {
+        return (bool) ($data['resolve_conflict'] ?? false)
+            ? (int) $data['conflict_version']
+            : (int) $data['expected_version'];
     }
 
     /** @param array<string, mixed> $data @return array{array<string, mixed>, array<string, mixed>} */

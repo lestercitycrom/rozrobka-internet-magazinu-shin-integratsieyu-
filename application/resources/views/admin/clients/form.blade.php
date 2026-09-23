@@ -1,4 +1,9 @@
-@php($editing = $client->exists)
+@php
+    $editing = $client->exists;
+    $hasLinkConflict = $linkRequest && ($errors->has('expected_version')
+        || (filled(old('command_id')) && filled(old('expected_version')) && (int) old('expected_version') !== (int) $linkRequest->operation_version));
+    $submittedExpectedVersion = old('expected_version', $linkRequest?->operation_version);
+@endphp
 <x-layouts.admin :title="$editing ? __('clients.edit') : __('clients.create')">
     <div class="max-w-4xl space-y-8">
         <header>
@@ -14,6 +19,17 @@
 
         @if($linkRequest)
             <p class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">{{ __('clients.link_request', ['reference' => $linkRequest->reference]) }}</p>
+        @endif
+
+        @if($hasLinkConflict)
+            <section class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="status" data-testid="client-link-version-conflict">
+                <p class="font-bold">{{ __('clients.link_conflict_title', ['reference' => $linkRequest->reference, 'version' => $linkRequest->operation_version]) }}</p>
+                <p class="mt-2">{{ __('clients.link_conflict_current') }}</p>
+                <dl class="mt-3 grid gap-2 sm:grid-cols-2" data-testid="client-link-current-values">
+                    <div><dt class="font-bold">{{ __('service_requests.status') }}</dt><dd>{{ __('service_requests.status_'.$linkRequest->status->value) }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.linked_client') }}</dt><dd>{{ $linkRequest->client ? $linkRequest->client->name.' · #'.$linkRequest->client->id : __('service_requests.no_linked_client') }}</dd></div>
+                </dl>
+            </section>
         @endif
 
         @if(($duplicateClients ?? collect())->isNotEmpty())
@@ -33,12 +49,12 @@
             </section>
         @endif
 
-        <form class="easytire-card rounded-2xl p-6" method="post" action="{{ $editing ? route('admin.clients.update', $client) : route('admin.clients.store') }}" data-testid="client-form">
+        <form class="easytire-card rounded-2xl p-6" method="post" action="{{ $editing ? route('admin.clients.update', $client) : route('admin.clients.store') }}" data-testid="client-form" @if($hasLinkConflict) data-conflict-draft="true" @endif>
             @csrf
             @if($editing) @method('PUT') @endif
             @if($linkRequest)
                 <input type="hidden" name="link_request_id" value="{{ $linkRequest->id }}">
-                <input type="hidden" name="expected_version" value="{{ $linkRequest->operation_version }}">
+                <input type="hidden" name="expected_version" value="{{ $hasLinkConflict ? $submittedExpectedVersion : $linkRequest->operation_version }}">
                 <input type="hidden" name="command_id" value="{{ old('command_id', (string) Illuminate\Support\Str::uuid()) }}">
                 @if(filled($returnTo ?? null))<input type="hidden" name="return_to" value="{{ $returnTo }}">@endif
             @endif
@@ -50,6 +66,7 @@
                 <label class="block text-sm font-bold sm:col-span-2" for="client-address">{{ __('clients.address') }}<input class="easytire-input mt-2 min-h-11 w-full rounded-lg px-3" id="client-address" name="address" value="{{ old('address', $client->address) }}" maxlength="255" autocomplete="street-address" @error('address') aria-invalid="true" aria-describedby="client-address-error" @enderror>@error('address')<span class="et-admin-field-error" id="client-address-error">{{ $message }}</span>@enderror</label>
                 <label class="block text-sm font-bold sm:col-span-2" for="client-note">{{ __('clients.note') }}<textarea class="easytire-input mt-2 min-h-36 w-full rounded-lg px-3 py-3" id="client-note" name="note" maxlength="4000" @error('note') aria-invalid="true" aria-describedby="client-note-error" @enderror>{{ old('note', $client->note) }}</textarea>@error('note')<span class="et-admin-field-error" id="client-note-error">{{ $message }}</span>@enderror</label>
             </div>
+            @if($hasLinkConflict)@include('admin.requests.partials.conflict-resolution', ['currentVersion' => $linkRequest->operation_version])@endif
             <button class="et-btn et-btn--primary mt-6" type="submit" data-testid="client-save">{{ __('clients.save') }}</button>
         </form>
     </div>

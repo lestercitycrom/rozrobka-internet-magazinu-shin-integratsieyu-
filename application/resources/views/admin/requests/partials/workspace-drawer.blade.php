@@ -23,10 +23,22 @@
                 <ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
-        @if($errors->has('expected_version'))
-            <p class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="status" data-testid="request-version-conflict">
-                {{ __('service_requests.latest_version_notice', ['version' => $request->operation_version, 'status' => __('service_requests.status_'.$request->status->value)]) }}
-            </p>
+        @if($errors->has('expected_version') || (filled(old('command')) && filled(old('expected_version')) && (int) old('expected_version') !== (int) $request->operation_version))
+            <section class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="status" data-testid="request-version-conflict">
+                <p class="font-bold">{{ __('service_requests.latest_version_notice', ['version' => $request->operation_version, 'status' => __('service_requests.status_'.$request->status->value)]) }}</p>
+                <p class="mt-2">{{ __('service_requests.conflict_current_values') }}</p>
+                <dl class="mt-2 grid gap-2 sm:grid-cols-2" data-testid="request-current-values">
+                    <div><dt class="font-bold">{{ __('service_requests.status') }}</dt><dd>{{ __('service_requests.status_'.$request->status->value) }}</dd></div>
+                    <div><dt class="font-bold">{{ __('service_requests.assigned_van') }}</dt><dd>{{ $request->assigned_van ? __('service_requests.assigned_van_'.$request->assigned_van) : __('service_requests.assigned_van_unassigned') }}</dd></div>
+                    <div class="sm:col-span-2"><dt class="font-bold">{{ __('service_requests.admin_note') }}</dt><dd class="whitespace-pre-wrap">{{ filled($request->admin_note) ? $request->admin_note : '—' }}</dd></div>
+                    <div class="sm:col-span-2"><dt class="font-bold">{{ __('service_requests.linked_client') }}</dt><dd>{{ $request->client ? $request->client->name.' · #'.$request->client->id : __('service_requests.no_linked_client') }}</dd></div>
+                    @foreach($vehicles as $index => $vehicle)
+                        @if(in_array($vehicle['storage_plan'] ?? 'none', ['new', 'renew', 'last'], true))
+                            <div><dt class="font-bold">{{ __('service_requests.storage_number_for_vehicle', ['number' => $index + 1]) }}</dt><dd>{{ filled($vehicle['storage_number'] ?? null) ? $vehicle['storage_number'] : '—' }}</dd></div>
+                        @endif
+                    @endforeach
+                </dl>
+            </section>
         @endif
         @if(session('status'))<p class="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-bold text-green-800" role="status">{{ session('status') }}</p>@endif
 
