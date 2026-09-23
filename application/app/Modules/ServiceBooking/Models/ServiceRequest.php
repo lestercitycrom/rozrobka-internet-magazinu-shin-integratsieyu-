@@ -5,9 +5,11 @@ namespace App\Modules\ServiceBooking\Models;
 use App\Models\User;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
+use App\Modules\ServiceBooking\ServiceRequestVehiclePayload;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'reference', 'submission_token', 'locale', 'source', 'created_by_user_id', 'client_id', 'service_slug', 'service_variant', 'fulfilment', 'assigned_van', 'preferred_date',
@@ -37,6 +39,7 @@ class ServiceRequest extends Model
             'consent_at' => 'datetime',
             'source' => ServiceRequestSource::class,
             'status' => ServiceRequestStatus::class,
+            'operation_version' => 'integer',
         ];
     }
 
@@ -48,5 +51,40 @@ class ServiceRequest extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(ServiceRequestEvent::class)->latest('id');
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function operationalVehicles(): array
+    {
+        $vehicles = is_array($this->vehicles) ? array_values($this->vehicles) : [];
+        if ($vehicles !== []) {
+            return $vehicles;
+        }
+
+        $hasSignal = filled($this->vehicle)
+            || filled($this->registration_number)
+            || filled($this->tire_size)
+            || (bool) $this->dekkhotell
+            || $this->dekkhotell_already_stored !== null
+            || filled($this->dekkhotell_number);
+        if (! $hasSignal) {
+            return [];
+        }
+
+        return [[
+            'vehicle' => $this->vehicle,
+            'registration_number' => $this->registration_number,
+            'tire_size' => $this->tire_size,
+            'storage_plan' => ServiceRequestVehiclePayload::generalPlan(
+                (bool) $this->dekkhotell,
+                $this->dekkhotell_already_stored,
+            ),
+            'storage_number' => $this->dekkhotell_number,
+        ]];
     }
 }

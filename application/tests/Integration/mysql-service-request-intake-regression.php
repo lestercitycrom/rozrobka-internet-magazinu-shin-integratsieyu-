@@ -14,6 +14,7 @@ use App\Modules\ServiceBooking\Models\BookingScheduleInterval;
 use App\Modules\ServiceBooking\Models\Client;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
 use App\Modules\ServiceBooking\ServiceRequestCreator;
+use App\Modules\ServiceBooking\ServiceRequestDirectorySearch;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ $app->make(Kernel::class)->bootstrap();
 const INTAKE_MIGRATION = '2026_09_14_000000_prepare_service_requests_for_manual_intake';
 const CLIENT_CRM_MIGRATION = '2026_09_14_010000_add_client_crm_fields';
 const VAN_ASSIGNMENT_MIGRATION = '2026_09_14_020000_add_assigned_van_to_service_requests';
+const OPERATIONS_WORKSPACE_MIGRATION = '2026_09_23_000000_add_service_request_version_and_events';
 
 function intakeAssert(bool $condition, string $message, mixed $actual = null): void
 {
@@ -57,6 +59,7 @@ function intakeBaselineMigrations(): array
             INTAKE_MIGRATION.'.php',
             CLIENT_CRM_MIGRATION.'.php',
             VAN_ASSIGNMENT_MIGRATION.'.php',
+            OPERATIONS_WORKSPACE_MIGRATION.'.php',
         ], true),
     ));
 }
@@ -144,6 +147,16 @@ function intakeClientIdsBySearch(ClientDirectorySearch $directory, string $needl
         ->all();
 }
 
+/** @return list<int> */
+function intakeRequestIdsBySearch(ServiceRequestDirectorySearch $directory, string $needle, ?string $storageOperation = null): array
+{
+    return $directory->apply(ServiceRequest::query(), $needle, $storageOperation)
+        ->orderBy('service_requests.id')
+        ->pluck('service_requests.id')
+        ->map(static fn (mixed $id): int => (int) $id)
+        ->all();
+}
+
 try {
     $connection = DB::connection();
     $databaseName = (string) $connection->getDatabaseName();
@@ -158,6 +171,7 @@ try {
         '--force' => true,
     ]);
     intakeAssert(! Schema::hasColumn('service_requests', 'source'), 'Baseline unexpectedly contains the intake migration.');
+    intakeAssert(! Schema::hasColumn('service_requests', 'operation_version'), 'Baseline unexpectedly contains the operations workspace migration.');
 
     $service = ServicePage::query()->create([
         'slug' => 'mysql-intake-service',
@@ -214,6 +228,9 @@ try {
     intakeAssert($after['client_id'] === null && $after['district'] === null, 'Legacy request was linked or assigned a district during migration.', $after);
     intakeAssert($after['assigned_van'] === null, 'Legacy request was assigned to a van during migration.', $after['assigned_van']);
     intakeAssert($after['preferred_period_starts_at'] === null && $after['preferred_period_ends_at'] === null, 'Legacy text window was guessed into structured timestamps.', $after);
+    intakeAssert((int) $after['operation_version'] === 1, 'Legacy request did not receive the initial operation version.', $after['operation_version']);
+    intakeAssert(Schema::hasTable('service_request_events'), 'Operations audit table was not created.');
+    intakeAssert(DB::table('service_request_events')->count() === 0, 'Upgrade invented operations history for a legacy request.');
     $legacySubmission = (array) DB::table('service_request_submissions')->where('token', $legacyToken)->first();
     intakeAssert($legacySubmission['source'] === 'public' && $legacySubmission['actor_user_id'] === null && $legacySubmission['session_fingerprint'] === null, 'Legacy submission provenance changed unexpectedly.', $legacySubmission);
 
@@ -245,14 +262,18 @@ try {
     $found = ServiceRequest::query()->where('phone_normalized', 'like', '%99887766%')->sole();
     intakeAssert($found->is($manual), 'Normalized phone lookup did not find the manual request.');
     $creator->updateManual($manual, [
+        'expected_version' => $manual->fresh()->operation_version,
+        'command_id' => (string) Str::uuid(),
         'name' => 'MySQL updated customer',
         'phone' => '+47 911 11 111',
         'status' => 'contacted',
         'admin_note' => 'Customer contacted',
-    ]);
+    ], $operations);
     $manual->refresh();
     intakeAssert($manual->name === 'MySQL updated customer', 'Editable customer data was not saved.');
     intakeAssert($manual->phone_normalized === '4791111111', 'Edited phone was not normalized.', $manual->phone_normalized);
+    intakeAssert($manual->operation_version === 2, 'Manual update did not advance the operation version.', $manual->operation_version);
+    intakeAssert(DB::table('service_request_events')->where('service_request_id', $manual->id)->count() === 1, 'Manual update did not create one audit event.');
 
     /** @var BookingCalendar $calendar */
     $calendar = app(BookingCalendar::class);
@@ -341,13 +362,13 @@ try {
         'client_id' => $topRegistrationClient->id,
         'registration_number' => 'MiXeD-Top-66',
     ]);
-    intakeLookupRequest($service, $operations, 'SR-MYSQL-LOOKUP-JSON-66', [
+    $jsonLookupRequest = intakeLookupRequest($service, $operations, 'SR-MYSQL-LOOKUP-JSON-66', [
         'client_id' => $jsonRegistrationClient->id,
         'vehicles' => [
-            ['vehicle' => 'First JSON car', 'registration_number' => 'JSON-FIRST-66', 'storage_number' => null],
-            ['vehicle' => 'Second JSON car', 'registration_number' => 'MiXeD-Second-66', 'storage_number' => null],
-            ['vehicle' => 'Third JSON car', 'registration_number' => 'MiXeD-Third-66', 'storage_number' => null],
-            ['vehicle' => 'Literal wildcard JSON car', 'registration_number' => 'MiXeD%_Literal-66', 'storage_number' => null],
+            ['vehicle' => 'First JSON car', 'registration_number' => 'JSON-FIRST-66', 'storage_plan' => 'new', 'storage_number' => null],
+            ['vehicle' => 'Second JSON car', 'registration_number' => 'MiXeD-Second-66', 'storage_plan' => 'renew', 'storage_number' => null],
+            ['vehicle' => 'Third JSON car', 'registration_number' => 'MiXeD-Third-66', 'storage_plan' => 'last', 'storage_number' => null],
+            ['vehicle' => 'Literal wildcard JSON car', 'registration_number' => 'MiXeD%_Literal-66', 'storage_plan' => 'none', 'storage_number' => null],
         ],
     ]);
     intakeLookupRequest($service, $operations, 'SR-MYSQL-LOOKUP-STORAGE-DECOY-66', [
@@ -401,6 +422,24 @@ try {
         intakeClientIdsBySearch($directory, 'mixed-unlinked'),
     );
 
+    /** @var ServiceRequestDirectorySearch $requestDirectory */
+    $requestDirectory = app(ServiceRequestDirectorySearch::class);
+    intakeAssert(
+        intakeRequestIdsBySearch($requestDirectory, 'mixed-second-66', 'renew') === [$jsonLookupRequest->id],
+        'MySQL request search did not match registration and storage operation on the same vehicle.',
+        intakeRequestIdsBySearch($requestDirectory, 'mixed-second-66', 'renew'),
+    );
+    intakeAssert(
+        intakeRequestIdsBySearch($requestDirectory, 'json-first-66', 'renew') === [],
+        'MySQL request search combined a registration from one vehicle with another vehicle storage operation.',
+        intakeRequestIdsBySearch($requestDirectory, 'json-first-66', 'renew'),
+    );
+    intakeAssert(
+        intakeRequestIdsBySearch($requestDirectory, 'mixed%_literal-66', 'none') === [$jsonLookupRequest->id],
+        'MySQL request search broadened literal wildcard identifiers.',
+        intakeRequestIdsBySearch($requestDirectory, 'mixed%_literal-66', 'none'),
+    );
+
     intakeAssertOldApplicationCanRead($manual);
 
     fwrite(STDOUT, json_encode([
@@ -424,10 +463,14 @@ try {
             'client_snapshot_independence' => true,
             'structured_unconfirmed_period' => true,
             'manual_nullable_van_assignment' => true,
+            'operations_workspace_additive_upgrade' => true,
+            'operations_version_and_audit' => true,
             'client_registration_search_case_insensitive' => true,
             'client_registration_search_escapes_wildcards' => true,
             'client_registration_search_explicit_links_only' => true,
             'client_registration_search_ignores_storage_numbers' => true,
+            'request_search_mysql_json_table_same_vehicle' => true,
+            'request_search_mysql_literal_wildcards' => true,
         ],
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
 } catch (Throwable $exception) {

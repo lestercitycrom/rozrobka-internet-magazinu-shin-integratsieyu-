@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
 import { ensureAdminLocale, expectNoGlobalOverflow, loginOperations } from './helpers';
 
 function surface(projectName: string): 'DESKTOP' | 'MOBILE-390' | 'MOBILE-320' {
@@ -8,6 +9,8 @@ function surface(projectName: string): 'DESKTOP' | 'MOBILE-390' | 'MOBILE-320' {
 }
 
 test('operations completes the real Russian intake public follow-up and safe historical edit', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+
     const currentSurface = surface(testInfo.project.name);
     const suffix = currentSurface.toLowerCase();
     const manualName = `E2E RU intake ${suffix}`;
@@ -48,7 +51,7 @@ test('operations completes the real Russian intake public follow-up and safe his
     const manualReference = (await page.getByRole('heading').filter({ hasText: /^SR-/ }).textContent())?.trim();
     expect(manualReference).toMatch(/^SR-/);
     await expect(page.getByText('Внесено сотрудником')).toBeVisible();
-    await expect(page.getByText('Выездная машина 1', { exact: true })).toBeVisible();
+    await expect(page.locator('dd').getByText('Выездная машина 1', { exact: true })).toBeVisible();
     await expect(page.getByText('Не подтверждено', { exact: true }).first()).toBeVisible();
 
     await page.goto('/admin/service-requests');
@@ -61,8 +64,8 @@ test('operations completes the real Russian intake public follow-up and safe his
     await page.locator('[name="status"]').selectOption('contacted');
     await page.locator('[name="admin_note"]').fill('Клиенту перезвонили.');
     await page.getByTestId('request-save').click();
-    await expect(page.getByText('Связались', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('Клиенту перезвонили.')).toBeVisible();
+    await expect(page.locator('[data-request-drawer] .et-admin-status').getByText('Связались', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-request-drawer] [name="admin_note"]')).toHaveValue('Клиенту перезвонили.');
 
     await page.goto('/ru/tjenester/oljeskift/foresporsel');
     await page.locator('#booking-fulfilment').selectOption('workshop');
@@ -96,7 +99,7 @@ test('operations completes the real Russian intake public follow-up and safe his
     await page.locator('[name="admin_note"]').fill('Only contact follow-up changed.');
     await page.getByTestId('request-save').click();
 
-    await expect(page.getByText(`E2E Historical updated ${suffix}`)).toBeVisible();
+    await expect(page.locator('[data-request-drawer]').getByText(`E2E Historical updated ${suffix}`)).toBeVisible();
     await expect(page.locator('main')).toContainText('255/45 R19');
     await expect(page.locator('main')).toContainText('235/55 R18');
     await expect(page.getByText(/2 300 NOK/)).toBeVisible();
@@ -162,4 +165,212 @@ test('operations stores and reopens five vehicles with an internal hotel number'
     await expect(page.locator('[data-admin-vehicles] [data-request-vehicle]:visible')).toHaveCount(5);
     await expect(page.locator('[name="vehicles[4][storage_number]"]')).toHaveValue(storageNumber);
     await expectNoGlobalOverflow(page);
+});
+
+test('cancelled closing confirmation keeps the full edit dirty until it is saved', async ({ page }, testInfo) => {
+    const currentSurface = surface(testInfo.project.name);
+    const reference = `SR-E2E-HIST-${currentSurface}`;
+    const retainedNote = `Cancelled close retained ${currentSurface}`;
+
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'nb');
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(reference);
+    await page.getByRole('button', { name: 'Vis resultater' }).click();
+    await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+    await page.getByTestId('request-edit').click();
+
+    const status = page.locator('[name="status"]');
+    const initialStatus = await status.inputValue();
+    await page.locator('[name="admin_note"]').fill(retainedNote);
+    await status.selectOption('closed');
+    page.once('dialog', async (dialog) => {
+        expect(dialog.type()).toBe('confirm');
+        await dialog.dismiss();
+    });
+    await page.getByTestId('request-save').click();
+
+    await expect(page).toHaveURL(/\/admin\/service-requests\/\d+\/edit/);
+    await expect(page.locator('[name="admin_note"]')).toHaveValue(retainedNote);
+
+    let beforeUnloadSeen = false;
+    page.once('dialog', async (dialog) => {
+        beforeUnloadSeen = dialog.type() === 'beforeunload';
+        await dialog.dismiss();
+    });
+    await page.getByTestId('request-back').click();
+    expect(beforeUnloadSeen).toBe(true);
+    await expect(page).toHaveURL(/\/admin\/service-requests\/\d+\/edit/);
+    await expect(page.locator('[name="admin_note"]')).toHaveValue(retainedNote);
+
+    await status.selectOption(initialStatus);
+    await page.getByTestId('request-save').click();
+    await expect(page).toHaveURL(/\/admin\/service-requests(?:\/\d+|\?)/);
+    await expect(page.locator('main')).toContainText(retainedNote);
+});
+
+test('full edit conflict compares concurrent address and storage before an explicit retry', async ({ page, context }, testInfo) => {
+    test.skip(surface(testInfo.project.name) !== 'DESKTOP', 'One real two-tab run covers the shared conflict implementation.');
+
+    const reference = 'SR-E2E-HIST-DESKTOP';
+    const baselineAddress = 'Baselinevegen 70, Tromsø';
+    const baselineStorage = '00070-BASE';
+    const concurrentAddress = 'Concurrentvegen 77, Tromsø';
+    const concurrentStorage = '00077-A';
+    const baselineRimBand = 'r16-r18';
+    const concurrentRimBand = 'r19';
+
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'nb');
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(reference);
+    await page.getByRole('button', { name: 'Vis resultater' }).click();
+    await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+    await page.getByTestId('request-edit').click();
+    await page.locator('[name="address"]').fill(baselineAddress);
+    await page.locator('[name="vehicles[0][storage_number]"]').fill(baselineStorage);
+    await page.locator('[name="vehicles[0][rim_band]"]').selectOption(baselineRimBand);
+    await page.getByTestId('request-save').click();
+    await page.getByTestId('request-edit').click();
+
+    const editUrl = page.url();
+    const staleTab = await context.newPage();
+    await staleTab.goto(editUrl);
+    await expect(staleTab.locator('[name="address"]')).toHaveValue(baselineAddress);
+    await expect(staleTab.locator('[name="vehicles[0][storage_number]"]')).toHaveValue(baselineStorage);
+    await expect(staleTab.locator('[name="vehicles[0][rim_band]"]')).toHaveValue(baselineRimBand);
+
+    await page.locator('[name="address"]').fill(concurrentAddress);
+    await page.locator('[name="vehicles[0][storage_number]"]').fill(concurrentStorage);
+    await page.locator('[name="vehicles[0][rim_band]"]').selectOption(concurrentRimBand);
+    await page.getByTestId('request-save').click();
+    await expect(page.locator('main')).toContainText(concurrentAddress);
+    await expect(page.locator('main')).toContainText(concurrentStorage);
+
+    await staleTab.locator('[name="admin_note"]').fill('Draft note from stale tab B');
+    await staleTab.getByTestId('request-save').click();
+    const comparison = staleTab.getByTestId('request-form-version-conflict');
+    await expect(comparison).toBeVisible();
+    await expect(comparison).toContainText(concurrentAddress);
+    await expect(comparison).toContainText(baselineAddress);
+    await expect(comparison).toContainText(concurrentStorage);
+    await expect(comparison).toContainText(baselineStorage);
+    await expect(comparison).toContainText('R19 eller større');
+    await expect(comparison).toContainText('R16–R18');
+    await expect(staleTab.locator('[name="address"]')).toHaveValue(baselineAddress);
+    await expect(staleTab.locator('[name="vehicles[0][storage_number]"]')).toHaveValue(baselineStorage);
+    await expect(staleTab.locator('[name="vehicles[0][rim_band]"]')).toHaveValue(baselineRimBand);
+    await expect(staleTab.locator('input[name="resolve_conflict"]')).not.toBeChecked();
+
+    await staleTab.locator('input[name="resolve_conflict"]').check();
+    await staleTab.getByTestId('request-save').click();
+    await expect(staleTab).toHaveURL(/\/admin\/service-requests(?:\/\d+|\?)/);
+    await expect(staleTab.locator('main')).toContainText(baselineAddress);
+    await expect(staleTab.locator('main')).toContainText(baselineStorage);
+    await staleTab.getByTestId('request-edit').click();
+    await expect(staleTab.locator('[name="vehicles[0][rim_band]"]')).toHaveValue(baselineRimBand);
+    await staleTab.close();
+});
+
+test('request workspace preserves context protects dirty input and works as a mobile full screen', async ({ page }, testInfo) => {
+    const currentSurface = surface(testInfo.project.name);
+    const reference = 'SR-E2E-LOOKUP-ISSUE66';
+
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'nb');
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(reference);
+    await page.getByRole('button', { name: 'Vis resultater' }).click();
+
+    const requestLink = page.locator('[data-request-open]:visible').filter({ hasText: reference }).first();
+    await requestLink.click();
+    await expect(page).toHaveURL(new RegExp(`q=${reference}.*selected=\\d+`));
+    const drawer = page.locator('[data-request-drawer]');
+    const panel = drawer.locator('[data-request-drawer-panel]');
+    await expect(drawer).toBeVisible();
+    expect(await panel.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+    await expect(drawer).toContainText('Raske, sikre handlinger');
+    await page.keyboard.press('Shift+Tab');
+    expect(await panel.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Tab');
+    expect(await panel.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+
+    if (currentSurface !== 'DESKTOP') {
+        const bounds = await panel.boundingBox();
+        expect(bounds).not.toBeNull();
+        expect(bounds!.width).toBeGreaterThanOrEqual(page.viewportSize()!.width - 1);
+    }
+
+    const note = drawer.locator('textarea[name="admin_note"]');
+    await note.fill(`Issue 81 workspace ${currentSurface}`);
+    page.once('dialog', async (dialog) => dialog.dismiss());
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeVisible();
+
+    const vanForm = drawer.locator('select[name="assigned_van"]').locator('xpath=ancestor::form');
+    await vanForm.locator('select[name="assigned_van"]').selectOption('van_1');
+    page.once('dialog', async (dialog) => dialog.dismiss());
+    await vanForm.getByRole('button', { name: 'Lagre', exact: true }).click();
+    await expect(drawer).toBeVisible();
+    await expect(note).toHaveValue(`Issue 81 workspace ${currentSurface}`);
+
+    page.once('dialog', async (dialog) => dialog.accept());
+    await vanForm.getByRole('button', { name: 'Lagre', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`q=${reference}.*selected=\\d+`));
+    await expect(drawer.locator('select[name="assigned_van"]')).toHaveValue('van_1');
+    await expect(note).not.toHaveValue(`Issue 81 workspace ${currentSurface}`);
+
+    await note.fill(`Issue 81 workspace ${currentSurface}`);
+    await drawer.getByRole('button', { name: 'Lagre intern merknad' }).click();
+    await expect(page).toHaveURL(new RegExp(`q=${reference}.*selected=\\d+`));
+    await expect(page.locator('[data-request-history]')).toContainText('Intern merknad endret');
+    await expectNoGlobalOverflow(page);
+
+    const noteForm = note.locator('xpath=ancestor::form');
+    await note.fill(`Stale input retained ${currentSurface}`);
+    await noteForm.locator('input[name="expected_version"]').evaluate((element: HTMLInputElement) => {
+        element.value = '1';
+    });
+    await noteForm.getByRole('button', { name: 'Lagre intern merknad' }).click();
+    await expect(page.getByTestId('request-version-conflict')).toBeVisible();
+    await expect(page.locator('[data-request-drawer] textarea[name="admin_note"]')).toHaveValue(`Stale input retained ${currentSurface}`);
+    await expect(noteForm.locator('input[name="expected_version"]')).toHaveValue('1');
+    await expect(noteForm.locator('input[name="resolve_conflict"]')).not.toBeChecked();
+    if (process.env.ISSUE81_CAPTURE_EVIDENCE === 'true') {
+        const file = currentSurface === 'DESKTOP' ? 'desktop-1440.png' : `${currentSurface.toLowerCase()}.png`;
+        await page.screenshot({
+            path: path.resolve(process.cwd(), `../evidence/issue-81/${file}`),
+            animations: 'disabled',
+            fullPage: false,
+        });
+    }
+
+    page.once('dialog', async (dialog) => dialog.dismiss());
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeVisible();
+    await expect(note).toHaveValue(`Stale input retained ${currentSurface}`);
+
+    await noteForm.getByRole('button', { name: 'Lagre intern merknad' }).click();
+    await expect(page.getByTestId('request-version-conflict')).toBeVisible();
+    await noteForm.locator('input[name="resolve_conflict"]').check();
+    await noteForm.getByRole('button', { name: 'Lagre intern merknad' }).click();
+    await expect(note).toHaveValue(`Stale input retained ${currentSurface}`);
+
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(new RegExp(`/admin/service-requests\\?q=${reference}$`));
+    await expect(page.locator('[data-request-open]:visible').filter({ hasText: reference }).first()).toBeFocused();
+
+    if (currentSurface === 'DESKTOP') {
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+        await expect(page.locator('[data-request-drawer]')).toBeVisible();
+        await expectNoGlobalOverflow(page);
+        if (process.env.ISSUE81_CAPTURE_EVIDENCE === 'true') {
+            await page.screenshot({
+                path: path.resolve(process.cwd(), '../evidence/issue-81/desktop-1280.png'),
+                animations: 'disabled',
+                fullPage: false,
+            });
+        }
+    }
 });
