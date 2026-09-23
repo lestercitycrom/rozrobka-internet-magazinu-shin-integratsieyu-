@@ -3,11 +3,17 @@
 Updated: 2026-09-18. This is a coordination and safety handoff. It does not
 authorize a production release, a database change, or a staging mutation.
 
+Owner update, 2026-09-23: Modern is the canonical storefront; Classic remains a
+retained comparison profile, not a parallel development line. See
+[`STOREFRONT_MAINLINE.md`](STOREFRONT_MAINLINE.md). The design gate in Issue #81
+is lifted. Admin work may begin from the canonical integration branch below.
+
 ## Starting point
 
-- The current application baseline is exact commit
+- The deployed application baseline is exact commit
   `11d799190a2e1863746f192983371e97f23526a7` on
-  `codex/customer-shared-followups` (open PR #84).
+  `codex/customer-shared-followups`. PR #84 is the cumulative integration PR to
+  `main`; use its latest remote head so this handoff/decision is included.
 - Both staging storefronts currently run that same SHA:
   `https://staging-easytire.bethub.fun` (Modern) and
   `https://staging-classic-easytire.bethub.fun` (Classic).
@@ -21,7 +27,8 @@ authorize a production release, a database change, or a staging mutation.
 
 Create a fresh clone or Codex worktree in a third directory and create a new
 `codex/admin-<task>` branch from the current remote tip of
-`codex/customer-shared-followups`. Before editing, prove that the application
+`codex/customer-shared-followups` while PR #84 is pending. After PR #84 is
+merged, use the updated `origin/main`. Before editing, prove that the application
 baseline is present:
 
 ```powershell
@@ -124,7 +131,9 @@ Useful existing coverage:
 ## Git, review and deployment
 
 - Commit and push only the new `codex/admin-<task>` branch. Do not merge open
-  stacked PRs, push `main`, rewrite history, or force-push.
+  stacked PRs yourself, push `main`, rewrite history, or force-push. Target the
+  canonical integration branch while PR #84 is pending; after its merge, target
+  `main`.
 - State the exact base and head SHA, changed files, roles/surfaces affected,
   migrations/config/dependencies (normally none), and exact local test counts.
 - Coding and local testing may begin immediately. A live deployment is a later

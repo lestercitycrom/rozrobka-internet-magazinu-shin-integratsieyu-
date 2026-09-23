@@ -1,5 +1,17 @@
 # Current task
 
+Owner decision, 2026-09-23: Modern is the canonical storefront and intended
+`main`; Classic remains available in Git and on its staging subdomain as a
+retained profile, not a parallel feature branch. PR #84 is the single cumulative
+integration PR to `main`. New admin work starts from its latest integration head
+until merge, then from updated `origin/main`. See
+[`STOREFRONT_MAINLINE.md`](STOREFRONT_MAINLINE.md) and
+[`ADMIN_AGENT_HANDOFF.md`](ADMIN_AGENT_HANDOFF.md). This decision lifts the
+design wait in Issue #81 but does not itself authorize deployment or live data
+mutation.
+
+The following records the prior admin coordination handoff.
+
 Next-agent coordination, 2026-09-18: any new admin/CRM task starts from the
 current shared two-profile line, not `origin/main` or a historical design branch.
 Read and follow [`ADMIN_AGENT_HANDOFF.md`](ADMIN_AGENT_HANDOFF.md) before editing.
