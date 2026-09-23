@@ -50,15 +50,35 @@ test('administrator previews and publishes only draft products with a positive c
     $zeroId = pricedDraftProductId('PUBLISH-0', '0.0000');
     PricingRule::create(['name' => 'Test retail', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'ndi-file-current', 'currency' => 'NOK', 'markup_basis_points' => 1000, 'fixed_markup_minor' => 0, 'rounding_increment_minor' => 100, 'priority' => 1, 'is_active' => true]);
 
-    $this->actingAs($admin)->get('/admin/catalog/publication-preview')
+    $preview = $this->actingAs($admin)->get('/admin/catalog/publication-preview');
+    $preview
         ->assertOk()
         ->assertSee('PUBLISH-1')
         ->assertDontSee('PUBLISH-0')
         ->assertSee('110,00 NOK');
-    $this->actingAs($admin)->put('/admin/catalog/publication')->assertRedirect('/admin/catalog');
+    preg_match('/name="publication_snapshot" value="([a-f0-9]{64})"/', $preview->getContent(), $matches);
+    expect($matches[1] ?? null)->not->toBeNull();
+    $this->actingAs($admin)->put('/admin/catalog/publication', ['publication_snapshot' => $matches[1]])->assertRedirect('/admin/catalog');
 
     expect(DB::table('products')->where('id', $eligibleId)->value('publication_status'))->toBe('published')
         ->and(DB::table('products')->where('id', $zeroId)->value('publication_status'))->toBe('draft');
+});
+
+test('bulk publication fails closed when catalog or prices changed after preview', function (): void {
+    $admin = User::factory()->owner()->create();
+    $reviewedId = pricedDraftProductId('REVIEWED-1', '100.0000');
+    PricingRule::create(['name' => 'Test retail', 'scope' => PricingRuleScope::Global, 'source_price_list_code' => 'ndi-file-current', 'currency' => 'NOK', 'markup_basis_points' => 1000, 'fixed_markup_minor' => 0, 'rounding_increment_minor' => 100, 'priority' => 1, 'is_active' => true]);
+
+    $preview = $this->actingAs($admin)->get('/admin/catalog/publication-preview');
+    preg_match('/name="publication_snapshot" value="([a-f0-9]{64})"/', $preview->getContent(), $matches);
+    $newId = pricedDraftProductId('UNREVIEWED-2', '200.0000');
+
+    $this->actingAs($admin)
+        ->put('/admin/catalog/publication', ['publication_snapshot' => $matches[1]])
+        ->assertSessionHasErrors('publication_snapshot');
+
+    expect(DB::table('products')->where('id', $reviewedId)->value('publication_status'))->toBe('draft')
+        ->and(DB::table('products')->where('id', $newId)->value('publication_status'))->toBe('draft');
 });
 
 function catalogProductId(): int

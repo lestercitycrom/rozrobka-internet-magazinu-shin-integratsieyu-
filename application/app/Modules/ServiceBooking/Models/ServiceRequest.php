@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\ServiceBooking\Enums\ServiceRequestSource;
 use App\Modules\ServiceBooking\Enums\ServiceRequestStatus;
 use App\Modules\ServiceBooking\ServiceRequestVehiclePayload;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -86,5 +87,17 @@ class ServiceRequest extends Model
             ),
             'storage_number' => $this->dekkhotell_number,
         ]];
+    }
+
+    public function canBeRescheduled(): bool
+    {
+        if (! in_array($this->status, [ServiceRequestStatus::New, ServiceRequestStatus::Contacted], true)
+            || count($this->operationalVehicles()) > 2) {
+            return false;
+        }
+
+        $now = CarbonImmutable::now((string) config('service_booking.timezone', 'Europe/Oslo'));
+
+        return ! ($this->booking_ends_at !== null && $this->booking_ends_at->lessThanOrEqualTo($now));
     }
 }

@@ -30,12 +30,13 @@ class StoreServiceRequest extends FormRequest
         $supportsAdditionalServices = in_array($slug, ['oljeskift', 'bilbatteri', 'bildiagnose', 'lyspaerer-viskerblad'], true);
         $bookingMode = (string) $this->input('booking_mode', '');
         $requiresStructuredDate = in_array($bookingMode, ['period', 'exact'], true);
+        $bookingToday = now((string) config('service_booking.timezone', 'Europe/Oslo'))->format('Y-m-d');
 
         return [
             'submission_token' => ['required', 'uuid'],
             'service_variant' => [Rule::requiredIf($isMounting), 'nullable', 'string', Rule::in(['mounting_balancing', 'balancing_only'])],
             'fulfilment' => ['required', Rule::in($workshopOnly ? ['workshop'] : ['workshop', 'mobile'])],
-            'preferred_date' => [Rule::requiredIf($isSeasonal || $isMounting || $isBattery || $requiresStructuredDate), 'nullable', 'date', 'after_or_equal:today'],
+            'preferred_date' => [Rule::requiredIf($isSeasonal || $isMounting || $isBattery || $requiresStructuredDate), 'nullable', 'date_format:Y-m-d', 'after_or_equal:'.$bookingToday],
             'preferred_window' => ['nullable', 'string', 'max:64'],
             'booking_mode' => ['nullable', Rule::in(['period', 'exact'])],
             'preferred_time_start' => [Rule::requiredIf($bookingMode === 'period'), 'nullable', 'date_format:H:i'],
@@ -81,7 +82,7 @@ class StoreServiceRequest extends FormRequest
             'registration_number.string' => __('service_requests.validation.registration_invalid'),
             'registration_number.max' => __('service_requests.validation.registration_max'),
             'preferred_date.required' => __('service_requests.validation.preferred_date_required'),
-            'preferred_date.date' => __('service_requests.validation.preferred_date_invalid'),
+            'preferred_date.date_format' => __('service_requests.validation.preferred_date_invalid'),
             'preferred_date.after_or_equal' => __('service_requests.validation.preferred_date_not_past'),
             'preferred_time_start.required' => __('service_requests.validation.period_start_required'),
             'preferred_time_end.required' => __('service_requests.validation.period_end_required'),

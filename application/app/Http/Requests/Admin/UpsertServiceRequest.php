@@ -81,6 +81,7 @@ final class UpsertServiceRequest extends FormRequest
                 && ($generalPlanChanged || $this->has('registration_number')));
         $generalRegistrationPresence = $generalRegistrationRequired ? [] : $serviceContractPresence;
         $serviceExists = Rule::exists('service_pages', 'slug');
+        $bookingToday = now((string) config('service_booking.timezone', 'Europe/Oslo'))->format('Y-m-d');
         if ($serviceChanged) {
             $serviceExists->where('publication_status', ServicePagePublicationStatus::Published->value);
         }
@@ -104,8 +105,8 @@ final class UpsertServiceRequest extends FormRequest
                 ...$datePresence,
                 Rule::requiredIf($dateRequired),
                 'nullable',
-                'date',
-                ...($dateChanged ? ['after_or_equal:today'] : []),
+                'date_format:Y-m-d',
+                ...($dateChanged ? ['after_or_equal:'.$bookingToday] : []),
             ],
             'preferred_window' => [$detailsLocked ? 'sometimes' : 'nullable', 'string', 'max:64'],
             'preferred_time_start' => [
@@ -233,6 +234,8 @@ final class UpsertServiceRequest extends FormRequest
             'storage_payload_conflict.prohibited' => __('service_requests.validation.storage_payload_conflict'),
             'vehicles.*.storage_number.regex' => __('service_requests.validation.storage_number_format'),
             'storage_number.regex' => __('service_requests.validation.storage_number_format'),
+            'preferred_date.date_format' => __('service_requests.validation.preferred_date_invalid'),
+            'preferred_date.after_or_equal' => __('service_requests.validation.preferred_date_not_past'),
         ];
     }
 

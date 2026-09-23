@@ -79,6 +79,9 @@ jobs:
       - name: Run service-request intake regression on real MySQL
         run: php tests/Integration/mysql-service-request-intake-regression.php
 
+      - name: Run service-request reschedule concurrency regression on real MySQL
+        run: php tests/Integration/mysql-service-request-reschedule-regression.php
+
   quality:
     name: Application quality
     runs-on: ubuntu-latest

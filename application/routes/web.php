@@ -38,7 +38,7 @@ Route::get('/sitemap.xml', function (CatalogReadService $catalog) {
     $urls = [url('/'), url('/dekk-og-felger'), url('/dekk'), url('/felger'), url('/tjenester'), url('/priser')];
     $servicePages = ServicePage::query()->where('publication_status', 'published')->orderBy('sort_order')->get(['slug', 'canonical_path']);
     $urls = [...$urls, ...$servicePages->map(fn (ServicePage $page) => url('/'.($page->canonical_path ?: 'tjenester/'.$page->slug)))->all()];
-    $contentPages = ContentPage::query()->where('publication_status', 'published')->orderBy('sort_order')->pluck('slug');
+    $contentPages = ContentPage::query()->where('publication_status', 'published')->whereIn('slug', ContentPage::ROUTABLE_SLUGS)->orderBy('sort_order')->pluck('slug');
     $urls = [...$urls, ...$contentPages->map(fn (string $slug) => url('/'.$slug))->all()];
     $urls = [...$urls, ...collect($catalog->publicSkuCodes())->map(fn ($sku) => url('/produkter/'.$sku))->all()];
     $xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.collect($urls)->unique()->map(fn ($location) => '<url><loc>'.e($location).'</loc></url>')->implode('').'</urlset>';
@@ -65,7 +65,7 @@ Route::middleware('public.locale')->group(function (): void {
     Route::get('/sok', SiteSearchController::class)->name('storefront.site-search.index');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('storefront.services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('storefront.services.show');
-    Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('storefront.content.show');
+    Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ContentPage::ROUTABLE_SLUGS)->name('storefront.content.show');
     Route::get('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'create'])->name('storefront.requests.create');
     Route::get('/booking/availability', BookingAvailabilityController::class)->middleware('throttle:60,1')->name('storefront.booking.availability');
     Route::post('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'store'])->middleware('throttle:10,1')->name('storefront.requests.store');
@@ -103,7 +103,7 @@ Route::prefix('ru')->as('storefront.preview.')->middleware('public.preview.ru')-
     Route::get('/sok', SiteSearchController::class)->name('site-search.index');
     Route::get('/tjenester', [ServiceController::class, 'index'])->name('services.index');
     Route::get('/tjenester/{slug}', [ServiceController::class, 'show'])->name('services.show');
-    Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ['om-oss', 'kontakt', 'personvern', 'kjopsvilkar'])->name('content.show');
+    Route::get('/{slug}', [ContentPageController::class, 'show'])->whereIn('slug', ContentPage::ROUTABLE_SLUGS)->name('content.show');
     Route::get('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'create'])->name('requests.create');
     Route::get('/booking/availability', BookingAvailabilityController::class)->middleware('throttle:60,1')->name('booking.availability');
     Route::post('/tjenester/{slug}/foresporsel', [ServiceRequestController::class, 'store'])->middleware('throttle:10,1')->name('requests.store');

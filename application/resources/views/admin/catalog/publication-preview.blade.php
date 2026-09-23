@@ -51,6 +51,8 @@
             <form method="POST" action="{{ route('admin.catalog.publication.publish') }}" class="flex justify-end">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="publication_snapshot" value="{{ $publicationSnapshot }}">
+                @error('publication_snapshot')<p class="mr-4 self-center text-sm font-bold text-red-700" role="alert">{{ $message }}</p>@enderror
                 <button class="easytire-interactive min-h-12 rounded-xl bg-easytire-brand px-6 font-black text-white hover:bg-easytire-brand-strong" type="submit">
                     {{ trans_choice('catalog.bulk_confirm', $candidates->count(), ['count' => $candidates->count()]) }}
                 </button>

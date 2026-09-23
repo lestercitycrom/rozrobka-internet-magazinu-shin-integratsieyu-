@@ -203,6 +203,7 @@
                             </div>
                         </div>
                         <div class="min-w-0 border-t border-easytire-border bg-easytire-surface px-5 py-3 text-right sm:px-6">
+                            @if($item->canBeRescheduled())<a class="mr-4 inline-flex min-h-11 max-w-full items-center break-words text-left font-bold text-easytire-brand underline decoration-2 underline-offset-4" href="{{ route('admin.service-requests.reschedule.edit', ['serviceRequest' => $item, 'return_to' => $returnTo]) }}">{{ $item->booking_slot_key ? __('service_requests.reschedule') : __('service_requests.assign_exact_time') }}</a>@endif
                             <a class="inline-flex min-h-11 max-w-full items-center break-words text-left font-bold underline decoration-2 underline-offset-4 hover:text-easytire-brand" href="{{ $itemRoute }}">{{ __('operations_day.open_request') }}</a>
                         </div>
                     </article>

@@ -16,7 +16,10 @@ final class ServiceRequestChangeRecorder
         string $commandId,
         string $command,
     ): bool {
-        $existing = ServiceRequestEvent::query()->where('command_id', $commandId)->first();
+        // Commands are checked inside the caller's transaction. A locking read
+        // both provides current-read semantics on MySQL REPEATABLE READ and
+        // serializes concurrent reuse of the same idempotency key.
+        $existing = ServiceRequestEvent::query()->where('command_id', $commandId)->lockForUpdate()->first();
         if ($existing === null) {
             return false;
         }
@@ -91,13 +94,38 @@ final class ServiceRequestChangeRecorder
         return $request->refresh();
     }
 
+    /** @param array<string, mixed> $auditChanges */
+    public function recordNoop(
+        ServiceRequest $request,
+        User $actor,
+        string $commandId,
+        string $command,
+        array $auditChanges,
+    ): ServiceRequest {
+        if ($this->alreadyApplied($request, $actor, $commandId, $command)) {
+            return $request->refresh();
+        }
+
+        ServiceRequestEvent::query()->create([
+            'service_request_id' => $request->getKey(),
+            'actor_user_id' => $actor->getKey(),
+            'command_id' => $commandId,
+            'command' => $command,
+            'changes' => $auditChanges,
+            'created_at' => now(),
+        ]);
+
+        return $request;
+    }
+
     /** @param array<string, array{old: mixed, new: mixed}> $dirty */
     private function minimalDiff(array $dirty): array
     {
         $safeValues = [
             'status', 'assigned_van', 'client_id', 'service_slug', 'fulfilment',
             'preferred_date', 'preferred_window', 'booking_slot_key',
-            'booking_starts_at', 'booking_ends_at', 'dekkhotell_number',
+            'preferred_period_starts_at', 'preferred_period_ends_at',
+            'booking_schedule_interval_id', 'booking_starts_at', 'booking_ends_at', 'dekkhotell_number',
         ];
         $result = [];
 

@@ -374,3 +374,104 @@ test('request workspace preserves context protects dirty input and works as a mo
         }
     }
 });
+
+test('operations safely reschedules an exact booking in Norwegian and Russian', async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+
+    const currentSurface = surface(testInfo.project.name);
+    const reference = `SR-E2E-EXACT-${currentSurface}`;
+
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'nb');
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(reference);
+    await page.getByRole('button', { name: 'Vis resultater' }).click();
+    await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+
+    await page.getByTestId('request-reschedule').click();
+    await expect(page.getByTestId('request-reschedule-page')).toBeVisible();
+    await expect(page.getByTestId('reschedule-current-slot')).toBeVisible();
+    await page.getByTestId('reschedule-date-form').locator('[name="date"]').fill('2037-06-18');
+    await page.getByTestId('reschedule-date-form').getByRole('button').click();
+    const norwegianForm = page.getByTestId('reschedule-form');
+    await norwegianForm.locator('[name="booking_slot_key"]').selectOption({ index: 1 });
+    await norwegianForm.locator('[name="confirm_reschedule"]').check();
+    await norwegianForm.locator('button[type="submit"]').click();
+
+    await expect(page).toHaveURL(new RegExp(`/admin/service-requests\\?q=${reference}.*selected=\\d+`));
+    await expect(page.getByRole('status')).toContainText('Tidspunktet er oppdatert');
+    await expect(page.locator('[data-request-drawer]')).toContainText('2037-06-18');
+
+    await page.locator('[data-request-drawer]').getByRole('link', { name: 'Lukk', exact: true }).first().click();
+    await ensureAdminLocale(page, 'ru');
+    await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+    await page.locator('[data-request-drawer]').getByTestId('request-reschedule').click();
+    await expect(page.getByTestId('request-reschedule-page')).toBeVisible();
+    await page.getByTestId('reschedule-date-form').locator('[name="date"]').fill('2037-06-19');
+    await page.getByTestId('reschedule-date-form').getByRole('button').click();
+    const russianForm = page.getByTestId('reschedule-form');
+    await russianForm.locator('[name="booking_slot_key"]').selectOption({ index: 1 });
+    await russianForm.locator('[name="confirm_reschedule"]').check();
+    await russianForm.locator('button[type="submit"]').click();
+
+    await expect(page).toHaveURL(new RegExp(`/admin/service-requests\\?q=${reference}.*selected=\\d+`));
+    await expect(page.getByRole('status')).toContainText('Время обновлено');
+    await expect(page.locator('[data-request-drawer]')).toContainText('2037-06-19');
+    await expectNoGlobalOverflow(page);
+    await page.screenshot({
+        path: testInfo.outputPath(`rescheduled-${currentSurface.toLowerCase()}.png`),
+        animations: 'disabled',
+        fullPage: true,
+    });
+});
+
+test('stale reschedule form reaches a safe request page after another operator cancels', async ({ page, context }, testInfo) => {
+    test.skip(surface(testInfo.project.name) !== 'DESKTOP', 'One real two-tab browser run covers the shared response handling.');
+    test.setTimeout(90_000);
+
+    const reference = 'SR-E2E-STALE-RESCHEDULE-DESKTOP';
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'nb');
+    await page.goto('/admin/service-requests');
+    await page.locator('[name="q"]').fill(reference);
+    await page.getByRole('button', { name: 'Vis resultater' }).click();
+    await page.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+    await page.getByTestId('request-reschedule').click();
+    await page.getByTestId('reschedule-date-form').locator('[name="date"]').fill('2037-06-20');
+    await page.getByTestId('reschedule-date-form').getByRole('button').click();
+    const staleForm = page.getByTestId('reschedule-form');
+    await staleForm.locator('[name="booking_slot_key"]').selectOption({ index: 1 });
+    await staleForm.locator('[name="confirm_reschedule"]').check();
+
+    const cancellingTab = await context.newPage();
+    await cancellingTab.goto('/admin/service-requests');
+    await cancellingTab.locator('[name="q"]').fill(reference);
+    await cancellingTab.getByRole('button', { name: 'Vis resultater' }).click();
+    await cancellingTab.locator('[data-request-open]:visible').filter({ hasText: reference }).first().click();
+    const statusForm = cancellingTab.locator('[data-request-drawer] [data-status-quick-form]');
+    await statusForm.locator('[name="status"]').selectOption('cancelled');
+    cancellingTab.once('dialog', async (dialog) => dialog.accept());
+    await statusForm.getByRole('button', { name: 'Lagre', exact: true }).click();
+    await expect(cancellingTab.locator('[data-request-drawer] .et-admin-status')).toContainText('Kansellert');
+
+    await staleForm.locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/admin\/service-requests\/\d+\?return_to=/);
+    await expect(page.getByTestId('request-page-errors')).toContainText('Bare aktive nye eller kontaktede forespørsler');
+    await expect(page.locator('main')).toContainText('Kansellert');
+    await expect(page.getByTestId('request-reschedule')).toHaveCount(0);
+    await expectNoGlobalOverflow(page);
+    await cancellingTab.close();
+});
+
+test('operations calendar is responsive and does not expose owner controls', async ({ page }) => {
+    await loginOperations(page);
+    await ensureAdminLocale(page, 'ru');
+    await page.goto('/admin/booking-calendar');
+
+    await expect(page.getByTestId('booking-calendar-admin')).toBeVisible();
+    await expect(page.getByTestId('booking-calendar-read-only')).toContainText('может только владелец');
+    await expect(page.locator('a[href="/admin/booking-calendar/intervals/create"]')).toHaveCount(0);
+    await expect(page.locator('a[href^="/admin/booking-calendar/intervals/"][href$="/edit"]')).toHaveCount(0);
+    await expect(page.locator('a[href="/admin/booking-calendar/blackouts/create"]')).toHaveCount(0);
+    await expectNoGlobalOverflow(page);
+});
