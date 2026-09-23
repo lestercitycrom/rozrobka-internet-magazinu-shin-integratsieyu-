@@ -343,7 +343,7 @@ test('safe day return context survives show edit validation and update without c
 
     $this->actingAs($operations)
         ->from($editUrl)
-        ->put($updateUrl, ['status' => 'not-a-status'])
+        ->put($updateUrl, versionedServiceRequestPayload($item, ['status' => 'not-a-status']))
         ->assertRedirect($editUrl)
         ->assertSessionHasErrors('status');
     $this->actingAs($operations)->get($editUrl)
@@ -351,7 +351,7 @@ test('safe day return context survives show edit validation and update without c
         ->assertSee('action="'.$updateUrl.'"', false);
 
     $this->actingAs($operations)
-        ->put($updateUrl, ['status' => 'contacted'])
+        ->put($updateUrl, versionedServiceRequestPayload($item, ['status' => 'contacted']))
         ->assertRedirect($showUrl);
     $item->refresh();
     expect($item->status)->toBe(ServiceRequestStatus::Contacted)

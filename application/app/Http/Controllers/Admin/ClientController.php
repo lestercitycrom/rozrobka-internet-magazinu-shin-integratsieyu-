@@ -9,6 +9,8 @@ use App\Modules\ServiceBooking\ClientDirectorySearch;
 use App\Modules\ServiceBooking\CustomerPhoneNormalizer;
 use App\Modules\ServiceBooking\Models\Client;
 use App\Modules\ServiceBooking\Models\ServiceRequest;
+use App\Modules\ServiceBooking\ServiceRequestChangeRecorder;
+use App\Modules\ServiceBooking\ServiceRequestReturnContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -34,11 +36,36 @@ final class ClientController extends Controller
         return view('admin.clients.index', compact('clients', 'filters'));
     }
 
-    public function create(Request $request): View
-    {
+    public function create(
+        Request $request,
+        ServiceRequestReturnContext $contexts,
+        CustomerPhoneNormalizer $phones,
+    ): View {
         $linkRequest = $request->filled('service_request')
             ? ServiceRequest::query()->findOrFail($request->integer('service_request'))
             : null;
+        $normalizedPhone = $phones->normalize($linkRequest?->phone);
+        $email = filled($linkRequest?->email) ? mb_strtolower(trim((string) $linkRequest?->email)) : null;
+        $duplicateClients = collect();
+
+        if ($linkRequest !== null && ($normalizedPhone !== null || $email !== null)) {
+            $duplicateClients = Client::query()
+                ->where(function ($query) use ($normalizedPhone, $email): void {
+                    if ($normalizedPhone !== null) {
+                        $query->where('phone_normalized', $normalizedPhone);
+                    }
+                    if ($email !== null) {
+                        if ($normalizedPhone !== null) {
+                            $query->orWhereRaw('LOWER(email) = ?', [$email]);
+                        } else {
+                            $query->whereRaw('LOWER(email) = ?', [$email]);
+                        }
+                    }
+                })
+                ->orderBy('name')
+                ->limit(5)
+                ->get(['id', 'name', 'phone', 'email']);
+        }
 
         return view('admin.clients.form', [
             'client' => new Client([
@@ -49,24 +76,56 @@ final class ClientController extends Controller
                 'district' => $linkRequest?->district,
             ]),
             'linkRequest' => $linkRequest,
+            'duplicateClients' => $duplicateClients,
+            'returnTo' => $contexts->fromRequest($request),
         ]);
     }
 
-    public function store(UpsertClient $request, CustomerPhoneNormalizer $phones): RedirectResponse
-    {
-        $client = DB::transaction(function () use ($request, $phones): Client {
+    public function store(
+        UpsertClient $request,
+        CustomerPhoneNormalizer $phones,
+        ServiceRequestChangeRecorder $changes,
+        ServiceRequestReturnContext $contexts,
+    ): RedirectResponse {
+        $client = DB::transaction(function () use ($request, $phones, $changes): Client {
+            $linkRequest = $request->filled('link_request_id')
+                ? ServiceRequest::query()->whereKey($request->integer('link_request_id'))->lockForUpdate()->firstOrFail()
+                : null;
+            if ($linkRequest !== null && $changes->alreadyApplied(
+                $linkRequest,
+                $request->user(),
+                (string) $request->input('command_id'),
+                'client_link',
+            )) {
+                return Client::query()->findOrFail($linkRequest->fresh()->client_id);
+            }
+            if ($linkRequest !== null) {
+                $changes->assertExpected($linkRequest, $request->integer('expected_version'));
+            }
+
             $client = Client::query()->create($this->attributes($request->validated(), $phones) + [
                 'created_by_user_id' => $request->user()->getKey(),
             ]);
 
-            if ($request->filled('link_request_id')) {
-                ServiceRequest::query()->whereKey($request->integer('link_request_id'))->update([
-                    'client_id' => $client->getKey(),
-                ]);
+            if ($linkRequest !== null) {
+                $changes->apply(
+                    request: $linkRequest,
+                    attributes: ['client_id' => $client->getKey()],
+                    actor: $request->user(),
+                    expectedVersion: $request->integer('expected_version'),
+                    commandId: (string) $request->input('command_id'),
+                    command: 'client_link',
+                );
             }
 
             return $client;
         }, 3);
+
+        $returnTo = $contexts->fromRequest($request);
+        if ($request->filled('link_request_id') && $returnTo !== null) {
+            return redirect($contexts->withSelected($returnTo, $request->integer('link_request_id')))
+                ->with('status', __('clients.created'));
+        }
 
         return redirect()->route('admin.clients.show', $client)->with('status', __('clients.created'));
     }
@@ -89,7 +148,7 @@ final class ClientController extends Controller
 
     public function edit(Client $client): View
     {
-        return view('admin.clients.form', ['client' => $client, 'linkRequest' => null]);
+        return view('admin.clients.form', ['client' => $client, 'linkRequest' => null, 'duplicateClients' => collect()]);
     }
 
     public function update(UpsertClient $request, Client $client, CustomerPhoneNormalizer $phones): RedirectResponse
@@ -102,7 +161,7 @@ final class ClientController extends Controller
     /** @param array<string, mixed> $data @return array<string, mixed> */
     private function attributes(array $data, CustomerPhoneNormalizer $phones): array
     {
-        $data = Arr::except($data, ['link_request_id']);
+        $data = Arr::except($data, ['link_request_id', 'expected_version', 'command_id', 'return_to']);
 
         return [
             'name' => trim((string) $data['name']),

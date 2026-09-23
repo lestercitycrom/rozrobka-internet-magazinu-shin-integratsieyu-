@@ -26,7 +26,7 @@ test('operations completes the client to linked request workflow', async ({ page
     await page.goto('/admin/clients');
     await page.locator('[name="q"]').fill(phone);
     await page.getByRole('button', { name: russian ? 'Найти' : 'Søk' }).click();
-    await page.getByRole('link', { name, exact: true }).first().click();
+    await page.locator('a:visible', { hasText: name }).first().click();
     await page.getByRole('link', { name: russian ? 'Редактировать клиента' : 'Rediger kunde' }).click();
     await page.locator('[name="name"]').fill(updatedName);
     await page.getByTestId('client-save').click();

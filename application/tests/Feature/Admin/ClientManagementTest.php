@@ -23,7 +23,7 @@ test('operations can save find and edit a client without creating a request', fu
         'address' => 'Ringvegen 200',
         'district' => 'Tromsdalen',
         'note' => 'Foretrekker SMS.',
-    ])->assertRedirect();
+    ])->assertSessionHasNoErrors()->assertRedirect();
 
     $client = Client::query()->sole();
     expect($client->phone_normalized)->toBe('4799887766')
@@ -117,7 +117,8 @@ test('an existing unlinked request can create and link a client without rewritin
     $this->actingAs($staff)->post(route('admin.clients.store'), [
         'name' => 'Client Record', 'phone' => '95555555', 'email' => 'record@example.test',
         'address' => 'New address', 'district' => 'New district', 'link_request_id' => $request->id,
-    ])->assertRedirect();
+        'expected_version' => $request->fresh()->operation_version, 'command_id' => (string) Str::uuid(),
+    ])->assertSessionHasNoErrors()->assertRedirect();
 
     $client = Client::query()->sole();
     $request->refresh();

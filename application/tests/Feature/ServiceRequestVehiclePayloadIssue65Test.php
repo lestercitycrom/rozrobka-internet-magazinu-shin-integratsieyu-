@@ -197,11 +197,11 @@ test('admin canonical five vehicle storage numbers persist through a contact onl
         ->and($request->dekkhotell)->toBeTrue();
 
     $persistedVehicles = $request->vehicles;
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'Issue 65 corrected contact',
         'phone' => '91111111',
         'status' => 'contacted',
-    ])->assertSessionHasNoErrors()->assertRedirect();
+    ]))->assertSessionHasNoErrors()->assertRedirect();
 
     $request->refresh();
     expect($request->name)->toBe('Issue 65 corrected contact')
@@ -254,9 +254,9 @@ test('operations can add only a seasonal vehicle storage number after a public e
 
     $blankStorageVehicles = $request->vehicles;
     $blankStorageVehicles[0]['storage_number'] = '';
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $blankStorageVehicles,
-    ])->assertSessionHasNoErrors()->assertRedirect();
+    ]))->assertSessionHasNoErrors()->assertRedirect();
     expect($request->fresh()->getRawOriginal('vehicles'))->toBe($vehicleJsonSnapshot);
 
     $expectedVehicles = $request->vehicles;
@@ -264,13 +264,13 @@ test('operations can add only a seasonal vehicle storage number after a public e
 
     $submittedVehicles = $request->vehicles;
     $submittedVehicles[0]['storage_number'] = '00042-A';
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $submittedVehicles,
         'admin_note' => 'Storage number assigned after arrival.',
         'quote_min_minor' => 1,
         'quote_max_minor' => 1,
         'quote_currency' => 'XXX',
-    ])->assertSessionHasNoErrors()->assertRedirect(route('admin.service-requests.show', $request));
+    ]))->assertSessionHasNoErrors()->assertRedirect(route('admin.service-requests.show', $request));
 
     $request->refresh();
     expect($request->vehicles)->toBe($expectedVehicles)
@@ -282,15 +282,15 @@ test('operations can add only a seasonal vehicle storage number after a public e
 
     $forgedRegistration = $request->vehicles;
     $forgedRegistration[0]['registration_number'] = 'FORGED1';
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $forgedRegistration,
-    ])->assertSessionHasErrors('vehicles');
+    ]))->assertSessionHasErrors('vehicles');
 
     $forgedPlan = $request->vehicles;
     $forgedPlan[0]['storage_plan'] = 'last';
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $forgedPlan,
-    ])->assertSessionHasErrors('vehicles');
+    ]))->assertSessionHasErrors('vehicles');
 
     $forgedComposition = $request->vehicles;
     $forgedComposition[] = [
@@ -298,19 +298,19 @@ test('operations can add only a seasonal vehicle storage number after a public e
         'vehicle_type' => 'passenger', 'rim_band' => 'r16-r18', 'storage_plan' => 'none',
         'storage_number' => 'INJECTED',
     ];
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $forgedComposition,
-    ])->assertSessionHasErrors('vehicles');
+    ]))->assertSessionHasErrors('vehicles');
 
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'booking_slot_key' => 'invalid',
-    ])->assertSessionHasErrors('booking_slot_key');
+    ]))->assertSessionHasErrors('booking_slot_key');
 
     $forgedInactiveStorage = $request->vehicles;
     $forgedInactiveStorage[1]['storage_number'] = 'FORGED-NONE';
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $forgedInactiveStorage,
-    ])->assertSessionHasErrors('vehicles.1.storage_number');
+    ]))->assertSessionHasErrors('vehicles.1.storage_number');
 
     $request->refresh();
     expect($request->vehicles)->toBe($expectedVehicles)
@@ -364,13 +364,13 @@ test('booked seasonal contact save trusts unchanged canonical vehicles over stal
     $browserVehicles = $request->vehicles;
     $browserVehicles[0]['storage_number'] = '';
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $browserVehicles,
         'name' => 'Booked stale mirror contact corrected',
         'phone' => '91111111',
         'status' => 'contacted',
         'admin_note' => 'Browser-shaped contact and status save.',
-    ])->assertSessionHasNoErrors()->assertRedirect(route('admin.service-requests.show', $request));
+    ]))->assertSessionHasNoErrors()->assertRedirect(route('admin.service-requests.show', $request));
 
     $request->refresh();
     expect($request->name)->toBe('Booked stale mirror contact corrected')
@@ -381,12 +381,12 @@ test('booked seasonal contact save trusts unchanged canonical vehicles over stal
 
     $forgedVehicles = $browserVehicles;
     $forgedVehicles[0]['registration_number'] = 'FORGED6501';
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'vehicles' => $forgedVehicles,
         'name' => 'Forged update must not persist',
         'phone' => '92222222',
         'status' => 'closed',
-    ])->assertSessionHasErrors('vehicles');
+    ]))->assertSessionHasErrors('vehicles');
 
     $request->refresh();
     expect($request->name)->toBe('Booked stale mirror contact corrected')
@@ -428,17 +428,17 @@ test('booked general storage updates do not require resubmitting a stored regist
     $this->actingAs($operations)->get(route('admin.service-requests.edit', $request))
         ->assertOk()
         ->assertSee('data-testid="booked-storage-number-general"', false);
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'General contact corrected',
         'admin_note' => 'Contact-only follow-up.',
-    ])->assertSessionHasNoErrors()->assertRedirect();
+    ]))->assertSessionHasNoErrors()->assertRedirect();
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'General contact corrected',
         'phone' => '90000000',
         'status' => 'contacted',
         'storage_number' => '00042-A',
-    ])->assertSessionHasNoErrors()->assertRedirect();
+    ]))->assertSessionHasNoErrors()->assertRedirect();
 
     $request->refresh();
     expect($request->registration_number)->toBe('GEN12345')
@@ -446,14 +446,14 @@ test('booked general storage updates do not require resubmitting a stored regist
         ->and($request->dekkhotell_number)->toBe('00042-A')
         ->and($request->booking_slot_key)->toBe($slotKey);
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'name' => 'General contact corrected again',
         'phone' => '90000000',
         'status' => 'contacted',
         'storage_number' => '00042-A',
-    ])->assertSessionHasNoErrors()->assertRedirect();
+    ]))->assertSessionHasNoErrors()->assertRedirect();
 
-    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), [
+    $this->actingAs($operations)->put(route('admin.service-requests.update', $request), versionedServiceRequestPayload($request, [
         'operational_form' => '1',
         'service_slug' => $service->slug,
         'fulfilment' => 'workshop',
@@ -466,7 +466,7 @@ test('booked general storage updates do not require resubmitting a stored regist
         'name' => 'General contact corrected again',
         'phone' => '90000000',
         'status' => 'contacted',
-    ])->assertSessionHasErrors('registration_number');
+    ]))->assertSessionHasErrors('registration_number');
 
     $inactive = ServiceRequest::query()->create([
         'reference' => 'SR-ISSUE-65-INACTIVE-STORAGE',
@@ -481,12 +481,12 @@ test('booked general storage updates do not require resubmitting a stored regist
         'phone_normalized' => '4791111111',
         'status' => 'new',
     ]);
-    $this->actingAs($operations)->patch(route('admin.service-requests.update', $inactive), [
+    $this->actingAs($operations)->patch(route('admin.service-requests.update', $inactive), versionedServiceRequestPayload($inactive, [
         'service_slug' => $service->slug,
         'fulfilment' => 'workshop',
         'booking_mode' => 'manual',
         'storage_plan' => 'new',
-    ])->assertSessionHasErrors('registration_number');
+    ]))->assertSessionHasErrors('registration_number');
 
     expect($request->fresh()->registration_number)->toBe('GEN12345')
         ->and($request->dekkhotell_number)->toBe('00042-A')

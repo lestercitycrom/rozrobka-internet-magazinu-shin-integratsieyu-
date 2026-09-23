@@ -20,7 +20,7 @@ test('administrators can see and update a localized service request', function (
 
     $this->actingAs($admin)->get('/admin/service-requests')->assertOk()->assertSee('SR-ADMIN-TEST')->assertSee('Tjenesteforespørsler')->assertSee('Dekkhotell i Tromsø');
     $this->actingAs($admin)->get('/admin/service-requests/'.$request->id)->assertOk()->assertSee('Tesla Model Y')->assertSee('Registreringsnummer')->assertSee('Dekkhotell i Tromsø');
-    $this->actingAs($admin)->put('/admin/service-requests/'.$request->id, ['status' => 'contacted', 'admin_note' => 'Ring kunden'])
+    $this->actingAs($admin)->put('/admin/service-requests/'.$request->id, versionedServiceRequestPayload($request, ['status' => 'contacted', 'admin_note' => 'Ring kunden']))
         ->assertRedirect()->assertSessionHas('status');
     expect($request->fresh()->status)->toBe(ServiceRequestStatus::Contacted)->and($request->fresh()->admin_note)->toBe('Ring kunden');
 });

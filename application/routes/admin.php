@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\ServiceAddonController;
 use App\Http\Controllers\Admin\ServicePageController;
 use App\Http\Controllers\Admin\ServiceRequestController;
 use App\Http\Controllers\Admin\ServiceRequestDayController;
+use App\Http\Controllers\Admin\ServiceRequestQuickActionController;
 use App\Http\Controllers\Admin\StorefrontSettingsController;
 use App\Http\Controllers\Admin\SystemHealthController;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::get('/service-requests/{request}/edit', [ServiceRequestController::class, 'edit'])->name('service-requests.edit');
             Route::get('/service-requests/{request}', [ServiceRequestController::class, 'show'])->name('service-requests.show');
             Route::match(['put', 'patch'], '/service-requests/{request}', [ServiceRequestController::class, 'update'])->name('service-requests.update');
+            Route::patch('/service-requests/{serviceRequest}/quick-action', ServiceRequestQuickActionController::class)->name('service-requests.quick-action');
             Route::get('/booking-calendar', [BookingCalendarController::class, 'index'])->name('booking-calendar.index');
         });
 

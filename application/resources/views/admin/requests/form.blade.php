@@ -63,6 +63,9 @@
                 <ul class="mt-2 list-disc space-y-1 pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
+        @error('expected_version')
+            <p class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="status">{{ __('service_requests.latest_version_notice', ['version' => $request->operation_version, 'status' => __('service_requests.status_'.$request->status->value)]) }}</p>
+        @enderror
 
         @if($detailsLocked)
             <div class="rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-950" role="status">
@@ -71,9 +74,16 @@
             </div>
         @endif
 
-        <form class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,.85fr)]" method="post" action="{{ $formAction }}" data-seasonal-prices='@json($seasonalPrices)'>
+        <form class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,.85fr)]" method="post" action="{{ $formAction }}" data-seasonal-prices='@json($seasonalPrices)' @if($editing) data-status-full-form data-reference="{{ $request->reference }}" data-initial-status="{{ $request->status->value }}" @endif>
             @csrf
-            @if($editing) @method('PUT') @else <input type="hidden" name="submission_token" value="{{ $submissionToken }}"> @endif
+            @if($editing)
+                @method('PUT')
+                <input type="hidden" name="expected_version" value="{{ $request->operation_version }}">
+                <input type="hidden" name="command_id" value="{{ old('command_id', (string) Illuminate\Support\Str::uuid()) }}">
+                @if(filled($returnTo ?? null))<input type="hidden" name="return_to" value="{{ $returnTo }}">@endif
+            @else
+                <input type="hidden" name="submission_token" value="{{ $submissionToken }}">
+            @endif
             @unless($detailsLocked)<input type="hidden" name="operational_form" value="1">@endunless
 
             <div class="space-y-6">
@@ -105,7 +115,7 @@
                                 <button class="et-btn et-btn--outline" type="button" data-client-load-more hidden>{{ __('service_requests.client_lookup_more') }}</button>
                             </div>
                             <span class="mt-2 block text-sm font-normal text-easytire-muted">
-                                <a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.create', $editing ? ['service_request' => $request->id] : []) }}">{{ __('service_requests.create_client_link') }}</a>
+                                <a class="font-bold text-easytire-brand underline" href="{{ route('admin.clients.create', $editing ? array_filter(['service_request' => $request->id, 'return_to' => $returnTo]) : []) }}">{{ __('service_requests.create_client_link') }}</a>
                                 · {{ __('service_requests.client_snapshot_note') }}
                             </span>
                         </div>

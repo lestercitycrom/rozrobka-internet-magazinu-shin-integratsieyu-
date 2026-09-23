@@ -20,6 +20,7 @@ final class ServiceRequestCreator
         private readonly SeasonalQuoteCalculator $quotes,
         private readonly OutboxPublisher $outbox,
         private readonly CustomerPhoneNormalizer $phones,
+        private readonly ServiceRequestChangeRecorder $changes,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -55,11 +56,17 @@ final class ServiceRequestCreator
     }
 
     /** @param array<string, mixed> $data */
-    public function updateManual(ServiceRequest $request, array $data): ServiceRequest
+    public function updateManual(ServiceRequest $request, array $data, User $actor): ServiceRequest
     {
-        return DB::transaction(function () use ($request, $data): ServiceRequest {
+        return DB::transaction(function () use ($request, $data, $actor): ServiceRequest {
             /** @var ServiceRequest $locked */
             $locked = ServiceRequest::query()->whereKey($request->getKey())->lockForUpdate()->firstOrFail();
+            $commandId = (string) $data['command_id'];
+            $expectedVersion = (int) $data['expected_version'];
+            if ($this->changes->alreadyApplied($locked, $actor, $commandId, 'full_update')) {
+                return $locked->refresh();
+            }
+            $this->changes->assertExpected($locked, $expectedVersion);
             $contact = Arr::only($data, ['client_id', 'name', 'email', 'phone', 'address', 'district', 'assigned_van', 'note', 'admin_note', 'status']);
             if (array_key_exists('email', $contact)) {
                 $contact['email'] = filled($contact['email']) ? mb_strtolower(trim((string) $contact['email'])) : null;
@@ -91,18 +98,25 @@ final class ServiceRequestCreator
                     ]);
                 }
 
-                $locked->update([
-                    ...$contact,
-                    ...$this->bookedStorageNumberChanges($locked, $data),
-                ]);
-
-                return $locked->refresh();
+                return $this->changes->apply(
+                    request: $locked,
+                    attributes: [...$contact, ...$this->bookedStorageNumberChanges($locked, $data)],
+                    actor: $actor,
+                    expectedVersion: $expectedVersion,
+                    commandId: $commandId,
+                    command: 'full_update',
+                );
             }
 
             if (! array_key_exists('service_slug', $data)) {
-                $locked->update($contact);
-
-                return $locked->refresh();
+                return $this->changes->apply(
+                    request: $locked,
+                    attributes: $contact,
+                    actor: $actor,
+                    expectedVersion: $expectedVersion,
+                    commandId: $commandId,
+                    command: 'full_update',
+                );
             }
 
             $effectiveData = $this->effectiveOperationalInput($locked, $data);
@@ -138,9 +152,14 @@ final class ServiceRequestCreator
                 $operational = Arr::except($operational, ['quote_min_minor', 'quote_max_minor', 'quote_currency']);
             }
 
-            $locked->update([...$contact, ...$operational]);
-
-            return $locked->refresh();
+            return $this->changes->apply(
+                request: $locked,
+                attributes: [...$contact, ...$operational],
+                actor: $actor,
+                expectedVersion: $expectedVersion,
+                commandId: $commandId,
+                command: 'full_update',
+            );
         }, 3);
     }
 

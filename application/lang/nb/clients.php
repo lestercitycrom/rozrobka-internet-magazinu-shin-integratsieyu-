@@ -30,5 +30,8 @@ return [
     'saved' => 'Kunden er oppdatert.',
     'create_request' => 'Opprett forespørsel',
     'link_request' => 'Kunden kobles til forespørsel :reference uten å endre forespørselens lagrede kontaktopplysninger.',
+    'possible_duplicates' => 'Mulig eksisterende kunde',
+    'possible_duplicates_intro' => 'Telefon eller e-post samsvarer med en eksisterende kundepost. Kontroller treffet før du oppretter en ny kunde.',
+    'possible_duplicates_no_merge' => 'Ingenting slås sammen automatisk. Du kan fortsatt opprette en separat kunde når det er riktig.',
     'open' => 'Åpne kunde',
 ];
