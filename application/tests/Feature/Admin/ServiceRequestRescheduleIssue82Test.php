@@ -230,6 +230,10 @@ test('full blocked blacked out forged and stale slots leave the original booking
     $stale = issue82ReschedulePayload($request, '2026-10-23', "b1-{$targetInterval->id}-20261023-1000", ['expected_version' => 1]);
     $request->forceFill(['operation_version' => 2, 'admin_note' => 'Concurrent change'])->save();
     $this->actingAs($operations)->post(route('admin.service-requests.reschedule.update', $request), $stale)
+        ->assertRedirect(route('admin.service-requests.reschedule.edit', [
+            'serviceRequest' => $request,
+            'date' => '2026-10-23',
+        ]))
         ->assertSessionHasErrors('expected_version');
     $current = $request->fresh();
     expect($current->booking_slot_key)->toBe($oldKey)
@@ -281,7 +285,7 @@ test('same slot and replayed command are idempotent even after a later move', fu
         ->and(ServiceRequestEvent::query()->where('command_id', $sameCommand)->count())->toBe(1);
 });
 
-test('reschedule is role protected and rejects historical inactive and multi vehicle requests', function (): void {
+test('reschedule is role protected', function (): void {
     $service = issue82Service();
     $owner = User::factory()->owner()->create();
     $operations = User::factory()->operations()->create();
@@ -306,21 +310,158 @@ test('reschedule is role protected and rejects historical inactive and multi veh
     $this->actingAs($owner)->get(route('admin.service-requests.reschedule.edit', $request))->assertOk();
     $this->actingAs($operations)->get(route('admin.service-requests.reschedule.edit', $request))->assertOk();
 
-    foreach ([ServiceRequestStatus::Closed, ServiceRequestStatus::Cancelled] as $status) {
-        $blocked = issue82Request($service, ['status' => $status]);
-        $this->actingAs($operations)->get(route('admin.service-requests.reschedule.edit', $blocked))
-            ->assertSessionHasErrors('booking_slot_key');
-    }
-    $past = issue82Request($service, [
-        'booking_slot_key' => 'b1-1-20261019-0900',
-        'booking_starts_at' => '2026-10-19 07:00:00',
-        'booking_ends_at' => '2026-10-19 07:30:00',
+});
+
+test('an ineligible reschedule page terminates on the request card with a clear error', function (string $scenario, string $message): void {
+    $service = issue82Service();
+    $operations = User::factory()->operations()->create(['locale' => 'nb']);
+    $overrides = match ($scenario) {
+        'closed' => ['status' => ServiceRequestStatus::Closed],
+        'cancelled' => ['status' => ServiceRequestStatus::Cancelled],
+        'ended' => [
+            'booking_slot_key' => 'b1-1-20261019-0900',
+            'booking_starts_at' => '2026-10-19 07:00:00',
+            'booking_ends_at' => '2026-10-19 07:30:00',
+        ],
+        'three-vehicles' => [
+            'vehicles' => [issue82Vehicle('ONE82'), issue82Vehicle('TWO82'), issue82Vehicle('THREE82')],
+        ],
+    };
+    $request = issue82Request($service, $overrides);
+    $returnTo = route('admin.service-requests.index', ['q' => $request->reference, 'selected' => $request->id], false);
+    $editUrl = route('admin.service-requests.reschedule.edit', [
+        'serviceRequest' => $request,
+        'return_to' => $returnTo,
     ]);
-    $this->actingAs($operations)->get(route('admin.service-requests.reschedule.edit', $past))
+    $showUrl = route('admin.service-requests.show', [
+        'request' => $request,
+        'return_to' => $returnTo,
+    ]);
+
+    $this->actingAs($operations)->get($editUrl)
+        ->assertRedirect($showUrl)
         ->assertSessionHasErrors('booking_slot_key');
-    $many = issue82Request($service, ['vehicles' => [issue82Vehicle('ONE82'), issue82Vehicle('TWO82'), issue82Vehicle('THREE82')]]);
-    $this->actingAs($operations)->get(route('admin.service-requests.reschedule.edit', $many))
-        ->assertSessionHasErrors('booking_slot_key');
+
+    $this->followingRedirects()->get($editUrl)
+        ->assertOk()
+        ->assertViewIs('admin.requests.show')
+        ->assertSee('data-testid="request-page-errors"', false)
+        ->assertSee(__($message));
+})->with([
+    'closed request' => ['closed', 'service_requests.validation.reschedule_status'],
+    'cancelled request' => ['cancelled', 'service_requests.validation.reschedule_status'],
+    'ended booking' => ['ended', 'service_requests.validation.reschedule_past'],
+    'three vehicles' => ['three-vehicles', 'service_requests.validation.reschedule_vehicle_limit'],
+]);
+
+test('a stale reschedule after another operator cancels ends safely without changing the booking', function (): void {
+    $service = issue82Service();
+    $operatorA = User::factory()->operations()->create(['locale' => 'nb']);
+    $operatorB = User::factory()->operations()->create(['locale' => 'nb']);
+    $oldDate = CarbonImmutable::parse('2026-10-22', 'Europe/Oslo');
+    $newDate = CarbonImmutable::parse('2026-10-23', 'Europe/Oslo');
+    $oldInterval = issue82Interval($oldDate);
+    $newInterval = issue82Interval($newDate);
+    $oldKey = "b1-{$oldInterval->id}-20261022-0900";
+    $request = issue82Request($service, [
+        'booking_schedule_interval_id' => $oldInterval->id,
+        'booking_slot_key' => $oldKey,
+        'booking_starts_at' => $oldDate->setTime(9, 0)->utc(),
+        'booking_ends_at' => $oldDate->setTime(9, 30)->utc(),
+    ]);
+    $returnTo = route('admin.service-requests.index', ['q' => $request->reference, 'selected' => $request->id], false);
+    $stalePayload = issue82ReschedulePayload(
+        $request,
+        '2026-10-23',
+        "b1-{$newInterval->id}-20261023-0900",
+        ['return_to' => $returnTo],
+    );
+
+    $this->actingAs($operatorA)->get(route('admin.service-requests.reschedule.edit', [
+        'serviceRequest' => $request,
+        'date' => '2026-10-23',
+        'return_to' => $returnTo,
+    ]))->assertOk();
+
+    $this->actingAs($operatorB)->patch(route('admin.service-requests.quick-action', $request), [
+        'command' => 'status',
+        'command_id' => (string) Str::uuid(),
+        'expected_version' => 1,
+        'status' => 'cancelled',
+    ])->assertSessionHasNoErrors();
+
+    $showUrl = route('admin.service-requests.show', [
+        'request' => $request,
+        'return_to' => $returnTo,
+    ]);
+    $response = $this->actingAs($operatorA)->post(
+        route('admin.service-requests.reschedule.update', $request),
+        $stalePayload,
+    );
+    $response->assertRedirect($showUrl)->assertSessionHasErrors('booking_slot_key');
+    $this->followingRedirects()->post(
+        route('admin.service-requests.reschedule.update', $request),
+        $stalePayload,
+    )
+        ->assertOk()
+        ->assertViewIs('admin.requests.show')
+        ->assertSee('data-testid="request-page-errors"', false)
+        ->assertSee(__('service_requests.validation.reschedule_status'));
+
+    $request->refresh();
+    expect($request->status)->toBe(ServiceRequestStatus::Cancelled)
+        ->and($request->booking_slot_key)->toBe($oldKey)
+        ->and($request->booking_starts_at->utc()->equalTo($oldDate->setTime(9, 0)->utc()))->toBeTrue()
+        ->and($request->operation_version)->toBe(2)
+        ->and(ServiceRequestEvent::query()->where('service_request_id', $request->id)->count())->toBe(1)
+        ->and(ServiceRequestEvent::query()->where('service_request_id', $request->id)->where('command', 'reschedule')->count())->toBe(0);
+});
+
+test('invalid reschedule dates and flashed hidden values reach one usable final page', function (): void {
+    $service = issue82Service();
+    $operations = User::factory()->operations()->create(['locale' => 'nb']);
+    $date = CarbonImmutable::parse('2026-10-22', 'Europe/Oslo');
+    issue82Interval($date);
+    $request = issue82Request($service);
+    $canonicalUrl = route('admin.service-requests.reschedule.edit', $request);
+
+    foreach (['not-a-date', '2026-10-19'] as $invalidDate) {
+        $invalidUrl = route('admin.service-requests.reschedule.edit', [
+            'serviceRequest' => $request,
+            'date' => $invalidDate,
+        ]);
+        $this->actingAs($operations)->get($invalidUrl)
+            ->assertRedirect($canonicalUrl)
+            ->assertSessionHasErrors('date');
+        $this->followingRedirects()->get($invalidUrl)
+            ->assertOk()
+            ->assertViewIs('admin.requests.reschedule')
+            ->assertSee('data-testid="reschedule-errors"', false);
+    }
+
+    $slot = app(BookingCalendar::class)->availabilityForRequest($request, $date)['slots']->firstOrFail();
+    $payload = issue82ReschedulePayload($request, '2026-10-22', $slot->key, [
+        'expected_version' => 0,
+        'command_id' => 'not-a-uuid',
+    ]);
+    $payload['booking_date'] = ['not-a-date'];
+
+    $this->from($canonicalUrl)->actingAs($operations)->post(
+        route('admin.service-requests.reschedule.update', $request),
+        $payload,
+    )->assertRedirect($canonicalUrl)->assertSessionHasErrors(['booking_date', 'expected_version', 'command_id']);
+
+    $this->from($canonicalUrl)->followingRedirects()->post(
+        route('admin.service-requests.reschedule.update', $request),
+        $payload,
+    )
+        ->assertOk()
+        ->assertViewIs('admin.requests.reschedule')
+        ->assertViewHas('commandId', fn (string $commandId): bool => Str::isUuid($commandId))
+        ->assertViewHas('date', fn (CarbonImmutable $selected): bool => $selected->format('Y-m-d') === '2026-10-22')
+        ->assertSee('name="booking_date" value="2026-10-22"', false)
+        ->assertSee('name="expected_version" value="1"', false)
+        ->assertSee('data-testid="reschedule-errors"', false);
 });
 
 test('ambiguous and nonexistent Oslo wall times are never offered as exact slots', function (): void {

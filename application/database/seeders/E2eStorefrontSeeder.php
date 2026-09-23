@@ -470,6 +470,41 @@ class E2eStorefrontSeeder extends Seeder
                 'status' => ServiceRequestStatus::New,
                 'consent_at' => now()->subDay(),
             ]);
+
+            ServiceRequest::query()->updateOrCreate(['reference' => 'SR-E2E-STALE-RESCHEDULE-'.$surface], [
+                'submission_token' => (string) Str::uuid(),
+                'locale' => 'nb',
+                'source' => ServiceRequestSource::Public,
+                'created_by_user_id' => null,
+                'service_slug' => 'mobilt-dekkskift',
+                'fulfilment' => 'workshop',
+                'preferred_date' => $exactStart->format('Y-m-d'),
+                'preferred_window' => '10:30–11:00',
+                'booking_slot_key' => 'e2e-stale-locked-'.$surface,
+                'booking_starts_at' => $exactStart->copy()->addMinutes(30),
+                'booking_ends_at' => $exactStart->copy()->addMinutes(60),
+                'vehicle' => 'E2E stale reschedule vehicle '.$surface,
+                'registration_number' => 'STALE'.str_replace('-', '', $surface),
+                'tire_size' => '205/55 R16',
+                'dekkhotell' => false,
+                'vehicles' => [[
+                    'vehicle' => 'E2E stale reschedule vehicle '.$surface,
+                    'registration_number' => 'STALE'.str_replace('-', '', $surface),
+                    'tire_size' => '205/55 R16',
+                    'vehicle_type' => 'passenger',
+                    'rim_band' => 'r16-r18',
+                    'storage_plan' => 'none',
+                ]],
+                'quote_min_minor' => 95000,
+                'quote_max_minor' => 95000,
+                'quote_currency' => 'NOK',
+                'name' => 'E2E stale reschedule customer '.$surface,
+                'email' => null,
+                'phone' => '95555555',
+                'phone_normalized' => '4795555555',
+                'status' => ServiceRequestStatus::New,
+                'consent_at' => now()->subDay(),
+            ]);
         }
     }
 

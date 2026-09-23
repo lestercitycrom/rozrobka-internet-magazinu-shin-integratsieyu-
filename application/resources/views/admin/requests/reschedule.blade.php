@@ -3,6 +3,9 @@
         $backHref = $returnTo ?: route('admin.service-requests.show', $request);
         $currentStart = $request->booking_starts_at?->setTimezone($timezone);
         $currentEnd = $request->booking_ends_at?->setTimezone($timezone);
+        $oldExpectedVersion = old('expected_version');
+        $expectedVersion = filter_var($oldExpectedVersion, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
+            ?: $request->operation_version;
     @endphp
     <div class="max-w-4xl space-y-7" data-testid="request-reschedule-page">
         <header>
@@ -17,7 +20,7 @@
                 <strong>{{ __('service_requests.validation_summary') }}</strong>
                 <ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
                 @if($errors->has('expected_version'))
-                    <a class="mt-3 inline-flex min-h-11 items-center font-bold underline" href="{{ route('admin.service-requests.reschedule.edit', array_filter(['serviceRequest' => $request, 'date' => old('booking_date', $date->format('Y-m-d')), 'return_to' => $returnTo])) }}">{{ __('service_requests.reschedule_reload') }}</a>
+                    <a class="mt-3 inline-flex min-h-11 items-center font-bold underline" href="{{ route('admin.service-requests.reschedule.edit', array_filter(['serviceRequest' => $request, 'date' => $date->format('Y-m-d'), 'return_to' => $returnTo])) }}">{{ __('service_requests.reschedule_reload') }}</a>
                 @endif
             </div>
         @endif
@@ -43,7 +46,7 @@
         <form class="easytire-card space-y-5 p-5 sm:p-6" method="post" action="{{ route('admin.service-requests.reschedule.update', $request) }}" data-dirty-guard data-testid="reschedule-form">
             @csrf
             <input type="hidden" name="booking_date" value="{{ $date->format('Y-m-d') }}">
-            <input type="hidden" name="expected_version" value="{{ old('expected_version', $request->operation_version) }}">
+            <input type="hidden" name="expected_version" value="{{ $expectedVersion }}">
             <input type="hidden" name="command_id" value="{{ $commandId }}">
             @if($returnTo)<input type="hidden" name="return_to" value="{{ $returnTo }}">@endif
 

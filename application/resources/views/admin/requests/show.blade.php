@@ -13,6 +13,12 @@
                 <a class="et-btn et-btn--primary" href="{{ route('admin.service-requests.edit', $editParameters) }}" data-testid="request-edit">{{ __('service_requests.edit') }}</a>
             </div>
         </header>
+        @if ($errors->any())
+            <div class="border border-red-300 bg-red-50 p-4 text-sm text-red-900" role="alert" tabindex="-1" autofocus data-testid="request-page-errors">
+                <strong>{{ __('service_requests.validation_summary') }}</strong>
+                <ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
         @if (session('status'))<p class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-bold text-green-800" role="status">{{ session('status') }}</p>@endif
 
         <div class="grid gap-5 lg:grid-cols-2">
