@@ -162,6 +162,8 @@ final class CustomerHomepageCollectionsSeeder extends Seeder
             'workshop-alt' => ['file' => 'workshop-alt.webp', 'alt_nb' => 'Arbeidsområde i EasyTire-verkstedet', 'alt_ru' => 'Рабочая зона мастерской EasyTire'],
             'dekkhotell' => ['file' => 'dekkhotell.webp', 'alt_nb' => 'Hjul lagret hos EasyTire', 'alt_ru' => 'Колёса на хранении в EasyTire'],
             'exterior' => ['file' => 'exterior.webp', 'alt_nb' => 'EasyTire-biler ved verkstedet', 'alt_ru' => 'Автомобили EasyTire у мастерской'],
+            'oil-change' => ['file' => 'customer-oil-change.webp', 'alt_nb' => 'Oljeskift hos EasyTire i Tromsø', 'alt_ru' => 'Замена масла в EasyTire в Тромсё'],
+            'interior-cleaning' => ['file' => 'customer-interior-cleaning.webp', 'alt_nb' => 'Nyrenset bilinteriør hos EasyTire', 'alt_ru' => 'Салон автомобиля после химчистки в EasyTire'],
         ];
 
         $assets = [];
@@ -247,8 +249,8 @@ final class CustomerHomepageCollectionsSeeder extends Seeder
         $published = ContentPageStatus::Published;
 
         return [
-            $this->card('additional-oil-change', HomepageServiceCollection::Additional, 10, 'oljeskift', 'Oljeskift', 'Oljeskift på verkstedet eller hjemme hos deg. Vi bruker olje og filter som passer bilen din.', 'Les mer', 'Замена масла', 'Замена масла в мастерской или у вас. Используем масло и фильтр, подходящие вашему автомобилю.', 'Подробнее', null, $assets['workshop'], $published),
-            $this->card('additional-interior-cleaning', HomepageServiceCollection::Additional, 20, null, 'Interiørrens', 'Fra enkel innvendig vask til grundig interiørrens av hele bilen.', 'Les mer', 'Химчистка салона', 'От простой уборки салона до глубокой химчистки всего автомобиля.', 'Подробнее', '/tjenester#service-interior-cleaning', $assets['exterior'], $published),
+            $this->card('additional-oil-change', HomepageServiceCollection::Additional, 10, 'oljeskift', 'Oljeskift', 'Oljeskift på verkstedet eller hjemme hos deg. Vi bruker olje og filter som passer bilen din.', 'Les mer', 'Замена масла', 'Замена масла в мастерской или у вас. Используем масло и фильтр, подходящие вашему автомобилю.', 'Подробнее', null, $assets['oil-change'], $published),
+            $this->card('additional-interior-cleaning', HomepageServiceCollection::Additional, 20, null, 'Interiørrens', 'Fra enkel innvendig vask til grundig interiørrens av hele bilen.', 'Les mer', 'Химчистка салона', 'От простой уборки салона до глубокой химчистки всего автомобиля.', 'Подробнее', '/tjenester#service-interior-cleaning', $assets['interior-cleaning'], $published),
             $this->card('additional-polishing-paint', HomepageServiceCollection::Additional, 30, null, 'Polering og lakkorrigering', 'Polering og lakkorrigering som gir lakken tilbake glans og en jevnere overflate.', 'Les mer', 'Полировка и коррекция лакокрасочного покрытия', 'Полировка и коррекция, которые возвращают покрытию блеск и делают поверхность ровнее.', 'Подробнее', '/tjenester#service-polishing-paint', $assets['workshop-alt'], $published),
             $this->card('additional-lockout', HomepageServiceCollection::Additional, 40, null, 'Utelåsing – åpning av bil', 'Har du låst nøklene inne i bilen? Vi kommer til deg og hjelper deg med å åpne bildøren på en skånsom måte.', 'Bestill hjelp', 'Открытие заблокированного автомобиля', 'Оставили ключи внутри? Мы приедем и поможем аккуратно открыть дверь автомобиля.', 'Заказать помощь', '/kontakt', $assets['mobile-service'], $published),
             $this->card('additional-lights-wipers', HomepageServiceCollection::Additional, 50, 'lyspaerer-viskerblad', 'Bytte av lyspærer og vindusviskere', 'Vi bytter lyspærer og vindusviskere raskt og enkelt.', 'Les mer', 'Замена ламп и стеклоочистителей', 'Быстро и просто заменим автомобильные лампы и стеклоочистители.', 'Подробнее', null, $assets['workshop-alt'], $published),

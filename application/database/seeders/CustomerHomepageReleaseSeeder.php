@@ -15,6 +15,7 @@ final class CustomerHomepageReleaseSeeder extends Seeder
         $this->call([
             CustomerHomepageCollectionsSeeder::class,
             CustomerHomepageCompositionSeeder::class,
+            CustomerServiceMediaLocaleRepairSeeder::class,
             // Compatibility only: #47's journal owns every hero value that it
             // applied. The older #45 seeder may handle an exact legacy value
             // only when that field is not already present in the journal.
