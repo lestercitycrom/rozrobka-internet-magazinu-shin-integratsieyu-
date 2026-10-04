@@ -1,0 +1,456 @@
+/*
+ * Final customer homepage composition (18 September 2026).
+ *
+ * Modern remains the canonical layout. This layer borrows only the expressive
+ * display type approved from Classic and deliberately leaves shared forms,
+ * catalogue UI, data bindings and the Classic profile untouched.
+ */
+
+/* Keep Modern usable in desktop browsers narrowed to a true 320px window.
+ * Classic retains its accepted 320px floor. */
+body.storefront[data-storefront-design='modern'] {
+    min-width: 0;
+}
+
+.storefront[data-storefront-design='modern'] :is(
+    .et-v3-hero .et-v3-display,
+    .et-v3-logistics .et-h2,
+    .et-v3-logistics-card__content h3,
+    .et-v3-notices .et-h2,
+    .et-v3-promotion__content h3,
+    .et-home-service-collection .et-h2,
+    .et-home-service-collection .et-v3-service h3,
+    .et-v3-process-strip__title,
+    [data-testid='homepage-reviews'] .et-h2,
+    #home-contact-title,
+    .et-v3-contact__business-copy h3
+) {
+    font-family: var(--et-font-display-system);
+    font-weight: 800;
+    letter-spacing: .012em;
+}
+
+.storefront[data-storefront-design='modern'] :is(
+    .et-v3-logistics .et-h2,
+    .et-v3-notices .et-h2,
+    .et-home-service-collection .et-h2,
+    .et-v3-process-strip__title,
+    [data-testid='homepage-reviews'] .et-h2,
+    #home-contact-title
+) {
+    font-size: clamp(3rem, 5vw, 4.5rem);
+    line-height: .95;
+    text-wrap: balance;
+}
+
+/* Hero: Classic's confidence at a calmer, more usable scale. */
+.storefront[data-storefront-design='modern'] .et-v3-hero__content {
+    max-width: 46rem;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-hero .et-v3-display {
+    max-width: 17.25ch;
+    font-size: clamp(4.6rem, 6.25vw, 5.625rem);
+    line-height: .86;
+    overflow-wrap: normal;
+    text-transform: uppercase;
+    text-wrap: wrap;
+}
+
+/* Dekkhotell: a calmer portrait pair with matching content baselines. */
+.storefront[data-storefront-design='modern'] .et-v3-logistics-grid {
+    max-width: 70rem;
+    grid-template-columns: repeat(2, minmax(0, 30rem));
+    justify-content: center;
+    gap: clamp(2.5rem, 5vw, 5rem);
+    margin-inline: auto;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-logistics-card {
+    min-height: 0;
+    aspect-ratio: 4 / 5;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-logistics-card__content {
+    display: grid;
+    grid-template-rows: auto minmax(2.05em, auto) minmax(4.5em, auto) auto;
+    align-content: end;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-logistics-card__content h3 {
+    margin-top: .55rem;
+    font-size: clamp(2.25rem, 3.2vw, 3.35rem);
+    line-height: .96;
+    overflow-wrap: normal;
+    text-wrap: balance;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-logistics-card__content > p:not(.et-eyebrow) {
+    margin-top: .8rem;
+}
+
+.storefront[data-storefront-design='modern'] [data-card-overlay-kind='dekkhotell'] > .et-card-overlay {
+    border: 1px solid rgb(255 255 255 / .28);
+    background: rgb(10 10 11 / .9);
+    color: #fff;
+    backdrop-filter: blur(10px);
+}
+
+.storefront[data-storefront-design='modern'] [data-card-overlay-kind='dekkhotell'] .et-card-overlay__surface {
+    background: linear-gradient(145deg, rgb(10 10 11 / .9), rgb(10 10 11 / .78));
+}
+
+.storefront[data-storefront-design='modern'] [data-card-overlay-kind='dekkhotell'] .et-card-overlay__surface h2 {
+    color: #fff;
+    font-family: var(--et-font-display-system);
+    font-weight: 800;
+    letter-spacing: .012em;
+    line-height: .98;
+}
+
+.storefront[data-storefront-design='modern'] [data-card-overlay-kind='dekkhotell'] .et-card-overlay__surface > p:not(.et-eyebrow) {
+    color: rgb(255 255 255 / .82);
+}
+
+.storefront[data-storefront-design='modern'] [data-card-overlay-kind='dekkhotell'] .et-card-overlay__close {
+    border-color: rgb(255 255 255 / .42);
+    background: rgb(10 10 11 / .72);
+    color: #fff;
+}
+
+/* Promotions: remove visual dead space and keep the two actions together. */
+.storefront[data-storefront-design='modern'] .et-v3-promotion {
+    aspect-ratio: 4 / 5;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-promotion__shade {
+    background: linear-gradient(0deg, rgb(6 6 7 / .97), rgb(6 6 7 / .72) 52%, rgb(6 6 7 / .08) 88%);
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-promotion__content {
+    justify-content: flex-end;
+    padding: clamp(1.4rem, 2.5vw, 2rem);
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-promotion__content h3 {
+    margin-top: 0;
+    font-size: clamp(2rem, 3.1vw, 3.15rem);
+    line-height: .96;
+    overflow-wrap: normal;
+    text-wrap: balance;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-promotion__content .et-v3-promotion__short,
+.storefront[data-storefront-design='modern'] .et-v3-promotion__disclosure,
+.storefront[data-storefront-design='modern'] .et-v3-promotion__cta {
+    margin-top: .65rem;
+}
+
+/* The selected Modern service-card structure, with one restrained red accent. */
+.storefront[data-storefront-design='modern'] .et-home-service-collection .et-v3-service {
+    border-top: 2px solid var(--v3-red);
+}
+
+.storefront[data-storefront-design='modern'] .et-home-service-collection .et-v3-service h3 {
+    font-size: clamp(1.65rem, 2.25vw, 2.2rem);
+    line-height: 1;
+    overflow-wrap: normal;
+    text-wrap: balance;
+}
+
+.storefront[data-storefront-design='modern'] .et-home-service-collection .et-v3-service--feature h3 {
+    font-size: clamp(2rem, 3vw, 2.85rem);
+}
+
+.storefront[data-storefront-design='modern'] .et-home-service-collection .et-v3-service a {
+    color: #ff5a5f;
+}
+
+/* Price strip: retain the approved condensed hierarchy without changing its rail. */
+.storefront[data-storefront-design='modern'] .et-home-prices header h2 {
+    font-family: var(--et-font-display-system);
+    font-size: clamp(1.65rem, 3vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -.015em;
+    line-height: .95;
+}
+
+.storefront[data-storefront-design='modern'] .et-home-prices__list strong {
+    font-family: var(--et-font-display-system);
+    font-size: clamp(1.45rem, 2.5vw, 2rem);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.storefront[data-storefront-design='modern'] .et-home-prices__list strong small {
+    font-family: var(--et-font-body);
+    font-size: .62rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+/* Reviews: restore the crisp card cap and give the display heading desktop room. */
+.storefront[data-storefront-design='modern'] [data-testid='homepage-reviews'] .et-v3-review {
+    border-top: 3px solid var(--v3-ink);
+}
+
+/* Business: match the accepted broad, two-line display treatment. */
+.storefront[data-storefront-design='modern'] .et-v3-contact__business-copy h3 {
+    max-width: 20ch;
+    font-size: clamp(2rem, 3.6vw, 3.35rem);
+    letter-spacing: -.05em;
+    line-height: .98;
+    overflow-wrap: normal;
+    text-wrap: balance;
+}
+
+/* Text-only zoom must not let large display words enlarge the page canvas.
+ * The normal layouts keep their natural word wrapping; anywhere is only used
+ * when a single word can no longer fit the available column. */
+@media (max-width: 900px) {
+    .storefront[data-storefront-design='modern'] .et-v3-section-head > div,
+    .storefront[data-storefront-design='modern'] .et-v3-section-head .et-h2,
+    .storefront[data-storefront-design='modern'] .et-v3-process-strip__title {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Five-step horizontal timeline on desktop; a readable vertical timeline below. */
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    margin-top: var(--et-section-heading-gap);
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline::before {
+    position: absolute;
+    top: 50%;
+    right: 10%;
+    left: 10%;
+    display: block;
+    height: 2px;
+    background: #b9b4ab;
+    content: '';
+    transform: translateY(-1px);
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step {
+    display: grid;
+    min-height: 360px;
+    grid-template-rows: minmax(130px, 1fr) 48px minmax(130px, 1fr);
+    gap: 0;
+    border: 0;
+    padding: 0 clamp(.65rem, 1.4vw, 1.25rem);
+    background: transparent;
+    text-align: center;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step > small {
+    position: relative;
+    top: auto;
+    right: auto;
+    z-index: 1;
+    display: grid;
+    width: 48px;
+    height: 48px;
+    grid-row: 2;
+    place-items: center;
+    justify-self: center;
+    border: 2px solid var(--v3-red);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--v3-red);
+    font-family: var(--et-font-display-system);
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step > div {
+    grid-row: 1;
+    align-self: end;
+    padding-bottom: 1.5rem;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step:nth-child(even) > div {
+    grid-row: 3;
+    align-self: start;
+    padding-top: 1.5rem;
+    padding-bottom: 0;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step h3 {
+    margin: 0;
+    font-family: var(--et-font-display-system);
+    font-size: clamp(1.45rem, 1.8vw, 1.8rem);
+    font-weight: 800;
+    letter-spacing: .012em;
+    line-height: 1.08;
+    text-wrap: balance;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step p {
+    margin-top: .65rem;
+    font-size: .9375rem;
+    line-height: 1.45;
+}
+
+/* Keep the map provider's bottom attribution visible: the CTA becomes a real footer. */
+.storefront[data-storefront-design='modern'] .et-v3-contact .et-map {
+    display: grid;
+    height: auto;
+    min-height: 500px;
+    grid-template-rows: minmax(360px, 1fr) auto;
+    align-items: stretch;
+    place-items: stretch;
+    background: #dedbd4;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-contact .et-map__frame {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+    grid-row: 1;
+}
+
+.storefront[data-storefront-design='modern'] .et-v3-contact .et-map__loaded {
+    position: relative;
+    inset: auto;
+    z-index: 3;
+    grid-row: 2;
+    border-top: 1px solid var(--v3-line);
+    border-radius: 0;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    box-shadow: none;
+}
+
+@media (max-width: 900px) {
+    .storefront[data-storefront-design='modern'] .et-v3-logistics-grid {
+        grid-template-columns: minmax(0, 34rem);
+        gap: 2rem;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+        padding-left: .25rem;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline::before {
+        top: 24px;
+        right: auto;
+        bottom: 24px;
+        left: 24px;
+        width: 2px;
+        height: auto;
+        transform: none;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step,
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step:nth-child(even) {
+        display: grid;
+        min-height: 0;
+        grid-template-columns: 48px minmax(0, 1fr);
+        grid-template-rows: auto;
+        gap: 1rem;
+        padding: 0 0 1.75rem;
+        text-align: left;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step:last-child {
+        padding-bottom: 0;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step > small {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step > div,
+    .storefront[data-storefront-design='modern'] .et-v3-process--timeline .et-v3-process__step:nth-child(even) > div {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: start;
+        padding: .15rem 0 0;
+    }
+}
+
+@media (min-width: 901px) {
+    .storefront[data-storefront-design='modern'] [data-testid='homepage-reviews'] .et-v3-section-head > div,
+    .storefront[data-storefront-design='modern'] [data-testid='homepage-reviews'] .et-h2 {
+        max-width: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .storefront[data-storefront-design='modern'] .et-v3-hero .et-v3-display {
+        max-width: 10ch;
+        font-size: clamp(2.8rem, 14vw, 4rem);
+        line-height: .88;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-logistics-card__content {
+        grid-template-rows: auto auto auto auto;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-logistics-card__content h3 {
+        min-height: 0;
+        font-size: clamp(2.2rem, 11vw, 3rem);
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-logistics-card__content > p:not(.et-eyebrow) {
+        min-height: 0;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-promotion {
+        min-height: min(142vw, 35rem);
+        aspect-ratio: auto;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-promotion__content h3 {
+        font-size: clamp(2.25rem, 11vw, 3rem);
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-contact .et-map {
+        min-height: 380px;
+        grid-template-rows: minmax(300px, 1fr) auto;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-contact .et-map__frame {
+        min-height: 300px;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-contact .et-map__loaded {
+        padding: .65rem 1rem;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-contact .et-map__loaded :is(h3, p) {
+        display: none;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-contact .et-map__loaded .et-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 380px) {
+    .storefront[data-storefront-design='modern'] .et-v3-hero .et-v3-display {
+        font-size: 2.65rem;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-shop-categories {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .storefront[data-storefront-design='modern'] .et-v3-logistics-card {
+        aspect-ratio: 4 / 5.4;
+    }
+}

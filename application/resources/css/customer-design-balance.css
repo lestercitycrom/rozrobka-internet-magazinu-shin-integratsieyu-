@@ -2,10 +2,6 @@
  * returning a little of the approved boxed finder structure. */
 .storefront[data-storefront-design='modern'] :is(
     .et-v3-display,
-    .et-h1,
-    .et-h2,
-    .et-page-hero :is(h1, h2),
-    .et-service-hero :is(h1, h2),
     .et-quick-finder__head h2,
     .et-v3-chooser__heading h2,
     .et-form-section__head h2,
@@ -62,8 +58,20 @@
     }
 }
 
-@container finder (max-width: 20rem) {
+@container finder (min-width: 720px) {
+    .storefront[data-storefront-design='modern'] .et-shop-categories {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@container finder (max-width: 14rem) {
     .storefront[data-storefront-design='modern'] .et-shop-categories {
         grid-template-columns: minmax(0, 1fr);
+        padding: .5rem;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-shop-categories a {
+        grid-template-columns: minmax(0, 1fr);
+        padding: .625rem;
     }
 }

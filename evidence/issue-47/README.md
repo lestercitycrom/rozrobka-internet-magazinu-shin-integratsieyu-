@@ -1,6 +1,7 @@
-# Issue #47 verification index
+# Issue #47 verification index — PR #87 refresh
 
-This directory contains the human-reviewable evidence for PR #50. The
+This directory contains the human-reviewable evidence introduced for PR #50
+and refreshed from the final PR #87 candidate. The
 Playwright geometry, interaction, locale, media-failure and overflow checks
 remain the source of truth; the captures below are review checkpoints.
 
@@ -19,9 +20,9 @@ remain the source of truth; the captures below are review checkpoints.
 Focused contact/B2B evidence is available as `business-partners-1440.png`,
 `business-partners-390.png` and `business-partners-320.png`.
 
-`homepage-layout.json` records the measured 4/2/1 process-grid structure,
-equal card heights and the partner-logo 4/2/1 desktop/tablet/mobile structure
-at the same widths. The browser suite additionally proves:
+`homepage-layout.json` records the measured five-column desktop / one-column
+narrow process timeline, equal step heights and the two-column partner-logo
+grid at the same widths. The browser suite additionally proves:
 
 - final section order and absence of the former duplicate catalogue block;
 - exact customer copy in Norwegian and the hidden Russian QA route;
@@ -66,7 +67,7 @@ and the 700 kr tier. A later administrator edit therefore cannot be mistaken
 for an untouched legacy value, and the rollback restores only values still
 equal to what this release applied.
 
-## Final local verification
+## Original PR #50 verification
 
 - Laravel/Pest: `463 passed`, `1 skipped`, `4388 assertions`.
 - Playwright: `197 passed`, `76 skipped` across the buyer, hidden Russian QA,
@@ -75,3 +76,20 @@ equal to what this release applied.
 - Pint: passed.
 - Project-control validation: passed.
 - `git diff --check`: passed.
+
+## PR #87 exact-candidate refresh
+
+- The seven full-page homepage captures, three focused business/partner
+  captures and `homepage-layout.json` were regenerated from the current
+  Modern storefront candidate on 2026-10-04.
+- Modern and Classic Playwright regression: `112 passed`, `32 expected skips`,
+  `0 failed`.
+- PR #87 buyer-focused Playwright: `17 passed`, `11 expected skips`.
+- Modern/Classic responsive balance matrix: all `20` locale/profile/viewport
+  combinations passed.
+- Issue #26 focused audit: `1 passed`.
+- Targeted Laravel/Pest: `28 passed`, `214 assertions`.
+- Vite production build, Blade view compilation, deployment safety suite and
+  `git diff --check`: passed.
+- No migration, seed, import, product data, integration configuration or
+  server-service change is part of this refresh.

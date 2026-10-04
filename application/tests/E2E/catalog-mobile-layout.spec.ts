@@ -117,6 +117,8 @@ test('desktop filter uses natural page scrolling and keeps every control reachab
         const apply = page.getByTestId('catalog-filter-apply');
         const reset = page.getByTestId('catalog-filter-reset');
         await expect(panel).toBeVisible();
+        await expect(panel).not.toHaveAttribute('role', 'dialog');
+        await expect(panel).not.toHaveAttribute('aria-modal', 'true');
         await expect(apply).toBeVisible();
         await expect(reset).toBeVisible();
 
@@ -142,6 +144,66 @@ test('desktop filter uses natural page scrolling and keeps every control reachab
         await expect(reset).toBeInViewport();
         await expectNoGlobalOverflow(page);
     }
+});
+
+test('mobile filter is a named modal with contained focus and complete cleanup', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'buyer-mobile', 'One deterministic mobile accessibility matrix is sufficient');
+
+    await page.goto('/dekk');
+    const drawer = page.getByTestId('catalog-filter-drawer');
+    const toggle = page.getByTestId('catalog-filter-toggle');
+    const dialog = page.locator('[data-mobile-filter-dialog]');
+    const close = page.getByTestId('catalog-filter-close');
+    const apply = page.getByTestId('catalog-filter-apply');
+    const results = page.locator('[data-catalog-live-results]');
+    const header = page.locator('[data-site-header]');
+
+    await expect(dialog).not.toHaveAttribute('role', 'dialog');
+    await toggle.click();
+    await expect(dialog).toHaveAttribute('role', 'dialog');
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
+    await expect(dialog).toHaveAttribute('aria-labelledby', 'catalog-filter-dialog-title');
+    await expect(dialog.locator('#catalog-filter-dialog-title')).toHaveText(/\S/);
+    await expect(close).toBeFocused();
+    await expect(results).toHaveAttribute('inert', '');
+    await expect(header).toHaveAttribute('inert', '');
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(apply).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(close).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(drawer).not.toHaveAttribute('open', '');
+    await expect(toggle).toBeFocused();
+    await expect(dialog).not.toHaveAttribute('role', 'dialog');
+    await expect(results).not.toHaveAttribute('inert', '');
+    await expect(header).not.toHaveAttribute('inert', '');
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
+
+    await toggle.click();
+    await expect(close).toBeFocused();
+    await close.click();
+    await expect(toggle).toBeFocused();
+    await toggle.click();
+    await page.setViewportSize({ width: 1200, height: 800 });
+    await expect(dialog).not.toHaveAttribute('role', 'dialog');
+    await expect(results).not.toHaveAttribute('inert', '');
+    await expect(header).not.toHaveAttribute('inert', '');
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(drawer).not.toHaveAttribute('open', '');
+
+    await toggle.click();
+    await page.locator('[data-catalog-live-form] select[name="width"]').selectOption('205');
+    await apply.click();
+    await expect(page).toHaveURL(/width=205/);
+    await expect(drawer).not.toHaveAttribute('open', '');
+    await expect(page.locator('.et-result-count')).toBeFocused();
+    await expect(results).not.toHaveAttribute('inert', '');
+    await expect(header).not.toHaveAttribute('inert', '');
+    await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
 });
 
 test('catalogue categories read as shop navigation with distinct current, hover and focus states', async ({ page }, testInfo) => {

@@ -83,6 +83,7 @@ test('offers and both independently managed service collections render in NB and
         additional.locator('.et-v3-service--feature img').first(),
         wheels.locator('.et-v3-service--feature img').first(),
     ]) {
+        await image.scrollIntoViewIfNeeded();
         const source = await image.getAttribute('src');
         await expect.poll(
             async () => image.evaluate((element: HTMLImageElement) => element.naturalWidth),

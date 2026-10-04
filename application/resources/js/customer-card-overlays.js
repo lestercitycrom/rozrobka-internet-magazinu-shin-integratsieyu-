@@ -73,6 +73,17 @@ const initCardOverlay = (root) => {
         if (overlay.open) return;
         if (activeController?.overlay.open) activeController.close({ restoreFocus: false });
 
+        // Card overlays intentionally stay inside their media card. Align the
+        // card below the sticky site header before opening so the title and
+        // close control stay visible on both tall desktop cards and mobile.
+        root.scrollIntoView({ behavior: 'instant', block: 'start', inline: 'nearest' });
+        const stickyHeader = document.querySelector('[data-site-header]');
+        const headerBottom = stickyHeader?.getBoundingClientRect().bottom ?? 0;
+        const rootTop = root.getBoundingClientRect().top;
+        const safeGap = 16;
+        if (rootTop < headerBottom + safeGap) {
+            window.scrollBy({ top: rootTop - headerBottom - safeGap, behavior: 'instant' });
+        }
         returnFocus = opener;
         setUnderlyingContentInert(true);
         overlay.show();
@@ -80,7 +91,7 @@ const initCardOverlay = (root) => {
         root.classList.add('is-card-overlay-open');
         opener.setAttribute('aria-expanded', 'true');
         notify(true);
-        closer.focus();
+        closer.focus({ preventScroll: true });
     };
 
     opener.addEventListener('click', open);

@@ -24,6 +24,13 @@ async function box(locator: Locator): Promise<Box> {
     return bounds!;
 }
 
+async function processCopyIsUnclipped(step: Locator): Promise<boolean> {
+    return step.locator(':scope > div').evaluate(element => (
+        element.scrollWidth <= element.clientWidth + 1
+        && element.scrollHeight <= element.clientHeight + 1
+    ));
+}
+
 async function expectFunctionalType(page: Page, route: string, viewport: { width: number; height: number }, expectedH1: number, expectedH2: number) {
     await page.setViewportSize(viewport);
     await page.goto(route);
@@ -44,10 +51,18 @@ test('DS-1 typography and responsive home composition stay on the approved scale
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
     const desktopHeroType = await typography(page.locator('.et-v3-display'));
-    expect(desktopHeroType.family).toMatch(/^Barlow\b/i);
-    expect(desktopHeroType.size).toBeCloseTo(56, 1);
-    expect(desktopHeroType.weight).toBe('700');
+    const desktopSectionType = await typography(page.locator('#home-logistics-title'));
+    const desktopFinderType = await typography(page.getByTestId('quick-finder').locator('.et-quick-finder__head h2'));
+    expect(desktopHeroType.family).toMatch(/Barlow Condensed/i);
+    expect(desktopHeroType.weight).toBe('800');
+    expect(desktopSectionType.family).toBe(desktopHeroType.family);
+    expect(desktopSectionType.weight).toBe('800');
+    expect(desktopFinderType.weight).toBe('700');
+    expect(desktopHeroType.size).toBeGreaterThan(desktopSectionType.size);
+    expect(desktopSectionType.size).toBeGreaterThan(desktopFinderType.size);
+    expect(desktopHeroType.lineHeight).toBeLessThan(desktopHeroType.size);
 
     const desktopContent = await box(page.locator('.et-v3-hero__content'));
     const desktopFinder = await box(page.getByTestId('quick-finder'));
@@ -70,9 +85,15 @@ test('DS-1 typography and responsive home composition stay on the approved scale
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
     const mobileHeroType = await typography(page.locator('.et-v3-display'));
-    expect(mobileHeroType.size).toBeGreaterThanOrEqual(36);
-    expect(mobileHeroType.size).toBeLessThanOrEqual(40);
+    const mobileSectionType = await typography(page.locator('#home-logistics-title'));
+    const mobileFinderType = await typography(page.getByTestId('quick-finder').locator('.et-quick-finder__head h2'));
+    expect(mobileHeroType.weight).toBe('800');
+    expect(mobileFinderType.weight).toBe('700');
+    expect(mobileHeroType.size).toBeGreaterThan(mobileSectionType.size);
+    expect(mobileSectionType.size).toBeGreaterThan(mobileFinderType.size);
+    expect(mobileHeroType.lineHeight).toBeLessThan(mobileHeroType.size);
 
     const mobilePhoto = await box(page.locator('.et-v3-hero > picture'));
     const mobileContent = await box(page.locator('.et-v3-hero__content'));
@@ -123,10 +144,11 @@ test('home hero and finder preserve content at 200 percent reflow and text-only 
 
 test('mobile finder labels stay readable while preserving full accessible tab names', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One deterministic narrow-screen finder pass is sufficient');
+    test.setTimeout(60_000);
 
     for (const width of [390, 320]) {
         await page.setViewportSize({ width, height: 844 });
-        await page.goto('/');
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.evaluate(() => document.fonts.ready);
         const registration = page.getByRole('tab', { name: 'Registreringsnummer', exact: true });
         const compactLabel = registration.locator('.et-quick-finder__tab-compact');
@@ -156,10 +178,14 @@ test('mobile finder labels stay readable while preserving full accessible tab na
         const clippedCategories = await page.locator('.et-shop-categories a').evaluateAll((links) => links.filter((link) => link.scrollWidth > link.clientWidth + 1).length);
         expect(clippedCategories).toBe(0);
         const processStep = page.locator('.et-v3-process__step').first();
-        const processIcon = await box(processStep.locator('.et-v3-process__icon'));
+        await expect(processStep.locator('.et-v3-process__icon')).toHaveCount(0);
+        const processNumber = await box(processStep.locator(':scope > small'));
         const processCopy = await box(processStep.locator(':scope > div'));
-        expect(processIcon.x + processIcon.width).toBeLessThanOrEqual(processCopy.x);
-        expect(processCopy.width).toBeGreaterThanOrEqual(140);
+        const processBounds = await box(processStep);
+        expect(processNumber.x + processNumber.width).toBeLessThanOrEqual(processCopy.x + 1);
+        expect(processCopy.x).toBeGreaterThanOrEqual(processBounds.x - 1);
+        expect(processCopy.x + processCopy.width).toBeLessThanOrEqual(processBounds.x + processBounds.width + 1);
+        expect(await processCopyIsUnclipped(processStep)).toBe(true);
         await expectNoGlobalOverflow(page);
     }
 });

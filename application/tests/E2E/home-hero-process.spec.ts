@@ -31,6 +31,7 @@ test('home hero keeps full-area media and primary paths clear at every required 
         const media = hero.locator('.et-v3-hero__photo');
         const finder = hero.getByTestId('quick-finder');
         const content = hero.locator('.et-v3-hero__content');
+        const heading = hero.locator('.et-v3-display');
         const primaryAction = hero.locator('.et-v3-hero__primary-action');
 
         await expect(hero).toBeVisible();
@@ -68,6 +69,36 @@ test('home hero keeps full-area media and primary paths clear at every required 
         const finderBox = await finder.boundingBox();
         const contentBox = await content.boundingBox();
         const actionBox = await primaryAction.boundingBox();
+        const headingLines = await heading.evaluate((element) => {
+            const style = getComputedStyle(element);
+            const lineHeight = Number.parseFloat(style.lineHeight);
+
+            return Math.round(element.getBoundingClientRect().height / lineHeight);
+        });
+        const headingLineText = await heading.evaluate((element) => {
+            const text = element.textContent ?? '';
+            const textNode = element.firstChild;
+            if (!(textNode instanceof Text)) return [];
+
+            const lines: string[] = [];
+            let currentLine = '';
+            let currentTop: number | null = null;
+            for (let index = 0; index < text.length; index += 1) {
+                const range = document.createRange();
+                range.setStart(textNode, index);
+                range.setEnd(textNode, index + 1);
+                const top = Math.round(range.getBoundingClientRect().top);
+                if (currentTop !== null && top !== currentTop) {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                currentTop = top;
+                currentLine += text[index];
+            }
+            if (currentLine.trim()) lines.push(currentLine.trim());
+
+            return lines;
+        });
         expect(heroBox).not.toBeNull();
         expect(pictureBox).not.toBeNull();
         expect(finderBox).not.toBeNull();
@@ -89,6 +120,8 @@ test('home hero keeps full-area media and primary paths clear at every required 
         });
 
         if (viewport.width >= 1200) {
+            expect(headingLines).toBe(2);
+            expect(headingLineText).toEqual(['Vi skifter hjul der', 'bilen står.']);
             expect(Math.abs(pictureBox!.x - heroBox!.x)).toBeLessThanOrEqual(1);
             expect(Math.abs(pictureBox!.y - heroBox!.y)).toBeLessThanOrEqual(1);
             expect(Math.abs(pictureBox!.width - heroBox!.width)).toBeLessThanOrEqual(1);
@@ -122,7 +155,7 @@ test('home hero keeps full-area media and primary paths clear at every required 
     }
 });
 
-test('home process renders four substantial customer steps without a mechanical connector', async ({ page }, testInfo) => {
+test('home process renders five readable customer steps on an adaptive timeline', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
     test.setTimeout(120_000);
 
@@ -141,9 +174,9 @@ test('home process renders four substantial customer steps without a mechanical 
         await expect(processStrip).toBeVisible();
         await expect(processStrip.locator('.et-v3-process-strip__title')).toBeVisible();
         await expect(processStrip.locator('.et-v3-process-strip__lead')).toBeVisible();
-        await expect(steps).toHaveCount(4);
-        expect(await processStrip.locator('.et-v3-process').evaluate((element) => getComputedStyle(element, '::before').content)).toBe('none');
-        expect(await steps.first().locator('.et-v3-process__icon').evaluate((element) => getComputedStyle(element).borderTopWidth)).toBe('0px');
+        await expect(steps).toHaveCount(5);
+        expect(await processStrip.locator('.et-v3-process').evaluate((element) => getComputedStyle(element, '::before').content)).toBe('\"\"');
+        await expect(steps.first().locator('.et-v3-process__icon')).toHaveCount(0);
 
         const processBox = await processStrip.boundingBox();
         expect(processBox).not.toBeNull();
@@ -159,9 +192,9 @@ test('home process renders four substantial customer steps without a mechanical 
             };
         }));
         const columns = await processStrip.locator('.et-v3-process').evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
-        const expectedColumns = viewport.width <= 640 ? 1 : viewport.width <= 900 ? 2 : 4;
+        const expectedColumns = viewport.width <= 900 ? 1 : 5;
         expect(columns).toBe(expectedColumns);
-        expect(new Set(stepBoxes.map(({ y }) => Math.round(y))).size).toBe(4 / expectedColumns);
+        expect(new Set(stepBoxes.map(({ y }) => Math.round(y))).size).toBe(expectedColumns === 1 ? 5 : 1);
         expect(stepBoxes.every(({ height, clientHeight, scrollHeight }) => height > 0 && scrollHeight <= clientHeight + 1)).toBeTruthy();
         for (let first = 0; first < stepBoxes.length; first += 1) {
             for (let second = first + 1; second < stepBoxes.length; second += 1) {
