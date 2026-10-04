@@ -178,6 +178,11 @@ test('homepage cards and five-step timeline keep their intended responsive struc
         const partnerGrid = page.getByTestId('homepage-business-partners').locator(':scope > div');
         await expect(steps).toHaveCount(5);
         await expectNoGlobalOverflow(page);
+        if (viewport.width === 320) {
+            await expect.poll(() => page.locator('body.storefront[data-storefront-design="modern"]').evaluate(
+                (element) => getComputedStyle(element).minWidth,
+            )).toBe('0px');
+        }
         const columns = await processGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
         expect(columns).toBe(viewport.width <= 900 ? 1 : 5);
         const partnerColumns = await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);

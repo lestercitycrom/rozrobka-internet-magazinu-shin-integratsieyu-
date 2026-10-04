@@ -6,6 +6,12 @@
  * catalogue UI, data bindings and the Classic profile untouched.
  */
 
+/* Keep Modern usable in desktop browsers narrowed to a true 320px window.
+ * Classic retains its accepted 320px floor. */
+body.storefront[data-storefront-design='modern'] {
+    min-width: 0;
+}
+
 .storefront[data-storefront-design='modern'] :is(
     .et-v3-hero .et-v3-display,
     .et-v3-logistics .et-h2,
