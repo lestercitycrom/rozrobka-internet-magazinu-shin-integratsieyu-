@@ -54,6 +54,7 @@ test('customer-approved homepage composition, copy and local partner media rende
     await expect(page.getByTestId('catalog-foundation')).toHaveCount(0);
     await expect(page.getByTestId('home-dekkhotell')).toContainText(russian ? 'Шинный отель без хлопот' : 'Dekkhotell uten stress');
     await expect(page.getByTestId('home-process')).toContainText(russian ? 'Оплатите после выполнения' : 'Betal etterpå');
+    await expect(page.getByTestId('home-process')).toContainText(russian ? 'Счастливого пути — берегите себя!' : 'Kjør trygt og ta godt vare på deg!');
     await expect(page.getByTestId('home-process')).toContainText(russian ? 'Заказать сейчас!' : 'Bestill nå!');
     await expect(page.getByTestId('home-prices')).toContainText('700 kr');
     await expect(page.getByTestId('business-contact-card')).toContainText(russian ? 'Локальный партнёр для компаний с автопарком' : 'En lokal partner for bedrifter med bilpark');
@@ -91,6 +92,13 @@ test('homepage card overlay is keyboard operable and returns focus', async ({ pa
     await expect(opener).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(dialog).toHaveJSProperty('open', true);
+    const [headerBox, dialogBox] = await Promise.all([
+        page.locator('[data-site-header]').boundingBox(),
+        dialog.boundingBox(),
+    ]);
+    expect(headerBox).not.toBeNull();
+    expect(dialogBox).not.toBeNull();
+    expect(dialogBox!.y).toBeGreaterThanOrEqual(headerBox!.y + headerBox!.height);
     await expect(dialog).toContainText(russian
         ? 'С шинным отелем EasyTire вам не придётся самостоятельно поднимать, перевозить или хранить колёса.'
         : 'Med dekkhotell hos EasyTire slipper du å løfte, frakte eller oppbevare hjulene selv.');
@@ -156,7 +164,7 @@ test('homepage video failure keeps the poster and copy usable', async ({ page },
     await expect(page.getByTestId('home-dekkhotell')).toContainText('Vi ordner hele hjulskiftet.');
 });
 
-test('homepage cards keep the intended 4/2/1 responsive structure at the acceptance widths', async ({ page }, testInfo) => {
+test('homepage cards and five-step timeline keep their intended responsive structure', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
     test.setTimeout(180_000);
     const measurements: Record<string, unknown>[] = [];
@@ -168,10 +176,10 @@ test('homepage cards keep the intended 4/2/1 responsive structure at the accepta
         const steps = page.locator('.et-v3-process__step');
         const processGrid = page.locator('.et-v3-process');
         const partnerGrid = page.getByTestId('homepage-business-partners').locator(':scope > div');
-        await expect(steps).toHaveCount(4);
+        await expect(steps).toHaveCount(5);
         await expectNoGlobalOverflow(page);
         const columns = await processGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
-        expect(columns).toBe(viewport.width <= 640 ? 1 : viewport.width <= 900 ? 2 : 4);
+        expect(columns).toBe(viewport.width <= 900 ? 1 : 5);
         const partnerColumns = await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
         expect(partnerColumns).toBe(2);
         const stepGeometry = await steps.evaluateAll((nodes) => nodes.map((node) => {
@@ -185,7 +193,7 @@ test('homepage cards keep the intended 4/2/1 responsive structure at the accepta
                 scrollHeight: node.scrollHeight,
             };
         }));
-        const expectedRows = 4 / columns;
+        const expectedRows = columns === 1 ? 5 : 1;
         expect(new Set(stepGeometry.map(({ y }) => Math.round(y))).size).toBe(expectedRows);
         expect(stepGeometry.every(({ height, clientHeight, scrollHeight }) => height > 0 && scrollHeight <= clientHeight + 1)).toBeTruthy();
         for (let first = 0; first < stepGeometry.length; first += 1) {

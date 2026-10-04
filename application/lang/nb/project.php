@@ -12,6 +12,8 @@ return [
         'process_3_text' => 'Teamet møter opp med nødvendig utstyr. Et vanlig hjulskift tar normalt rundt 20 minutter.',
         'process_4_title' => 'Betal etter utført arbeid',
         'process_4_text' => 'Betaling skjer etter at arbeidet er utført og den endelige prisen er avklart.',
+        'process_5_title' => 'Kjør trygt og ta godt vare på deg!',
+        'process_5_text' => '',
         'process_cta' => 'Bestill nå!',
         'hotel_video_label' => 'EasyTire henter og skifter hjul',
         'video_pause' => 'Sett videoen på pause',

@@ -397,17 +397,26 @@
                 <h2 class="et-v3-process-strip__title" id="home-process-title">{{ $storefrontValue('process_title_'.$homepageLocale, __('project.home.process_title')) }}</h2>
                 <p class="et-v3-process-strip__lead">{{ $storefrontValue('process_lead_'.$homepageLocale, __('project.home.process_note')) }}</p>
             </div>
-            <div class="et-v3-process">
-                @foreach ([
+            @php
+                $modernProcess = config('storefront.design_profile') !== 'classic';
+                $processSteps = [
                     ['calendar-location', $storefrontValue('process_1_title_'.$homepageLocale, __('project.home.process_1_title')), $storefrontValue('process_1_text_'.$homepageLocale, __('project.home.process_1_text'))],
                     ['calendar-check', $storefrontValue('process_2_title_'.$homepageLocale, __('project.home.process_2_title')), $storefrontValue('process_2_text_'.$homepageLocale, __('project.home.process_2_text'))],
                     ['mobile-wrench', $storefrontValue('process_3_title_'.$homepageLocale, __('project.home.process_3_title')), $storefrontValue('process_3_text_'.$homepageLocale, __('project.home.process_3_text'))],
                     ['payment-check', $storefrontValue('process_4_title_'.$homepageLocale, __('project.home.process_4_title')), $storefrontValue('process_4_text_'.$homepageLocale, __('project.home.process_4_text'))],
-                ] as $index => [$stepIcon, $stepTitle, $stepText])
+                ];
+                if ($modernProcess) {
+                    $processSteps[] = ['check', __('project.home.process_5_title'), __('project.home.process_5_text')];
+                }
+            @endphp
+            <div @class(['et-v3-process', 'et-v3-process--timeline' => $modernProcess])>
+                @foreach ($processSteps as $index => [$stepIcon, $stepTitle, $stepText])
                     <article class="et-v3-process__step">
-                        <span class="et-v3-process__icon"><x-icon :name="$stepIcon" :size="58" /></span>
+                        @unless ($modernProcess)
+                            <span class="et-v3-process__icon"><x-icon :name="$stepIcon" :size="58" /></span>
+                        @endunless
                         <small>{{ $index + 1 }}</small>
-                        <div><h3>{{ $stepTitle }}</h3><p>{{ $stepText }}</p></div>
+                        <div><h3>{{ $stepTitle }}</h3>@if (filled($stepText))<p>{{ $stepText }}</p>@endif</div>
                     </article>
                 @endforeach
             </div>
