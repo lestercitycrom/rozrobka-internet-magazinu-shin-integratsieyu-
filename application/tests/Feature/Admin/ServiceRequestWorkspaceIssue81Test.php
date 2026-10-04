@@ -332,7 +332,8 @@ test('cancelled booked requests cannot be reactivated and list return context ca
         'command' => 'admin_note', 'command_id' => (string) Str::uuid(),
         'expected_version' => 2, 'admin_note' => 'Safe redirect', 'return_to' => 'https://evil.example/steal',
     ])->assertSessionHasNoErrors();
-    expect(parse_url($external->headers->get('Location'), PHP_URL_HOST))->toBe('localhost')
+    expect(parse_url($external->headers->get('Location'), PHP_URL_HOST))
+        ->toBe(parse_url((string) config('app.url'), PHP_URL_HOST))
         ->and(parse_url($external->headers->get('Location'), PHP_URL_PATH))->toBe('/admin/service-requests/'.$request->id);
 });
 
