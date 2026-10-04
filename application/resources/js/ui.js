@@ -161,14 +161,110 @@ const initFooterGroups = () => {
 
 const initProductionFilters = () => {
     const desktop = window.matchMedia('(min-width: 1101px)');
+    const states = new WeakMap();
+
+    // Keep the existing desktop disclosure untouched; its sheet presentation is
+    // modal only while the same <details> is open below the desktop breakpoint.
+
+    const stateFor = (details) => {
+        if (!states.has(details)) {
+            states.set(details, {
+                active: false,
+                applyPending: false,
+                inertSnapshots: [],
+                opener: null,
+                overflow: '',
+            });
+        }
+        return states.get(details);
+    };
+    const dialogFor = (details) => one('[data-mobile-filter-dialog]', details);
+    const focusableIn = (dialog) => all(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+        dialog,
+    ).filter((element) => {
+        if (!(element instanceof HTMLElement) || element.hidden || element.closest('[inert]')) return false;
+        const style = window.getComputedStyle(element);
+        const bounds = element.getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden' && bounds.width > 0 && bounds.height > 0;
+    });
+    const setBackgroundInert = (details, state) => {
+        let branch = details;
+        while (branch.parentElement) {
+            const parent = branch.parentElement;
+            Array.from(parent.children).forEach((sibling) => {
+                if (sibling === branch || !(sibling instanceof HTMLElement)) return;
+                state.inertSnapshots.push({ element: sibling, inert: sibling.inert });
+                sibling.inert = true;
+            });
+            if (parent === document.body) break;
+            branch = parent;
+        }
+    };
+    const clearDialogSemantics = (details) => {
+        const dialog = dialogFor(details);
+        dialog?.removeAttribute('role');
+        dialog?.removeAttribute('aria-modal');
+        dialog?.removeAttribute('aria-labelledby');
+    };
+    const deactivate = (details, { restoreFocus = false } = {}) => {
+        const state = stateFor(details);
+        clearDialogSemantics(details);
+        if (state.active) {
+            state.inertSnapshots.forEach(({ element, inert }) => {
+                if (element.isConnected) element.inert = inert;
+            });
+            state.inertSnapshots = [];
+            document.body.style.overflow = state.overflow;
+            state.active = false;
+        }
+        if (restoreFocus) {
+            const target = state.opener?.isConnected ? state.opener : one('summary', details);
+            target?.focus();
+        }
+        state.opener = null;
+    };
+    const activate = (details) => {
+        const dialog = dialogFor(details);
+        if (!(dialog instanceof HTMLElement) || desktop.matches || !details.open) return;
+        const state = stateFor(details);
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        const title = one('[id]', dialog);
+        if (title?.id) dialog.setAttribute('aria-labelledby', title.id);
+        if (!state.active) {
+            state.active = true;
+            state.opener = one('summary', details);
+            state.overflow = document.body.style.overflow;
+            setBackgroundInert(details, state);
+            document.body.style.overflow = 'hidden';
+        }
+        window.requestAnimationFrame(() => {
+            if (details.open && !desktop.matches && !dialog.matches(':focus-within')) {
+                (one('[data-filter-details-close]', dialog) || focusableIn(dialog)[0] || dialog).focus();
+            }
+        });
+    };
+    const close = (details, { restoreFocus = false } = {}) => {
+        stateFor(details).applyPending = false;
+        details.open = false;
+        deactivate(details, { restoreFocus });
+    };
 
     const sync = () => {
         all('[data-mobile-filter]').forEach((details) => {
             if (!(details instanceof HTMLDetailsElement)) return;
-            if (desktop.matches) details.open = true;
+            if (desktop.matches) {
+                stateFor(details).applyPending = false;
+                deactivate(details);
+                details.open = true;
+            } else if (details.open) {
+                activate(details);
+            } else {
+                deactivate(details);
+            }
             details.dataset.filterReady = 'true';
         });
-        if (desktop.matches || !one('[data-mobile-filter][open]')) document.body.style.overflow = '';
     };
 
     document.addEventListener('click', (event) => {
@@ -177,24 +273,59 @@ const initProductionFilters = () => {
         if (!button) return;
         const details = button.closest('[data-mobile-filter]');
         if (!(details instanceof HTMLDetailsElement)) return;
-        details.open = false;
-        document.body.style.overflow = '';
-        one('summary', details)?.focus();
+        close(details, { restoreFocus: true });
     });
 
     document.addEventListener('toggle', (event) => {
         const details = event.target;
         if (!(details instanceof HTMLDetailsElement) || !details.matches('[data-mobile-filter]')) return;
-        document.body.style.overflow = details.open && !desktop.matches ? 'hidden' : '';
+        if (details.open && !desktop.matches) {
+            activate(details);
+            return;
+        }
+        const state = stateFor(details);
+        const focusResults = state.applyPending && !desktop.matches;
+        state.applyPending = false;
+        deactivate(details);
+        if (focusResults) one('[data-catalog-live-results] .et-result-count')?.focus({ preventScroll: true });
     }, true);
 
+    document.addEventListener('submit', (event) => {
+        if (!(event.target instanceof HTMLFormElement) || !event.target.matches('[data-catalog-live-form]')) return;
+        const details = event.target.closest('[data-mobile-filter]');
+        if (details instanceof HTMLDetailsElement && details.open && !desktop.matches) {
+            stateFor(details).applyPending = true;
+        }
+    });
+
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || desktop.matches) return;
+        if (desktop.matches) return;
         const details = one('[data-mobile-filter][open]');
         if (!(details instanceof HTMLDetailsElement)) return;
-        details.open = false;
-        document.body.style.overflow = '';
-        one('summary', details)?.focus();
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            close(details, { restoreFocus: true });
+            return;
+        }
+        if (event.key !== 'Tab') return;
+        const dialog = dialogFor(details);
+        if (!(dialog instanceof HTMLElement)) return;
+        const focusable = focusableIn(dialog);
+        if (focusable.length === 0) {
+            event.preventDefault();
+            dialog.tabIndex = -1;
+            dialog.focus();
+            return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+            event.preventDefault();
+            first.focus();
+        }
     });
 
     desktop.addEventListener('change', sync);

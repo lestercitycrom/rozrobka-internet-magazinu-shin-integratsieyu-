@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# PR #87: bounded Modern storefront polish above the accepted shared-followups release.
+# PR #87: bounded Modern storefront polish and mobile catalogue-filter A11Y fix
+# above the accepted shared-followups release.
 # This is NOT the main-branch hook: no migrations, seeds, imports, pruning or service control.
 set -Eeuo pipefail
 umask 0027
@@ -44,14 +45,19 @@ validate_env() {
 [[ "$(git --git-dir="$REPO" rev-parse "$BRANCH^{commit}" 2>/dev/null)" == "$revision" ]] || fail 'Published storefront branch does not match the requested SHA.'
 git --git-dir="$REPO" merge-base --is-ancestor "$BASE" "$revision" || fail 'Candidate is not stacked on the pinned accepted release.'
 
-# Exact presentation-only allowlist for PR #87. Backend, dependencies, admin,
-# migrations, data and server configuration are deliberately excluded.
+# Exact presentation/A11Y-only allowlist for PR #87. The JS and catalogue view
+# entries are limited to the mobile filter dialog fix; backend, dependencies,
+# admin, migrations, data and server configuration remain excluded.
 while IFS= read -r -d '' file; do
     case "$file" in
         application/lang/nb/project.php|application/lang/ru/project.php) ;;
         application/resources/css/app.css|application/resources/css/customer-design-balance.css|application/resources/css/homepage-final-polish.css) ;;
-        application/resources/js/customer-card-overlays.js|application/resources/views/welcome.blade.php) ;;
-        application/tests/E2E/home-hero-process.spec.ts|application/tests/E2E/homepage-composition.spec.ts|application/tests/E2E/homepage-content-collections.spec.ts) ;;
+        application/resources/js/customer-card-overlays.js|application/resources/js/ui.js) ;;
+        application/resources/views/welcome.blade.php|application/resources/views/storefront/catalog/index.blade.php) ;;
+        application/tests/Audit/issue-26-interaction-matrix.spec.ts) ;;
+        application/tests/E2E/catalog-mobile-layout.spec.ts|application/tests/E2E/customer-design-balance.spec.ts|application/tests/E2E/design-foundation.spec.ts|application/tests/E2E/home-hero-process.spec.ts|application/tests/E2E/homepage-composition.spec.ts|application/tests/E2E/homepage-content-collections.spec.ts) ;;
+        evidence/issue-47/README.md|evidence/issue-47/business-partners-1440.png|evidence/issue-47/business-partners-320.png|evidence/issue-47/business-partners-390.png) ;;
+        evidence/issue-47/homepage-1280x800.jpg|evidence/issue-47/homepage-1366x768.jpg|evidence/issue-47/homepage-1440x900.jpg|evidence/issue-47/homepage-1920x1080.jpg|evidence/issue-47/homepage-320x800.jpg|evidence/issue-47/homepage-390x844.jpg|evidence/issue-47/homepage-800x900.jpg|evidence/issue-47/homepage-layout.json) ;;
         deploy/storefront-final-staging.sh|deploy/tests/storefront-final-safety.sh) ;;
         *) fail "Outside approved storefront scope: $file" ;;
     esac

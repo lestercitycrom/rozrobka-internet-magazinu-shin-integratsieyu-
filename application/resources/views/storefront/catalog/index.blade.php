@@ -138,11 +138,11 @@
                         <span><x-icon name="filter" :size="19" />{{ __('pro.catalog.filters') }}</span>
                         @if ($activeFilters->isNotEmpty())<span class="et-filter-counter">{{ $activeFilters->count() }}</span>@endif
                     </summary>
-                    <div class="et-production-filter__panel">
+                    <div class="et-production-filter__panel" id="catalog-filter-dialog" data-mobile-filter-dialog>
                         <div class="et-production-filter__head">
                             <div>
                                 <p class="et-eyebrow">{{ __('pro.catalog.controls') }}</p>
-                                <h2 class="et-h3">{{ __('pro.catalog.filters') }}</h2>
+                                <h2 class="et-h3" id="catalog-filter-dialog-title">{{ __('pro.catalog.filters') }}</h2>
                             </div>
                             <button class="et-production-filter__close" type="button" aria-label="{{ __('pro.catalog.close_filters') }}" data-filter-details-close data-testid="catalog-filter-close">×</button>
                         </div>

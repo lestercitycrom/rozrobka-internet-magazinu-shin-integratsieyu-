@@ -84,18 +84,39 @@ async function typeWeight(locator: Locator): Promise<string> {
     return locator.evaluate(element => getComputedStyle(element).fontWeight);
 }
 
-async function modernHeroKeepsBaselineLeading(heroTitle: Locator): Promise<{ actual: string; baseline: string }> {
-    return heroTitle.evaluate(element => {
-        const probe = document.createElement('span');
-        probe.setAttribute('aria-hidden', 'true');
-        probe.style.cssText = 'position:absolute; visibility:hidden; font-size:1rem; line-height:var(--et-type-hero-leading);';
-        document.body.append(probe);
-        const result = {
-            actual: getComputedStyle(element).lineHeight,
-            baseline: getComputedStyle(probe).lineHeight,
+async function typeReadability(locator: Locator) {
+    await expect(locator).toBeVisible();
+    return locator.evaluate(element => {
+        const style = getComputedStyle(element);
+        const size = Number.parseFloat(style.fontSize);
+        const lineHeight = Number.parseFloat(style.lineHeight);
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const inkRects = [...range.getClientRects()]
+            .filter(rect => rect.width > 0 && rect.height > 0);
+        const lines = new Set(inkRects
+            .map(rect => Math.round(rect.top * 2) / 2));
+        const heroRect = element.closest('.et-v3-hero')?.getBoundingClientRect();
+        return {
+            family: style.fontFamily,
+            size,
+            lineHeight,
+            leadingRatio: lineHeight / size,
+            lineCount: lines.size,
+            clientWidth: element.clientWidth,
+            scrollWidth: element.scrollWidth,
+            clientHeight: element.clientHeight,
+            scrollHeight: element.scrollHeight,
+            overflowX: style.overflowX,
+            overflowY: style.overflowY,
+            inkLeft: Math.min(...inkRects.map(rect => rect.left)),
+            inkRight: Math.max(...inkRects.map(rect => rect.right)),
+            inkTop: Math.min(...inkRects.map(rect => rect.top)),
+            inkBottom: Math.max(...inkRects.map(rect => rect.bottom)),
+            viewportWidth: document.documentElement.clientWidth,
+            heroTop: heroRect?.top ?? Number.NEGATIVE_INFINITY,
+            heroBottom: heroRect?.bottom ?? Number.POSITIVE_INFINITY,
         };
-        probe.remove();
-        return result;
     });
 }
 
@@ -166,13 +187,14 @@ test('customer balance keeps scoped type, finder geometry and GET-only choices a
     const sectionTitle = page.locator('main #home-logistics-title');
     const finder = page.getByTestId('home-hero').getByTestId('quick-finder');
     const finderTitle = finder.locator('.et-quick-finder__head h2');
-    const expectedHeadingWeight = designProfile === 'modern' ? '700' : '800';
+    const expectedMarketingWeight = '800';
+    const expectedFinderWeight = designProfile === 'modern' ? '700' : '800';
 
-    // These are the deliberate page/hero/finder heading scopes from the balance pass,
-    // rather than an over-broad assertion about every heading in the application.
-    await expect(typeWeight(heroTitle)).resolves.toBe(expectedHeadingWeight);
-    await expect(typeWeight(sectionTitle)).resolves.toBe(expectedHeadingWeight);
-    await expect(typeWeight(finderTitle)).resolves.toBe(expectedHeadingWeight);
+    // Modern's expressive marketing headings and its functional finder deliberately
+    // use different weights. Classic retains its accepted 800-weight contracts.
+    await expect(typeWeight(heroTitle)).resolves.toBe(expectedMarketingWeight);
+    await expect(typeWeight(sectionTitle)).resolves.toBe(expectedMarketingWeight);
+    await expect(typeWeight(finderTitle)).resolves.toBe(expectedFinderWeight);
     const bodyWeight = Number.parseFloat(await typeWeight(page.locator('body')));
     const leadWeight = Number.parseFloat(await typeWeight(page.locator('main .et-v3-hero__lead')));
     expect(bodyWeight, 'The balance layer must not make all body text bold.').toBeLessThan(600);
@@ -192,9 +214,31 @@ test('customer balance keeps scoped type, finder geometry and GET-only choices a
     } else {
         expect(finderSurface.borderTop, 'Modern finder grouping keeps its explicit frame.').toBeGreaterThanOrEqual(1);
         expect(finderSurface.background, 'Modern finder grouping keeps its surface.').not.toBe('rgba(0, 0, 0, 0)');
-        const leading = await modernHeroKeepsBaselineLeading(heroTitle);
-        expect(leading.actual, 'Modern stronger headings must preserve the original hero line-height.').toBe(leading.baseline);
+        const heroReadability = await typeReadability(heroTitle);
+        expect(heroReadability.family, 'Modern marketing display type remains condensed.').toMatch(/Barlow Condensed/i);
+        expect(heroReadability.leadingRatio, 'Modern hero leading stays compact without collapsing the line box.').toBeGreaterThanOrEqual(.8);
+        expect(heroReadability.leadingRatio, 'Modern hero leading stays compact without opening into body-copy rhythm.').toBeLessThanOrEqual(1.05);
+        expect(heroReadability.lineCount, 'Modern localized hero copy must render at least one readable line.').toBeGreaterThan(0);
+        expect(heroReadability.overflowX, 'Modern hero must not clip condensed glyph ink horizontally.').toBe('visible');
+        expect(heroReadability.overflowY, 'Modern hero must not clip condensed glyph ink vertically.').toBe('visible');
+        expect(heroReadability.inkLeft, 'Modern localized hero ink must stay inside the viewport.').toBeGreaterThanOrEqual(-1);
+        expect(heroReadability.inkRight, 'Modern localized hero ink must stay inside the viewport.').toBeLessThanOrEqual(heroReadability.viewportWidth + 1);
+        expect(heroReadability.inkTop, 'Modern localized hero ink must stay inside the hero surface.').toBeGreaterThanOrEqual(heroReadability.heroTop - 1);
+        expect(heroReadability.inkBottom, 'Modern localized hero ink must stay inside the hero surface.').toBeLessThanOrEqual(heroReadability.heroBottom + 1);
         await expectModernCategoryTiles(finder, metadata(info).balanceWidth);
+    }
+
+    const process = page.getByTestId('home-process').locator('.et-v3-process');
+    const processSteps = process.locator('.et-v3-process__step');
+    const processIcons = processSteps.locator('.et-v3-process__icon');
+    if (designProfile === 'modern') {
+        await expect(process).toHaveClass(/\bet-v3-process--timeline\b/);
+        await expect(processSteps).toHaveCount(5);
+        await expect(processIcons).toHaveCount(0);
+    } else {
+        await expect(process).not.toHaveClass(/\bet-v3-process--timeline\b/);
+        await expect(processSteps).toHaveCount(4);
+        await expect(processIcons).toHaveCount(4);
     }
 
     await expectFinderControlsFit(page, finder);

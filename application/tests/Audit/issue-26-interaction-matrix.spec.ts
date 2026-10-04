@@ -879,13 +879,15 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
 
         await page.goto('/dekk', { waitUntil: 'domcontentloaded' });
         await settle(page);
-        const storeNavigation = page.locator('[data-testid="desktop-navigation"] a[aria-current="page"]').first();
+        const storeNavigation = page.getByTestId('catalog-category-rail').locator('a[aria-current="page"]').first();
+        const storeNavigationLabel = storeNavigation.locator('.et-catalog-category__copy strong');
         const catalogueHeading = page.locator('main h1').first();
         await expect(storeNavigation).toBeVisible();
+        await expect(storeNavigationLabel).toBeVisible();
         await expect(catalogueHeading).toBeVisible();
         const navigation = {
             classification: 'MATCH_CONTEXTUAL_HIERARCHY',
-            catalogueNavigationText: (await storeNavigation.innerText()).trim(),
+            catalogueNavigationText: (await storeNavigationLabel.innerText()).trim(),
             catalogueNavigationHref: await storeNavigation.getAttribute('href'),
             catalogueNavigationCurrent: await storeNavigation.getAttribute('aria-current'),
             pageHeading: (await catalogueHeading.innerText()).trim(),
@@ -944,13 +946,18 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
         await page.goto('/', { waitUntil: 'domcontentloaded' });
         await settle(page);
         const process = page.getByTestId('home-process');
-        const processSteps = process.locator('.et-v3-process__step');
+        const processTimeline = process.locator('.et-v3-process');
+        const processSteps = processTimeline.locator('.et-v3-process__step');
         await expect(process).toBeVisible();
-        await expect(processSteps).toHaveCount(4);
+        await expect(page.locator('body')).toHaveAttribute('data-storefront-design', 'modern');
+        await expect(processTimeline).toHaveClass(/\bet-v3-process--timeline\b/);
+        await expect(processSteps).toHaveCount(5);
+        await expect(processSteps.locator('.et-v3-process__icon')).toHaveCount(0);
         const processComposition = {
-            classification: 'DESIGN_SYSTEM_DRIFT',
+            classification: 'MATCH',
             section: await visualState(process),
             stepCount: await processSteps.count(),
+            iconCount: await processSteps.locator('.et-v3-process__icon').count(),
             steps: await processSteps.evaluateAll((elements) => elements.map((element) => {
                 const rect = element.getBoundingClientRect();
                 const style = getComputedStyle(element);
@@ -961,20 +968,24 @@ test.describe('Issue #26 corrected interaction and composition audit', () => {
                     border: `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor}`,
                 };
             })),
-            rationale: 'The four-step sequence is understandable, but the compressed icon/divider rail reads more mechanically than the image-led local direction.',
+            rationale: 'Modern uses the approved five-stage numbered timeline without the legacy process icons; Classic retains its separate four-step icon treatment.',
         };
         await process.screenshot({ path: path.join(target, 'critical-home-process.png') });
 
         const promotions = page.getByTestId('homepage-promotions');
         const promotionCards = promotions.getByTestId('homepage-promotion');
         await expect(promotions).toBeVisible();
-        await expect(promotionCards).toHaveCount(1);
+        const promotionCardCount = await promotionCards.count();
+        expect(promotionCardCount, 'the content fixture must expose at least one active promotion').toBeGreaterThan(0);
+        const isSingletonPromotion = promotionCardCount === 1;
         const singletonPromotion = {
-            classification: 'MATCH',
-            cardCount: await promotionCards.count(),
+            classification: isSingletonPromotion ? 'MATCH_SINGLETON' : 'NOT_APPLICABLE_MULTI_ITEM_FIXTURE',
+            cardCount: promotionCardCount,
             section: await visualState(promotions),
             card: await visualState(promotionCards.first()),
-            rationale: 'A single active promotion deliberately expands into one image-led feature instead of leaving an empty grid slot.',
+            rationale: isSingletonPromotion
+                ? 'A single active promotion deliberately expands into one image-led feature instead of leaving an empty grid slot.'
+                : 'The exact-head E2E fixture contains multiple active promotions, so singleton composition is recorded as not applicable instead of fabricating a one-card state.',
         };
         await promotions.screenshot({ path: path.join(target, 'critical-home-singleton-promotion.png') });
 

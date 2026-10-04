@@ -167,6 +167,58 @@ body.storefront[data-storefront-design='modern'] {
     color: #ff5a5f;
 }
 
+/* Price strip: retain the approved condensed hierarchy without changing its rail. */
+.storefront[data-storefront-design='modern'] .et-home-prices header h2 {
+    font-family: var(--et-font-display-system);
+    font-size: clamp(1.65rem, 3vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -.015em;
+    line-height: .95;
+}
+
+.storefront[data-storefront-design='modern'] .et-home-prices__list strong {
+    font-family: var(--et-font-display-system);
+    font-size: clamp(1.45rem, 2.5vw, 2rem);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.storefront[data-storefront-design='modern'] .et-home-prices__list strong small {
+    font-family: var(--et-font-body);
+    font-size: .62rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+/* Reviews: restore the crisp card cap and give the display heading desktop room. */
+.storefront[data-storefront-design='modern'] [data-testid='homepage-reviews'] .et-v3-review {
+    border-top: 3px solid var(--v3-ink);
+}
+
+/* Business: match the accepted broad, two-line display treatment. */
+.storefront[data-storefront-design='modern'] .et-v3-contact__business-copy h3 {
+    max-width: 20ch;
+    font-size: clamp(2rem, 3.6vw, 3.35rem);
+    letter-spacing: -.05em;
+    line-height: .98;
+    overflow-wrap: normal;
+    text-wrap: balance;
+}
+
+/* Text-only zoom must not let large display words enlarge the page canvas.
+ * The normal layouts keep their natural word wrapping; anywhere is only used
+ * when a single word can no longer fit the available column. */
+@media (max-width: 900px) {
+    .storefront[data-storefront-design='modern'] .et-v3-section-head > div,
+    .storefront[data-storefront-design='modern'] .et-v3-section-head .et-h2,
+    .storefront[data-storefront-design='modern'] .et-v3-process-strip__title {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+}
+
 /* Five-step horizontal timeline on desktop; a readable vertical timeline below. */
 .storefront[data-storefront-design='modern'] .et-v3-process--timeline {
     position: relative;
@@ -331,6 +383,13 @@ body.storefront[data-storefront-design='modern'] {
     }
 }
 
+@media (min-width: 901px) {
+    .storefront[data-storefront-design='modern'] [data-testid='homepage-reviews'] .et-v3-section-head > div,
+    .storefront[data-storefront-design='modern'] [data-testid='homepage-reviews'] .et-h2 {
+        max-width: none;
+    }
+}
+
 @media (max-width: 767px) {
     .storefront[data-storefront-design='modern'] .et-v3-hero .et-v3-display {
         max-width: 10ch;
@@ -385,6 +444,10 @@ body.storefront[data-storefront-design='modern'] {
 @media (max-width: 380px) {
     .storefront[data-storefront-design='modern'] .et-v3-hero .et-v3-display {
         font-size: 2.65rem;
+    }
+
+    .storefront[data-storefront-design='modern'] .et-shop-categories {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .storefront[data-storefront-design='modern'] .et-v3-logistics-card {

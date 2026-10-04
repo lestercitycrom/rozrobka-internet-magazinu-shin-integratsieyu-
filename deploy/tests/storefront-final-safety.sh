@@ -43,10 +43,10 @@ previous="$root/releases/previous"
 classic_previous="$classic_root/releases/previous"
 shared="$root/shared/storage"
 mockbin="$tmp/mockbin"
-mkdir -p "$work/application/resources/css" "$work/application/resources/js" "$work/application/resources/views" \
-    "$work/application/lang/nb" "$work/application/lang/ru" "$work/application/tests/E2E" \
+mkdir -p "$work/application/resources/css" "$work/application/resources/js" "$work/application/resources/views/storefront/catalog" \
+    "$work/application/lang/nb" "$work/application/lang/ru" "$work/application/tests/Audit" "$work/application/tests/E2E" \
     "$work/application/storage" "$work/application/bootstrap/cache" "$work/application/public" \
-    "$work/deploy/tests" "$mockbin"
+    "$work/deploy/tests" "$work/evidence/issue-47" "$mockbin"
 printf 'fixture\n' > "$work/application/.env.example"
 printf 'fixture\n' > "$work/application/artisan"
 printf '{}\n' > "$work/application/composer.lock"
@@ -57,12 +57,30 @@ printf 'base\n' > "$work/application/resources/css/app.css"
 printf 'base\n' > "$work/application/resources/css/customer-design-balance.css"
 printf 'base\n' > "$work/application/resources/css/homepage-final-polish.css"
 printf 'base\n' > "$work/application/resources/js/customer-card-overlays.js"
+printf 'base\n' > "$work/application/resources/js/ui.js"
 printf 'base\n' > "$work/application/resources/views/welcome.blade.php"
+printf 'base\n' > "$work/application/resources/views/storefront/catalog/index.blade.php"
 printf 'base\n' > "$work/application/lang/nb/project.php"
 printf 'base\n' > "$work/application/lang/ru/project.php"
+printf 'base\n' > "$work/application/tests/Audit/issue-26-interaction-matrix.spec.ts"
 printf 'base\n' > "$work/application/tests/E2E/home-hero-process.spec.ts"
+printf 'base\n' > "$work/application/tests/E2E/catalog-mobile-layout.spec.ts"
+printf 'base\n' > "$work/application/tests/E2E/customer-design-balance.spec.ts"
+printf 'base\n' > "$work/application/tests/E2E/design-foundation.spec.ts"
 printf 'base\n' > "$work/application/tests/E2E/homepage-composition.spec.ts"
 printf 'base\n' > "$work/application/tests/E2E/homepage-content-collections.spec.ts"
+printf 'base\n' > "$work/evidence/issue-47/README.md"
+printf 'base\n' > "$work/evidence/issue-47/business-partners-1440.png"
+printf 'base\n' > "$work/evidence/issue-47/business-partners-320.png"
+printf 'base\n' > "$work/evidence/issue-47/business-partners-390.png"
+printf 'base\n' > "$work/evidence/issue-47/homepage-1280x800.jpg"
+printf 'base\n' > "$work/evidence/issue-47/homepage-1366x768.jpg"
+printf 'base\n' > "$work/evidence/issue-47/homepage-1440x900.jpg"
+printf 'base\n' > "$work/evidence/issue-47/homepage-1920x1080.jpg"
+printf 'base\n' > "$work/evidence/issue-47/homepage-320x800.jpg"
+printf 'base\n' > "$work/evidence/issue-47/homepage-390x844.jpg"
+printf 'base\n' > "$work/evidence/issue-47/homepage-800x900.jpg"
+printf 'base\n' > "$work/evidence/issue-47/homepage-layout.json"
 printf 'base\n' > "$work/deploy/storefront-final-staging.sh"
 printf 'base\n' > "$work/deploy/tests/storefront-final-safety.sh"
 git -C "$work" init -q
@@ -75,8 +93,14 @@ git -C "$work" switch -qc codex/storefront-visual-debt
 for path in \
     application/lang/nb/project.php application/lang/ru/project.php \
     application/resources/css/app.css application/resources/css/customer-design-balance.css application/resources/css/homepage-final-polish.css \
-    application/resources/js/customer-card-overlays.js application/resources/views/welcome.blade.php \
-    application/tests/E2E/home-hero-process.spec.ts application/tests/E2E/homepage-composition.spec.ts application/tests/E2E/homepage-content-collections.spec.ts \
+    application/resources/js/customer-card-overlays.js application/resources/js/ui.js \
+    application/resources/views/welcome.blade.php application/resources/views/storefront/catalog/index.blade.php \
+    application/tests/Audit/issue-26-interaction-matrix.spec.ts \
+    application/tests/E2E/customer-design-balance.spec.ts application/tests/E2E/design-foundation.spec.ts \
+    application/tests/E2E/catalog-mobile-layout.spec.ts application/tests/E2E/home-hero-process.spec.ts application/tests/E2E/homepage-composition.spec.ts application/tests/E2E/homepage-content-collections.spec.ts \
+    evidence/issue-47/README.md evidence/issue-47/business-partners-1440.png evidence/issue-47/business-partners-320.png evidence/issue-47/business-partners-390.png \
+    evidence/issue-47/homepage-1280x800.jpg evidence/issue-47/homepage-1366x768.jpg evidence/issue-47/homepage-1440x900.jpg evidence/issue-47/homepage-1920x1080.jpg \
+    evidence/issue-47/homepage-320x800.jpg evidence/issue-47/homepage-390x844.jpg evidence/issue-47/homepage-800x900.jpg evidence/issue-47/homepage-layout.json \
     deploy/storefront-final-staging.sh deploy/tests/storefront-final-safety.sh; do
     printf 'allowed change\n' >> "$work/$path"
 done
@@ -250,6 +274,8 @@ assert_forbidden lockfile application/package-lock.json
 assert_forbidden integration application/app/Modules/NdiApi/SubmitNdiOrder.php
 assert_forbidden backend application/app/Modules/Catalog/CatalogReadService.php
 assert_forbidden admin application/resources/views/admin/requests/index.blade.php
+assert_forbidden unrelated-js application/resources/js/catalog-live.js
+assert_forbidden unrelated-storefront-view application/resources/views/storefront/catalog/_card.blade.php
 assert_forbidden env application/.env
 assert_forbidden hook deploy/post-receive
 assert_forbidden service deploy/easytire-queue.service

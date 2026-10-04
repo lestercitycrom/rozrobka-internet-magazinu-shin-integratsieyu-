@@ -164,7 +164,7 @@ test('homepage video failure keeps the poster and copy usable', async ({ page },
     await expect(page.getByTestId('home-dekkhotell')).toContainText('Vi ordner hele hjulskiftet.');
 });
 
-test('homepage cards and five-step timeline keep their intended responsive structure', async ({ page }, testInfo) => {
+test('homepage visual review contracts and five-step timeline keep their intended responsive structure', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'buyer-desktop', 'One serial viewport matrix is sufficient');
     test.setTimeout(180_000);
     const measurements: Record<string, unknown>[] = [];
@@ -176,7 +176,11 @@ test('homepage cards and five-step timeline keep their intended responsive struc
         const steps = page.locator('.et-v3-process__step');
         const processGrid = page.locator('.et-v3-process');
         const partnerGrid = page.getByTestId('homepage-business-partners').locator(':scope > div');
+        const priceEntries = page.locator('.et-home-prices__list > a');
         await expect(steps).toHaveCount(5);
+        await expect(processGrid).toHaveClass(/\bet-v3-process--timeline\b/);
+        await expect(steps.locator('.et-v3-process__icon')).toHaveCount(0);
+        await expect(priceEntries).toHaveCount(3);
         await expectNoGlobalOverflow(page);
         if (viewport.width === 320) {
             await expect.poll(() => page.locator('body.storefront[data-storefront-design="modern"]').evaluate(
@@ -187,6 +191,123 @@ test('homepage cards and five-step timeline keep their intended responsive struc
         expect(columns).toBe(viewport.width <= 900 ? 1 : 5);
         const partnerColumns = await partnerGrid.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length);
         expect(partnerColumns).toBe(2);
+        const reviewMetrics = await page.evaluate(() => {
+            const required = <T extends Element>(selector: string): T => {
+                const element = document.querySelector<T>(selector);
+                if (!element) throw new Error(`Missing homepage review-contract element: ${selector}`);
+                return element;
+            };
+            const renderedLineCount = (element: Element): number => {
+                const range = document.createRange();
+                range.selectNodeContents(element);
+                const lines = new Set([...range.getClientRects()]
+                    .filter(rect => rect.width > 0 && rect.height > 0)
+                    .map(rect => Math.round(rect.top * 2) / 2));
+                return lines.size;
+            };
+            const typeAndFit = (element: HTMLElement) => {
+                const style = getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+                return {
+                    family: style.fontFamily,
+                    size: Number.parseFloat(style.fontSize),
+                    weight: Number.parseFloat(style.fontWeight),
+                    lineHeight: Number.parseFloat(style.lineHeight),
+                    overflowX: style.overflowX,
+                    overflowY: style.overflowY,
+                    whiteSpace: style.whiteSpace,
+                    lines: renderedLineCount(element),
+                    left: rect.left,
+                    right: rect.right,
+                    width: rect.width,
+                    clientWidth: element.clientWidth,
+                    scrollWidth: element.scrollWidth,
+                    clientHeight: element.clientHeight,
+                    scrollHeight: element.scrollHeight,
+                };
+            };
+
+            const hero = required<HTMLElement>('.et-v3-hero .et-v3-display');
+            const priceHeading = required<HTMLElement>('.et-home-prices header h2');
+            const priceKicker = required<HTMLElement>('.et-home-prices header .et-eyebrow');
+            const firstPrice = required<HTMLElement>('.et-home-prices__list strong');
+            const firstPriceLabel = required<HTMLElement>('.et-home-prices__list > a > span');
+            const priceList = required<HTMLElement>('.et-home-prices__list');
+            const reviewHeading = required<HTMLElement>("[data-testid='homepage-reviews'] .et-h2");
+            const reviewCards = [...document.querySelectorAll<HTMLElement>("[data-testid='homepage-review']")];
+            const businessHeading = required<HTMLElement>('.et-v3-contact__business-copy h3');
+            const businessBody = required<HTMLElement>('.et-v3-contact__business-copy > p:not(.et-eyebrow)');
+            const listStyle = getComputedStyle(priceList);
+
+            return {
+                viewportWidth: document.documentElement.clientWidth,
+                hero: typeAndFit(hero),
+                priceHeading: typeAndFit(priceHeading),
+                priceKicker: typeAndFit(priceKicker),
+                firstPrice: typeAndFit(firstPrice),
+                firstPriceLabel: typeAndFit(firstPriceLabel),
+                priceList: {
+                    display: listStyle.display,
+                    overflowX: listStyle.overflowX,
+                    columns: listStyle.gridTemplateColumns.split(' ').filter(Boolean).length,
+                    clientWidth: priceList.clientWidth,
+                    scrollWidth: priceList.scrollWidth,
+                },
+                priceEntries: [...document.querySelectorAll<HTMLAnchorElement>('.et-home-prices__list > a')].map(link => ({
+                    href: link.getAttribute('href'),
+                    amount: link.querySelector('strong')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+                })),
+                reviewHeading: typeAndFit(reviewHeading),
+                reviewCards: reviewCards.map(card => {
+                    const style = getComputedStyle(card);
+                    const channels = (style.borderTopColor.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+                    return {
+                        width: Number.parseFloat(style.borderTopWidth),
+                        style: style.borderTopStyle,
+                        dark: channels.length === 3 && channels.every(channel => channel <= 32),
+                    };
+                }),
+                businessHeading: typeAndFit(businessHeading),
+                businessBody: typeAndFit(businessBody),
+            };
+        });
+
+        expect(reviewMetrics.priceHeading.family).toBe(reviewMetrics.hero.family);
+        expect(reviewMetrics.priceHeading.weight).toBe(800);
+        expect(reviewMetrics.priceHeading.size).toBeGreaterThan(reviewMetrics.priceKicker.size);
+        expect(reviewMetrics.firstPrice.family).toBe(reviewMetrics.hero.family);
+        expect(reviewMetrics.firstPrice.weight).toBeGreaterThanOrEqual(700);
+        expect(reviewMetrics.firstPrice.size).toBeGreaterThan(reviewMetrics.firstPriceLabel.size);
+        expect(reviewMetrics.priceEntries.every(entry => entry.href && /\d[\d\s]*kr/i.test(entry.amount))).toBe(true);
+
+        expect(reviewMetrics.reviewHeading.family).toBe(reviewMetrics.hero.family);
+        expect(reviewMetrics.reviewHeading.weight).toBe(800);
+        expect(reviewMetrics.reviewHeading.whiteSpace).not.toBe('nowrap');
+        expect(reviewMetrics.reviewHeading.scrollWidth).toBeLessThanOrEqual(reviewMetrics.reviewHeading.clientWidth + 1);
+        expect(reviewMetrics.reviewHeading.right).toBeLessThanOrEqual(reviewMetrics.viewportWidth + 1);
+        expect(reviewMetrics.reviewCards.length).toBeGreaterThan(0);
+        expect(reviewMetrics.reviewCards.every(card => card.width === 3 && card.style === 'solid' && card.dark)).toBe(true);
+
+        expect(reviewMetrics.businessHeading.family).toBe(reviewMetrics.hero.family);
+        expect(reviewMetrics.businessHeading.weight).toBe(800);
+        expect(reviewMetrics.businessHeading.size).toBeGreaterThan(reviewMetrics.businessBody.size * 1.5);
+        expect(reviewMetrics.businessHeading.scrollWidth).toBeLessThanOrEqual(reviewMetrics.businessHeading.clientWidth + 1);
+        expect(reviewMetrics.businessHeading.lineHeight).toBeGreaterThan(reviewMetrics.businessHeading.size * .9);
+        expect(reviewMetrics.businessHeading.overflowX).toBe('visible');
+        expect(reviewMetrics.businessHeading.overflowY).toBe('visible');
+        expect(reviewMetrics.businessHeading.left).toBeGreaterThanOrEqual(-1);
+        expect(reviewMetrics.businessHeading.right).toBeLessThanOrEqual(reviewMetrics.viewportWidth + 1);
+
+        if (viewport.width >= 1440) {
+            expect(reviewMetrics.priceList.display).toBe('grid');
+            expect(reviewMetrics.priceList.columns).toBe(3);
+            expect(reviewMetrics.reviewHeading.lines).toBe(1);
+            expect(reviewMetrics.businessHeading.lines).toBe(2);
+        } else if (viewport.width <= 390) {
+            expect(reviewMetrics.priceList.display).toBe('flex');
+            expect(reviewMetrics.priceList.overflowX).toBe('auto');
+            expect(reviewMetrics.priceList.scrollWidth).toBeGreaterThan(reviewMetrics.priceList.clientWidth);
+        }
         const stepGeometry = await steps.evaluateAll((nodes) => nodes.map((node) => {
             const rect = node.getBoundingClientRect();
             return {
@@ -208,10 +329,20 @@ test('homepage cards and five-step timeline keep their intended responsive struc
         }
         measurements.push({ viewport, columns, partnerColumns, stepGeometry });
 
+        // Exercise native lazy loading before recording review evidence. A full-page
+        // screenshot alone is not a reliable loading signal at very narrow widths.
+        const businessCard = page.getByTestId('business-contact-card');
+        const partnerLogos = page.getByTestId('homepage-business-partners').locator('img');
+        await expect(partnerLogos).toHaveCount(4);
+        await businessCard.scrollIntoViewIfNeeded();
+        await expect.poll(() => partnerLogos.evaluateAll((images) => images.every((image) => (
+            image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0
+        ))), { message: `Partner logos did not finish loading at ${viewport.width}px` }).toBe(true);
+
         if (process.env.CAPTURE_ISSUE_47 === '1') {
             await page.screenshot({ path: path.join(evidenceRoot, `homepage-${viewport.width}x${viewport.height}.jpg`), type: 'jpeg', quality: 82, fullPage: true });
             if ([1440, 390, 320].includes(viewport.width)) {
-                await page.getByTestId('business-contact-card').screenshot({ path: path.join(evidenceRoot, `business-partners-${viewport.width}.png`) });
+                await businessCard.screenshot({ path: path.join(evidenceRoot, `business-partners-${viewport.width}.png`) });
             }
         }
     }
