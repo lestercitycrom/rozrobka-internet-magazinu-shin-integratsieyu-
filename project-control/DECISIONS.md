@@ -1,6 +1,6 @@
 # EasyTire permanent decisions
 
-Updated: 2026-09-15
+Updated: 2026-10-04
 
 Only decisions that must survive closed Issues belong here. Implementation detail stays in code/As-Built docs; discussion stays in Issues and PRs.
 
@@ -63,6 +63,13 @@ Design-only preview exception to the general release sequence above: [PM #44, co
 
 - The standing decision in [Issue #44 comment 5654897537](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/issues/44#issuecomment-5654897537) authorises required Issue/PR reporting, cross-links, named branches/PRs, pushes and proportionate local/CI checks inside an already authorised task without repeated owner acknowledgements.
 - It never widens scope or implicitly authorises merge, deployment, customer-data mutation, production operation or an external integration side effect.
+
+## GOV-010 — Ordinary staging deployment is pre-authorised
+
+- The owner's standing decision on 2026-10-04, recorded in [PR #87 comment 5979629377](https://github.com/lestercitycrom/rozrobka-internet-magazinu-shin-integratsieyu-/pull/87#issuecomment-5979629377), supersedes the former requirement for a separate owner or PM approval before each ordinary deployment to the existing EasyTire staging site.
+- Once an authorised task has an exact pushed SHA, proportionate green checks and a safe bounded deployment path, the chief engineer publishes it to staging, verifies the runtime revision and primary routes, and reports the result without asking again.
+- Staging publication remains distinct from merge, final acceptance and production. It does not authorise real payments, commercial NDI orders, mailings, third-party mutations, DNS changes, destructive database work, new access recipients or any broader integration side effect.
+- A demonstrated data-loss, access-control, storage, pricing, booking, release-integrity or unsafe partial-migration risk still stops the affected action. Previous and rollback releases remain recoverable.
 
 ## COM-001 — Dintero capture follows physical readiness
 

@@ -46,7 +46,7 @@ mockbin="$tmp/mockbin"
 mkdir -p "$work/application/resources/css" "$work/application/resources/js" "$work/application/resources/views/storefront/catalog" \
     "$work/application/lang/nb" "$work/application/lang/ru" "$work/application/tests/Audit" "$work/application/tests/E2E" \
     "$work/application/storage" "$work/application/bootstrap/cache" "$work/application/public" \
-    "$work/deploy/tests" "$work/evidence/issue-47" "$mockbin"
+    "$work/deploy/tests" "$work/evidence/issue-47" "$work/project-control" "$mockbin"
 printf 'fixture\n' > "$work/application/.env.example"
 printf 'fixture\n' > "$work/application/artisan"
 printf '{}\n' > "$work/application/composer.lock"
@@ -81,6 +81,8 @@ printf 'base\n' > "$work/evidence/issue-47/homepage-320x800.jpg"
 printf 'base\n' > "$work/evidence/issue-47/homepage-390x844.jpg"
 printf 'base\n' > "$work/evidence/issue-47/homepage-800x900.jpg"
 printf 'base\n' > "$work/evidence/issue-47/homepage-layout.json"
+printf 'base\n' > "$work/project-control/DECISIONS.md"
+printf 'base\n' > "$work/project-control/WORKFLOW.md"
 printf 'base\n' > "$work/deploy/storefront-final-staging.sh"
 printf 'base\n' > "$work/deploy/tests/storefront-final-safety.sh"
 git -C "$work" init -q
@@ -101,6 +103,7 @@ for path in \
     evidence/issue-47/README.md evidence/issue-47/business-partners-1440.png evidence/issue-47/business-partners-320.png evidence/issue-47/business-partners-390.png \
     evidence/issue-47/homepage-1280x800.jpg evidence/issue-47/homepage-1366x768.jpg evidence/issue-47/homepage-1440x900.jpg evidence/issue-47/homepage-1920x1080.jpg \
     evidence/issue-47/homepage-320x800.jpg evidence/issue-47/homepage-390x844.jpg evidence/issue-47/homepage-800x900.jpg evidence/issue-47/homepage-layout.json \
+    project-control/DECISIONS.md project-control/WORKFLOW.md \
     deploy/storefront-final-staging.sh deploy/tests/storefront-final-safety.sh; do
     printf 'allowed change\n' >> "$work/$path"
 done

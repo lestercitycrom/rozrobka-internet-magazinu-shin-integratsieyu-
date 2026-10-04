@@ -9,7 +9,7 @@ readonly ROOT='/var/www/staging-easytire.bethub.fun'
 readonly CLASSIC_ROOT='/var/www/staging-classic-easytire.bethub.fun'
 readonly REPO='/srv/git/shop-ndi.git'
 readonly BASE='833c98356c0ef9a1a53246682025790268f53227'
-readonly EXPECTED_CURRENT='5de5a81e48c06039dbda73141d92e852c4aedc42'
+readonly EXPECTED_CURRENT='3705a24a2d0b8ac7e3899bf63b44fdae3ec4fd92'
 readonly EXPECTED_CLASSIC='833c98356c0ef9a1a53246682025790268f53227'
 readonly BRANCH='refs/heads/codex/storefront-visual-debt'
 readonly HOST='staging-easytire.bethub.fun'
@@ -58,6 +58,7 @@ while IFS= read -r -d '' file; do
         application/tests/E2E/catalog-mobile-layout.spec.ts|application/tests/E2E/customer-design-balance.spec.ts|application/tests/E2E/design-foundation.spec.ts|application/tests/E2E/home-hero-process.spec.ts|application/tests/E2E/homepage-composition.spec.ts|application/tests/E2E/homepage-content-collections.spec.ts) ;;
         evidence/issue-47/README.md|evidence/issue-47/business-partners-1440.png|evidence/issue-47/business-partners-320.png|evidence/issue-47/business-partners-390.png) ;;
         evidence/issue-47/homepage-1280x800.jpg|evidence/issue-47/homepage-1366x768.jpg|evidence/issue-47/homepage-1440x900.jpg|evidence/issue-47/homepage-1920x1080.jpg|evidence/issue-47/homepage-320x800.jpg|evidence/issue-47/homepage-390x844.jpg|evidence/issue-47/homepage-800x900.jpg|evidence/issue-47/homepage-layout.json) ;;
+        project-control/DECISIONS.md|project-control/WORKFLOW.md) ;;
         deploy/storefront-final-staging.sh|deploy/tests/storefront-final-safety.sh) ;;
         *) fail "Outside approved storefront scope: $file" ;;
     esac
